@@ -232,7 +232,24 @@
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
-      }
+      },
+      "dns_forward_count" : "4",
+      "dmsb.dns.forwarding.1.enable" : "1",
+      "dmsb.dns.forwarding.2.enable" : "1",
+      "dmsb.dns.forwarding.3.enable" : "1",
+      "dmsb.dns.forwarding.4.enable" : "1",
+      "dmsb.dns.forwarding.1.alias" : "",
+      "dmsb.dns.forwarding.2.alias" : "",
+      "dmsb.dns.forwarding.3.alias" : "",
+      "dmsb.dns.forwarding.4.alias" : "",
+      "dmsb.dns.forwarding.1.interface" : "Device.IP.Interface.1",
+      "dmsb.dns.forwarding.2.interface" : "Device.IP.Interface.1",
+      "dmsb.dns.forwarding.3.interface" : "Device.IP.Interface.1",
+      "dmsb.dns.forwarding.4.interface" : "Device.IP.Interface.1",
+      "dmsb.dns.forwarding.1.dnsserver" : "",
+      "dmsb.dns.forwarding.2.dnsserver" : "",
+      "dmsb.dns.forwarding.3.dnsserver" : "",
+      "dmsb.dns.forwarding.4.dnsserver" : ""
 },
 
    "sky-italia" : {

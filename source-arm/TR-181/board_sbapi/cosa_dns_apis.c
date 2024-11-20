@@ -946,7 +946,18 @@ CosaDmlDnsRelayGetServer
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "cosa_x_cisco_com_devicecontrol_apis.h"
+#include <utapi/utapi_dns.h>
+#include "ccsp_psm_helper.h"
+#include "secure_wrapper.h"
 
+extern char g_Subsystem[32];
+extern ANSC_HANDLE bus_handle;
+
+#define DEFAULT_WAN_INTERFACE  "Device.IP.Interface.1"
+
+static boolean_t g_DnsRelayEnabled = FALSE;
+static const char *DNS_RELAY_RESOLV_CONF = "/var/resolv_lan.dnsmasq";
+static const char *DNS_KEY_RESOLVCONF = "nameserver";
 
 /**********************************************************************
 
@@ -1434,8 +1445,56 @@ CosaDmlDnsEnableRelay
     )
 {
     UNREFERENCED_PARAMETER(hContext);
-    UNREFERENCED_PARAMETER(bEnabled);
-    return ANSC_STATUS_FAILURE;
+    FILE *fd = NULL;
+    char dnsProxyStatus[256] = {};
+
+    UtopiaContext ctx = {};
+
+    if (!Utopia_Init(&ctx))
+    {
+        return ANSC_STATUS_FAILURE;
+    }
+
+    if(g_DnsRelayEnabled == bEnabled)
+    {
+        CcspTraceWarning(("%s Relay is enabled \n",__FUNCTION__));
+        return ANSC_STATUS_SUCCESS;
+    }
+
+    g_DnsRelayEnabled = bEnabled;
+    int rc = Utopia_SetDnsRelayEnabled(&ctx, g_DnsRelayEnabled);
+    Utopia_Free(&ctx, !rc);
+
+    if (rc == 0)
+    {
+          if(bEnabled == FALSE)
+          {
+                v_secure_system("sysevent set dns_proxy_status stopped");
+          }
+          else
+          {
+              v_secure_system("sysevent set dns_proxy_status InProgress");
+          }
+
+          v_secure_system("sysevent set dhcp_server-stop");
+
+          snprintf(dnsProxyStatus,sizeof(dnsProxyStatus),"sysevent get dhcp_server-status");
+          fd = popen(dnsProxyStatus, "r");
+
+          if (fd)
+          {
+              fgets(dnsProxyStatus,sizeof(dnsProxyStatus),fd);
+              CcspTraceWarning(("dhcp_server status %s \n" ,dnsProxyStatus));
+              pclose(fd);
+          }
+
+          if(strcmp(dnsProxyStatus,"stopped"))
+          {
+              v_secure_system("sysevent set dhcp_server-start");
+              v_secure_system("sysevent set dns_proxy_status started");
+          }
+    }
+    return ANSC_STATUS_SUCCESS ;
 }
 
 
@@ -1464,11 +1523,139 @@ CosaDmlDnsEnableRelay
 COSA_DML_DNS_STATUS
 CosaDmlIpDnsGetRelayStatus
     (
-        ANSC_HANDLE                 hContext
+        ANSC_HANDLE                 hContext,
+        PCOSA_DML_DNS_RELAY         pRelay
     )
 {
     UNREFERENCED_PARAMETER(hContext);
-    return ANSC_STATUS_FAILURE;
+    COSA_DML_DNS_STATUS status = COSA_DML_DNS_STATUS_Error;
+    FILE *fp = NULL;
+    const char *dnsmasqConfig = "/var/dnsmasq_lan.conf";
+    int readLength = 256;
+    char searchString[200];
+    char buffer[readLength];
+    boolean_t isRunning = FALSE;
+
+    UtopiaContext ctx = {};
+    if (!Utopia_Init(&ctx))
+    {
+        return status;
+    }
+
+    int rc = Utopia_GetDnsRelayEnabled(&ctx, &g_DnsRelayEnabled);
+    if (rc != 0)
+    {
+        CcspTraceError(("%s Failed to get enable\n",__FUNCTION__));
+    }
+    else
+    {
+        pRelay->bEnabled = g_DnsRelayEnabled;
+        if(g_DnsRelayEnabled == FALSE)
+        {
+            v_secure_system("sysevent set dns_proxy_status stopped");
+            status = COSA_DML_DNS_STATUS_Disabled;
+            CcspTraceWarning(("%s DNS Relay is Disabled \n",__FUNCTION__));
+        }
+        else
+        {
+            snprintf(searchString, sizeof(searchString), "ps | grep -i dnsmasq | grep '%s' | grep -v grep", dnsmasqConfig);
+            fp = popen(searchString, "r");
+            if(fp != NULL)
+            {
+                if (fgets(buffer, readLength-1, fp) != NULL)
+                {
+                    buffer[readLength-1] = '\0';
+                    if( _ansc_strstr(buffer, "/var/dnsmasq_lan.conf")){
+                        CcspTraceWarning(("DNS Relay LAN dnsmasq processs is Running \n"));
+                        isRunning = TRUE;
+                    }
+                    else
+                    {
+                        CcspTraceWarning(("No DNS Relay LAN dnsmasq processs Found \n"));
+                    }
+                }
+                pclose(fp);
+            }
+        }
+
+        if((g_DnsRelayEnabled == TRUE) && (isRunning == TRUE))
+        {
+            status =  COSA_DML_DNS_STATUS_Enabled;
+        }
+        else if ((g_DnsRelayEnabled == TRUE) && (isRunning == FALSE))
+        {
+             status =  COSA_DML_DNS_STATUS_Error;
+        }
+        else
+        {
+             status = COSA_DML_DNS_STATUS_Disabled;
+        }
+
+        pRelay->Status = status;
+    }
+
+    Utopia_Free(&ctx, 0);
+    return status;
+}
+
+/**********************************************************************
+
+    caller:     self
+
+    prototype:
+
+        ANSC_STATUS
+        CosaDmlIpDnsGetRelayEnable
+            (
+                ANSC_HANDLE                 hContext
+                PCOSA_DML_DNS_RELAY         pRelay
+            )
+
+    description:
+
+        This function gets the Relay Enable Status.
+
+    argument:   ANSC_HANDLE                         hContext
+    argument:   PCOSA_DML_DNS_RELAY                 pRelay
+
+    return:     operation status.
+
+**********************************************************************/
+ANSC_STATUS
+CosaDmlIpDnsGetRelayEnable
+    (
+        ANSC_HANDLE                 hContext,
+        PCOSA_DML_DNS_RELAY         pRelay
+    )
+{
+    UNREFERENCED_PARAMETER(hContext);
+    pRelay->bEnabled = g_DnsRelayEnabled;
+    return ANSC_STATUS_SUCCESS ;
+}
+
+static COSA_DML_DNS_STATUS GetDnsServerStatus(const char *ip)
+{
+    COSA_DML_DNS_STATUS status = COSA_DML_DNS_STATUS_Disabled;
+    FILE *fd = NULL;
+    char buff[256] = {0};
+    const char *resolvConf = DNS_RELAY_RESOLV_CONF;
+    const char *dnsKey = DNS_KEY_RESOLVCONF;
+
+    if ((resolvConf) && (strlen(ip) > 1))
+    {
+        snprintf(buff, sizeof(buff) - 1, "cat %s | grep '%s' | grep -c -E '%s' ", resolvConf, dnsKey, ip);
+        fd = popen(buff, "r");
+        if (fd)
+        {
+            if ((NULL != fgets(buff, sizeof(buff), fd)) && (strncmp(buff,"0",1) != 0))
+            {
+                status = COSA_DML_DNS_STATUS_Enabled;
+            }
+            pclose(fd);
+        }
+    }
+
+    return status;
 }
 
 /*
@@ -1506,8 +1693,120 @@ CosaDmlDnsRelayGetServers
     )
 {
     UNREFERENCED_PARAMETER(hContext);
-    UNREFERENCED_PARAMETER(pulCount);
-    return NULL;
+    PCOSA_DML_DNS_RELAY_ENTRY pForward = NULL;
+    DNS_Client_t dhcpcDns = {0};
+
+    UtopiaContext ctx = {};
+    int retPsmGet = CCSP_SUCCESS;
+    int forwardCount = 0;
+    int dynCount = 0;
+    int staticCount = 0;
+    int i = 0;
+    *pulCount = 0;
+    char* param_value = NULL;
+    char param_name[256]= {0};
+    unsigned int dns_static_enable = 0;
+
+    if (!Utopia_Init(&ctx))
+    {
+        return NULL;
+    }
+
+    if(SUCCESS == Utopia_GetDNSServer(&ctx, &dhcpcDns)){
+            for(i = DNS_CLIENT_NAMESERVER_CNT -1; i >= 0 && (dhcpcDns.dns_server[i][0] == 0) ; i--);
+            dynCount = i+1;
+    }
+
+    staticCount = Utopia_GetNumberOfDnsForwards(&ctx);
+
+    forwardCount = staticCount + dynCount;
+
+    if (forwardCount == 0)
+    {
+        Utopia_Free(&ctx, 0);
+        return NULL;
+    }
+
+    pForward = (PCOSA_DML_DNS_RELAY_ENTRY)AnscAllocateMemory(forwardCount * sizeof(COSA_DML_DNS_RELAY_ENTRY));
+    if (!pForward)
+    {
+        Utopia_Free(&ctx, 0);
+        return NULL;
+    }
+
+    *pulCount = forwardCount;
+    int af = DNS_FAMILY_NONE;
+
+    /*Getting static dns entries for instance 1-4*/
+    for (i = 0; i < staticCount; i++)
+    {
+       pForward[i].InstanceNumber = i + 1;
+       pForward[i].Type = COSA_DML_DNS_ADDR_SRC_Static;
+
+       sprintf(param_name, FORWARDING_DNS_SERVER_ENABLE, i+1);
+       retPsmGet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, param_name, NULL, &param_value);
+       if (retPsmGet == CCSP_SUCCESS && param_value != NULL)
+       {
+           dns_static_enable = atoi(param_value);
+           pForward[i].bEnabled = (dns_static_enable == 1) ? TRUE : FALSE;
+           ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(param_value);
+       }
+
+       sprintf(param_name, FORWARDING_DNS_SERVER_ALIAS, i+1);
+       retPsmGet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, param_name, NULL, &param_value);
+       if (retPsmGet == CCSP_SUCCESS && param_value != NULL)
+       {
+           AnscCopyString(pForward[i].Alias,param_value);
+           ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(param_value);
+       }
+
+       sprintf(param_name, FORWARDING_DNS_SERVER_INTERFACE, i+1);
+       retPsmGet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, param_name, NULL, &param_value);
+       if (retPsmGet == CCSP_SUCCESS && param_value != NULL)
+       {
+           AnscCopyString(pForward[i].Interface,param_value);
+           ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(param_value);
+       }
+
+       sprintf(param_name, FORWARDING_DNS_SERVER, i+1);
+       retPsmGet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, param_name, NULL, &param_value);
+       if (retPsmGet == CCSP_SUCCESS && param_value != NULL)
+       {
+           AnscCopyString(pForward[i].DNSServer,param_value);
+           ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(param_value);
+       }
+
+       pForward[i].Status = GetDnsServerStatus(pForward[i].DNSServer);
+
+    }
+
+    PCOSA_DML_DNS_RELAY_ENTRY pDynServer = pForward + staticCount;
+
+    /*Getting Dynamic dns entries from instance 5*/
+    for (i=0; i < dynCount; i++)
+    {
+       pDynServer[i].InstanceNumber = i + (staticCount + 1);
+       AnscCopyString(pDynServer[i].DNSServer,  dhcpcDns.dns_server[i]);
+       AnscCopyString(pDynServer[i].Interface, DEFAULT_WAN_INTERFACE);
+       AnscCopyString(pDynServer[i].Alias, dhcpcDns.s_alias[i]);
+       pDynServer[i].bEnabled = TRUE;
+       pDynServer[i].Status = COSA_DML_DNS_STATUS_Enabled;
+       af = CHECK_V4_V6(dhcpcDns.dns_server[i]);
+       switch (af)
+       {
+           case DNS_FAMILY_IPV4:
+               pDynServer[i].Type = COSA_DML_DNS_ADDR_SRC_DHCPV4;
+               break;
+           case DNS_FAMILY_IPV6:
+               pDynServer[i].Type = COSA_DML_DNS_ADDR_SRC_DHCPV6;
+               break;
+           default:
+               break;
+        }
+    }
+
+    Utopia_Free(&ctx, 0);
+    return pForward;
 }
 
 
@@ -1633,6 +1932,78 @@ CosaDmlDnsRelayDelServer
     UNREFERENCED_PARAMETER(ulInstanceNumber);
     return ANSC_STATUS_FAILURE;
 }
+
+int ForwardingDNS_SetParamValuesToDB( char *pParamName, char *pParamVal )
+{
+    int     retPsmSet  = CCSP_SUCCESS;
+    /* Input Validation */
+    if( ( NULL == pParamName) || ( NULL == pParamVal ) )
+    {
+        CcspTraceError(("%s Invalid Input Parameters\n",__FUNCTION__));
+        return CCSP_FAILURE;
+    }
+
+    retPsmSet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, pParamName, ccsp_string, pParamVal);
+    if (retPsmSet != CCSP_SUCCESS) {
+        CcspTraceError(("%s Error %d writing %s\n", __FUNCTION__, retPsmSet, pParamName));
+    }
+
+    return retPsmSet;
+}
+
+/**********************************************************************
+
+    caller:     self
+
+    prototype:
+
+        void
+        update_proxy_state
+            (
+                BOOLEAN                     bEnabled
+            )
+
+    description:
+
+        This function update the DNS relay.Proxy State
+
+    argument:    BOOLEAN          bEnabled
+
+    return:     operation status.
+
+**********************************************************************/
+static int update_proxy_state (BOOLEAN bEnabled)
+{
+    char* dns_relay_1 = NULL;
+    char* dns_relay_2 = NULL;
+    char* dns_relay_3 = NULL;
+    char* dns_relay_4 = NULL;
+    int retPsmGet = CCSP_SUCCESS;
+    int retStatus = 0;
+    FILE *fp = NULL;
+
+    retPsmGet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.1.dnsserver", NULL, &dns_relay_1);
+    if ((retPsmGet == CCSP_SUCCESS) && (dns_relay_1 != NULL) && (bEnabled == TRUE ))
+    {
+        PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.2.dnsserver", NULL, &dns_relay_2);
+        PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.3.dnsserver", NULL, &dns_relay_3);
+        PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.4.dnsserver", NULL, &dns_relay_4);
+
+        if((strlen(dns_relay_1) <= 1) && (strlen(dns_relay_2) <= 1) && (strlen(dns_relay_3) <= 1) && (strlen(dns_relay_4) <= 1))
+        {
+            CcspTraceWarning(("DNS Relay is Enabled without any Static Server\n"));
+            CosaDmlDnsEnableRelay(NULL, FALSE);
+            fp = popen("sysevent set dhcp_server-stop;sysevent set dhcp_server-start","r");
+            pclose(fp);
+            retStatus = 1;
+        }
+        else {
+            CcspTraceWarning(("DNS Relay is Enabled and Static Server Data found\n"));
+        }
+    }
+    return retStatus;
+}
+
 /**********************************************************************
 
     caller:     self
@@ -1665,8 +2036,78 @@ CosaDmlDnsRelaySetServer
     )
 {
     UNREFERENCED_PARAMETER(hContext);
-    UNREFERENCED_PARAMETER(pEntry);
-    return ANSC_STATUS_FAILURE;
+    int retPsmSet = CCSP_SUCCESS;
+    char param_name[256] = {0};
+    char param_value[256] = {0};
+    int instancenum = 0;
+    char* oldDnsserver = NULL;
+    FILE *fp = NULL;
+    int retUpdateState = 0;
+
+    instancenum = pEntry->InstanceNumber;
+
+    CcspTraceWarning(("%s-%d: instancenum=%d \n",__FUNCTION__, __LINE__, instancenum));
+
+    memset(param_value, 0, sizeof(param_value));
+    memset(param_name, 0, sizeof(param_name));
+
+    if(pEntry->bEnabled)
+    {
+        sprintf(param_value, "1");
+    }
+    else
+    {
+        sprintf(param_value, "0");
+    }
+    sprintf(param_name, FORWARDING_DNS_SERVER_ENABLE, instancenum);
+    retPsmSet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, param_name, NULL, &oldDnsserver);
+    if (retPsmSet == CCSP_SUCCESS && oldDnsserver != NULL)
+    {
+        if((strncasecmp(oldDnsserver,param_value,sizeof(param_value))!=0) && (g_DnsRelayEnabled == TRUE))
+        {
+            fp = popen("sysevent set dhcp_server-stop;sysevent set dhcp_server-start","r");
+            pclose(fp);
+        }
+    }
+    ForwardingDNS_SetParamValuesToDB(param_name,param_value);
+
+    memset(param_value, 0, sizeof(param_value));
+    memset(param_name, 0, sizeof(param_name));
+
+    sprintf(param_value, "%s", pEntry->Alias);
+    sprintf(param_name, FORWARDING_DNS_SERVER_ALIAS, instancenum);
+    ForwardingDNS_SetParamValuesToDB(param_name,param_value);
+
+    memset(param_value, 0, sizeof(param_value));
+    memset(param_name, 0, sizeof(param_name));
+
+    sprintf(param_value, "%s", pEntry->Interface);
+    sprintf(param_name, FORWARDING_DNS_SERVER_INTERFACE, instancenum);
+    ForwardingDNS_SetParamValuesToDB(param_name,param_value);
+
+    memset(param_value, 0, sizeof(param_value));
+    memset(param_name, 0, sizeof(param_name));
+
+    sprintf(param_value, "%s", pEntry->DNSServer);
+    sprintf(param_name, FORWARDING_DNS_SERVER, instancenum);
+
+    retPsmSet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, param_name, NULL, &oldDnsserver);
+    if (retPsmSet == CCSP_SUCCESS && oldDnsserver != NULL)
+    {
+        if((strncasecmp(oldDnsserver,param_value,sizeof(param_value))!=0) && (g_DnsRelayEnabled == TRUE))
+        {
+            fp = popen("sysevent set dhcp_server-stop;sysevent set dhcp_server-start","r");
+            pclose(fp);
+        }
+    }
+    ForwardingDNS_SetParamValuesToDB(param_name,param_value);
+    retUpdateState = update_proxy_state(g_DnsRelayEnabled);
+    if(retUpdateState)
+    {
+        pEntry->bEnabled = g_DnsRelayEnabled;
+        CcspTraceWarning(("DNS Relay activation status updated %d - %d\n", g_DnsRelayEnabled, pEntry->bEnabled));
+    }
+    return ANSC_STATUS_SUCCESS ;
 }
 
 
