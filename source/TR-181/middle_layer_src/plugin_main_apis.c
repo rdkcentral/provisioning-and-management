@@ -335,12 +335,8 @@ CosaBackEndManagerInitialize
     AnscTraceWarning(("  CosaSecurityCreate done!\n"));
     pMyObject->hIP            = (ANSC_HANDLE)CosaIPCreate();
     AnscTraceWarning(("  CosaIPCreate done!\n"));
-#ifdef FEATURE_RDKB_DHCP_MANAGER
-    AnscTraceWarning(("  CosaDhcpv4Create not done will be created from dhcp manager!\n"));
-#else
     pMyObject->hDhcpv4        = (ANSC_HANDLE)CosaDhcpv4Create();
     AnscTraceWarning(("  CosaDhcpv4Create done!\n"));
-#endif
     pMyObject->hHosts         = (ANSC_HANDLE)CosaHostsCreate();
     AnscTraceWarning(("  CosaHostsCreate done!\n"));
     pMyObject->hDNS           = (ANSC_HANDLE)CosaDNSCreate();
@@ -360,12 +356,8 @@ CosaBackEndManagerInitialize
 #endif
 #endif
 
-#ifdef FEATURE_RDKB_DHCP_MANAGER
-    AnscTraceWarning(("  CosaDhcpv6Create not done will be created from dhcp manager!\n"));
-#else
     pMyObject->hDhcpv6        = (ANSC_HANDLE)CosaDhcpv6Create();
     AnscTraceWarning(("  CosaDhcpv6Create done!\n"));
-#endif
     pMyObject->hDeviceControl  = (ANSC_HANDLE)CosaDeviceControlCreate();
     AnscTraceWarning(("  CosaDeviceControlCreate done!\n"));
 #if !defined (RESOURCE_OPTIMIZATION)
