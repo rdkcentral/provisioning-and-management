@@ -77,8 +77,8 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <linux/if.h>
-#include <linux/ip.h>
+#include <net/if.h>
+#include <netinet/ip.h>
 
 #include "cosa_apis.h"
 #include "syscfg/syscfg.h"

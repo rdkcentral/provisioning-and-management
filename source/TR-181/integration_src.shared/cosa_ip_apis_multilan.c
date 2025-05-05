@@ -74,7 +74,7 @@
 #include "cosa_dhcpv6_apis.h"
 #include "cosa_drg_common.h"
 
-#include "linux/if.h"
+#include <net/if.h>
 #include "linux/sockios.h"
 #include <sys/ioctl.h>
 #include "safec_lib_common.h"
