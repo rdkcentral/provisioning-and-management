@@ -703,7 +703,7 @@ CosaDmlDiGetProductClass
                     return ANSC_STATUS_FAILURE;
                 }
         }
-#elif defined(_PLATFORM_RASPBERRYPI_)
+#elif defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_BANANAPI_R4_)
         {
                 rc = strcpy_s(pValue, *pulSize, "ER");
                 if ( rc != EOK) {
