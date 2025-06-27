@@ -143,6 +143,7 @@ typedef struct
 {
    amenityBridgeDetails_t ** ppAmenityDetails;
    uint16_t ui16Flag;
+   bool completed;  
 }AmenityThread_t;
 
 int getAmenityRbusData(amenityBridgeInfo_t ** ppBridgeRbusData, int *pVapCount);
@@ -163,6 +164,7 @@ typedef struct
 {
    bool bMwEnable;
    char cFlag;
+   bool completed; 
 }threadStruct_t;
 
 void getBridgeDetailsFromPsm(void);
