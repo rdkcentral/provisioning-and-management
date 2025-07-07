@@ -7823,7 +7823,8 @@ OAUTH_GetParamStringValue
             // we don't need to worry about the other values in this case
             if( bAuthModeCheck == TRUE )
             {
-                snprintf( pValue, *pUlSize, "potd" );
+                snprintf( pValue, *pUlSize, "sso" );
+                CcspTraceInfo(("AuthMode set to SSO by default\n"));
             }
             else if( *pUlSize > 0 )
             {
