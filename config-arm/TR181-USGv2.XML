@@ -3945,6 +3945,22 @@
                                 </parameter>
                             </parameters>
                         </object>
+                        <object>
+                            <name>NIM</name>
+                            <objectType>object</objectType>
+                            <functions>
+                                <func_GetParamBoolValue>NIM_GetParamBoolValue</func_GetParamBoolValue>
+                                <func_SetParamBoolValue>NIM_SetParamBoolValue</func_SetParamBoolValue>
+                            </functions>
+                            <parameters>
+                                <parameter>
+                                    <name>Enable</name>
+                                    <type>boolean</type>
+                                    <syntax>bool</syntax>
+                                    <writable>true</writable>
+                                </parameter>
+                            </parameters>
+                        </object>
 <?endif?>
 <?ifdef FEATURE_RDKB_NFC_MANAGER?>
                         <object>
