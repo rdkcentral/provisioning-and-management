@@ -63,6 +63,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <utapi.h>
+#include <mqueue.h>
 #include "cosa_common_util.h"
 #include "cosa_apis_util.h"
 #if defined (WIFI_MANAGE_SUPPORTED)
@@ -431,33 +432,9 @@ enum {EVENT_ERROR=-1, EVENT_OK, EVENT_TIMEOUT, EVENT_HANDLE_EXIT, EVENT_LAN_STAR
 #endif
 
 #if defined (RBUS_WAN_IP)
-void free_args_struct(arg_struct_t *param){
-
-    if(param != NULL)
-    {
-        if(param->parameterName != NULL)
-        {
-            free(param->parameterName);
-            param->parameterName = NULL;
-        }
-        if(param->newValue != NULL)
-        {
-            free(param->newValue);
-            param->newValue = NULL;
-        }
-        if(param->oldValue != NULL)
-        {
-            free(param->oldValue);
-            param->oldValue = NULL;
-        }
-        free(param);
-        param = NULL;
-    }
-
-}
 
 void*
-Set_Notifi_ParamName(void *args)
+Set_Notifi_ParamName(arg_struct_t arguments)
 {
     errno_t rc = -1;
     char  str1[512] = {0};
@@ -471,15 +448,7 @@ Set_Notifi_ParamName(void *args)
     char* faultParam = NULL;
     int ret = 0;
 
-    pthread_detach(pthread_self());    
-
-    arg_struct_t *arguments = (arg_struct_t*)args;
-    if(arguments == NULL){
-        CcspTraceError(("%s: arguments struct is NULL", __FUNCTION__)); 
-        return NULL;
-    }
-    
-    rc = sprintf_s(str1,sizeof(str1),"%s,%u,%s,%s,%d",arguments->parameterName, arguments->writeID, (arguments->newValue)!=NULL ? (strlen(arguments->newValue)>0 ? arguments->newValue : "NULL") : "NULL", (arguments->oldValue)!=NULL ? (strlen(arguments->oldValue)>0 ? arguments->oldValue : "NULL") : "NULL", arguments->type);
+    rc = sprintf_s(str1,sizeof(str1),"%s,%u,%s,%s,%d",arguments.parameterName, arguments.writeID, strlen(arguments.newValue)>0 ? arguments.newValue : "NULL", strlen(arguments.oldValue)>0 ? arguments.oldValue : "NULL", arguments.type);
     CcspTraceInfo(("%s rc: %d, str1: %s\n", __FUNCTION__ , rc, str1));
 
     if(rc < EOK)
@@ -521,7 +490,7 @@ Set_Notifi_ParamName(void *args)
         goto EXIT;
     }
     else{
-        CcspTraceDebug(("%s /tmp/webpanotifyready file exists. WebPA is ready to receive notifications: %d\n", __FUNCTION__, __LINE__));
+        CcspTraceInfo(("%s /tmp/webpanotifyready file exists. WebPA is ready to receive notifications: %d\n", __FUNCTION__, __LINE__));
     }
 
     ret = CcspBaseIf_setParameterValues(  bus_handle,
@@ -546,8 +515,94 @@ Set_Notifi_ParamName(void *args)
     }
   
     EXIT:
-        free_args_struct(arguments);
+        CcspTraceWarning(("%s: CcspBaseIf_setParameterValues: Exit.\n", __FUNCTION__ ));
         return NULL;
+}
+
+// Enqueue a notification
+bool enqueueNotification(arg_struct_t data) {
+    bool ret = false;
+    mqd_t mq;
+    struct mq_attr attr;
+    attr.mq_flags = 0;
+    attr.mq_maxmsg = MAX_QUEUE_SIZE;
+    attr.mq_msgsize = MAX_MSG_SIZE;
+    attr.mq_curmsgs = 0;
+
+    CcspTraceInfo(("%s: Entry %d\n", __FUNCTION__,__LINE__));
+
+    mq = mq_open(WEBPA_NOTIFY_QUEUE , O_CREAT | O_WRONLY , 0644 , &attr);
+    if(mq == (mqd_t) -1) {
+        CcspTraceError(("%s: WebPA notification message queue open error \n", __FUNCTION__));
+        return true;
+    }
+
+    if(mq_send(mq, (const char *)&data , sizeof(arg_struct_t) , 0 ) == -1) {
+        CcspTraceError(("%s: Error on sending WebPr notification message queue \n", __FUNCTION__));
+        ret = true;
+    }
+    else {
+        CcspTraceInfo(("%s: Notification enqueued successfully\n", __FUNCTION__));
+    }
+
+    if(mq_close(mq) == -1) {
+        CcspTraceError(("%s: WebPA notification message queue close error \n", __FUNCTION__));
+        ret = false;
+    }
+    return ret;
+}
+
+void *SyncNotificationHandlerThread(void *arg) {
+    UNREFERENCED_PARAMETER(arg);
+    pthread_detach(pthread_self());
+
+    mqd_t mq;
+    struct mq_attr attr;
+    attr.mq_flags = 0;
+    attr.mq_maxmsg = MAX_QUEUE_SIZE;
+    attr.mq_msgsize = MAX_MSG_SIZE;
+    attr.mq_curmsgs = 0;
+
+    while (true)
+    {
+        mq = mq_open(WEBPA_NOTIFY_QUEUE , O_CREAT | O_RDONLY, 0644, &attr);
+        if (mq == (mqd_t) -1)
+        {
+            CcspTraceError(("%s: WebPA notification message queue open error \n", __FUNCTION__));
+            return NULL;
+        }
+
+        CcspTraceInfo(("%s Waiting for the Message \n", __FUNCTION__));
+        arg_struct_t notification;
+        ssize_t bytes_read = mq_receive(mq , (char *)&notification , sizeof(arg_struct_t) , NULL);
+
+        if (bytes_read < 0)
+        {
+            CcspTraceError(("%s Error on message queue reading \n " , __FUNCTION__));
+        }
+        else
+	{
+            CcspTraceDebug(("%s processing the recieved message, call Set_Notifi_ParamName \n", __FUNCTION__));
+            // Call Set_Notifi_ParamName() to process the notification
+            Set_Notifi_ParamName(notification);
+	}
+        if(mq_close(mq) == -1)
+            CcspTraceError(("%s: WebPA notification message queue close error \n", __FUNCTION__));
+
+    }
+    return NULL;
+}
+
+/*
+ * Create a thread to send notification webPA
+ */
+void initializeNotificationHandler() {
+    pthread_t threadId;
+    if (pthread_create(&threadId, NULL, SyncNotificationHandlerThread, NULL) != 0) {
+        CcspTraceError(("Failed to create SyncNotificationHandlerThread\n"));
+    }
+    else
+        CcspTraceInfo(("%s: sync notification thread created \n", __FUNCTION__));
 }
 
 int Send_WebPANotification_prefix(char* parameterName, char *prefix, char *previous_prefix){
@@ -557,37 +612,24 @@ int Send_WebPANotification_prefix(char* parameterName, char *prefix, char *previ
         return EVENT_ERROR;
     }
 
-    pthread_t threadId;
-    arg_struct_t *prefix_args = NULL;
-    prefix_args = (arg_struct_t *)malloc(sizeof(arg_struct_t));
+    //pthread_t threadId;
+    arg_struct_t prefix_args;
+        CcspTraceInfo(("%s prefix_args is valid: %d \n", __FUNCTION__, __LINE__));
+        memset(&prefix_args, 0, sizeof(arg_struct_t));
+        strncpy(prefix_args.parameterName , parameterName , PARAM_NAME_LEN - 1);
+        prefix_args.writeID         = 256;
+        strncpy(prefix_args.newValue , prefix , VALUE_LEN - 1);
+        strncpy(prefix_args.oldValue , previous_prefix , VALUE_LEN - 1);
+        prefix_args.type            = ccsp_string;
+        CcspTraceInfo(("%s En queue the notification with arguments: %s,%u,%s,%s,%d, LINE: %d\n", __FUNCTION__, prefix_args.parameterName, prefix_args.writeID, prefix_args.newValue, prefix_args.oldValue, prefix_args.type,__LINE__));
 
-    if(prefix_args != NULL)
-    {
-        CcspTraceDebug(("%s prefix_args for is valid: %d \n", __FUNCTION__, __LINE__)); 
-        memset(prefix_args, 0, sizeof(arg_struct_t));
- 
-        prefix_args->parameterName = strdup(parameterName);
-        prefix_args->writeID         = 256;
-        prefix_args->newValue = strdup(prefix);
-        prefix_args->oldValue = strdup(previous_prefix);
-        prefix_args->type            = ccsp_string;
-        CcspTraceDebug(("%s pthread_create with arguments: %s,%u,%s,%s,%d, LINE: %d\n", __FUNCTION__, prefix_args->parameterName, prefix_args->writeID, prefix_args->newValue, prefix_args->oldValue, prefix_args->type,__LINE__)); 
-
-        if (pthread_create(&threadId, NULL, Set_Notifi_ParamName, (void *) prefix_args) != 0) 
+        if(enqueueNotification(prefix_args))
         {
-            CcspTraceError(("%s: Error creating thread Set_Notifi_ParamName for %d\n", __FUNCTION__,__LINE__));
-            free_args_struct(prefix_args);
+            CcspTraceError(("%s: Error en queueing the notification for prefix %d\n", __FUNCTION__,__LINE__));
             return EVENT_ERROR;
+        } else {
+            CcspTraceInfo(("%s: sent the notification to queue prefix %d\n", __FUNCTION__,__LINE__));
         }
-        else{
-            CcspTraceInfo(("%s: Created thread Set_Notifi_ParamName for %d\n", __FUNCTION__,__LINE__));
-        }
-    }
-    else
-    {
-        CcspTraceError(("%s prefix_args NULL.\n", __FUNCTION__ ));
-        return EVENT_ERROR;
-    }
     return(EVENT_OK);
 
 }
@@ -599,47 +641,39 @@ int Send_WebPANotification_WANIP(char* parameterName, char *ip_addrs, char *prev
         return EVENT_ERROR;
     }
 
-    pthread_t threadId;
-    arg_struct_t *wanip_args = NULL;
-    wanip_args = (arg_struct_t *)malloc(sizeof(arg_struct_t));
+    arg_struct_t wanip_args;
 
     bool IPv6Flag = false;
     if(strcmp(parameterName,PRIMARY_WAN_IPv6_ADDRESS)==0){
         IPv6Flag=true;
     }
 
-    CcspTraceDebug(("%s thread started for %s.\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4" ));
+    CcspTraceInfo(("%s Notification sending for %s.\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4" ));
 
-    if(wanip_args != NULL)
     {
-        CcspTraceDebug(("%s wanip_args for %s is valid: %d \n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4", __LINE__)); 
-        memset(wanip_args, 0, sizeof(arg_struct_t));
+        CcspTraceInfo(("%s wanip_args for %s is valid: %d \n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4", __LINE__));
+        memset(&wanip_args, 0, sizeof(arg_struct_t));
  
-        wanip_args->parameterName = strdup(parameterName);
-        wanip_args->writeID         = 256;
-        wanip_args->newValue = strdup(ip_addrs);
-        wanip_args->oldValue = strdup(previous_ip);
-        wanip_args->type            = ccsp_string;
-        CcspTraceDebug(("%s pthread_create with arguments: %s,%u,%s,%s,%d, LINE: %d\n", __FUNCTION__, wanip_args->parameterName, wanip_args->writeID, wanip_args->newValue, wanip_args->oldValue, wanip_args->type,__LINE__)); 
+        strncpy(wanip_args.parameterName , parameterName , PARAM_NAME_LEN - 1);
+        wanip_args.writeID         = 256;
+        strncpy(wanip_args.newValue , ip_addrs , VALUE_LEN - 1);
+        strncpy(wanip_args.oldValue , previous_ip , VALUE_LEN - 1);
+        wanip_args.type            = ccsp_string;
+        CcspTraceInfo(("%s En Queue the notification with arguments: %s,%u,%s,%s,%d, LINE: %d\n", __FUNCTION__, wanip_args.parameterName, wanip_args.writeID, wanip_args.newValue, wanip_args.oldValue, wanip_args.type,__LINE__));
 
-        if (pthread_create(&threadId, NULL, Set_Notifi_ParamName, (void *) wanip_args) != 0) 
+        // Enqueue the notification
+        if(enqueueNotification(wanip_args))
         {
-            CcspTraceError(("%s: Error creating thread Set_Notifi_ParamName for %s\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4"));
-            free_args_struct(wanip_args);
+            CcspTraceError(("%s: Error en queueing the notification for %s\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4"));
             return EVENT_ERROR;
+        } else {
+            CcspTraceInfo(("%s: updated the notfication into queue for %s\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4"));
         }
-        else{
-            CcspTraceInfo(("%s: Created thread Set_Notifi_ParamName for %s\n", __FUNCTION__, IPv6Flag?"IPv6":"IPv4"));
-        }
-    }
-    else
-    {
-        CcspTraceError(("%s wanip_args NULL.\n", __FUNCTION__ ));
-        return EVENT_ERROR;
     }
     return(EVENT_OK);
 }
 #endif /*RBUS_WAN_IP*/
+
 
 static void
 EvtDispterIpv6PrefixCallback( char *prefix )
@@ -651,7 +685,7 @@ EvtDispterIpv6PrefixCallback( char *prefix )
 
         int ret = Send_WebPANotification_prefix(IPV6_PREFIX, prefix, previous_prefix);
         if(ret == EVENT_OK){
-            CcspTraceInfo(("%s: Send_WebPANotification_Prefix completed for IPv6 Prefix and Set_Notifi_ParamName thread created. %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
+            CcspTraceInfo(("%s: Send_WebPANotification_Prefix completed for IPv6 Prefix and Set_Notifi_ParamName will be called. %d, ret: %d \n", __FUNCTION__,__LINE__, ret));
         }
         else{
             CcspTraceError(("%s: Send_WebPANotification_Prefix failed %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
@@ -705,7 +739,7 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
   
         int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IP_ADDRESS, ip_addrs, previous_ip);
         if(ret == EVENT_OK){
-            CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv4 and Set_Notifi_ParamName thread created. %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
+            CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv4 and Set_Notifi_ParamName will be called. %d, ret: %d \n", __FUNCTION__,__LINE__, ret));
         }
         else{
             CcspTraceError(("%s: Send_WebPANotification_WANIP failed for IPv4 %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
@@ -740,7 +774,7 @@ EvtDispterWanIpv6AddrsCallback(char *ip_addrs)
 
         int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IPv6_ADDRESS, ip_addrs, previous_ipv6);
         if(ret == EVENT_OK){
-            CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv6 and Set_Notifi_ParamName thread created. %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
+            CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv6 and Set_Notifi_ParamName will be created. %d, ret: %d \n", __FUNCTION__,__LINE__, ret));
         }
         else{
             CcspTraceError(("%s:  Send_WebPANotification_WANIP failed for IPv6 %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 

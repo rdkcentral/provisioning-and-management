@@ -349,6 +349,10 @@ CosaBackEndManagerInitialize
     pMyObject->hInterfaceStack = (ANSC_HANDLE)CosaIFStackCreate();
     AnscTraceWarning(("  CosaIFStackCreate done!\n"));
 #endif
+
+    // initiatlize the thread to send sync notifcation to webPA when IPv6 prefix , IPV4 and IPv6 ip address change
+    initializeNotificationHandler();
+
 #ifndef FEATURE_RDKB_XDSL_PPP_MANAGER
 #if !defined (RESOURCE_OPTIMIZATION)
     pMyObject->hPPP           = (ANSC_HANDLE)CosaPPPCreate();
