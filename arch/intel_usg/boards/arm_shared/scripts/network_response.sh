@@ -315,7 +315,7 @@ restartLanServices()
     # Modify DNS server option in dibbler configuration
     if [ -e $SERVER6_CONF ]
     then
-	Uncommented_line=`cat $SERVER6_CONF | grep dns-server | sed -e 's/.//'`
+	Uncommented_line=`cat $SERVER6_CONF | grep dns-server | sed -e 's/^#//'`
 	#cat $SERVER6_CONF | grep dns-server | sed -e 's/.//' > $SERVER6_BKUP
 	sed "/dns-server/c \
 	\ \ \ \ $Uncommented_line"  $SERVER6_CONF > $SERVER6_BKUP
