@@ -5476,8 +5476,8 @@ int setMultiProfileXdnsConfig(BOOL bValue)
                         fprintf(fp1, "%s", confEntry);
                 }
 
-                //copy only dnsoverride entries and Multi_profile into nvram
-                if (strstr(confEntry, "dnsoverride") || strstr(confEntry, "XDNS_Multi_Profile"))
+                //copy only dnsoverride entries into nvram
+                if (strstr(confEntry, "dnsoverride"))
                 {
 
                         fprintf(fp2, "%s", confEntry);
