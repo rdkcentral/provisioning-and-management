@@ -10655,7 +10655,7 @@ dhcpv6c_dbg_thrd(void * in)
                             if (strlen(globalIP2) != 0 )
                             {
                                 g_dhcpv6s_refresh_count = bRestartLan;
-                                CcspTraceWarning(("%s: g_dhcpv6s_refresh_count %ld, globalIP2 is %s, strlen is %d\n", __func__, g_dhcpv6s_refresh_count,globalIP2,strlen(globalIP2)));
+                                CcspTraceWarning(("%s: g_dhcpv6s_refresh_count %ld, globalIP2 is %s, strlen is %zu\n", __func__, g_dhcpv6s_refresh_count,globalIP2,strlen(globalIP2)));
 
                             }
                             rc = strcpy_s(globalIP2, sizeof(globalIP2), globalIP);
