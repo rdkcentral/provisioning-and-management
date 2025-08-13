@@ -114,7 +114,7 @@ if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_board_sbapi_la_LDFLAGS += -lnet
 endif
 
-libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common -ltime_conversion -lwebconfig_framework -lmsgpackc -lrdkconfig
+libCcspPandM_board_sbapi_la_LDFLAGS = -lccsp_common -ltime_conversion -lwebconfig_framework -lmsgpackc
 if FEATURE_HOTSPOT_SUPPORT
 libCcspPandM_board_sbapi_la_LDFLAGS += -lHotspotApi
 endif
