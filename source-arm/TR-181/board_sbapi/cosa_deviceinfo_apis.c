@@ -2438,9 +2438,15 @@ ANSC_STATUS getXOpsReverseSshArgs
     UNREFERENCED_PARAMETER(hContext);
     errno_t                         rc              = -1;
 
+    if (!pValue || !pulSize || *pulSize <= 0) {
+        CcspTraceError(("[%s]: Invalid buffer or size\n", __FUNCTION__));
+        return ANSC_STATUS_FAILURE;
+    }
+
     rc = strcpy_s(pValue, *pulSize, reverseSSHArgs);
     if ( rc != EOK) {
         ERR_CHK(rc);
+        CcspTraceError(("[%s]: strcpy_s failed with error %d\n", __FUNCTION__, rc));
         return ANSC_STATUS_FAILURE;
     }
     *pulSize = AnscSizeOfString(pValue) +1;
@@ -2464,18 +2470,27 @@ int setXOpsReverseSshTrigger(char *input) {
         {
                 CcspTraceInfo(("[%s] Starting Stunnel \n",__FUNCTION__));
                 CcspTraceInfo(("[%s] Stunnel Commmand = %s %d %s %s %d %s %s %s \n",__FUNCTION__,stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin));
-                v_secure_system("/bin/sh %s %d %s %s %d %s %s %s &",stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin);
+                int ret = v_secure_system("/bin/sh %s %d %s %s %d %s %s %s &",stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin);
+                if (ret != 0) {
+                    CcspTraceError(("[%s] Stunnel execution failed with return code %d\n", __FUNCTION__, ret));
+                }
         }
 
         else {
     #endif
                 CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
-                v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                if (ret != 0) {
+                    CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+                }
     #ifdef ENABLE_SHORTS
         }
     #endif
     } else {
-        v_secure_system(sshCommand " stop ");
+        int ret = v_secure_system(sshCommand " stop ");
+        if (ret != 0) {
+            CcspTraceError(("[%s] Reverse SSH stop failed with return code %d\n", __FUNCTION__, ret));
+        }
     }
     return OK;
 }
@@ -2491,11 +2506,15 @@ int isRevSshActive(void) {
             if ( -1 != getpgid(pid)) {
                 status = OK;
             } else {
+                CcspTraceWarning(("[%s] Reverse SSH process (PID: %d) not running\n", __FUNCTION__, pid));
                 status = NOK;
             }
         }
         fclose(pidFilePtr);
+    } else {
+        CcspTraceError(("[%s] Failed to open reverse SSH PID file: %s\n", __FUNCTION__, rsshPidFile));
     }
+
     return status;
 }
 
@@ -5476,8 +5495,8 @@ int setMultiProfileXdnsConfig(BOOL bValue)
                         fprintf(fp1, "%s", confEntry);
                 }
 
-                //copy only dnsoverride entries and Multi_profile into nvram
-                if (strstr(confEntry, "dnsoverride") || strstr(confEntry, "XDNS_Multi_Profile"))
+                //copy only dnsoverride entries into nvram
+                if (strstr(confEntry, "dnsoverride"))
                 {
 
                         fprintf(fp2, "%s", confEntry);
