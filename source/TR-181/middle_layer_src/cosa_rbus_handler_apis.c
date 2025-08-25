@@ -1112,7 +1112,7 @@ rbusError_t getStringAmenityHandler(rbusHandle_t rbusHandle, rbusProperty_t rbus
         CcspTraceError(("%s:%d, Invalid set value for the parameter '%s'\n", __FUNCTION__, __LINE__, pName));
         return RBUS_ERROR_INVALID_INPUT;
     }
-    sscanf (pName, "Device.LAN.Bridge.%d.%s", &iBridgeIndex, cElementName);
+    sscanf (pName, "Device.LAN.Bridge.%d.%31s", &iBridgeIndex, cElementName);
     CcspTraceInfo(("%s:%d, Bridge index is %d\n", __FUNCTION__, __LINE__, iBridgeIndex));
     CcspTraceInfo(("%s:%d, Element name is %s\n", __FUNCTION__, __LINE__, cElementName));
     amenityBridgeInfo_t *pAmenityBridgeInfo = NULL;
@@ -1190,7 +1190,7 @@ rbusError_t setStringAmenityHandler(rbusHandle_t rbusHandle, rbusProperty_t rbus
         CcspTraceError(("%s:%d, Invalid set value for the parameter '%s'\n", __FUNCTION__, __LINE__, pName));
         return RBUS_ERROR_INVALID_INPUT;
     }
-    sscanf (pName, "Device.LAN.Bridge.%d.%s", &iBridgeIndex, cElementName);
+    sscanf (pName, "Device.LAN.Bridge.%d.%31s", &iBridgeIndex, cElementName);
     CcspTraceInfo(("%s:%d, Bridge index is %d\n", __FUNCTION__, __LINE__, iBridgeIndex));
     CcspTraceInfo(("%s:%d, Element name is %s\n", __FUNCTION__, __LINE__, cElementName));
 
