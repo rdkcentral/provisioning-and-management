@@ -1645,7 +1645,7 @@ CosaDmlDcSetRebootDevice
 		}
 		else
         {
-#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_)
+#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
 //TCCBR-4087
             int                         ret = -1;
             int                         size = 0;
@@ -1671,11 +1671,8 @@ CosaDmlDcSetRebootDevice
 
             if ( ret == CCSP_SUCCESS && size == 1)
             {
-
-                parameterValStruct_t val[ ] = { { "Device.WiFi.Radio.1.X_CISCO_COM_ApplySetting", "true", ccsp_boolean},
-			{ "Device.WiFi.Radio.1.X_CISCO_COM_ApplySettingSSID", "1", ccsp_int},
-			{ "Device.WiFi.Radio.2.X_CISCO_COM_ApplySetting", "true", ccsp_boolean},
-			{ "Device.WiFi.Radio.2.X_CISCO_COM_ApplySettingSSID", "1", ccsp_int} };
+                parameterValStruct_t val[ ] = { { "Device.WiFi.ApplyAccessPointSettings", "true", ccsp_boolean},
+			{ "Device.WiFi.ApplyRadioSettings", "true", ccsp_boolean}};
 
                 ret = CcspBaseIf_setParameterValues
                     (

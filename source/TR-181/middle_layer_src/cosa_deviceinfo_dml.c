@@ -13072,7 +13072,7 @@ IPv6onLnF_GetParamBoolValue
             /* collect value */
             char buf[128];
 	    char Inf_name[32];
-            
+
             memset(Inf_name, 0, sizeof(Inf_name));
             syscfg_get( NULL, "iot_brname", Inf_name, sizeof(Inf_name));
             if ( (Inf_name[0] == '\0') && (strlen(Inf_name)) == 0 )
@@ -14861,12 +14861,12 @@ IPv6onLnF_SetParamBoolValue
 
 		    if( buf[0] != '\0' )
 		    {
-		        if (strstr(buf, Inf_name))
+                        if (strstr(buf, Inf_name))
 		            bFound = TRUE;
 		        else
 		            bFound = FALSE;
 
-			
+
 			if(bValue)
 	                {
 					if(bFound == FALSE)
@@ -14966,33 +14966,38 @@ IPv6onXHS_GetParamBoolValue
     /* check the parameter name and return the corresponding value */
 
     if (strcmp(ParamName, "Enable") == 0)
-        {
-            /* collect value */
-            char buf[128];
-	        char *Inf_name = NULL;
-    	    int retPsmGet = CCSP_SUCCESS;
+    {
+        /* collect value */
+        char buf[128];
+        char *Inf_name = NULL;
+        char *token = NULL;
+        char *pt = NULL;
+        int retPsmGet = CCSP_SUCCESS;
+        *pBool = FALSE;
 
-            retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name);
-            if (retPsmGet == CCSP_SUCCESS) {
-	    	if( Inf_name != NULL )
-            	{
-                    /* CID: 68662 Array compared against 0*/ 
-               	    if(!syscfg_get( NULL, "IPv6_Interface", buf, sizeof(buf)))
-		    {
-		        if (strstr(buf, Inf_name))
-		            *pBool = TRUE;
-		        else
-		            *pBool = FALSE;
-		    } else 
-                       return FALSE;
+        retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name);
+        if (retPsmGet == CCSP_SUCCESS) {
+            if( Inf_name != NULL )
+            {
+                /* CID: 68662 Array compared against 0*/
+                if(!syscfg_get( NULL, "IPv6_Interface", buf, sizeof(buf)))
+                {
+                    pt = buf;
+                    while ((token = strtok_r(pt, ",", &pt)))
+                    {
+                        if (strcmp(Inf_name, token) == 0) {
+                            *pBool = TRUE;
+                            break;
+                        }
+                    }
+                }
 
-		    ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
-		    return TRUE;
-	        }
+                ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
             }
-            else
-            *pBool = FALSE;
         }
+
+        return TRUE;
+    }
 
     return FALSE;
 }
@@ -15043,84 +15048,97 @@ IPv6onXHS_SetParamBoolValue
         return TRUE;
 
  if (strcmp(ParamName, "Enable") == 0)
-        {
-     	    char buf[128], OutBuff[128];
-	    char *Inf_name = NULL;
-	    BOOL bFound = FALSE;
-    	    int retPsmGet = CCSP_SUCCESS;
-            errno_t rc = -1;
+ {
+     char buf[128], OutBuff[128];
+     char *Inf_name = NULL;
+     BOOL bFound = FALSE;
+     int retPsmGet = CCSP_SUCCESS;
+     errno_t rc = -1;
 
-            retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name);
-            if (retPsmGet == CCSP_SUCCESS)
-				{		
-                    memset(buf,0,sizeof(buf));
-                    memset(OutBuff,0,sizeof(OutBuff));
+     retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name);
+     if (retPsmGet == CCSP_SUCCESS)
+     {
+         memset(buf,0,sizeof(buf));
+         memset(OutBuff,0,sizeof(OutBuff));
 
-					if( Inf_name != NULL )
-						{
-			 
-					        /*CID: 65587 Array compared against 0*/
-                                                /* CID: 53214 Logically dead code*/	
-						if(!syscfg_get( NULL, "IPv6_Interface", buf, sizeof(buf)))
-						{
-							if (strstr(buf, Inf_name))
-								bFound = TRUE;
-							else
-								bFound = FALSE;
+         if( Inf_name != NULL )
+         {
 
-						
-							if(bValue)
-							{
-								if(bFound == FALSE)
-								{
-								// interface is not present in the list, we need to add interface to enable IPv6 PD
+              /*CID: 65587 Array compared against 0*/
+              /* CID: 53214 Logically dead code*/
+              if(!syscfg_get( NULL, "IPv6_Interface", buf, sizeof(buf)))
+              {
+                  char *ptrBuf = strdup(buf);
+		  if(ptrBuf == NULL)
+			  return FALSE;
+		  pt = buf;
 
-										rc = sprintf_s(OutBuff,sizeof(OutBuff),"%s%s,",buf,Inf_name);
-										if(rc < EOK)
-										{
-											ERR_CHK(rc);
-											return FALSE;
-										}
-										syscfg_set_commit(NULL, "IPv6_Interface",OutBuff);
+                  while ((token = strtok_r(pt, ",", &pt)))
+                  {
+                      if (strcmp(Inf_name, token) == 0)
+                      {
+                          bFound = TRUE;
+                          break;
+                      }
+                  }
+                  if(bValue)
+                  {
+                      if(bFound == FALSE)
+                      {
+                          // interface is not present in the list, we need to add interface to enable IPv6 PD
 
-								}
-							}
-							else
-							{
-							
-								if(bFound == TRUE)
-								{
-								// interface is present in the list, we need to remove interface to disable IPv6 PD
-									pt = buf;
-									   while((token = strtok_r(pt, ",", &pt))) {
-										if(strncmp(Inf_name,token,strlen(Inf_name)))
-										{
-											strncat(OutBuff,token,CALC_SPACE_LEFT(OutBuff));
-											strncat(OutBuff,",",CALC_SPACE_LEFT(OutBuff));
-										}
+			  CcspTraceDebug(("ptrBuf: %s\n", ptrBuf));
+                          CcspTraceDebug(("buf: %s\n", buf));
+                          CcspTraceDebug(("Inf_name: %s\n", Inf_name));
+                          rc = snprintf(OutBuff,sizeof(OutBuff),"%s%s,",ptrBuf,Inf_name);
+                          CcspTraceDebug(("OutBuff: %s\n", OutBuff));
+                          if(rc < EOK)
+                          {
+                              ERR_CHK(rc);
+			      free(ptrBuf);
+                              return FALSE;
+                          }
+                          syscfg_set_commit(NULL, "IPv6_Interface",OutBuff);
+                      }
+                  }
+                  else
+                  {
 
-									   }
-								
-									syscfg_set_commit(NULL, "IPv6_Interface",OutBuff);
-								}
-							}
-						}
-						else
-						{
-							if(bValue)
-							{
-							strncat(OutBuff,Inf_name,CALC_SPACE_LEFT(OutBuff));
-							strncat(OutBuff,",",CALC_SPACE_LEFT(OutBuff));
-							syscfg_set_commit(NULL, "IPv6_Interface",OutBuff);
-							}
-						}
-					    ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
-						return TRUE;
-					}
-				   ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
-            }
-            return TRUE;
-        }
+                      if(bFound == TRUE)
+                      {
+                          // interface is present in the list, we need to remove interface to disable IPv6 PD
+                          pt = buf;
+                          while((token = strtok_r(pt, ",", &pt))) 
+                          {
+                              if(strcmp(Inf_name, token) != 0)
+                              {
+                                  strncat(OutBuff,token,CALC_SPACE_LEFT(OutBuff));
+                                  strncat(OutBuff,",",CALC_SPACE_LEFT(OutBuff));
+                              }
+
+                          }
+
+                          syscfg_set_commit(NULL, "IPv6_Interface",OutBuff);
+                      }
+                  }
+		  free(ptrBuf);
+              }
+              else
+              {
+                  if(bValue)
+                  {
+                      strncat(OutBuff,Inf_name,CALC_SPACE_LEFT(OutBuff));
+                      strncat(OutBuff,",",CALC_SPACE_LEFT(OutBuff));
+                      syscfg_set_commit(NULL, "IPv6_Interface",OutBuff);
+                  }
+              }
+              ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
+              return TRUE;
+          }
+          ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
+      }
+      return TRUE;
+    }
     return FALSE;
 }
 /**********************************************************************
