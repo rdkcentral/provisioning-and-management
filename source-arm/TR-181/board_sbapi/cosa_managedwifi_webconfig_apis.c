@@ -522,6 +522,7 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
         while(!sAmenityThread.completed)
         {
             // Wait few sec for amenityMultinetNotifyHandler thread to complete
+            CcspTraceInfo(("%s:%d, calling pthread_cond_timedwait\n", __FUNCTION__, __LINE__));
             iErr = pthread_cond_timedwait(&amenityWifi_exec_completed, &amenityWifi_exec, &abs_time);
         }
         if (iErr == ETIMEDOUT)
@@ -2391,7 +2392,10 @@ void *amenityMultinetNotifyHandler(void *vArg)
                 bShouldSet = isAnyFlagSet(ui16Flag, BIT_6G_DOWN_MASK | BIT_6G_UP_MASK | BIT_6G_ENABLE_MASK | BIT_6G_DISABLE_MASK);
 
             if (bShouldSet)
+            {
+                CcspTraceInfo(("%s:%d, Registering for mulitnet notification of :%s\n", __FUNCTION__, __LINE__,pBridge->cBridgeIndex));
                 registerMultinetNotification(iSyseventANFd, SyseventANToken, pBridge->cBridgeIndex, &Asyncid);
+            }
         }
     }
     async_id_t getnotification_asyncid;
@@ -2401,9 +2405,11 @@ void *amenityMultinetNotifyHandler(void *vArg)
         memset(cVal, 0, sizeof(cVal));
         iNameLen = sizeof(cName);
         iValLen = sizeof(cVal);
-
+        CcspTraceInfo(("%s:%d, calling sysevent_getnotification\n", __FUNCTION__, __LINE__));
         iErr = sysevent_getnotification(iSyseventANFd, SyseventANToken, cName, &iNameLen, cVal, &iValLen, &getnotification_asyncid);
 
+        CcspTraceInfo(("%s:%d, cName:%s, cVal:%s\n", __FUNCTION__, __LINE__,cName,cVal));
+        CcspTraceInfo(("%s:%d,iErr:%d\n", __FUNCTION__, __LINE__,iErr));
         if (iErr)
         {
             CcspTraceWarning(("sysevent_getnotification failed with error: %d %s\n", iErr, __FUNCTION__));
@@ -2418,10 +2424,12 @@ void *amenityMultinetNotifyHandler(void *vArg)
         {
             for (int iCount = 0; iCount < pAmenityBridgeInfo->iBridgeCount; iCount++)
             {
+                CcspTraceInfo(("%s:%d, cName:%s, cVal:%s\n", __FUNCTION__, __LINE__,cName,cVal));
                 handleBridgeNotification(&pAmenityBridgeInfo->pBridgeInfoStruct[iCount], &ui16Flag, cName, cVal);
             }
             if ((0 == ui16Flag) && (0 < iSyseventANFd))
             {
+                CcspTraceInfo(("%s:%d,Closing the sysevent\n", __FUNCTION__, __LINE__));
                 sysevent_close(iSyseventANFd, SyseventANToken);
                 pAmenityThread->completed=true;
                 pthread_cond_signal(&amenityWifi_exec_completed);
