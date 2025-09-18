@@ -40,7 +40,6 @@ CcspPandMSsp_gtest_bin_CPPFLAGS = -I$(PKG_CONFIG_SYSROOT_DIR)$(includedir)/gtest
                                   -I$(top_srcdir)/../hal/include \
                                   -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/ \
                                   -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include/ \
-                                  -I$(top_srcdir)/../rdkscheduler/include/ \
                                   -I$(top_srcdir)/source/Custom \
                                   -I$(top_srcdir)/source/PandMSsp \
                                   -I$(top_srcdir)/source/TR-181/board_sbapi \
