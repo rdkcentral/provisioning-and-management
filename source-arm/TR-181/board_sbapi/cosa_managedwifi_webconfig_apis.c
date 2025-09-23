@@ -475,9 +475,33 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
         return -1;
     }
 
-    pthread_condattr_init(&amenityWifi_attr);
-    pthread_condattr_setclock(&amenityWifi_attr, CLOCK_MONOTONIC);
-    pthread_cond_init(&amenityWifi_exec_completed, &amenityWifi_attr);
+    int iRet = 0;
+    iRet = pthread_condattr_init(&amenityWifi_attr);
+    if (0 != iRet)
+    {
+        CcspTraceError(("%s:%d, pthread_condattr_init failed\n", __FUNCTION__, __LINE__));
+        snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "pthread_condattr_init failed\n");
+        pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
+        return -1;
+    }
+    iRet = pthread_condattr_setclock(&amenityWifi_attr, CLOCK_MONOTONIC);
+    if (0 != iRet)
+    {
+        pthread_condattr_destroy(&amenityWifi_attr);
+        CcspTraceError(("%s:%d, pthread_condattr_setclock failed\n", __FUNCTION__, __LINE__));
+        snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "pthread_condattr_setclock failed\n");
+        pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
+        return -1;
+    }
+    iRet = pthread_cond_init(&amenityWifi_exec_completed, &amenityWifi_attr);
+    if (0 != iRet)
+    {
+        pthread_condattr_destroy(&amenityWifi_attr);
+        CcspTraceError(("%s:%d, pthread_cond_init failed\n", __FUNCTION__, __LINE__));
+        snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "pthread_cond_init failed\n");
+        pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
+        return -1;
+    }
 
     AmenityThread_t sAmenityThread = { &pCurrBrInfo, ui16Flag , false };
     CcspTraceInfo(("%s:%d, creating amenityMultinetNotifyHandler 3 \n", __FUNCTION__, __LINE__));
@@ -485,6 +509,10 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
     if (iPthreadRetVal != 0)
     {
         CcspTraceError(("%s:%d, Failed to create pthread\n", __FUNCTION__, __LINE__));
+        snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "Failed to create pthread\n");
+        pthread_cond_destroy(&amenityWifi_exec_completed);
+        pthread_condattr_destroy(&amenityWifi_attr);
+        pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
         return -1;
     }
 
@@ -494,6 +522,8 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
         if ('\0' == pBridge->cBridgeName[0])
         {
             CcspTraceError(("%s:%d, cBridgeName is NULL\n", __FUNCTION__, __LINE__));
+            pthread_cond_destroy(&amenityWifi_exec_completed);
+            pthread_condattr_destroy(&amenityWifi_attr);
             snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "cBridgeName is NULL\n");
             pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
             return -1;
@@ -506,6 +536,8 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
             if (0 != commonSyseventSet(cAction, pBridge->cBridgeIndex))
             {
                 CcspTraceError(("%s:%d, commonSyseventSet failed for %s\n", __FUNCTION__, __LINE__, pBridge->cBridgeIndex));
+                pthread_cond_destroy(&amenityWifi_exec_completed);
+                pthread_condattr_destroy(&amenityWifi_attr);
                 snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "commonSyseventSet failed for %s\n", pBridge->cBridgeIndex);
                 pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
                 return -1;
@@ -519,22 +551,39 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
         abs_time.tv_nsec += 0;
         pthread_mutex_lock(&amenityWifi_exec);
         int iErr = 0;
-        while(!sAmenityThread.completed)
+        if(FALSE == sAmenityThread.completed)
         {
             // Wait few sec for amenityMultinetNotifyHandler thread to complete
-            CcspTraceInfo(("%s:%d, calling pthread_cond_timedwait\n", __FUNCTION__, __LINE__));
+            CcspTraceInfo(("%s:%d, Waiting for amenityMultinetNotifyHandler thread to complete\n",__FUNCTION__,__LINE__));
             iErr = pthread_cond_timedwait(&amenityWifi_exec_completed, &amenityWifi_exec, &abs_time);
+
+            if (iErr == ETIMEDOUT)
+            {
+                CcspTraceInfo(("%s:%d, Timedout Cancelling the Amenity multinet thread\n",__FUNCTION__,__LINE__));
+                pthread_cancel(amenityMultinetThreadId);
+            }
+            else if (0 == iErr)
+            {
+                CcspTraceInfo(("%s:%d, Amenity multinet thread completed\n",__FUNCTION__,__LINE__));
+            }
+            else
+            {
+                CcspTraceError(("%s:%d, pthread_cond_timedwait failed with err=%d\n", __FUNCTION__, __LINE__, iErr));
+                snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "pthread_cond_timedwait failed with err=%d\n", iErr);
+                pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
+                pthread_cond_destroy(&amenityWifi_exec_completed);
+                pthread_condattr_destroy(&amenityWifi_attr);
+                pthread_mutex_unlock(&amenityWifi_exec);
+                return -1;
+            }
         }
-        if (iErr == ETIMEDOUT)
+        else if (TRUE == sAmenityThread.completed)
         {
-            CcspTraceInfo(("%s:%d, Timedout Cancelling the Amenity multinet thread\n",__FUNCTION__,__LINE__));
-            pthread_cancel(amenityMultinetThreadId);
+            CcspTraceInfo(("%s:%d, Amenity multinet thread already completed, No need to wait\n",__FUNCTION__,__LINE__));
         }
+        pthread_cond_destroy(&amenityWifi_exec_completed);
+        pthread_condattr_destroy(&amenityWifi_attr);
         pthread_mutex_unlock(&amenityWifi_exec);
-    }
-    else
-    {
-        CcspTraceInfo(("%s:%d, amenityMultinetNotifyHandler thread completed successfully\n", __FUNCTION__, __LINE__));
     }
 
     updateFirewallSyscfg(pCurrBrInfo->iBridgeCount, pCurrBrInfo->bIsAmenityEnabled);
@@ -654,7 +703,7 @@ void initializeAmenityBridges(void)
     CcspTraceInfo(("%s:%d, Creating Amenity Wifi network - from PSM records for %d bridge counts and vlanFlag = %d\n",
         __FUNCTION__, __LINE__, sBackupAmenityBridgeDetails.iBridgeCount, ui16Flag));
 
-    if (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal))
+    if ((ui16Flag > 0) && (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal)))
     {
         CcspTraceError(("%s:%d, Failed to process Tunnel Info, error code:%d\n", __FUNCTION__, __LINE__, pErrRetVal->ErrorCode));
         CcspTraceInfo(("%s:%d, Error message:%s\n", __FUNCTION__, __LINE__, pErrRetVal->ErrorMsg));
@@ -916,7 +965,13 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
                 setBridgeUpFlag(pLanCfgTunnelInfo->ppVapNames[iCount], &ui16Flag);
             }
         }
-
+        if (ui16Flag == 0)
+        {
+            CcspTraceError(("%s:%d, No changes in VLAN ID/Enable state\n",__FUNCTION__,__LINE__));
+            snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128, "No changes in VLAN ID/Enable state\n");
+            pErrRetVal->ErrorCode = BLOB_EXEC_SUCCESS;
+            return pErrRetVal;
+        }
         if (strlen(sManageWiFiInfo.aBridgeName) > 0)
         {
 #ifdef CORE_NET_LIB
@@ -981,7 +1036,7 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
         bool bTempAmenityEnabled = sBackupAmenityBridgeDetails.bIsAmenityEnabled ;
         sBackupAmenityBridgeDetails.bIsAmenityEnabled = bIsAmenityEnabled;
         CcspTraceInfo(("%s:%d, calling processTunnelInfo with vlanflag=%d \n",__FUNCTION__,__LINE__, ui16Flag));
-        if (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal))
+        if ((ui16Flag > 0) && (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal)))
         {
             sBackupAmenityBridgeDetails.bIsAmenityEnabled=bTempAmenityEnabled;
             CcspTraceError(("%s:%d, Failed to process Tunnel Info, error code:%d\n", __FUNCTION__, __LINE__, pErrRetVal->ErrorCode));
@@ -1002,6 +1057,7 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
                     snprintf(pRbusBridgeInfo[iVar].cBridgeIndex, sizeof(pRbusBridgeInfo[iVar].cBridgeIndex), "0");
                     strncpy(pRbusBridgeInfo[iVar].cBridgeName, "", sizeof(pRbusBridgeInfo[iVar].cBridgeName)-1);
                     strncpy(pRbusBridgeInfo[iVar].cVapName, "", sizeof(pRbusBridgeInfo[iVar].cVapName)-1);
+                    strncpy(pRbusBridgeInfo[iVar].cWiFiInterface,"", sizeof(pRbusBridgeInfo[iVar].cWiFiInterface)-1);
                     CcspTraceInfo(("%s:%d, pRbusBridgeInfo[%d].cBridgeIndex:%s\n",__FUNCTION__,__LINE__,iVar,pRbusBridgeInfo[iVar].cBridgeIndex));
                     CcspTraceInfo(("%s:%d, pRbusBridgeInfo[%d].cBridgeName:%s\n",__FUNCTION__,__LINE__,iVar,pRbusBridgeInfo[iVar].cBridgeName));
                     CcspTraceInfo(("%s:%d, pRbusBridgeInfo[%d].cVapName:%s\n",__FUNCTION__,__LINE__,iVar,pRbusBridgeInfo[iVar].cVapName));
@@ -1044,10 +1100,43 @@ BOOL bringDownManagedWifiBridge(pErr pErrRetVal)
     }
     CcspTraceInfo(("%s:%d, creating Pthread for bring down manageWiFi bridge interface \n",__FUNCTION__,__LINE__));
     threadStruct_t sThread = {false, 0xFF,false};
-    pthread_condattr_init(&manageWifi_attr);
-    pthread_condattr_setclock(&manageWifi_attr, CLOCK_MONOTONIC);
-    pthread_cond_init(&manageWifi_exec_completed, &manageWifi_attr);
+    int iRet= 0;
+    iRet = pthread_condattr_init(&manageWifi_attr);
+    if (0 != iRet)
+    {
+        CcspTraceError(("%s:%d, pthread_condattr_init failed with err=%d\n",__FUNCTION__,__LINE__,iRet));
+        snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_condattr_init failed with err=%d\n",iRet);
+        pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+        return 1;
+    }
+    iRet = pthread_condattr_setclock(&manageWifi_attr, CLOCK_MONOTONIC);
+    if (0 != iRet)
+    {
+        CcspTraceError(("%s:%d, pthread_condattr_setclock failed with err=%d\n",__FUNCTION__,__LINE__,iRet));
+        pthread_condattr_destroy(&manageWifi_attr);
+        snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_condattr_setclock failed with err=%d\n",iRet);
+        pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+        return 1;
+    }
+    iRet = pthread_cond_init(&manageWifi_exec_completed, &manageWifi_attr);
+    if (0 != iRet)
+    {
+        CcspTraceError(("%s:%d, pthread_cond_init failed with err=%d\n",__FUNCTION__,__LINE__,iRet));
+        pthread_condattr_destroy(&manageWifi_attr);
+        snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_cond_init failed with err=%d\n",iRet);
+        pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+        return 1;
+    }
     pthreadRetValue = pthread_create(&manageWifiBridgeThreadId, NULL, &ManageWiFiBridgeCreationThread, (void*)&sThread);
+    if (0 != pthreadRetValue)
+    {
+        CcspTraceError(("%s:%d, pthread_create failed with err=%d\n",__FUNCTION__,__LINE__,pthreadRetValue));
+        pthread_cond_destroy(&manageWifi_exec_completed);
+        pthread_condattr_destroy(&manageWifi_attr);
+        snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_create failed with err=%d\n",pthreadRetValue);
+        pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+        return 1;
+    }
     if (0 != commonSyseventSet("multinet-down", cManageWiFiBridgeIndex))
     {
         CcspTraceError(("%s:%d, Failed to set multinet-down\n",__FUNCTION__,__LINE__));
@@ -1062,15 +1151,36 @@ BOOL bringDownManagedWifiBridge(pErr pErrRetVal)
         abs_time.tv_nsec += 0;
 
         pthread_mutex_lock(&manageWifi_exec);
-        while(sThread.completed == true)
+        if (FALSE == sThread.completed)
         {
+            CcspTraceInfo(("%s:%d, Waiting for ManageWiFiThread to complete\n",__FUNCTION__,__LINE__));
             err = pthread_cond_timedwait(&manageWifi_exec_completed, &manageWifi_exec, &abs_time);
+            if (err == ETIMEDOUT)
+            {
+                CcspTraceInfo(("%s:%d, Timedout Cancelling the ManageWiFiThread\n",__FUNCTION__,__LINE__));
+                pthread_cancel(manageWifiBridgeThreadId);
+            }
+            else if (0 == err)
+            {
+                CcspTraceInfo(("%s:%d, ManageWiFiThread signalled completion\n",__FUNCTION__,__LINE__));
+            }
+            else
+            {
+                CcspTraceError(("%s:%d, pthread_cond_timedwait failed with err=%d\n",__FUNCTION__,__LINE__,err));
+                snprintf(pErrRetVal->ErrorMsg,BUFF_LEN_128,"pthread_cond_timedwait failed with err=%d\n",err);
+                pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+                pthread_cond_destroy(&manageWifi_exec_completed);
+                pthread_condattr_destroy(&manageWifi_attr);
+                pthread_mutex_unlock(&manageWifi_exec);
+                return 1;
+            }
         }
-        if (err == ETIMEDOUT)
+        else if (TRUE == sThread.completed)
         {
-            CcspTraceInfo(("%s:%d, Timedout Cancelling the ManageWiFiThread\n",__FUNCTION__,__LINE__));
-            pthread_cancel(manageWifiBridgeThreadId);
+            CcspTraceInfo(("%s:%d, ManageWiFiThread is already completed\n",__FUNCTION__,__LINE__));
         }
+        pthread_cond_destroy(&manageWifi_exec_completed);
+        pthread_condattr_destroy(&manageWifi_attr);
         pthread_mutex_unlock(&manageWifi_exec);
     }
     CcspTraceInfo(("%s:%d, Restarting the firewall\n",__FUNCTION__,__LINE__));
@@ -1433,7 +1543,10 @@ void * ManageWiFiBridgeCreationThread(void * vArg)
                 CcspTraceInfo(("%s:%d,aMultiNetStatus:%s\n",__FUNCTION__,__LINE__, aMultiNetStatus));
                 publishEvent(MANAGE_WIFI_LAN_BRIDGE,aMultiNetStatus, RBUS);
                 /* wake up the caller if execution is completed in time */
+                pthread_mutex_lock(&manageWifi_exec);
+                pThreadStruct->completed = true;
                 pthread_cond_signal(&manageWifi_exec_completed);
+                pthread_mutex_unlock(&manageWifi_exec);
                 if (0 < syseventManageWiFiFd)
                     sysevent_close(syseventManageWiFiFd, syseventManageWiFiToken);
                 return vArg;
@@ -1453,7 +1566,10 @@ void * ManageWiFiBridgeCreationThread(void * vArg)
                 if (0 != commonSyseventSet("dhcp_server-restart", ""))
                     CcspTraceError(("%s:%d, commonSyseventSet failed for dhcp_server-restart\n",__FUNCTION__,__LINE__));
                 /* wake up the caller if execution is completed in time */
+                pthread_mutex_lock(&manageWifi_exec);
+                pThreadStruct->completed = true;
                 pthread_cond_signal(&manageWifi_exec_completed);
+                pthread_mutex_unlock(&manageWifi_exec);
                 if (0 < syseventManageWiFiFd)
                     sysevent_close(syseventManageWiFiFd, syseventManageWiFiToken);
                 return vArg;
@@ -1537,9 +1653,11 @@ void * ManageWiFiBridgeCreationThread(void * vArg)
             }
         }
     }
+    pthread_mutex_lock(&manageWifi_exec);
     pThreadStruct->completed=true;
     /* wake up the caller if execution is completed in time */
     pthread_cond_signal(&manageWifi_exec_completed);
+    pthread_mutex_unlock(&manageWifi_exec);
     if (0 < syseventManageWiFiFd)
         sysevent_close(syseventManageWiFiFd, syseventManageWiFiToken);
     return vArg;
@@ -1834,13 +1952,45 @@ void processManageWifiData(backupLanconfig_t * pLanConfig, char cFlag, pErr pErr
     {
         threadStruct_t sThread = {false, 0 , false};
         CcspTraceInfo(("%s:%d, bMwEnable :%d\n",__FUNCTION__,__LINE__,pLanConfig->bMwEnable));
-        pthread_condattr_init(&manageWifi_attr);
-        pthread_condattr_setclock(&manageWifi_attr, CLOCK_MONOTONIC);
-        pthread_cond_init(&manageWifi_exec_completed, &manageWifi_attr);
-
+        int iRet = 0;
+        iRet = pthread_condattr_init(&manageWifi_attr);
+        if (0 != iRet)
+        {
+            CcspTraceError(("%s:%d, pthread_condattr_init failed with error code %d\n",__FUNCTION__,__LINE__,iRet));
+            snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_condattr_init failed\n");
+            pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+            return ;
+        }
+        iRet = pthread_condattr_setclock(&manageWifi_attr, CLOCK_MONOTONIC);
+        if (0 != iRet)
+        {
+            pthread_condattr_destroy(&manageWifi_attr);
+            CcspTraceError(("%s:%d, pthread_condattr_setclock failed with error code %d\n",__FUNCTION__,__LINE__,iRet));
+            snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_condattr_setclock failed\n");
+            pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+            return ;
+        }
+        iRet = pthread_cond_init(&manageWifi_exec_completed, &manageWifi_attr);
+        if (0 != iRet)
+        {
+            pthread_condattr_destroy(&manageWifi_attr);
+            CcspTraceError(("%s:%d, pthread_cond_init failed with error code %d\n",__FUNCTION__,__LINE__,iRet));
+            snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_cond_init failed\n");
+            pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+            return ;
+        }
         sThread.bMwEnable = pLanConfig->bMwEnable;
         sThread.cFlag = cFlag;
         pthreadRetValue = pthread_create(&manageWifiBridgeThreadId, NULL, &ManageWiFiBridgeCreationThread, (void*)&sThread);
+        if (0 != pthreadRetValue)
+        {
+            pthread_cond_destroy(&manageWifi_exec_completed);
+            pthread_condattr_destroy(&manageWifi_attr);
+            CcspTraceError(("%s:%d, pthread_create failed with error code %d\n",__FUNCTION__,__LINE__,pthreadRetValue));
+            snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_create failed\n");
+            pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+            return ;
+        }
 
         if (true == pLanConfig->bMwEnable)
         {
@@ -1884,15 +2034,36 @@ void processManageWifiData(backupLanconfig_t * pLanConfig, char cFlag, pErr pErr
             abs_time.tv_nsec += 0;
 
             pthread_mutex_lock(&manageWifi_exec);
-            while(sThread.completed == true)
+            if(FALSE == sThread.completed)
             {
+                CcspTraceInfo(("%s:%d, Waiting for ManageWiFiThread to complete\n",__FUNCTION__,__LINE__));
                 err = pthread_cond_timedwait(&manageWifi_exec_completed, &manageWifi_exec, &abs_time);
+                if (err == ETIMEDOUT)
+                {
+                    CcspTraceInfo(("%s:%d, Timedout Cancelling the ManageWiFiThread\n",__FUNCTION__,__LINE__));
+                    pthread_cancel(manageWifiBridgeThreadId);
+                }
+                else if (0 == err)
+                {
+                    CcspTraceInfo(("%s:%d, ManageWiFiThread completed successfully\n",__FUNCTION__,__LINE__));
+                }
+                else
+                {
+                    CcspTraceError(("%s:%d, pthread_cond_timedwait failed with error code %d\n",__FUNCTION__,__LINE__,err));
+                    snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_cond_timedwait failed\n");
+                    pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+                    pthread_cond_destroy(&manageWifi_exec_completed);
+                    pthread_condattr_destroy(&manageWifi_attr);
+                    pthread_mutex_unlock(&manageWifi_exec);
+                    return ;
+                }
             }
-            if (err == ETIMEDOUT)
+            else if (TRUE == sThread.completed)
             {
-                CcspTraceInfo(("%s:%d, Timedout Cancelling the ManageWiFiThread\n",__FUNCTION__,__LINE__));
-                pthread_cancel(manageWifiBridgeThreadId);
+                CcspTraceInfo(("%s:%d, ManageWiFiThread already completed successfully\n",__FUNCTION__,__LINE__));
             }
+            pthread_cond_destroy(&manageWifi_exec_completed);
+            pthread_condattr_destroy(&manageWifi_attr);
             pthread_mutex_unlock(&manageWifi_exec);
         }
         CcspTraceInfo(("%s:%d, Restarting the firewall\n",__FUNCTION__,__LINE__));
@@ -2369,11 +2540,23 @@ void *amenityMultinetNotifyHandler(void *vArg)
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &iOldType);
     pthread_detach(pthread_self());
 
+    if (0 == ui16Flag)
+    {
+        pthread_mutex_lock(&amenityWifi_exec);
+        pAmenityThread->completed=true;
+        pthread_cond_signal(&amenityWifi_exec_completed);
+        pthread_mutex_unlock(&amenityWifi_exec);
+        return NULL;
+    }
     CcspTraceInfo(("%s:%d pthread to Register Amenity network multinet sysevents \n",__FUNCTION__,__LINE__));
     iSyseventANFd = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION,  "AmenityMultinetStatus", &SyseventANToken);
     if (iSyseventANFd < 0)
     {
         CcspTraceError(("%s:%d, sysevent_open failed\n",__FUNCTION__,__LINE__));
+        pthread_mutex_lock(&amenityWifi_exec);
+        pAmenityThread->completed=true;
+        pthread_cond_signal(&amenityWifi_exec_completed);
+        pthread_mutex_unlock(&amenityWifi_exec);
         return NULL;
     }
 
@@ -2417,6 +2600,10 @@ void *amenityMultinetNotifyHandler(void *vArg)
             if (0 != v_secure_system("pidof syseventd"))
             {
                 CcspTraceWarning(("%s syseventd not running, breaking the receive notification loop \n", __FUNCTION__));
+                pthread_mutex_lock(&amenityWifi_exec);
+                pAmenityThread->completed=true;
+                pthread_cond_signal(&amenityWifi_exec_completed);
+                pthread_mutex_unlock(&amenityWifi_exec);
                 break;
             }
         }
@@ -2431,8 +2618,10 @@ void *amenityMultinetNotifyHandler(void *vArg)
             {
                 CcspTraceInfo(("%s:%d,Closing the sysevent\n", __FUNCTION__, __LINE__));
                 sysevent_close(iSyseventANFd, SyseventANToken);
+                pthread_mutex_lock(&amenityWifi_exec);
                 pAmenityThread->completed=true;
                 pthread_cond_signal(&amenityWifi_exec_completed);
+                pthread_mutex_unlock(&amenityWifi_exec);
                 break;
             }
         }
@@ -2527,7 +2716,7 @@ int rollbackTunnelLanconfig(void)
                 }
             }
             CcspTraceInfo(("%s:%d, calling processTunnelInfo with vlanflag=%d \n", __FUNCTION__, __LINE__, ui16Flag));
-            if (0 != processTunnelInfo(&sCurrAmenityBridgeDetails, ui16Flag, pErrRetVal))
+            if ((ui16Flag > 0) && (0 != processTunnelInfo(&sCurrAmenityBridgeDetails, ui16Flag, pErrRetVal)))
             {
                 CcspTraceError(("%s:%d, Failed to process Tunnel Info, error code:%d\n", __FUNCTION__, __LINE__, pErrRetVal->ErrorCode));
             }
@@ -2601,7 +2790,7 @@ int rollbackTunnelLanconfig(void)
             }
         }
         CcspTraceInfo(("%s:%d, calling processTunnelInfo with vlanflag=%d \n", __FUNCTION__, __LINE__, ui16Flag));
-        if (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal))
+        if ((ui16Flag > 0) && (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal)))
         {
             CcspTraceError(("%s:%d, Failed to process Tunnel Info, error code:%d\n", __FUNCTION__, __LINE__, pErrRetVal->ErrorCode));
         }
@@ -2621,7 +2810,7 @@ int rollbackTunnelLanconfig(void)
             }
         }
         CcspTraceInfo(("%s:%d, calling processTunnelInfo with vlanflag=%d \n", __FUNCTION__, __LINE__, ui16Flag));
-        if (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal))
+        if ((ui16Flag > 0) && (0 != processTunnelInfo(&sBackupAmenityBridgeDetails, ui16Flag, pErrRetVal)))
         {
             CcspTraceError(("%s:%d, Failed to process Tunnel Info, error code:%d\n", __FUNCTION__, __LINE__, pErrRetVal->ErrorCode));
         }
