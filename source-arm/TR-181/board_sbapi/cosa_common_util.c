@@ -418,7 +418,7 @@ EvtDispterCallFuncByEvent
 static int se_fd = 0; 
 static token_t token;
 
-static async_id_t async_id[7];
+static async_id_t async_id[8];
 
 static short server_port;
 static char  server_ip[19];
@@ -725,9 +725,17 @@ static void
 EvtDispterWanIpv6AddrsCallback(char *ip_addrs)
 {
     static char previous_ipv6[40] = "::";
+     char wan_interface[32] = {0};
 
     if (strcmp(previous_ipv6, ip_addrs) != 0) 
     {
+	commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+
+	if (strcmp(wan_interface,"brww0") == 0 ) {
+
+	    CcspTraceInfo(("%s Setting current_wan_ipaddr and restarting firewall %d \n", __FUNCTION__,__LINE__)); 
+	    sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
+	}
         CcspTraceInfo(("%s New IPv6 address detected: %s, Previous IPv6 address: %s\n", __FUNCTION__, ip_addrs, previous_ipv6));
       
         if(publishWanIpAddr(PRIMARY_WAN_IPv6_ADDRESS, ip_addrs, previous_ipv6)== RBUS_ERROR_SUCCESS)
@@ -833,6 +841,11 @@ EvtDispterEventInits(void)
 #else
     //register tr_erouter0_dhcpv6_client_v6addr event
     rc = sysevent_setnotification(se_fd, token, "tr_erouter0_dhcpv6_client_v6addr", &async_id[3]);
+    if (rc) {
+       return(EVENT_ERROR);
+    }
+    //register tr_brww0_dhcpv6_client_v6addr event
+    rc = sysevent_setnotification(se_fd, token, "tr_brww0_dhcpv6_client_v6addr", &async_id[7]);
     if (rc) {
        return(EVENT_ERROR);
     }
@@ -979,6 +992,11 @@ EvtDispterEventListen(void)
             }
 
 #endif
+            else if(!strcmp(name_str, "tr_brww0_dhcpv6_client_v6addr"))
+            {
+                EvtDispterWanIpv6AddrsCallback(value_str);
+                ret = EVENT_WAN_IPV6_RECD;
+            }
         } else {
             CcspTraceWarning(("Received msg that is not a SE_MSG_NOTIFICATION (%d)\n", msg_type));
 	    if (  0 != system("pidof syseventd")) {
