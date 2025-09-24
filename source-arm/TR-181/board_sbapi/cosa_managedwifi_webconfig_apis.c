@@ -558,6 +558,7 @@ void initializeAmenityBridges(void)
 {
     char cAmenityBridgeCount[BUFF_LEN_8] = {0};
     char cAmenityEnabled[BUFF_LEN_8] = {0};
+    CcspTraceInfo(("%s:%d, Entry \n", __FUNCTION__, __LINE__));
     pErr pErrRetVal = (pErr)malloc(sizeof(Err));
     if (!pErrRetVal)
     {
@@ -577,6 +578,7 @@ void initializeAmenityBridges(void)
 
     sBackupAmenityBridgeDetails.bIsAmenityEnabled = (!strncmp(cAmenityEnabled, "true", 4)) ? true : false;
     int iBridgeCount = atoi(cAmenityBridgeCount);
+    CcspTraceInfo(("%s:%d, Amenity BridgeCount=%d \n", __FUNCTION__, __LINE__,iBridgeCount));
 
     if ((iBridgeCount > 0) && (0 != readTunnelDetailsFromPsm(iBridgeCount)))
     {
@@ -916,6 +918,7 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
             }
         }
 
+        CcspTraceInfo(("%s:%d, Manage Wifi BridgeName=%s \n",__FUNCTION__,__LINE__, sManageWiFiInfo.aBridgeName));
         if (strlen(sManageWiFiInfo.aBridgeName) > 0)
         {
 #ifdef CORE_NET_LIB
@@ -1025,6 +1028,7 @@ BOOL bringDownManagedWifiBridge(pErr pErrRetVal)
     pthread_t manageWifiBridgeThreadId;
     struct timespec abs_time = {0};
 
+    CcspTraceInfo(("%s:%d, Entry \n",__FUNCTION__,__LINE__));
     if (NULL == pErrRetVal)
     {
         CcspTraceError(("%s:%d, pErrRetVal is NULL\n", __FUNCTION__, __LINE__));
@@ -2104,7 +2108,10 @@ int readLanConfigFromPSM(backupLanconfig_t *pBackupLanConfig)
 
     snprintf(aParamName,BUFF_LEN_64,l2netBridgeEnable, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName,aParamVal,BUFF_LEN_32))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
     /*CID: 347105 - Array compared against null - fixed*/
     if ( '\0' != aParamVal[0] )
     {
@@ -2116,20 +2123,32 @@ int readLanConfigFromPSM(backupLanconfig_t *pBackupLanConfig)
     }
     snprintf(aParamName, BUFF_LEN_64, l2netAlias, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName, pBackupLanConfig->aAlias, sizeof(pBackupLanConfig->aAlias)))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     snprintf(aParamName, BUFF_LEN_64, l3netV4Addr, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName, pBackupLanConfig->aLanIpAddr, sizeof(pBackupLanConfig->aLanIpAddr)))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     snprintf(aParamName, BUFF_LEN_64, l2netV4SubnetMask, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName, pBackupLanConfig->aLanSubnetMask, sizeof(pBackupLanConfig->aLanSubnetMask)))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     snprintf(aParamName, BUFF_LEN_64, l3netDhcpV4PoolEnable, sManageWiFiInfo.aBridgeIndex);
     memset(aParamVal, 0, BUFF_LEN_32);
     if (0 != psmGet(aParamName, aParamVal, BUFF_LEN_32))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     if ('\0' != aParamVal)
     {
@@ -2142,20 +2161,32 @@ int readLanConfigFromPSM(backupLanconfig_t *pBackupLanConfig)
 
     snprintf(aParamName, BUFF_LEN_64, l3netDhcpV4PoolMinAddr, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName, pBackupLanConfig->aDhcpStartIpAdd, sizeof(pBackupLanConfig->aDhcpStartIpAdd)))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     snprintf(aParamName, BUFF_LEN_64, l3netDhcpV4PoolMaxAddr, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName, pBackupLanConfig->aDhcpEndIpAdd, sizeof(pBackupLanConfig->aDhcpEndIpAdd)))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     snprintf(aParamName, BUFF_LEN_64, l3netDhcpV4PoolLeaseTime, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName, pBackupLanConfig->aLeaseTime, sizeof(pBackupLanConfig->aLeaseTime)))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     snprintf(aParamName, BUFF_LEN_64, l3netIPv6Enable, sManageWiFiInfo.aBridgeIndex);
     memset(aParamVal, 0, BUFF_LEN_32);
     if (0 != psmGet(aParamName, aParamVal, BUFF_LEN_32))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     /* CID 347105 Array compared against 0 : fix */
     if (aParamVal[0] != '\0')
@@ -2169,7 +2200,10 @@ int readLanConfigFromPSM(backupLanconfig_t *pBackupLanConfig)
 
     snprintf(aParamName, BUFF_LEN_64,l2netWiFiMembers, sManageWiFiInfo.aBridgeIndex);
     if (0 != psmGet(aParamName, pBackupLanConfig->aWiFiInterfaces, sizeof(pBackupLanConfig->aWiFiInterfaces)))
+    {
+        CcspTraceError(("%s: psmGet error for %s\n", __FUNCTION__,aParamName));
         return -1;
+    }
 
     if ('\0' != pBackupLanConfig->aWiFiInterfaces[0])
         strncpy (sManageWiFiInfo.aWiFiInterfaces,pBackupLanConfig->aWiFiInterfaces, (sizeof(sManageWiFiInfo.aWiFiInterfaces)-1));
@@ -2258,7 +2292,7 @@ void initManageWiFiBacupStruct(void)
     char aManageWiFiEnabled[BUFF_LEN_8] = {0};
 
     syscfg_get(NULL, "Manage_WiFi_Enabled", aManageWiFiEnabled, BUFF_LEN_8);
-
+    CcspTraceInfo(("%s:%d, Manage_WiFi_Enabled=%s\n",__FUNCTION__,__LINE__,aManageWiFiEnabled));
     getBridgeDetailsFromPsm();
     if ((!strncmp(aManageWiFiEnabled, "true", 4)) || (!strncmp(aManageWiFiEnabled, "false", 4)))
     {
