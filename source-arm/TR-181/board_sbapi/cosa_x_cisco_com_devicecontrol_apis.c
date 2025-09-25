@@ -2469,6 +2469,10 @@ CosaDmlDcSetFactoryReset
             CcspTraceWarning(("X_CISCO_SECURITY: Error in initializing context!!! \n" ));
             return ANSC_STATUS_FAILURE;
         }
+        fw.allow_ipsec_passthru = 1;
+        fw.allow_pptp_passthru = 1;
+        fw.allow_l2tp_passthru = 1;
+        fw.allow_ssl_passthru = 1;
         fw.filter_ident = 0;
         fw.filter_multicast = 0;
         fw.filter_anon_req = 0;
