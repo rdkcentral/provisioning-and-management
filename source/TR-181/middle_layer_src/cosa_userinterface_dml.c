@@ -69,6 +69,8 @@
 #include "cosa_userinterface_dml.h"
 #include "ansc_string_util.h"
 #include "safec_lib_common.h"
+#include "syscfg/syscfg.h"
+#include "cosa_x_cisco_com_devicecontrol_apis.h"
 
 
 /***********************************************************************
@@ -818,6 +820,21 @@ RemoteAccess_SetParamBoolValue
 
     if (strcmp(ParamName, "HttpEnable") == 0)
     {
+        if(bValue == true)
+        {
+           char mgmt_wan_httpport[16] = {0};
+#if defined(CONFIG_CCSP_WAN_MGMT_ACCESS)
+           syscfg_get(NULL, "mgmt_wan_httpport_ert" , mgmt_wan_httpport, sizeof(mgmt_wan_httpport));
+#else
+           syscfg_get(NULL, "mgmt_wan_httpport" , mgmt_wan_httpport, sizeof(mgmt_wan_httpport));
+#endif
+           //check if the http port is overlap with PT or PF ports
+           if (IsPortOverlapWithPFPorts(atoi(mgmt_wan_httpport)) || IsPortOverlapWithPTPorts(atoi(mgmt_wan_httpport)))
+           {
+              CcspTraceNotice(("RA_HTTP_split: http port=%s overlaps with PF or PT port \n",mgmt_wan_httpport));
+              return FALSE;
+           }
+        }
         pMyObject->RaCfg.HttpEnable = bValue;
         CcspTraceNotice(("RA_HTTP_split:Feature Switch Remote Access HTTP %d\n", bValue));
         return TRUE;
@@ -825,6 +842,17 @@ RemoteAccess_SetParamBoolValue
 
     if (strcmp(ParamName, "HttpsEnable") == 0)
     {
+        if(bValue == true)
+        {
+           char mgmt_wan_httpsport[16] = {0};
+           syscfg_get(NULL, "mgmt_wan_httpsport" , mgmt_wan_httpsport, sizeof(mgmt_wan_httpsport));
+           //check if the https port is overlap with PT or PF ports
+           if (IsPortOverlapWithPFPorts(atoi(mgmt_wan_httpsport)) || IsPortOverlapWithPTPorts(atoi(mgmt_wan_httpsport)))
+           {
+              CcspTraceNotice(("RA_HTTPS_split: https port=%s overlaps with PF or PT port \n",mgmt_wan_httpsport));
+              return FALSE;
+           }
+        }
         pMyObject->RaCfg.HttpsEnable = bValue;
         CcspTraceNotice(("RA_HTTPS_split :Feature Switch Remote Access HTTPS %d\n",bValue));
         return TRUE;
