@@ -479,6 +479,11 @@ int set_portmap_conf(portmappingdoc_t *rpm)
                 return INVALID_PORT ;
             }
 
+            if( IsPortOverlapWithManagementAccess(atoi(rpm->entries[j].external_port), atoi(rpm->entries[j].external_port_end_range)))
+            {
+                CcspTraceError(("%s: Port Range %d - %d is overlapping with Management Access port \n",__FUNCTION__,atoi(rpm->entries[j].external_port), atoi(rpm->entries[j].external_port_end_range)));
+                return INVALID_PORT ;
+            }
 
 #if defined (SPEED_BOOST_SUPPORTED)
             if( IsPortOverlapWithSpeedboostPortRange(atoi(rpm->entries[j].external_port), atoi(rpm->entries[j].external_port_end_range) , 0, 0))

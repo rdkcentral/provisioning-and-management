@@ -401,9 +401,166 @@ SaveWebServConf(const WebServConf_t *conf)
 
     if (UtSetUlong(sysCfghttpPort, conf->httpport) != ANSC_STATUS_SUCCESS)
         return -1;
+
     if (UtSetUlong("mgmt_wan_httpsport", conf->httpsport) != ANSC_STATUS_SUCCESS)
         return -1;
+    return 0;
+}
 
+bool IsPortOverlapWithPFPorts(int mgmtport)
+{
+    CcspTraceInfo(("%s %d - Entry mgmtport=%d\n",__FUNCTION__,__LINE__, mgmtport));
+    char pfcount[8] = {0};
+    char query[32] = {0};
+    char namespace[32] = {0};
+
+    syscfg_get( NULL, "PortRangeForwardCount", pfcount, sizeof(pfcount));
+    CcspTraceInfo(("%s %d - PortRangeForwardCount=%s \n",__FUNCTION__,__LINE__,pfcount));
+    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
+      namespace[0] = '\0';
+      snprintf(query, sizeof(query), "PortRangeForward_%d", idx);
+      int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
+      if (0 != rc || '\0' == namespace[0]) {
+         continue;
+      }
+      query[0] = '\0';
+      rc = syscfg_get(namespace, "enabled", query, sizeof(query));
+      if (0 != rc || '\0' == query[0]) {
+         continue;
+      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+        CcspTraceDebug(("%s %d- PFR namespace Not enabled \n",__FUNCTION__,__LINE__));
+        continue;
+      }
+      char sdport[10];
+      char edport[10];
+      char portrange[30];
+      portrange[0]='\0';
+      sdport[0] = '\0';
+      edport[0] = '\0';
+      rc = syscfg_get(namespace, "external_port_range", portrange, sizeof(portrange));
+      if (0 != rc || '\0' == portrange[0]) {
+         continue;
+      } else {
+         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+            continue;
+         }
+      }
+      if (atoi(sdport) <= mgmtport && mgmtport <= atoi(edport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PFR External ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+      rc = syscfg_get(namespace, "internal_port", sdport, sizeof(sdport));
+      rc |= syscfg_get(namespace, "internal_port_range_size", portrange, sizeof(portrange));
+      int edport_i = atoi(sdport) + atoi(portrange);
+      CcspTraceInfo(("%s %d- PFR End port=%d \n",__FUNCTION__,__LINE__, edport_i));
+      if (0 != rc || '\0' == sdport[0]) {
+         continue;
+      }
+      if (atoi(sdport) <= mgmtport && mgmtport <= edport_i)
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PFR internal ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+    }
+
+    memset(pfcount,0, sizeof(pfcount));
+    memset(query,0, sizeof(query));
+    memset(namespace,0, sizeof(namespace));
+    syscfg_get( NULL, "SinglePortForwardCount", pfcount, sizeof(pfcount));
+    CcspTraceInfo(("%s %d- SPF count=%s \n",__FUNCTION__,__LINE__,pfcount));
+    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
+      namespace[0] = '\0';
+      snprintf(query, sizeof(query), "SinglePortForward_%d", idx);
+      int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
+      if (0 != rc || '\0' == namespace[0]) {
+         continue;
+      }
+      query[0] = '\0';
+      rc = syscfg_get(namespace, "enabled", query, sizeof(query));
+      if (0 != rc || '\0' == query[0]) {
+         continue;
+      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+        CcspTraceDebug(("%s %d- SPF namespace Not enabled \n",__FUNCTION__,__LINE__));
+        continue;
+      }
+      char extport[10];
+      char intport[10];
+      extport[0] = '\0';
+      intport[0] = '\0';
+      rc = syscfg_get(namespace, "external_port", extport, sizeof(extport));
+      rc |= syscfg_get(namespace, "internal_port", intport, sizeof(intport));
+      if (0 != rc || '\0' == extport[0] || '\0' == intport[0]) {
+         continue;
+      }
+      if (atoi(extport) == mgmtport || mgmtport == atoi(intport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with SPF internal or external port \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+    }
+    CcspTraceInfo(("%s %d - Exit\n",__FUNCTION__,__LINE__));
+    return 0;
+}
+
+bool IsPortOverlapWithPTPorts(int mgmtport)
+{
+    CcspTraceInfo(("%s %d - Entry mgmtport=%d\n",__FUNCTION__,__LINE__, mgmtport));
+    char pfcount[8] = {0};
+    char query[32] = {0};
+    char namespace[32] = {0};
+
+    syscfg_get( NULL, "PortRangeTriggerCount", pfcount, sizeof(pfcount));
+    CcspTraceInfo(("%s %d - PortRangeTriggerCount=%s \n",__FUNCTION__,__LINE__,pfcount));
+    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
+      namespace[0] = '\0';
+      snprintf(query, sizeof(query), "PortRangeTrigger_%d", idx);
+      int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
+      if (0 != rc || '\0' == namespace[0]) {
+         continue;
+      }
+      query[0] = '\0';
+      rc = syscfg_get(namespace, "enabled", query, sizeof(query));
+      if (0 != rc || '\0' == query[0]) {
+         continue;
+      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+        continue;
+      }
+      char sdport[10];
+      char edport[10];
+      char portrange[30];
+      portrange[0]='\0';
+      sdport[0] = '\0';
+      edport[0] = '\0';
+      rc = syscfg_get(namespace, "trigger_range", portrange, sizeof(portrange));
+      if (0 != rc || '\0' == portrange[0]) {
+         continue;
+      } else {
+         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+            continue;
+         }
+      }
+      CcspTraceInfo(("%s %d- PT trigger_range start=%s end=%s \n",__FUNCTION__,__LINE__, sdport,edport));
+      if (atoi(sdport) <= mgmtport && mgmtport <= atoi(edport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PT ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+      rc = syscfg_get(namespace, "forward_range", portrange, sizeof(portrange));
+      if (0 != rc || '\0' == portrange[0]) {
+         continue;
+      } else {
+         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+            continue;
+         }
+      }
+      CcspTraceInfo(("%s %d- PT forward_range start=%s end=%s \n",__FUNCTION__,__LINE__, sdport,edport));
+      if (atoi(sdport) <= mgmtport && mgmtport <= atoi(edport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PT ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+    }
     return 0;
 }
 
@@ -1896,12 +2053,12 @@ void* restoreAllDBs(void* arg)
      v_secure_system("syscfg commit");
 #endif     
 
-#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SE501_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SE501_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
   /* wipe out all user data including any debug flags which could produce lot of data.  without invalidate flash memory, /nvram/secure end up corrupting if using rm -rf *. */
 //        v_secure_system("sync; find /nvram /nvram2 /data -mindepth 1 | grep -vE \"Q[[:xdigit:]]{8}$\" | xargs rm -r; sync");  /* remove all files from user directory */
 	v_secure_system("sync;find /nvram /nvram2 /data ! \\( -path '/nvram/.partner_ID' -o -regex '.*/Q[[:xdigit:]]\\{8\\}$' -o -path '/nvram/.apply_partner_defaults' \\) -mindepth 1 | xargs rm -r; sync");
 	// set lastreboot reason directly into db
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 /* run another cleanup just to make sure if above script did not clean it */
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         //voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
@@ -1912,7 +2069,7 @@ void* restoreAllDBs(void* arg)
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
        // set factory_reset flag directory into db to restore the db value in bootup case
-#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
         v_secure_system("echo \"factory_reset=y\" >> /nvram/secure/data/syscfg.db");
 #endif
 
@@ -2312,6 +2469,10 @@ CosaDmlDcSetFactoryReset
             CcspTraceWarning(("X_CISCO_SECURITY: Error in initializing context!!! \n" ));
             return ANSC_STATUS_FAILURE;
         }
+        fw.allow_ipsec_passthru = 1;
+        fw.allow_pptp_passthru = 1;
+        fw.allow_l2tp_passthru = 1;
+        fw.allow_ssl_passthru = 1;
         fw.filter_ident = 0;
         fw.filter_multicast = 0;
         fw.filter_anon_req = 0;
@@ -2536,7 +2697,7 @@ CosaDmlDcSetFactoryReset
 		CcspTraceWarning(("FactoryReset:%d  case is both WIFI and Router removing DB\n",__LINE__));
 		v_secure_system("rm -f /nvram/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
 		v_secure_system("rm -f /opt/secure/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 /* clean up BRCM nvram */
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
