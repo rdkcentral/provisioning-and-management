@@ -115,7 +115,7 @@
 #ifdef ARRIS_XB3_PLATFORM_CHANGES
 #include "rdk_cm_api_arris.h"
 #else
-#include <net/if.h>
+#include "linux/if.h"
 #endif
 
 #ifdef CORE_NET_LIB
