@@ -393,6 +393,8 @@ CosaDmlNatChkPortMappingMaxRuleNum(PCOSA_DML_NAT_PMAPPING pEntry);
 
 void CosaDmlNatDelDynPortMappings (void);
 
+int IsPortOverlapWithManagementAccess(int PortStart, int PortEndRange);
+
 #if defined (SPEED_BOOST_SUPPORTED)
 int
 IsPortOverlapWithSpeedboostPortRange(int ExternalPort, int ExternalPortEndRange, int InternalPort , int InternalPortend);
