@@ -81,6 +81,7 @@
 #include "dml_tr181_custom_cfg.h"
 #include "safec_lib_common.h"
 #include "secure_wrapper.h"
+#include "syscfg/syscfg.h"
 
 #ifdef _BWG_PRODUCT_REQ_
 //CGWTDETS-8800 : Usable Statics will no longer support 1-1 NAT :: START
@@ -1769,6 +1770,7 @@ ANSC_STATUS _Update_TriggerEnable(UtopiaContext   *pCtx, boolean_t enabled){
 
 int _Check_PF_parameter(PCOSA_DML_NAT_PMAPPING pPortMapping)
 {      
+    CcspTraceInfo(("%s Entry \n", __FUNCTION__));
     if( pPortMapping->PublicIP.Value == 0 &&
         ((pPortMapping->ExternalPort == 0) || 
          (pPortMapping->ExternalPortEndRange < pPortMapping->ExternalPort) ||
@@ -1790,10 +1792,17 @@ int _Check_PF_parameter(PCOSA_DML_NAT_PMAPPING pPortMapping)
         return FALSE;
     }
 
+    if( IsPortOverlapWithManagementAccess(pPortMapping->ExternalPort,pPortMapping->ExternalPortEndRange))
+    {
+        CcspTraceDebug(("%s Mgmt port Overlaps from start port=%d to end port=%d\n", __FUNCTION__, pPortMapping->ExternalPort,pPortMapping->ExternalPortEndRange));
+        return FALSE;
+    }
+
 #if defined (SPEED_BOOST_SUPPORTED)
     if( IsPortOverlapWithSpeedboostPortRange(pPortMapping->ExternalPort, pPortMapping->ExternalPortEndRange, pPortMapping->InternalPort , pPortMapping->InternalPort))
         return FALSE;
 #endif
+    CcspTraceInfo(("%s Exit \n", __FUNCTION__));
 
     return TRUE;
 }
@@ -1801,6 +1810,7 @@ int _Check_PF_parameter(PCOSA_DML_NAT_PMAPPING pPortMapping)
 
 int _Check_PT_parameter(PCOSA_DML_NAT_PTRIGGER pPortTrigger)
 {
+    CcspTraceInfo(("%s Entry \n", __FUNCTION__));
     /* Check parameter setting */
     if( (pPortTrigger->TriggerProtocol > 3 || pPortTrigger->TriggerProtocol < 1) ||
         (pPortTrigger->TriggerPortStart == 0) || 
@@ -1819,12 +1829,77 @@ int _Check_PT_parameter(PCOSA_DML_NAT_PTRIGGER pPortTrigger)
         return FALSE;
     }
 
+    if( (IsPortOverlapWithManagementAccess(pPortTrigger->TriggerPortStart, pPortTrigger->TriggerPortEnd)) ||
+          (IsPortOverlapWithManagementAccess(pPortTrigger->ForwardPortStart, pPortTrigger->ForwardPortEnd)))
+    {
+        CcspTraceDebug(("%s: Mgmt port overlaps with trgr port start =%d to end=%d\n", __FUNCTION__, pPortTrigger->TriggerPortStart,pPortTrigger->TriggerPortEnd));
+        CcspTraceDebug(("%s: Mgmt port overlaps with frwd port start =%d to end=%d\n", __FUNCTION__, pPortTrigger->ForwardPortStart, pPortTrigger->ForwardPortEnd));
+        return FALSE;
+    }
 #if defined (SPEED_BOOST_SUPPORTED)
     if( IsPortOverlapWithSpeedboostPortRange(pPortTrigger->TriggerPortStart, pPortTrigger->TriggerPortEnd , pPortTrigger->ForwardPortStart, pPortTrigger->ForwardPortEnd))
         return FALSE;
 #endif
+    CcspTraceInfo(("%s Exit \n", __FUNCTION__));
 
     return TRUE;
+}
+
+/*
+- *  Procedure     : IsPortOverlapWithManagementAccess
+- *  Purpose       : check if ExternalPort ranges are overlap with management UI access ports
+- *  Parameters    :
+- *    fp          : External port ranges from PF or PT user defined
+- *  Return        :
+- *    TRUE        : PF/PT port ranges are overlapping with webui management ports
+- *    FALSE       : management access not enabled or PF/PT ports are not overlapping with management UI
+- *
+- */
+
+int IsPortOverlapWithManagementAccess(int PortStart, int PortEndRange)
+{
+    CcspTraceInfo(("%s Entry Port Start =%d and End=%d\n", __FUNCTION__,PortStart,PortEndRange));
+    char mgmt_wan_access[8]={0};
+    char mgmt_wan_httpaccess[8]={0};
+    char mgmt_wan_httpsaccess[8]={0};
+    char mgmt_wan_httpport[16]={0};
+    char mgmt_wan_httpsport[16]={0};
+
+    int rc = syscfg_get( NULL, "mgmt_wan_access" , mgmt_wan_access , sizeof( mgmt_wan_access ) ) ;
+
+    if (rc == 0 && (0 == strcmp("1", mgmt_wan_access) || 0 == strcasecmp("true", mgmt_wan_access)))
+    {
+#if defined(CONFIG_CCSP_WAN_MGMT_ACCESS)
+    char sysCfghttpAccess[30] = "mgmt_wan_httpaccess_ert";
+    char syscfghttpPort[30] = "mgmt_wan_httpport_ert";
+#else
+    char sysCfghttpAccess[30] = "mgmt_wan_httpaccess";
+    char syscfghttpPort[30] = "mgmt_wan_httpport";
+#endif
+       rc = syscfg_get( NULL, sysCfghttpAccess , mgmt_wan_httpaccess , sizeof( mgmt_wan_httpaccess ) );
+       rc |= syscfg_get( NULL, syscfghttpPort , mgmt_wan_httpport , sizeof( mgmt_wan_httpport ) );
+       if (rc == 0 && (0 == strcmp("1", mgmt_wan_httpaccess) || 0 == strcasecmp("true", mgmt_wan_httpaccess)))
+       {
+          if (PortStart <= atoi(mgmt_wan_httpport) && atoi(mgmt_wan_httpport) <= PortEndRange)
+          {
+             CcspTraceError((" Port is overlapping with management http port, exit from %s\n", __FUNCTION__));
+             return TRUE;
+          }
+       }
+
+       rc = syscfg_get( NULL, "mgmt_wan_httpsaccess" , mgmt_wan_httpsaccess , sizeof( mgmt_wan_httpsaccess ) );
+       rc |= syscfg_get( NULL, "mgmt_wan_httpsport" , mgmt_wan_httpsport , sizeof( mgmt_wan_httpsport ) );
+       if (rc == 0 && (0 == strcmp("1", mgmt_wan_httpsaccess) || 0 == strcasecmp("true", mgmt_wan_httpsaccess)))
+       {
+          if (PortStart <= atoi(mgmt_wan_httpsport) && atoi(mgmt_wan_httpsport) <= PortEndRange)
+          {
+             CcspTraceError((" Port is overlapping with management https port, exit from %s\n", __FUNCTION__));
+             return TRUE;
+          }
+       }
+    }
+    CcspTraceInfo(("%s Exit \n", __FUNCTION__));
+    return FALSE;
 }
 
 #if defined (SPEED_BOOST_SUPPORTED)
