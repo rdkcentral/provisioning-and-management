@@ -1286,7 +1286,12 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
             CcspTraceWarning(("Port already in use\n"));
             return FALSE;
         }
-        if((uValue >= START_HTTPPORT) && (uValue <= END_HTTPPORT))
+
+	//check if the http port is overlap with PT or PF
+        if (IsPortOverlapWithPFPorts(uValue) || IsPortOverlapWithPTPorts(uValue))
+            return FALSE;
+
+	if((uValue >= START_HTTPPORT) && (uValue <= END_HTTPPORT))
         {
             pMyObject->HTTPPort = uValue;
             pMyObject->WebServerChanged = TRUE;
@@ -1303,6 +1308,11 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
             CcspTraceWarning(("Port already in use\n"));
             return FALSE;
         }
+
+	//check if the https port is overlap with PT or PF
+        if (IsPortOverlapWithPFPorts(uValue) || IsPortOverlapWithPTPorts(uValue))
+            return FALSE;
+
         if((uValue >= START_HTTPPORT) && (uValue <= END_HTTPPORT))
         {
             pMyObject->HTTPSPort = uValue;

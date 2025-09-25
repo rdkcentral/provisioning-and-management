@@ -349,6 +349,10 @@ CosaBackEndManagerInitialize
     pMyObject->hInterfaceStack = (ANSC_HANDLE)CosaIFStackCreate();
     AnscTraceWarning(("  CosaIFStackCreate done!\n"));
 #endif
+
+    // initiatlize the thread to send sync notifcation to webPA when IPv6 prefix , IPV4 and IPv6 ip address change
+    initializeNotificationHandler();
+
 #ifndef FEATURE_RDKB_XDSL_PPP_MANAGER
 #if !defined (RESOURCE_OPTIMIZATION)
     pMyObject->hPPP           = (ANSC_HANDLE)CosaPPPCreate();
@@ -496,18 +500,20 @@ if(id != 0)
     SetAutoreboot((ANSC_HANDLE)pMyObject->hDeviceInfo);
 #if defined (WIFI_MANAGE_SUPPORTED)
     char cAmenityReceived [8] = {0};
-    if(!syscfg_get( NULL, "Is_Amenity_Received", cAmenityReceived, sizeof(cAmenityReceived)))
+    syscfg_get( NULL, "Is_Amenity_Received", cAmenityReceived, sizeof(cAmenityReceived));
+    CcspTraceWarning(("%s : syscfg get Is_Amenity_Received=%s \n",__FUNCTION__, cAmenityReceived));
+    if(0 != strncmp(cAmenityReceived, "true", 4))
     {
-         if(0 != strncmp(cAmenityReceived, "true", 4))
-         {
-             initManageWiFiBacupStruct();
-         }
+        CcspTraceWarning(("%s : Amenity network is not enabled yet , Initialize Manage WiFi from psm details \n",__FUNCTION__));
+        initManageWiFiBacupStruct();
     }
+
 #endif /*WIFI_MANAGE_SUPPORTED*/
 
 #if defined (SPEED_BOOST_SUPPORTED)
     speedBoostSchdeulerInit();
 #endif /*SPEED_BOOST_SUPPORTED*/
+    CcspTraceWarning(("%s : RDKB_SYSTEM_BOOT_UP_LOG : Exit  \n",__FUNCTION__)); 
     return returnStatus;
 }
 

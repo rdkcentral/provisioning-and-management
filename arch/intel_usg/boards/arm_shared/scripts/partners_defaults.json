@@ -2,7 +2,7 @@
    "properties" : {
 
       "comments" : "MANDATORY: !!! Please increment below version value for any new parameter added in this partners_defaults.json !!!",
-      "version" : "8.30"
+      "version" : "8.31"
    },
 
    "comcast" : {
@@ -130,6 +130,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
 },
@@ -226,6 +227,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
 },
@@ -333,6 +335,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "false",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "false",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "false",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "false"
       }
    },
@@ -455,6 +458,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "false",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "false",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "false",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "true",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "false"
       }
    },
@@ -575,6 +579,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
    },
@@ -696,6 +701,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
    },
@@ -823,6 +829,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
    },
@@ -925,6 +932,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
    },
@@ -1020,6 +1028,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
   },
@@ -1115,6 +1124,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
    },
@@ -1215,6 +1225,7 @@
             "Device.X_RDK_Features.HomeSecurity.Enable" : "true",
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
+            "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
    }
