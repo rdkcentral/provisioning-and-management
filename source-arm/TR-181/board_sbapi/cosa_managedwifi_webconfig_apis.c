@@ -35,6 +35,10 @@
 #define BIT_6G_DOWN_MASK        (1 << 10)
 #define BIT_6G_UP_MASK          (1 << 11)
 
+#define AMENITY_GRE_IFACES_PARAM          "dmsb.Amenity.gre.%d.LocalInterfaces"
+#define AMENITY_GRE_IFACES_STR            "Device.WiFi.SSID.7.,Device.WiFi.SSID.8."
+#define AMENITY_QUEUE_NUM_START           61
+#define AMENITY_GRE_INSTANCE              1
 static char *l2netVlanID = "dmsb.l2net.%s.Vid";
 static char *l2netVapName = "dmsb.l2net.%s.VapName";
 
@@ -277,6 +281,41 @@ void setRbus(char *pParamName, char *pParamVal)
     rbusValue_Release(rbusValue);
 }
 
+char * getRbus (char *pParamName)
+{
+    rbusValue_t rbusValue;
+    char *pStrVal = NULL;
+    int iRbusRetVal = RBUS_ERROR_SUCCESS;
+
+    if ((NULL == handle) || (NULL == pParamName))
+    {
+        CcspTraceError(("%s:%d, NULL parameter passed\n",__FUNCTION__,__LINE__));
+        return NULL;
+    }
+    /* Init rbus variable */
+    rbusValue_Init(&rbusValue);
+
+    iRbusRetVal = rbus_get(handle,pParamName, &rbusValue);
+    if(iRbusRetVal != RBUS_ERROR_SUCCESS )
+    {
+        CcspTraceError(("%s:%d, Failed to do rbus_get\n",__FUNCTION__,__LINE__));
+        rbusValue_Release(rbusValue);
+        return NULL;
+    }
+
+    pStrVal = rbusValue_ToString(rbusValue, NULL, 0);
+    if ((NULL == pStrVal) || (strlen(pStrVal) < 1))
+    {
+        CcspTraceError(("%s:%d, pStrVal returned NULL by R-Bus or Strlen is zero\n",__FUNCTION__,__LINE__));
+        rbusValue_Release(rbusValue);
+        if(NULL != pStrVal)
+            free(pStrVal);
+        return NULL;
+    }
+    rbusValue_Release(rbusValue);
+    return pStrVal;
+}
+
 int getAmenityRbusData(amenityBridgeInfo_t ** ppBridgeRbusData, int *pVapCount)
 {
     if (NULL == ppBridgeRbusData || NULL == pVapCount)
@@ -297,6 +336,160 @@ int getAmenityRbusData(amenityBridgeInfo_t ** ppBridgeRbusData, int *pVapCount)
     CcspTraceInfo(("%s:%d,ppBridgeRbusData:%p\n",__FUNCTION__,__LINE__,*ppBridgeRbusData));
     CcspTraceInfo(("%s:%d,pRbusBridgeInfo:%p\n",__FUNCTION__,__LINE__,pRbusBridgeInfo));
     return 0;
+}
+
+//Extracts the SSID from "<hardware_addr>;<SSID><o|s>"
+static void extractSsid(char * pStr,char * pSsidName, int iSsidBufLen)
+{
+    if (NULL == pStr || NULL == pSsidName || iSsidBufLen < 1)
+        return;
+
+    const char *pSemiColon = strchr(pStr,';');
+    if (NULL == pSemiColon || *(pSemiColon + 1) == '\0')
+       return;
+
+    char *pStr1 = pStr;
+    while(*pStr1 != '\0')
+        pStr1++;
+
+    //Move the pointer back two times (skip null and last char (o or s))
+    pStr1 -= 2;
+
+    // Calculate length between pSemiColon+1 and pStr1
+    int iSsidLen = pStr1 - (pSemiColon + 1) + 1; // +1 to include last char before o/s
+
+    if (iSsidLen > 0 && iSsidLen < iSsidBufLen)
+    {
+        strncpy(pSsidName, pSemiColon + 1, iSsidLen);
+        pSsidName[iSsidLen] = '\0';
+    }
+}
+int updateAmenityCircuitIds(int iGreInst, int iQueueStart)
+{
+    char cParamName[BUFF_LEN_64] = {0};
+    char cParamVal [BUFF_LEN_64] = {0};
+    char cCircuitId[BUFF_LEN_128] = {0};
+    char cHardwareAddr[BUFF_LEN_64] = {0};
+    char cAmenityGreIfaces[BUFF_LEN_128] = {0};
+    char *pSave = NULL, *pCurInt = NULL, *pTestCurInt = NULL;
+    int iRetVal = 0, iInstance = 0;
+    char *pStrVal = NULL;
+
+    int iSyseventGreAmenFd;
+    token_t syseventGreAmenToken;
+
+
+    iSyseventGreAmenFd = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "ManageWiFiBridgeHandler", &syseventGreAmenToken);
+    if (iSyseventGreAmenFd < 0)
+    {
+        CcspTraceError(("%s:%d, sysevent_open failed\n", __FUNCTION__, __LINE__));
+        return -1;
+    }
+
+    snprintf(cParamName, sizeof(cParamName), AMENITY_GRE_IFACES_PARAM, iGreInst);
+    iRetVal = psmGet(cParamName, cAmenityGreIfaces, sizeof(cAmenityGreIfaces));
+    if (iRetVal == -1 || strlen(cAmenityGreIfaces) < strlen(AMENITY_GRE_IFACES_STR))
+    {
+        CcspTraceError(("%s:%d, Failed to get PSM value for %s\n", __FUNCTION__, __LINE__, cParamName));
+        snprintf(cAmenityGreIfaces, sizeof(cAmenityGreIfaces), AMENITY_GRE_IFACES_STR);
+    }
+
+    pCurInt = strtok_r(cAmenityGreIfaces, ",", &pSave);
+
+    if (syscfg_get(NULL, "wan_physical_ifname", cParamName, sizeof(cParamName)) != 0)
+    {
+        CcspTraceError(("%s:%d, Failed to get syscfg value for wan_physical_ifname\n", __FUNCTION__, __LINE__));
+        snprintf(cParamName, sizeof(cParamName), "erouter0");
+    }
+
+    if (get_if_hwaddr(cParamName, cHardwareAddr, sizeof(cHardwareAddr)) != 0)
+    {
+        CcspTraceError(("%s:%d, Failed to get hardware address for %s\n", __FUNCTION__, __LINE__, cParamName));
+        snprintf(cHardwareAddr, sizeof(cHardwareAddr), "00:00:00:00:00:00");
+    }
+
+
+    while (pCurInt != NULL)
+    {
+        // Remove trailing dot if exists
+        size_t ulSizeCurInt = strlen(pCurInt);
+        if (ulSizeCurInt > 0 && pCurInt[ulSizeCurInt - 1] == '.')
+            pCurInt[ulSizeCurInt - 1] = '\0';
+
+        pTestCurInt = strrchr(pCurInt, '.');
+        if (!pTestCurInt)
+        {
+            CcspTraceError(("%s:%d, pTestCurInt is NULL for %s\n", __FUNCTION__, __LINE__, pCurInt));
+            sysevent_close(iSyseventGreAmenFd, syseventGreAmenToken);
+            return -1;
+        }
+        iInstance = atoi(pTestCurInt + 1);
+
+        if (iInstance < 1 || iInstance > 20)
+        {
+            CcspTraceError(("%s:%d, Invalid instance number %d for %s\n", __FUNCTION__, __LINE__, iInstance, pCurInt));
+            sysevent_close(iSyseventGreAmenFd, syseventGreAmenToken);
+            return -1;
+        }
+        snprintf(cParamName, sizeof(cParamName), "%s.SSID", pCurInt);
+        pStrVal = getRbus(cParamName);
+        if (NULL == pStrVal)
+        {
+            CcspTraceError(("%s:%d, pStrVal returned NULL by R-Bus \n",__FUNCTION__,__LINE__));
+            sysevent_close(iSyseventGreAmenFd, syseventGreAmenToken);
+            return -1;
+        }
+
+        snprintf(cParamName, sizeof(cParamName), "snooper-queue%d-circuitID", iQueueStart);
+        memset(cParamVal,0, sizeof(cParamVal));
+        if(0 == sysevent_get(iSyseventGreAmenFd, syseventGreAmenToken, cParamName, cParamVal, sizeof(cParamVal)) && strlen(cParamVal) > 0)
+        {
+            char cSsidName [BUFF_LEN_64] = {0};
+            memset(cParamVal,0, sizeof(cParamVal));
+            extractSsid(cParamVal, cSsidName, sizeof(cSsidName));
+
+            //If the SSID is not changed, then continue to check for another queue
+            if ((strlen(cSsidName) > 0) && (strcmp(cSsidName,pStrVal) == 0))
+            {
+                free(pStrVal);
+                continue;
+            }
+        }
+
+        // Build circuit ID: <hwaddr>;<SSID>;<o|s>
+        snprintf(cCircuitId, sizeof(cCircuitId), "%s;", cHardwareAddr);
+
+        strncat(cCircuitId, pStrVal, sizeof(cCircuitId) - strlen(cCircuitId) - 1);
+        free(pStrVal);
+
+        snprintf(cParamName, sizeof(cParamName), "Device.WiFi.AccessPoint.%d.Security.ModeEnabled", iInstance);
+        pStrVal = getRbus(cParamName);
+        if (NULL == pStrVal)
+        {
+            CcspTraceError(("%s:%d, pStrVal returned NULL by R-Bus \n",__FUNCTION__,__LINE__));
+            sysevent_close(iSyseventGreAmenFd, syseventGreAmenToken);
+            return -1;
+        }
+        strncat(cCircuitId,
+                (strcmp(pStrVal, "None") == 0 || strcmp(pStrVal, "Enhanced-Open") == 0) ? ";o" : ";s",
+                sizeof(cCircuitId) - strlen(cCircuitId) - 1);
+
+        free(pStrVal);
+
+        snprintf(cParamName, sizeof(cParamName), "snooper-queue%d-circuitID", iQueueStart);
+        sysevent_set(iSyseventGreAmenFd, syseventGreAmenToken, cParamName, cCircuitId, 0);
+        CcspTraceInfo(("%s:%d, cCircuitId:%s\n",__FUNCTION__,__LINE__,cCircuitId));
+
+        snprintf(cParamName, sizeof(cParamName), "snooper-ssid%d-index", iQueueStart++);
+        memset(cParamVal,0, sizeof(cParamVal));
+        snprintf(cParamVal, sizeof(cParamVal), "%d", iInstance);
+        sysevent_set(iSyseventGreAmenFd, syseventGreAmenToken, cParamName, cParamVal, 0);
+
+        pCurInt = strtok_r(NULL, ",", &pSave);
+    }
+
+    sysevent_close(iSyseventGreAmenFd, syseventGreAmenToken);
+    return iQueueStart;
 }
 int confirmAmentitiesNetworkVap(void)
 {
@@ -415,6 +608,8 @@ int confirmAmentitiesNetworkVap(void)
         if (true == sCurrAmenityBridgeDetails.bIsAmenityEnabled)
         {
             syscfg_set_commit(NULL, "Amenity_Network_Enabled", "true");
+            int iRet = updateAmenityCircuitIds (AMENITY_GRE_INSTANCE,AMENITY_QUEUE_NUM_START);
+            CcspTraceInfo (("%s:%d, iRet:%d\n",__FUNCTION__,__LINE__, iRet));
         }
         else if (false == sCurrAmenityBridgeDetails.bIsAmenityEnabled)
         {
@@ -663,6 +858,8 @@ void initializeAmenityBridges(void)
     else
     {
         CcspTraceInfo(("%s:%d, processTunnelInfo success\n", __FUNCTION__, __LINE__));
+        int iRet = updateAmenityCircuitIds (AMENITY_GRE_INSTANCE,AMENITY_QUEUE_NUM_START);
+        CcspTraceInfo (("%s:%d, iRet:%d\n",__FUNCTION__,__LINE__, iRet));
     }
 
     free(pErrRetVal);

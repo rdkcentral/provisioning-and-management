@@ -909,6 +909,9 @@ IsPortInUse
 (
     unsigned int port
 );
+bool IsPortOverlapWithPFPorts(int mgmtport);
+bool IsPortOverlapWithPTPorts(int mgmtport);
+
 
 ANSC_STATUS
 CosaDmlDcSetReinitMacThreshold
