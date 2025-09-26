@@ -1160,6 +1160,19 @@ typedef struct ipv6_prefix {
 
 #endif
 
+#ifndef ND_OPT_RDNSS
+#define ND_OPT_RDNSS 25
+#endif
+
+/* Minimal definition of RDNSS option (RFC 8106) */
+struct nd_opt_rdnss {
+    uint8_t  nd_opt_type;
+    uint8_t  nd_opt_len;
+    uint16_t reserved;
+    uint32_t lifetime;
+};
+
+
 #if 0
 
 /*This is test part  Begin */
@@ -11281,6 +11294,9 @@ void* monitor_ipv6_assignments(void *arg)
     struct sockaddr_nl sa;
     struct msghdr msg = { &sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
 
+    // ---- internal accumulator for all DNS servers in one RA ----
+    char dns_accumulator[1024];
+
     while (1) {
         ssize_t len = recvmsg(sock, &msg, 0);
         if (len <= 0) continue;
@@ -11321,7 +11337,7 @@ void* monitor_ipv6_assignments(void *arg)
                 }
             }
 
-            /* ---- 2. Handle Router Advertisements with RDNSS (DNS) ---- */
+	    /* ---- 2. Handle Router Advertisements with RDNSS (DNS) ---- */
             else if (nh->nlmsg_type == RTM_NEWNDUSEROPT) {
                 struct nduseroptmsg *ndmsg = NLMSG_DATA(nh);
                 int ifindex = ndmsg->nduseropt_ifindex;
@@ -11333,6 +11349,9 @@ void* monitor_ipv6_assignments(void *arg)
                     int optlen = NLMSG_PAYLOAD(nh, sizeof(*ndmsg));
                     unsigned char *opt = (unsigned char *)(ndmsg + 1);
 
+                    // reset accumulator at start of new RA
+                    dns_accumulator[0] = '\0';
+
                     while (optlen > 0) {
                         struct nd_opt_hdr *hdr = (struct nd_opt_hdr *)opt;
                         if (hdr->nd_opt_len == 0) break; // avoid infinite loop
@@ -11342,25 +11361,28 @@ void* monitor_ipv6_assignments(void *arg)
                             int addr_count = (hdr->nd_opt_len * 8 - sizeof(*rdnss)) / sizeof(struct in6_addr);
                             struct in6_addr *addr = (struct in6_addr *)(rdnss + 1);
 
-                            char dns_combined[512] = {0};
-			    for (int i = 0; i < addr_count; i++) {
-				    char dns[INET6_ADDRSTRLEN];
-				    inet_ntop(AF_INET6, &addr[i], dns, sizeof(dns));
+                            for (int i = 0; i < addr_count; i++) {
+                                char dns[INET6_ADDRSTRLEN];
+                                inet_ntop(AF_INET6, &addr[i], dns, sizeof(dns));
 
-				    if (i > 0) strncat(dns_combined, " ", sizeof(dns_combined) - strlen(dns_combined) - 1);
-				    strncat(dns_combined, dns, sizeof(dns_combined) - strlen(dns_combined) - 1);
+                                if (strlen(dns_accumulator) > 0) {
+                                    strncat(dns_accumulator, " ", sizeof(dns_accumulator) - strlen(dns_accumulator) - 1);
+                                }
+                                strncat(dns_accumulator, dns, sizeof(dns_accumulator) - strlen(dns_accumulator) - 1);
 
-				    CcspTraceWarning((" RDNSS nameserver on %s: %s\n", ifname, dns));
-			    }
-
-			    if (strlen(dns_combined) > 0) {
-				    commonSyseventSet("ipv6_nameserver", dns_combined);
-			    }
+                                CcspTraceWarning(("  RDNSS nameserver on %s: %s\n", ifname, dns));
+                            }
                         }
 
                         int step = hdr->nd_opt_len * 8;
                         optlen -= step;
                         opt += step;
+                    }
+
+                    // set sysevent once per RA
+                    if (strlen(dns_accumulator) > 0) {
+                        commonSyseventSet("ipv6_nameserver", dns_accumulator);
+                        CcspTraceWarning(("Set sysevent ipv6_nameserver = %s\n", dns_accumulator));
                     }
                 }
             }
@@ -11397,7 +11419,7 @@ void Switch_ipv6_mode(char *ifname, int length)
 
             if (pthread_create(&MonitorIpv6_tid, NULL, monitor_ipv6_assignments, (void *)hotspotIfname_copy) != 0) {
                 perror("pthread_create failed");
-                free(ifname_copy);
+                free(hotspotIfname_copy);
             } else {
                 pthread_detach(MonitorIpv6_tid); // thread will run independently
             }
