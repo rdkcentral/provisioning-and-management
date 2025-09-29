@@ -426,9 +426,9 @@ if(id != 0)
     pMyObject->hUpnp          = (ANSC_HANDLE)CosaUpnpCreate();
     AnscTraceWarning(("  CosaUpnpCreate done!\n"));
 
+#endif
     pMyObject->hParentalControl = (ANSC_HANDLE)TR181_ParentalControlCreate();
     AnscTraceWarning(("  CosaParentalControlCreate done - hParentalControl = 0x%p!\n", pMyObject->hParentalControl));
-#endif
     pMyObject->hRLog          = (ANSC_HANDLE)CosaRLogCreate();
     AnscTraceWarning(("  CosaRLogCreate done!\n"));
 
