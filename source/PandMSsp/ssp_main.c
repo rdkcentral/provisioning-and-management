@@ -502,9 +502,7 @@ int main(int argc, char* argv[])
     setlinebuf(stdout);
     setlinebuf(stderr);
 
-#ifdef FEATURE_SUPPORT_RDKLOG
-    RDK_LOGGER_INIT();
-#endif
+rdk_logger_init(DEBUG_INI_NAME);
 
 #if defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_BANANAPI_R4_)
 	int id=0;
