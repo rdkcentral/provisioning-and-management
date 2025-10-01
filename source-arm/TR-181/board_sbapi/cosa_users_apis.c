@@ -73,12 +73,17 @@
 #include <openssl/hmac.h>
 #include <syscfg/syscfg.h>
 #include "safec_lib_common.h"
+#include "ccsp_psm_helper.h"
 #if defined(LIBRDKCONFIG_BUILD)
 #include "rdkconfig.h"
 #endif
 #define SIZE_OF_HASHPASSWORD  32
 /* Changing SNO as 256 bytes from 64 bytes due to HAL layer access more than 64 byets*/
 static char SerialNumber[256] = {'\0'};
+
+extern ANSC_HANDLE bus_handle;
+extern char g_Subsystem[32];
+
 #if ( defined _COSA_SIM_ )
 
 COSA_DML_USER  g_users_user[] = 
@@ -565,8 +570,36 @@ user_validatepwd
    int isDefault=0;
    errno_t safec_rc = -1;
    char *v;
+   int retPsmGet = CCSP_SUCCESS;
+   char defaultPassPharse[65];
+   char *strValue = NULL;
+
+   retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem,"eRT.com.cisco.spvtg.ccsp.Device.WiFi.Radio.SSID.1.Passphrase", NULL, &strValue);
+   if (retPsmGet != CCSP_SUCCESS) {
+          CcspTraceWarning(("%s, Returning PSM GET failure rc=%d\n",__FUNCTION__,retPsmGet));
+          return ANSC_STATUS_FAILURE;
+   }
+   else
+   {
+       safec_rc = strcpy_s(defaultPassPharse,sizeof(defaultPassPharse),strValue);
+       if(safec_rc != EOK)
+       {
+          ERR_CHK(safec_rc);
+       }
+       ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+   }
+
    if(!strcmp(pEntry->Username,"admin"))
    {
+#if !defined(_HUB4_PRODUCT_REQ_)
+   //Restrict the webUI login with default weak password
+   if (!strcmp("password",pString))
+   {
+          CcspTraceWarning(("%s, Unset the Hash value is saved to syscfg\n",__FUNCTION__));
+          syscfg_unset(NULL, "hash_password_3");
+          syscfg_commit();
+   }
+#endif
 
    syscfg_get( NULL, "hash_password_3",fromDB, sizeof(fromDB));
 
@@ -583,24 +616,12 @@ user_validatepwd
         else
 #endif /* _RDKB_GLOBAL_PRODUCT_REQ_  */
         {
-            uint8_t *cosabuf=NULL;
-            size_t cosasize;
-            if(rdkconfig_get(&cosabuf, &cosasize, "cosausers"))
-            {
-                CcspTraceWarning(("%s, Extraction failure for cosa value \n",__FUNCTION__));
-                return ANSC_STATUS_FAILURE;
-            }
-            cosabuf[strcspn((const char*)cosabuf, "\n")] = '\0';
-            user_hashandsavepwd(hContext,(char*)cosabuf,pEntry);
-            if (rdkconfig_free(&cosabuf, cosasize)  == RDKCONFIG_FAIL) {
-                CcspTraceWarning(("%s, Memory deallocation for cosa value failed \n",__FUNCTION__));
-            }
+	    user_hashandsavepwd(hContext,defaultPassPharse,pEntry);
         }
 #endif
    }
 #if !defined(_HUB4_PRODUCT_REQ_)
-   //TODO: Avoid the hardcoded password.
-   if (!strcmp("password",pString))
+   if (!strcmp(defaultPassPharse,pString))
    { 
      isDefault=1;
    }
@@ -618,26 +639,21 @@ user_validatepwd
 #if defined(_COSA_FOR_BCI_) && defined(LIBRDKCONFIG_BUILD)
    if(!strcmp(pEntry->Username,"cusadmin"))
    {
+   //Restrict the webUI login with default weak password
+   if (!strcmp("highspeed",pString))
+   {
+          CcspTraceWarning(("%s, Unset the Hash value is saved to syscfg\n",__FUNCTION__));
+          syscfg_unset(NULL, "hash_password_2");
+          syscfg_commit();
+   }
 
    syscfg_get( NULL, "hash_password_2",fromDB, sizeof(fromDB));
 
    if(fromDB[0] == '\0')
    {
-
-	uint8_t *outbuff=NULL;
-        size_t outsize;
-        if(rdkconfig_get(&outbuff, &outsize, "cosausers-cusa"))
-        {
-            CcspTraceWarning(("%s, Extraction failure for cosa value \n",__FUNCTION__));
-            return ANSC_STATUS_FAILURE;
-        }
-        outbuff[strcspn((const char*)outbuff, "\n")] = '\0';
-        user_hashandsavepwd(hContext,(char *)outbuff,pEntry);
-        if (rdkconfig_free(&outbuff, outsize)  == RDKCONFIG_FAIL) {
-           CcspTraceWarning(("%s, Memory deallocation for cosa value failed \n",__FUNCTION__));
-        }
+	user_hashandsavepwd(hContext,defaultPassPharse,pEntry);
    }
-   if (!strcmp("highspeed",pString))
+   if (!strcmp("defaultPassPharse",pString))
    {
      isDefault=1;
    }
@@ -725,8 +741,27 @@ CosaDmlUserResetPassword
 {
    UNREFERENCED_PARAMETER(bValue);
    CcspTraceWarning(("%s, Entered Reset function\n",__FUNCTION__)); 
-   char defPassword[10];
+   char defPassword[65];
+   int retPsmGet = CCSP_SUCCESS;
+   char *strValue = NULL;
    errno_t safec_rc = -1;
+
+   retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem,"eRT.com.cisco.spvtg.ccsp.Device.WiFi.Radio.SSID.1.Passphrase", NULL, &strValue);
+   if (retPsmGet != CCSP_SUCCESS) {
+          CcspTraceWarning(("%s, Returning PSM GET failure rc=%d\n",__FUNCTION__,retPsmGet));
+          return ANSC_STATUS_FAILURE;
+   }
+   else
+   {
+       errno_t safec_rc = -1;
+       safec_rc = strcpy_s(defPassword,sizeof(defPassword),strValue);
+       if(safec_rc != EOK)
+       {
+          ERR_CHK(safec_rc);
+       }
+       ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+   }
+#if 0
    if(!strcmp(pEntry->Username,"admin"))
    {
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_)  || defined(_PLATFORM_BANANAPI_R4_)
@@ -784,6 +819,7 @@ CosaDmlUserResetPassword
    {
      return ANSC_STATUS_FAILURE;
    }
+#endif
    if(!strcmp(pEntry->Username,"admin"))
    {
      user_hashandsavepwd(NULL,defPassword,pEntry);
