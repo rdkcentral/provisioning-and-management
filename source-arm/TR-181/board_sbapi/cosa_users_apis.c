@@ -744,7 +744,6 @@ CosaDmlUserResetPassword
    char defPassword[65];
    int retPsmGet = CCSP_SUCCESS;
    char *strValue = NULL;
-   errno_t safec_rc = -1;
 
    retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem,"eRT.com.cisco.spvtg.ccsp.Device.WiFi.Radio.SSID.1.Passphrase", NULL, &strValue);
    if (retPsmGet != CCSP_SUCCESS) {
