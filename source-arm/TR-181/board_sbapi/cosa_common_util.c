@@ -1225,6 +1225,37 @@ int executeCmd(char *cmd)
     return 0;
 }
 
+int sysctl_iface_set(const char *path, const char *ifname, const char *content)
+{
+    char buf[128];
+    char *filename;
+    size_t len;
+    int fd;
+
+    if (ifname) {
+        if (snprintf(buf, sizeof(buf), path, ifname) >= (int) sizeof(buf))
+            return -1;
+        filename = buf;
+    }
+    else
+        filename = (char *) path;
+
+    if ((fd = open(filename, O_WRONLY)) < 0) {
+        perror("Failed to open file");
+        return -1;
+    }
+
+    len = strlen(content);
+    if (write(fd, content, len) != (ssize_t) len) {
+        perror("Failed to write to file");
+        close(fd);
+        return -1;
+    }
+
+    close(fd);
+
+    return 0;
+}
 
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
 void* RegenerateUla(void *arg)

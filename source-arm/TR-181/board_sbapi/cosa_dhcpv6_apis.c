@@ -8868,7 +8868,7 @@ void enable_IPv6(char* if_name)
 
     	if(tbuff[strlen(tbuff)-1] == '0')
     	{
-            v_secure_system("sysctl -w net.ipv6.conf.%s.autoconf=1",if_name);
+            sysctl_iface_set("/proc/sys/net/ipv6/conf/%s/autoconf", if_name, "1");
 #ifdef CORE_NET_LIB
             interface_down(if_name);
             interface_up(if_name);
