@@ -73,7 +73,7 @@
 #include "ccsp_psm_helper.h"
 #include "dmsb_tr181_psm_definitions.h"
 
-#include "linux/if.h"
+#include <net/if.h>
 #include "linux/sockios.h"
 #include <sys/ioctl.h>
 #include <linux/errno.h>
