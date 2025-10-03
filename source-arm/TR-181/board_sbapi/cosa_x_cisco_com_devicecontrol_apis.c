@@ -2064,6 +2064,8 @@ void* restoreAllDBs(void* arg)
         //voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
         v_secure_system("echo 1 > /data/HFRES_TELCOVOIP;echo 2 > /data/HFRES_TELCOVOICE;");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
+	//Remove region default countrycode file.
+	v_secure_system("rm -rf /nvram/CountryCode");
 #endif
         v_secure_system("mkdir -p /nvram/secure/data/ && touch $_/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
