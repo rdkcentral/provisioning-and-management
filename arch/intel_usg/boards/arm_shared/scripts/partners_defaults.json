@@ -67,7 +67,7 @@
       "Device.Time.NTPServer3" : "time3.xfinity.com",
       "Device.Time.NTPServer4" : "time4.xfinity.com",
       "Device.Time.NTPServer5" : "",
-      "Device.X_RDK_WebConfig.URL" : "https://cpe-config.xdp.comcast.net/api/v1/device/{mac}/config",
+      "Device.X_RDK_WebConfig.URL" : "https://cpe-config.red.xdp.comcast.net/api/v1/device/{mac}/config",
       "Device.X_RDK_WebConfig.SupplementaryServiceUrls.Telemetry" : "https://cpe-profile.xdp.comcast.net/api/v1/device/{mac}/config",
       "Device.X_RDKCENTRAL-COM_Webpa.Server.URL" : "https://fabric.xmidt.comcast.net:8080",
       "Device.X_RDKCENTRAL-COM_Webpa.TokenServer.URL" : "https://issuer.xmidt.comcast.net:8080/issue", 
