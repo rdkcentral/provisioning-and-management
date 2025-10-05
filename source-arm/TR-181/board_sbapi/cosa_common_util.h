@@ -70,13 +70,18 @@
 #include "dmsb_tr181_psm_definitions.h"
 
 #define MAX_EVENT_NAME_LENGTH   32
+#define WEBPA_NOTIFY_QUEUE "/sync_notify_queue"
+#define MAX_QUEUE_SIZE 100
+#define MAX_MSG_SIZE sizeof(arg_struct_t)
+#define PARAM_NAME_LEN 128
+#define VALUE_LEN      128
 
 #if defined (RBUS_WAN_IP)
 typedef struct{
-    char* parameterName;
+    char parameterName[PARAM_NAME_LEN];
     unsigned int writeID;
-    char* newValue;
-    char* oldValue;
+    char newValue[VALUE_LEN];
+    char oldValue[VALUE_LEN];
     enum dataType_e type;
 }arg_struct_t;
 #endif /*RBUS_WAN_IP*/
@@ -193,3 +198,6 @@ void free_args_struct(arg_struct_t *param);
 unsigned char IsThisCurrentPartnerID( const char* pcPartnerID );
 unsigned char IsThisFeatureApplicable( const char* pcFeatureFlag, common_util_InputSourceType  enInputSourceType );
 #endif
+
+void initializeNotificationHandler(void);
+

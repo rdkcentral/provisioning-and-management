@@ -431,7 +431,7 @@ CosaDmlIpInit
     ULONG i;
     for(i = 0; i < COSA_USG_IF_NUM; i++)
     {
-#if defined(_SCER11BEL_PRODUCT_REQ_)
+#if defined(_SCER11BEL_PRODUCT_REQ_) || defined(_SCXF11BFL_PRODUCT_REQ_)
         if(strcmp(G_USG_IF_NAME(i), "erouter0") == 0)
 	{
 	   g_usg_if_cfg[i].LinkType = ( TRUE == IsThisCurrentPartnerID("sky-") ) ? COSA_DML_LINK_TYPE_VlanLink : COSA_DML_LINK_TYPE_EthLink;   

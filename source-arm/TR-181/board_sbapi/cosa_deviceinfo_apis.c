@@ -493,7 +493,7 @@ CosaDmlDiGetManufacturerOUI
 
 }
 
-#if !defined(_SR213_PRODUCT_REQ_) && !defined (_WNXL11BWL_PRODUCT_REQ_) && !defined(_SCER11BEL_PRODUCT_REQ_)
+#if !defined(_SR213_PRODUCT_REQ_) && !defined (_WNXL11BWL_PRODUCT_REQ_) && !defined(_SCER11BEL_PRODUCT_REQ_) && !defined(_SCXF11BFL_PRODUCT_REQ_)
 ANSC_STATUS
 CosaDmlDiGetInActiveFirmware
     (
@@ -618,6 +618,14 @@ CosaDmlDiGetProductClass
 #elif defined(_SCER11BEL_PRODUCT_REQ_)
     {
        rc = strcpy_s(pValue, *pulSize, "XER10");
+       if ( rc != EOK) {
+            ERR_CHK(rc);
+            return ANSC_STATUS_FAILURE;
+        }
+    }
+#elif defined(_SCXF11BFL_PRODUCT_REQ_)
+    {
+       rc = strcpy_s(pValue, *pulSize, "XF10");
        if ( rc != EOK) {
             ERR_CHK(rc);
             return ANSC_STATUS_FAILURE;
@@ -2091,7 +2099,7 @@ CosaDmlDiGetProcessorSpeed
     memset(line, 0, sizeof(line));
 
 #if defined(_COSA_BCM_ARM_) || defined(_COSA_QCA_ARM_)
-#if defined (_SR300_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SR300_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
     if(pValue && pulSize)
     {
         if( ANSC_STATUS_SUCCESS == platform_hal_GetCPUSpeed(pValue) )
@@ -3430,11 +3438,11 @@ void FillPartnerIDValues(cJSON *json , char *partnerID , PCOSA_DATAMODEL_RDKB_UI
 						// For Sky, we need to pull the default login from the /tmp/serial.txt file.
 						FILE *fp = NULL;
 						char DefaultPassword[25] = {0};
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 						fp = popen("grep 'WIFI_PASSWORD' /tmp/serial.txt | cut -d '=' -f 2 | tr -d [:space:]", "r");
 #else
 						fp = popen("grep 'WIFIPASSWORD' /tmp/serial.txt | cut -d '=' -f 2 | tr -d [:space:]", "r");
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ OR _SCXF11BFL_PRODUCT_REQ_ */
 						if (fp == NULL)
 						{
 							CcspTraceWarning(("%s - ERROR Grabbing the default password\n",__FUNCTION__));
