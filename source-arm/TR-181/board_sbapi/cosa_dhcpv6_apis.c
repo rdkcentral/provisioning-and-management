@@ -1160,6 +1160,7 @@ typedef struct ipv6_prefix {
 
 #endif
 
+#ifdef MONITOR_IPV6_NETLINK
 #ifndef ND_OPT_RDNSS
 #define ND_OPT_RDNSS 25
 #endif
@@ -1171,6 +1172,7 @@ struct nd_opt_rdnss {
     uint16_t reserved;
     uint32_t lifetime;
 };
+#endif
 
 
 #if 0
@@ -11276,6 +11278,7 @@ int open_netlink_socket(void)
     return sock;
 }
 
+#ifdef MONITOR_IPV6_NETLINK
 void* monitor_ipv6_assignments(void *arg)
 {
     char *hotspot_wan_ifname = (char *)arg;
@@ -11393,7 +11396,7 @@ void* monitor_ipv6_assignments(void *arg)
     free(hotspot_wan_ifname);
     return NULL;
 }
-
+#endif
 /** Switching  between Primary and Secondary Wan for LTE Backup **/
 void Switch_ipv6_mode(char *ifname, int length)
 {
@@ -11414,6 +11417,7 @@ void Switch_ipv6_mode(char *ifname, int length)
         if(strncmp(ifname,default_wan_ifname,length) != 0)
 #endif
         {
+#ifdef MONITOR_IPV6_NETLINK
 	    pthread_t MonitorIpv6_tid;
             char *hotspotIfname_copy = strdup(hotspot_wan_ifname); // pass to thread
 
@@ -11423,6 +11427,7 @@ void Switch_ipv6_mode(char *ifname, int length)
             } else {
                 pthread_detach(MonitorIpv6_tid); // thread will run independently
             }
+#endif
 
             SwitchToULAIpv6(); //Secondary Wan
             CcspTraceWarning(("%s: Switched to ULA IPv6\n", __FUNCTION__));
