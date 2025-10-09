@@ -100,6 +100,12 @@
 /*#include "cosa_diagnostic_apis.h"*/
 #include "cosa_x_cisco_com_devicecontrol_internal.h"
 
+#if defined(_PLATFORM_IPQ_)
+#errrrripqdefined
+#else
+#errrrrrrrrrrrrrrrrrripqnotdefined
+#endif
+
 #if !defined (RESOURCE_OPTIMIZATION)
 #include "cosa_ipv6rd_internal.h"
 #include "cosa_x_cisco_com_mld_internal.h"
