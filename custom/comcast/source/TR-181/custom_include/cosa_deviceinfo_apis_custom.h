@@ -112,6 +112,7 @@ CosaDmlDiGetRouterMacAddress
         PULONG                      pulSize
     );
 
+#if !defined (NO_MTA_FEATURE_SUPPORT)    
 /*X_COMCAST-COM_MTA_MAC*/
 ANSC_STATUS
 CosaDmlDiGetMTAMacAddress
@@ -120,6 +121,7 @@ CosaDmlDiGetMTAMacAddress
         char*                       pValue,
         PULONG                      pulSize
     );
+#endif
 
 /*X_COMCAST-COM_CM_IP*/
 ANSC_STATUS
@@ -139,6 +141,7 @@ CosaDmlDiGetRouterIPAddress
         PULONG                      pulSize
     );
 
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 /*X_COMCAST-COM_MTA_IP*/
 ANSC_STATUS
 CosaDmlDiGetMTAIPAddress
@@ -158,7 +161,7 @@ CosaDmlDiGetMTAIPV6Address
     );
 
 #endif
-
+#endif
 
 #ifdef CONFIG_CISCO_HOTSPOT
 ANSC_STATUS
