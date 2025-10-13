@@ -1075,6 +1075,7 @@ BOOL tagPermitted(int tag)
 #include <netinet/in.h>
 #endif
 
+#ifdef MONITOR_IPV6_NETLINK
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/netlink.h>
@@ -1082,6 +1083,7 @@ BOOL tagPermitted(int tag)
 #include <unistd.h>
 #include <ifaddrs.h>
 #include <netinet/icmp6.h>
+#endif
 
 #define SYSCFG_FORMAT_DHCP6C "tr_dhcpv6c"
 #define CLIENT_DUID_FILE "/var/lib/dibbler/client-duid"
@@ -11257,6 +11259,7 @@ void SwitchToULAIpv6()
     commonSyseventSet("firewall-restart","");
 }
 
+#ifdef MONITOR_IPV6_NETLINK
 int open_netlink_socket(void)
 {
     int sock = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
@@ -11278,7 +11281,6 @@ int open_netlink_socket(void)
     return sock;
 }
 
-#ifdef MONITOR_IPV6_NETLINK
 void* monitor_ipv6_assignments(void *arg)
 {
     char *hotspot_wan_ifname = (char *)arg;
