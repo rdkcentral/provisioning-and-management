@@ -85,9 +85,15 @@ TEST (FreeArgsStructTest_4, FreeArgsStruct_Test4)
     char newValue[] = "67.164.67.77";
     char oldValue[] = "N.A";
 
-    param->parameterName = strdup(parameterName);
-    param->newValue = strdup(newValue);
-    param->oldValue = strdup(oldValue);
+    
+    strncpy(param->parameterName, parameterName, sizeof(param->parameterName));
+    param->parameterName[sizeof(param->parameterName) - 1] = '\0'; // Ensure null-termination
+
+    strncpy(param->newValue, newValue, sizeof(param->newValue));
+    param->newValue[sizeof(param->newValue) - 1] = '\0';
+
+    strncpy(param->oldValue, oldValue, sizeof(param->oldValue));
+    param->oldValue[sizeof(param->oldValue) - 1] = '\0';
 
     EXPECT_NE(param, nullptr);
     EXPECT_NE(param->parameterName, nullptr);
