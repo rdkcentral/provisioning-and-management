@@ -46,9 +46,14 @@ TEST (FreeArgsStructTest_2, FreeArgsStruct_Test2)
     memset(param, 0, sizeof(arg_struct_t));
     char parameterName[] = "Device.DeviceInfo.X_COMCAST-COM_WAN_IP";
 
-    param->parameterName = strdup(parameterName);
-    param->newValue = nullptr;
-    param->oldValue = nullptr;
+    strncpy(param->parameterName, parameterName, sizeof(param->parameterName));
+    param->parameterName[sizeof(param->parameterName) - 1] = '\0'; // Ensure null-termination
+
+    strncpy(param->newValue, newValue, sizeof(param->newValue));
+    param->newValue[sizeof(param->newValue) - 1] = '\0';
+
+    strncpy(param->oldValue, oldValue, sizeof(param->oldValue));
+    param->oldValue[sizeof(param->oldValue) - 1] = '\0';
 
     EXPECT_NE(param, nullptr);
     EXPECT_NE(param->parameterName, nullptr);
@@ -65,9 +70,14 @@ TEST (FreeArgsStructTest_3, FreeArgsStruct_Test3)
     char parameterName[] = "Device.DeviceInfo.X_COMCAST-COM_WAN_IP";
     char newValue[] = "67.164.67.77";
 
-    param->parameterName = strdup(parameterName);
-    param->newValue = strdup(newValue);
-    param->oldValue = nullptr;
+    strncpy(param->parameterName, parameterName, sizeof(param->parameterName));
+    param->parameterName[sizeof(param->parameterName) - 1] = '\0'; // Ensure null-termination
+
+    strncpy(param->newValue, newValue, sizeof(param->newValue));
+    param->newValue[sizeof(param->newValue) - 1] = '\0';
+
+    strncpy(param->oldValue, oldValue, sizeof(param->oldValue));
+    param->oldValue[sizeof(param->oldValue) - 1] = '\0';
 
     EXPECT_NE(param, nullptr);
     EXPECT_NE(param->parameterName, nullptr);
@@ -85,7 +95,6 @@ TEST (FreeArgsStructTest_4, FreeArgsStruct_Test4)
     char newValue[] = "67.164.67.77";
     char oldValue[] = "N.A";
 
-    
     strncpy(param->parameterName, parameterName, sizeof(param->parameterName));
     param->parameterName[sizeof(param->parameterName) - 1] = '\0'; // Ensure null-termination
 
