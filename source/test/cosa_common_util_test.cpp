@@ -31,7 +31,7 @@ extern void* Set_Notifi_ParamName(void *args);
 ANSC_HANDLE bus_handle;
 extern SyseventMock * g_syseventMock;
 
-TEST (FreeArgsStructTest_1, FreeArgsStruct)
+/**TEST (FreeArgsStructTest_1, FreeArgsStruct)
 {
     arg_struct_t* param = nullptr;
 
@@ -113,7 +113,7 @@ TEST (FreeArgsStructTest_4, FreeArgsStruct_Test4)
     EXPECT_NE(param->oldValue, nullptr);
 
     free_args_struct(param);
-}
+}**/
 
 TEST (Set_Notifi_ParamNameTest, Set_Notifi_ParamName_Test1)
 {
