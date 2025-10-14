@@ -45,7 +45,9 @@ TEST (FreeArgsStructTest_2, FreeArgsStruct_Test2)
     arg_struct_t* param = (arg_struct_t*)malloc(sizeof(arg_struct_t));
     memset(param, 0, sizeof(arg_struct_t));
     char parameterName[] = "Device.DeviceInfo.X_COMCAST-COM_WAN_IP";
-
+    char newValue[] = "192.168.0.1";
+    char oldValue[] = "N.A";
+    
     strncpy(param->parameterName, parameterName, sizeof(param->parameterName));
     param->parameterName[sizeof(param->parameterName) - 1] = '\0'; // Ensure null-termination
 
@@ -69,6 +71,7 @@ TEST (FreeArgsStructTest_3, FreeArgsStruct_Test3)
     memset(param, 0, sizeof(arg_struct_t));
     char parameterName[] = "Device.DeviceInfo.X_COMCAST-COM_WAN_IP";
     char newValue[] = "67.164.67.77";
+    char oldValue[] = "N.A";
 
     strncpy(param->parameterName, parameterName, sizeof(param->parameterName));
     param->parameterName[sizeof(param->parameterName) - 1] = '\0'; // Ensure null-termination
