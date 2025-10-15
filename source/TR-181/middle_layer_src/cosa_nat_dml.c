@@ -279,9 +279,6 @@ NAT_GetParamUlongValue
     PCOSA_DML_NAT                   pNat         = &pMyObject->Nat;
 
     CosaDmlNatGet(NULL, pNat);
-#if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
-    int nports=0;
-#endif
 
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "X_CISCO_COM_TCPTimeout") == 0)
@@ -311,25 +308,20 @@ NAT_GetParamUlongValue
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
     if (strcmp(ParamName, "X_RDK_NumberActiveIPv4TcpInternalPorts") == 0)
     {
-       nports=0;
-       CosaDmlNatGetActiveIPv4TcpInternalPorts(&nports);
-       *puLong = nports;
-
+        *puLong = count_unique_ports("tcp");
        return TRUE; 
     }
        
     if (strcmp(ParamName, "X_RDK_NumberActiveIPv4UdpInternalPorts") == 0)
     {
-       nports=0;
-       CosaDmlNatGetActiveIPv4UdpInternalPorts(&nports);
-       *puLong = nports;
-
+       *puLong = count_unique_ports("udp");
        return TRUE;        
     }
 #endif
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
+
 
 /**********************************************************************
 
@@ -382,8 +374,24 @@ NAT_GetParamStringValue
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(pValue);
     UNREFERENCED_PARAMETER(pUlSize);
-    /* check the parameter name and return the corresponding value */
+    #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
+    /* check the parameter name and return the corresponding value */
+    int ret;
+    if (strcmp(ParamName, "X_RDK_ActiveIPv4Tcp_TotalPorts_UsagePerc") == 0)
+    {
+        /* collect value */
+        ret = GetTotalPortsUsagePerc("tcp", pValue, pUlSize);
+        return ret;
+    }
+
+    if (strcmp(ParamName, "X_RDK_ActiveIPv4Udp_TotalPorts_UsagePerc") == 0)
+    {
+        /* collect value */
+        ret = GetTotalPortsUsagePerc("udp", pValue, pUlSize);
+        return ret;
+    }
+    #endif
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return -1;
 }
