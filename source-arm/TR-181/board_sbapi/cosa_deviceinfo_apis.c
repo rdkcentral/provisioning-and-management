@@ -2800,11 +2800,7 @@ void *CosaDmlDiPartnerIDChangeHandling( __attribute__((unused)) void* buff )
 {
 
     CCSP_MESSAGE_BUS_INFO *bus_info 		  = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
-#if !defined (NO_MTA_FEATURE_SUPPORT)    
 	parameterValStruct_t param_val[ 1 ] 	  = {{ "Device.X_CISCO_COM_DeviceControl.FactoryReset", "Router,Wifi,VoIP,Dect,MoCA", ccsp_string }};
-#else	
-	parameterValStruct_t param_val[ 1 ] 	  = {{ "Device.X_CISCO_COM_DeviceControl.FactoryReset", "Router,Wifi,Dect,MoCA", ccsp_string }};
-#endif	
 	char 				*pComponentName = "eRT.com.cisco.spvtg.ccsp.pam";
 	char 				*pComponentPath = "/com/cisco/spvtg/ccsp/pam";
 	char				*faultParam 		  = NULL;
@@ -4503,11 +4499,7 @@ void* RebootDevice_thread(void* buff)
 {
 	char pValue[128],source_str[64];
 	char* source = NULL;
-#if !defined (NO_MTA_FEATURE_SUPPORT)	
 	int router, wifi, voip, dect, moca, all;
-#else
-        int router, wifi, dect, moca, all;
-#endif	
     int delay_time = 0;
 	errno_t rc = -1;
 
@@ -4520,23 +4512,17 @@ void* RebootDevice_thread(void* buff)
 		ERR_CHK(rc);
 		free(buff);		
 	}
-#if !defined (NO_MTA_FEATURE_SUPPORT)
-    router = wifi = voip = dect = moca = all = 0;
-#else
-   router = wifi = dect = moca = all = 0; 
-#endif
 
+    router = wifi = voip = dect = moca = all = 0;
     if (strcasestr(pValue, "Router")) {
         router = 1;
     }
     if (strcasestr(pValue, "Wifi")) {
         wifi = 1;
     }
-#if !defined (NO_MTA_FEATURE_SUPPORT)    
     if (strcasestr(pValue, "VoIP")) {
         voip = 1;
     }
-#endif    
     if (strcasestr(pValue, "Dect")) {
         dect = 1;
     }
@@ -4566,20 +4552,12 @@ void* RebootDevice_thread(void* buff)
 	}
 
 	CcspTraceInfo(("reboot source - %s\n",source_str));
-
-#if !defined (NO_MTA_FEATURE_SUPPORT)	
+	
 	if(!router && !wifi && !voip && !dect && !moca && !all){
-#else
-         if(!router && !wifi && !dect && !moca && !all){
-#endif 		 
 		all = 1;
 	}
-
-#if !defined (NO_MTA_FEATURE_SUPPORT) 	 
+	
     if (router && wifi && voip && dect && moca) {
-#else
-    if (router && wifi && dect && moca) {
-#endif	    
         all = 1;
     }
 	
@@ -4646,12 +4624,11 @@ void* RebootDevice_thread(void* buff)
 		pthread_t tid;
 		pthread_create(&tid, NULL, &CosaDmlDcRebootWifi, NULL);
     }
-#if !defined (NO_MTA_FEATURE_SUPPORT)    
+    
     if (voip) {
         fprintf(stderr, "VoIP is going to reboot\n");
         // TODO: 
     }
-#endif    
     if (dect) {
         fprintf(stderr, "Dect is going to reboot\n");
         // TODO: 
@@ -4777,11 +4754,11 @@ CosaDmlDi_ValidateRebootDeviceParam( char *pValue )
 	if (strcasestr(pValue, "Wifi")) {
 		IsActionValid = TRUE;
 	}
-#if !defined (NO_MTA_FEATURE_SUPPORT)
+
 	if (strcasestr(pValue, "VoIP")) {
 		IsActionValid = TRUE;
 	}
-#endif
+
 	if (strcasestr(pValue, "Dect")) {
 		IsActionValid = TRUE;
 	}

@@ -1741,29 +1741,19 @@ CosaDmlDcSetRebootDevice
     )
 {
     UNREFERENCED_PARAMETER(hContext);
-#if !defined (NO_MTA_FEATURE_SUPPORT)    
     int router, wifi, voip, dect, moca, all, delay;
-#else
-    int router, wifi, dect, moca, all, delay;    
-#endif    
     int delay_time = 0;
 
-#if !defined (NO_MTA_FEATURE_SUPPORT)
     router = wifi = voip = dect = moca = all = delay = 0;
-#else
-    router = wifi = dect = moca = all = delay = 0;
-#endif    
     if (strstr(pValue, "Router") != NULL) {
         router = 1;
     }
     if (strstr(pValue, "Wifi") != NULL) {
         wifi = 1;
     }
-#if !defined (NO_MTA_FEATURE_SUPPORT)    
     if (strstr(pValue, "VoIP") != NULL) {
         voip = 1;
     }
-#endif    
     if (strstr(pValue, "Dect") != NULL) {
         dect = 1;
     }
@@ -1780,11 +1770,7 @@ CosaDmlDcSetRebootDevice
         delay_time = atoi(strstr(pValue, "delay=") + strlen("delay="));
     }
 
-#if !defined (NO_MTA_FEATURE_SUPPORT)    
     if (router && wifi && voip && dect && moca) {
-#else 
-    if (router && wifi && dect && moca) {
-#endif	    
         all = 1;
     }
 
@@ -1922,13 +1908,11 @@ CosaDmlDcSetRebootDevice
 	CcspTraceWarning(("RebootDevice:CosaDmlDcRebootWifi thread called to reboot WiFi\n"));
    	pthread_create(&tid, NULL, &CosaDmlDcRebootWifi, NULL);
     }
-
-#if !defined (NO_MTA_FEATURE_SUPPORT)    
+    
     if (voip) {
         fprintf(stderr, "VoIP is going to reboot\n");
         // TODO: 
     }
-#endif    
     if (dect) {
         fprintf(stderr, "Dect is going to reboot\n");
         // TODO: 
@@ -2323,11 +2307,7 @@ CosaDmlDcSetFactoryReset
 				factory_reset_mask |= FR_WIFI;
 			} else if(strcmp("Firewall", tok) == 0) {
 				factory_reset_mask |= FR_FW;
-#if !defined (NO_MTA_FEATURE_SUPPORT)				
 			} else if(strcmp("VoIP", tok) == 0 || strcmp("Docsis", tok) == 0) {
-#else
-			} else if(strcmp("Docsis", tok) == 0) {
-#endif				
 				factory_reset_mask |= FR_OTHER;
 #if defined(FEATURE_RDKB_CELLULAR_MANAGER)
                         } else if(strcmp("Cellular", tok) == 0) {
