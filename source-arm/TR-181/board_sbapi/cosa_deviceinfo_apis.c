@@ -639,6 +639,14 @@ CosaDmlDiGetProductClass
             return ANSC_STATUS_FAILURE;
         }
     }
+#elif defined(_XB9_PRODUCT_REQ_)
+    {
+        rc = strcpy_s(pValue, *pulSize, "XB9");
+        if ( rc != EOK) {
+            ERR_CHK(rc);
+            return ANSC_STATUS_FAILURE;
+        }
+    }
 #elif defined(_XB10_PRODUCT_REQ_)
     {
         rc = strcpy_s(pValue, *pulSize, "XB10");
