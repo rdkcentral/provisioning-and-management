@@ -5806,11 +5806,13 @@ static int ssmtp_send(const char *msgFilePath, const char *subject, const char *
     //copy recipient address from msg file
     fgets(buf, sizeof(buf), fp);
     fclose(fp);
-    /* CID 162725 Buffer not null terminated : fix */
+    /* CID 162725 fix - Buffer not null terminated */
     strncpy(recipient, buf + strlen("To: "), sizeof(recipient)-1 );
+    recipient[sizeof(recipient) - 1] = '\0';  /* CID 162725 fix - Buffer not null terminated */
 
-    /* CID 162725 fix */
+    /* CID 162725 fix - Buffer not null terminated */
     strncpy(attachmentPathCopy, attachmentPath, (sizeof(attachmentPathCopy)-1));
+    attachmentPathCopy[sizeof(attachmentPathCopy) - 1] = '\0';  /* CID 162725 fix - Buffer not null terminated */
   
     v_secure_system( "(((cat %s; echo 'Subject: %s'; echo; echo; uuencode %s %s) | ssmtp %s) && rm %s) &", msgFilePath, subject, attachmentPath, basename(attachmentPathCopy), recipient, attachmentPath);
 
