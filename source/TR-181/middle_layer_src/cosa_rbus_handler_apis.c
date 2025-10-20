@@ -881,10 +881,12 @@ rbusError_t getStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusG
     if (0 == strcmp(name,MANAGE_WIFI_LAN_BRIDGE))
     {
         snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aBridgeName);
+        aParamVal[BUFF_LEN_64 - 1] = '\0';  /* CID 347175 fix - String not null terminated */
     }
     else if (0 == strcmp(name, MANAGE_WIFI_INTERFACES))
     {
         snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aWiFiInterfaces);
+        aParamVal[BUFF_LEN_64 - 1] = '\0';  /* CID 347175 fix - String not null terminated */
     }
     else
     {
