@@ -2050,6 +2050,7 @@ void* restoreAllDBs(void* arg)
 #endif
 
 #if  defined (_XB10_PRODUCT_REQ_)
+     v_secure_system("rm -f /nvram/.psm_disable_ethwan_selection"); 
      v_secure_system("rm -f /nvram/ethwan_interface"); 
      v_secure_system("rm -f /nvram/ETHWAN_ENABLE"); 
      v_secure_system("syscfg set selected_wan_mode 2");
