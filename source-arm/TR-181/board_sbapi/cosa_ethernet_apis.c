@@ -112,11 +112,7 @@
 #include "linux/sockios.h"
 #include <sys/ioctl.h>
 
-#ifdef ARRIS_XB3_PLATFORM_CHANGES
-#include "rdk_cm_api_arris.h"
-#else
 #include "linux/if.h"
-#endif
 
 #ifdef CORE_NET_LIB
 #include <libnet.h>
