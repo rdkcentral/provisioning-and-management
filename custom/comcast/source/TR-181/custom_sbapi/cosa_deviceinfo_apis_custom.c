@@ -247,6 +247,7 @@ CosaDmlDiGetRouterMacAddress
     return ANSC_STATUS_SUCCESS;
 }
 
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 /*X_COMCAST-COM_MTA_MAC*/
 ANSC_STATUS
 CosaDmlDiGetMTAMacAddress
@@ -265,6 +266,7 @@ CosaDmlDiGetMTAMacAddress
     return ANSC_STATUS_FAILURE;
 #endif
 }
+#endif
 
 /*X_COMCAST-COM_WAN_IP*/
 ANSC_STATUS
@@ -377,6 +379,7 @@ CosaDmlDiGetRouterIPv6Address
     return ANSC_STATUS_SUCCESS;
 }
 
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 /*X_COMCAST-COM_MTA_IP*/
 ANSC_STATUS
 CosaDmlDiGetMTAIPAddress
@@ -408,6 +411,7 @@ CosaDmlDiGetMTAIPV6Address
     UNREFERENCED_PARAMETER(hContext);
     return Local_CosaDmlGetParamValueByPathName("Device.X_CISCO_COM_MTA_V6.IPV6Address", pValue, pulSize);
 }
+#endif
 
 /*X_COMCAST-COM_CM_IP*/
 ANSC_STATUS

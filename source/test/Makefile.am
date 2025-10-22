@@ -54,7 +54,7 @@ CcspPandMSsp_gtest_bin_CPPFLAGS = -I$(PKG_CONFIG_SYSROOT_DIR)$(includedir)/gtest
                                   -DRDKB_EXTENDER_ENABLED \
                                   -DFEATURE_SUPPORT_SPEED_BOOST \
                                   -DWAN_FAILOVER_SUPPORTED \
-                                  -DCONFIG_INTERNET2P0
+                                  -DCONFIG_INTERNET2P0 
 
 CcspPandMSsp_gtest_bin_SOURCES = pandmssp_mock.cpp \
                                  $(top_srcdir)/source-arm/TR-181/board_sbapi/cosa_common_util.c \
@@ -65,12 +65,14 @@ CcspPandMSsp_gtest_bin_SOURCES = pandmssp_mock.cpp \
                                  ${top_srcdir}/source/TR-181/middle_layer_src/webui_webconfig_apis.c \
                                  ${top_srcdir}/source/TR-181/middle_layer_src/webui_webconfig_dml.c \
                                  ${top_srcdir}/custom/comcast/source/TR-181/custom_ml/cosa_deviceinfo_dml_custom.c \
+                                 ${top_srcdir}/source/TR-181/middle_layer_src/cosa_routing_dml.c \
                                  rbus_handler_test.cpp \
                                  cosa_common_util_test.cpp \
                                  speedBoostWebconfigApisGtest.cpp \
                                  speedBoostDocGtest.cpp \
                                  webuiWebConfigGtest.cpp \
                                  cosa_deviceinfo_dml_custom_test.cpp \
+                                 cosa_routing_dml_test.cpp \
                                  mocks/rbushandler_mock.cpp \
                                  mocks/speedboostSchedulerApisMock.cpp \
                                  mocks/speedboostRbusHandlersMock.cpp \
@@ -79,9 +81,10 @@ CcspPandMSsp_gtest_bin_SOURCES = pandmssp_mock.cpp \
                                  mocks/cosaDeviceInfoApisMock.cpp \
                                  mocks/cosaDeviceInfoApisCustomMock.cpp \
                                  mocks/parodusInterfaceMock.cpp \
-                                 gtest_main.cpp
+				 mocks/cosa_routing_dml_mock.cpp \
+                                 gtest_main.cpp 
 
-CcspPandMSsp_gtest_bin_LDFLAGS = -lgtest -lgmock -lgcov
+CcspPandMSsp_gtest_bin_LDFLAGS = -lgtest -lgmock -lgcov -lrt
 
 CcspPandMSsp_gtest_bin_LDADD = $(HOME)/usr/local/lib/libmock_ccsp_common.la \
                                $(HOME)/usr/local/lib/libmock_rbus.la \

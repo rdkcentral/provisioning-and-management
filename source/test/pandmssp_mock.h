@@ -43,6 +43,7 @@
 #include <mocks/mock_ansc_memory.h>
 #include <mocks/mock_base64.h>
 #include <mocks/mock_msgpack.h>
+#include <mocks/mock_ansc_wrapper_api.h>
 
 class PandMSSPTestFixture : public ::testing::Test {
   protected:

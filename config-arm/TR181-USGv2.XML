@@ -675,6 +675,7 @@
 
         </parameter>
 <?endif?>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
         <parameter>
     
           <name>X_COMCAST-COM_MTA_MAC</name>
@@ -703,6 +704,7 @@
           <syntax>string</syntax>
                                                  
         </parameter>
+<?endif?>
         <parameter>
           <name>X_COMCAST-COM_AP_MAC</name>  
           <type>string(64)</type>
@@ -15135,12 +15137,16 @@
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                        </parameter>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
+                        <parameter>
         			<name>HomeUser_Mta_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                        </parameter>
+<?endif?>
+                         <parameter>
         			<name>HomeUser_WanRG_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
@@ -15155,12 +15161,16 @@
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+			</parameter>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
+                        <parameter>
         			<name>CusAdmin_Mta_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                        </parameter>
+<?endif?>
+                        <parameter>
         			<name>CusAdmin_WanRG_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
@@ -15175,12 +15185,16 @@
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                         </parameter>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
+                         <parameter>
         			<name>AdvUser_Mta_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                         </parameter>
+<?endif?>
+                         <parameter>
         			<name>AdvUser_WanRG_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
