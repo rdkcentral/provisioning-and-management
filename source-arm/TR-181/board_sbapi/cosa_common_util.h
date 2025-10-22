@@ -192,6 +192,9 @@ void * EvtDispterEventHandler(void *arg);
 int EvtDispterCheckEvtStatus(int fd, token_t token);
 /*Create a thread to handle the sysevent asynchronously*/
 void EvtDispterHandleEventAsync(void);
+
+int sysctl_iface_set(const char *path, const char *ifname, const char *content);
+
 #if defined (RBUS_WAN_IP)
 void free_args_struct(arg_struct_t *param);
 #endif
