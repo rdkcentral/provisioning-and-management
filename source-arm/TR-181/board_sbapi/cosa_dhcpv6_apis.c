@@ -2973,11 +2973,7 @@ static int _write_dibbler_sent_option_file(void)
         for (i=0; i<g_sent_option_num; i++)
         {
             if (g_sent_options[i].bEnabled)
-#if !defined(_64BIT_ARCH_SUPPORT_)
-                    fprintf(fp, "%lu:%d:%s\n",
-#else
                     fprintf(fp, "%lu:%zu:%s\n",
-#endif
                         g_sent_options[i].Tag,
                         strlen((const char*)g_sent_options[i].Value)/2,
                         g_sent_options[i].Value);
@@ -5508,6 +5504,7 @@ void __cosa_dhcpsv6_refresh_config()
                     CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
                 }
 
+                fprintf(fp, "   subnet %s\n", prefixValue);
                 fprintf(fp, "   class {\n");
 
 #ifdef CONFIG_CISCO_DHCP6S_REQUIREMENT_FROM_DPC3825
@@ -11003,11 +11000,7 @@ dhcpv6c_dbg_thrd(void * in)
                             if (strlen(globalIP2) != 0 )
                             {
                                 g_dhcpv6s_refresh_count = bRestartLan;
-#if !defined(_64BIT_ARCH_SUPPORT_)
-				CcspTraceWarning(("%s: g_dhcpv6s_refresh_count %ld, globalIP2 is %s, strlen is %d\n", __func__, g_dhcpv6s_refresh_count,globalIP2,strlen(globalIP2)));
-#else
 				CcspTraceWarning(("%s: g_dhcpv6s_refresh_count %ld, globalIP2 is %s, strlen is %zu\n", __func__, g_dhcpv6s_refresh_count,globalIP2,strlen(globalIP2)));
-#endif
 			    }
 
                             rc = strcpy_s(globalIP2, sizeof(globalIP2), globalIP);

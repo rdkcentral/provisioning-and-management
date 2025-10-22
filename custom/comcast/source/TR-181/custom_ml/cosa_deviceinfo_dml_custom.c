@@ -337,7 +337,7 @@ DeviceInfo_GetParamStringValue_Custom
 	   CosaDmlDiGetRouterMacAddress(NULL, pValue,pulSize);
 	   return 0;
 	}
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "X_COMCAST-COM_MTA_MAC") == 0)
 	{
 #if !defined(_PLATFORM_RASPBERRYPI_) && !defined(_PLATFORM_TURRIS_) && !defined(_PLATFORM_BANANAPI_R4_)
@@ -345,7 +345,7 @@ DeviceInfo_GetParamStringValue_Custom
 #endif
 	   return 0;
 	}
-
+#endif
 	if (strcmp(ParamName, "X_COMCAST-COM_CM_IP") == 0)
 	{
         	if( EthWANEnable )
@@ -380,7 +380,7 @@ DeviceInfo_GetParamStringValue_Custom
            #endif
 	   return 0;
 	}
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "X_COMCAST-COM_MTA_IP") == 0)
 	{
 #if !defined(_PLATFORM_RASPBERRYPI_) && !defined(_PLATFORM_TURRIS_) && !defined(_PLATFORM_BANANAPI_R4_)
@@ -397,7 +397,7 @@ DeviceInfo_GetParamStringValue_Custom
 	   return 0;
 	}
 #endif
-
+#endif
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return -1;
 }

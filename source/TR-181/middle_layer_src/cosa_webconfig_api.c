@@ -207,7 +207,7 @@ int setBlobVersion (char *subdoc, uint32_t version)
 void webConfigFrameworkInit()
 {
 #if defined (FEATURE_RDKB_DHCP_MANAGER)
-	char *sub_docs[SUBDOC_COUNT+1]= {"portforwarding","wan","hotspot","connectedbuilding","xmspeedboost","webui",(char *) 0 };
+	char *sub_docs[SUBDOC_COUNT+1]= {"portforwarding","wan","lan","hotspot","connectedbuilding","xmspeedboost","webui",(char *) 0 };
 #else
 	char *sub_docs[SUBDOC_COUNT+1]= {"portforwarding","wan","macbinding","lan","hotspot","connectedbuilding","xmspeedboost","webui",(char *) 0 };
 #endif
@@ -450,11 +450,7 @@ int set_portmap_conf(portmappingdoc_t *rpm)
     	int pfr_count = 0;
     	char alias_pre[8];
         errno_t  rc   = -1;
-#if !defined(_64BIT_ARCH_SUPPORT_)
-    	printf("Port map entries %d\n",rpm->entries_count);
-#else
         printf("Port map entries %zu\n",rpm->entries_count);
-#endif
     	//printf("SinglePortForwardCount = %d\n", rpm->entries_count);
     	//count = rpm->entries_count + 1;
     	for(i = 1,j =0; i < rpm->entries_count+1; i++, j++ )
@@ -704,11 +700,7 @@ pErr Process_PF_WebConfigRequest(void *Data)
     	portmappingdoc_t *rpm = (portmappingdoc_t *) Data ;
 
 
-#if !defined(_64BIT_ARCH_SUPPORT_)
-        CcspTraceWarning(("rpm->entries_count is %d\n", rpm->entries_count));
-#else
         CcspTraceWarning(("rpm->entries_count is %zu\n", rpm->entries_count));
-#endif
     	CcspTraceWarning(("Portmap configurartion recieved\n"));
 
 
