@@ -182,7 +182,9 @@ int fwSync = 0;
 #include "syscfg/syscfg.h"
 
 #include "platform_hal.h"
+#ifndef PON_GATEWAY
 #include "cm_hal.h"
+#endif
 
 #define HTTPD_CONF      "/var/lighttpd.conf"
 #define HTTPD_DEF_CONF  "/etc/lighttpd.conf"
@@ -401,9 +403,166 @@ SaveWebServConf(const WebServConf_t *conf)
 
     if (UtSetUlong(sysCfghttpPort, conf->httpport) != ANSC_STATUS_SUCCESS)
         return -1;
+
     if (UtSetUlong("mgmt_wan_httpsport", conf->httpsport) != ANSC_STATUS_SUCCESS)
         return -1;
+    return 0;
+}
 
+bool IsPortOverlapWithPFPorts(int mgmtport)
+{
+    CcspTraceInfo(("%s %d - Entry mgmtport=%d\n",__FUNCTION__,__LINE__, mgmtport));
+    char pfcount[8] = {0};
+    char query[32] = {0};
+    char namespace[32] = {0};
+
+    syscfg_get( NULL, "PortRangeForwardCount", pfcount, sizeof(pfcount));
+    CcspTraceInfo(("%s %d - PortRangeForwardCount=%s \n",__FUNCTION__,__LINE__,pfcount));
+    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
+      namespace[0] = '\0';
+      snprintf(query, sizeof(query), "PortRangeForward_%d", idx);
+      int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
+      if (0 != rc || '\0' == namespace[0]) {
+         continue;
+      }
+      query[0] = '\0';
+      rc = syscfg_get(namespace, "enabled", query, sizeof(query));
+      if (0 != rc || '\0' == query[0]) {
+         continue;
+      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+        CcspTraceDebug(("%s %d- PFR namespace Not enabled \n",__FUNCTION__,__LINE__));
+        continue;
+      }
+      char sdport[10];
+      char edport[10];
+      char portrange[30];
+      portrange[0]='\0';
+      sdport[0] = '\0';
+      edport[0] = '\0';
+      rc = syscfg_get(namespace, "external_port_range", portrange, sizeof(portrange));
+      if (0 != rc || '\0' == portrange[0]) {
+         continue;
+      } else {
+         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+            continue;
+         }
+      }
+      if (atoi(sdport) <= mgmtport && mgmtport <= atoi(edport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PFR External ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+      rc = syscfg_get(namespace, "internal_port", sdport, sizeof(sdport));
+      rc |= syscfg_get(namespace, "internal_port_range_size", portrange, sizeof(portrange));
+      int edport_i = atoi(sdport) + atoi(portrange);
+      CcspTraceInfo(("%s %d- PFR End port=%d \n",__FUNCTION__,__LINE__, edport_i));
+      if (0 != rc || '\0' == sdport[0]) {
+         continue;
+      }
+      if (atoi(sdport) <= mgmtport && mgmtport <= edport_i)
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PFR internal ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+    }
+
+    memset(pfcount,0, sizeof(pfcount));
+    memset(query,0, sizeof(query));
+    memset(namespace,0, sizeof(namespace));
+    syscfg_get( NULL, "SinglePortForwardCount", pfcount, sizeof(pfcount));
+    CcspTraceInfo(("%s %d- SPF count=%s \n",__FUNCTION__,__LINE__,pfcount));
+    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
+      namespace[0] = '\0';
+      snprintf(query, sizeof(query), "SinglePortForward_%d", idx);
+      int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
+      if (0 != rc || '\0' == namespace[0]) {
+         continue;
+      }
+      query[0] = '\0';
+      rc = syscfg_get(namespace, "enabled", query, sizeof(query));
+      if (0 != rc || '\0' == query[0]) {
+         continue;
+      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+        CcspTraceDebug(("%s %d- SPF namespace Not enabled \n",__FUNCTION__,__LINE__));
+        continue;
+      }
+      char extport[10];
+      char intport[10];
+      extport[0] = '\0';
+      intport[0] = '\0';
+      rc = syscfg_get(namespace, "external_port", extport, sizeof(extport));
+      rc |= syscfg_get(namespace, "internal_port", intport, sizeof(intport));
+      if (0 != rc || '\0' == extport[0] || '\0' == intport[0]) {
+         continue;
+      }
+      if (atoi(extport) == mgmtport || mgmtport == atoi(intport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with SPF internal or external port \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+    }
+    CcspTraceInfo(("%s %d - Exit\n",__FUNCTION__,__LINE__));
+    return 0;
+}
+
+bool IsPortOverlapWithPTPorts(int mgmtport)
+{
+    CcspTraceInfo(("%s %d - Entry mgmtport=%d\n",__FUNCTION__,__LINE__, mgmtport));
+    char pfcount[8] = {0};
+    char query[32] = {0};
+    char namespace[32] = {0};
+
+    syscfg_get( NULL, "PortRangeTriggerCount", pfcount, sizeof(pfcount));
+    CcspTraceInfo(("%s %d - PortRangeTriggerCount=%s \n",__FUNCTION__,__LINE__,pfcount));
+    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
+      namespace[0] = '\0';
+      snprintf(query, sizeof(query), "PortRangeTrigger_%d", idx);
+      int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
+      if (0 != rc || '\0' == namespace[0]) {
+         continue;
+      }
+      query[0] = '\0';
+      rc = syscfg_get(namespace, "enabled", query, sizeof(query));
+      if (0 != rc || '\0' == query[0]) {
+         continue;
+      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+        continue;
+      }
+      char sdport[10];
+      char edport[10];
+      char portrange[30];
+      portrange[0]='\0';
+      sdport[0] = '\0';
+      edport[0] = '\0';
+      rc = syscfg_get(namespace, "trigger_range", portrange, sizeof(portrange));
+      if (0 != rc || '\0' == portrange[0]) {
+         continue;
+      } else {
+         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+            continue;
+         }
+      }
+      CcspTraceInfo(("%s %d- PT trigger_range start=%s end=%s \n",__FUNCTION__,__LINE__, sdport,edport));
+      if (atoi(sdport) <= mgmtport && mgmtport <= atoi(edport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PT ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+      rc = syscfg_get(namespace, "forward_range", portrange, sizeof(portrange));
+      if (0 != rc || '\0' == portrange[0]) {
+         continue;
+      } else {
+         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+            continue;
+         }
+      }
+      CcspTraceInfo(("%s %d- PT forward_range start=%s end=%s \n",__FUNCTION__,__LINE__, sdport,edport));
+      if (atoi(sdport) <= mgmtport && mgmtport <= atoi(edport))
+      {
+          CcspTraceInfo(("%s %d- mgmtport over laps with PT ports \n",__FUNCTION__,__LINE__));
+          return 1;
+      }
+    }
     return 0;
 }
 
@@ -707,7 +866,7 @@ CosaDmlDcGetWanStaticIPAddress
 ANSC_STATUS 
 CosaDmlDcSetReInitCmMac ()
 {
-
+#ifndef PON_GATEWAY
     if(cm_hal_ReinitMac() == 0)
     {
        return ANSC_STATUS_SUCCESS;
@@ -716,7 +875,8 @@ CosaDmlDcSetReInitCmMac ()
     {
        return ANSC_STATUS_FAILURE;
     }
-    
+#endif
+    return ANSC_STATUS_FAILURE;
 }
 ANSC_STATUS
 CosaDmlDcGetWanStaticSubnetMask
@@ -2178,10 +2338,7 @@ CosaDmlDcSetFactoryReset
 #endif
 
 #if defined(_SR213_PRODUCT_REQ_) || defined(FEATURE_RDKB_LED_MANAGER_FACTORY_RESET)
-               if( (factory_reset_mask & FR_ROUTER) ||
-                   (factory_reset_mask & FR_WIFI) ||
-                   (factory_reset_mask & FR_FW) ||
-                   (factory_reset_mask & FR_OTHER) ) {
+               if( (factory_reset_mask & FR_ROUTER) ) {
                     CcspTraceInfo(("LED Transition: GREEN LED will blink, Reason: Factory Reset\n"));
                     sysevent_led_fd = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "FactoryResetHandler", &sysevent_led_token);
                     if(sysevent_led_fd != -1)
@@ -2312,6 +2469,10 @@ CosaDmlDcSetFactoryReset
             CcspTraceWarning(("X_CISCO_SECURITY: Error in initializing context!!! \n" ));
             return ANSC_STATUS_FAILURE;
         }
+        fw.allow_ipsec_passthru = 1;
+        fw.allow_pptp_passthru = 1;
+        fw.allow_l2tp_passthru = 1;
+        fw.allow_ssl_passthru = 1;
         fw.filter_ident = 0;
         fw.filter_multicast = 0;
         fw.filter_anon_req = 0;

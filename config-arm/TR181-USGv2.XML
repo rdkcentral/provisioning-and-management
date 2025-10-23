@@ -675,6 +675,7 @@
 
         </parameter>
 <?endif?>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
         <parameter>
     
           <name>X_COMCAST-COM_MTA_MAC</name>
@@ -703,6 +704,7 @@
           <syntax>string</syntax>
                                                  
         </parameter>
+<?endif?>
         <parameter>
           <name>X_COMCAST-COM_AP_MAC</name>  
           <type>string(64)</type>
@@ -3918,6 +3920,22 @@
                                 </parameter>
                             </parameters>
                         </object>
+                        <object>
+                            <name>NIM</name>
+                            <objectType>object</objectType>
+                            <functions>
+                                <func_GetParamBoolValue>NIM_GetParamBoolValue</func_GetParamBoolValue>
+                                <func_SetParamBoolValue>NIM_SetParamBoolValue</func_SetParamBoolValue>
+                            </functions>
+                            <parameters>
+                                <parameter>
+                                    <name>Enable</name>
+                                    <type>boolean</type>
+                                    <syntax>bool</syntax>
+                                    <writable>true</writable>
+                                </parameter>
+                            </parameters>
+                        </object>
 <?endif?>
 <?ifdef FEATURE_RDKB_NFC_MANAGER?>
                         <object>
@@ -4588,7 +4606,7 @@
 
             <name>LogInterval</name>
 
-            <type>int[300:3600]</type>
+            <type>int[60:3600]</type>
 
             <syntax>int</syntax>
 
@@ -9647,6 +9665,25 @@
           <writable>false</writable>
 
         </parameter>
+        <parameter>
+          <name>X_RDK_ActiveIPv4Tcp_TotalPorts_UsagePerc</name>
+
+          <type>string</type>
+
+          <syntax>string</syntax>
+
+          <writable>false</writable>
+        </parameter>
+        <parameter>
+
+          <name>X_RDK_ActiveIPv4Udp_TotalPorts_UsagePerc</name>
+
+          <type>string</type>
+
+          <syntax>string</syntax>
+
+          <writable>false</writable>
+        </parameter>  
 <?endif?>
 
         <parameter>
@@ -15100,12 +15137,16 @@
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                        </parameter>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
+                        <parameter>
         			<name>HomeUser_Mta_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                        </parameter>
+<?endif?>
+                         <parameter>
         			<name>HomeUser_WanRG_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
@@ -15120,12 +15161,16 @@
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+			</parameter>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
+                        <parameter>
         			<name>CusAdmin_Mta_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                        </parameter>
+<?endif?>
+                        <parameter>
         			<name>CusAdmin_WanRG_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
@@ -15140,12 +15185,16 @@
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                         </parameter>
+<?ifndef NO_MTA_FEATURE_SUPPORT?>
+                         <parameter>
         			<name>AdvUser_Mta_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>
         			<writable>true</writable>
-        		</parameter><parameter>
+                         </parameter>
+<?endif?>
+                         <parameter>
         			<name>AdvUser_WanRG_Level</name>
         			<type>int[-1:]</type>
         			<syntax>int</syntax>

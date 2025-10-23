@@ -1286,7 +1286,12 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
             CcspTraceWarning(("Port already in use\n"));
             return FALSE;
         }
-        if((uValue >= START_HTTPPORT) && (uValue <= END_HTTPPORT))
+
+	//check if the http port is overlap with PT or PF
+        if (IsPortOverlapWithPFPorts(uValue) || IsPortOverlapWithPTPorts(uValue))
+            return FALSE;
+
+	if((uValue >= START_HTTPPORT) && (uValue <= END_HTTPPORT))
         {
             pMyObject->HTTPPort = uValue;
             pMyObject->WebServerChanged = TRUE;
@@ -1303,6 +1308,11 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
             CcspTraceWarning(("Port already in use\n"));
             return FALSE;
         }
+
+	//check if the https port is overlap with PT or PF
+        if (IsPortOverlapWithPFPorts(uValue) || IsPortOverlapWithPTPorts(uValue))
+            return FALSE;
+
         if((uValue >= START_HTTPPORT) && (uValue <= END_HTTPPORT))
         {
             pMyObject->HTTPSPort = uValue;
@@ -2519,12 +2529,12 @@ WebAccessLevel_GetParamIntValue
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 1, 2, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
     }
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "HomeUser_Mta_Level") == 0)
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 1, 16, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
     }
-
+#endif
 	if (strcmp(ParamName, "HomeUser_WanRG_Level") == 0)
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 1, 40, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
@@ -2539,12 +2549,12 @@ WebAccessLevel_GetParamIntValue
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 5, 2, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
     }
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "CusAdmin_Mta_Level") == 0)
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 5, 16, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
     }
-
+#endif
 	if (strcmp(ParamName, "CusAdmin_WanRG_Level") == 0)
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 5, 40, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
@@ -2559,12 +2569,12 @@ WebAccessLevel_GetParamIntValue
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 10, 2,(ULONG*)pInt) == ANSC_STATUS_SUCCESS);
     }
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "AdvUser_Mta_Level") == 0)
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 10, 16, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
     }
-
+#endif	
 	if (strcmp(ParamName, "AdvUser_WanRG_Level") == 0)
     {
         return (CosaDmlDcGetWebAccessLevel(NULL, 10, 40, (ULONG*)pInt) == ANSC_STATUS_SUCCESS);
@@ -2643,11 +2653,12 @@ WebAccessLevel_SetParamIntValue
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 1, 2, iValue) == ANSC_STATUS_SUCCESS);
     }
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "HomeUser_Mta_Level") == 0)
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 1, 16, iValue) == ANSC_STATUS_SUCCESS);
     }
+#endif	
 
 	if (strcmp(ParamName, "HomeUser_WanRG_Level") == 0)
     {
@@ -2663,12 +2674,12 @@ WebAccessLevel_SetParamIntValue
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 5, 2, iValue) == ANSC_STATUS_SUCCESS);
     }
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "CusAdmin_Mta_Level") == 0)
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 5, 16, iValue) == ANSC_STATUS_SUCCESS);
     }
-
+#endif
 	if (strcmp(ParamName, "CusAdmin_WanRG_Level") == 0)
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 5, 40, iValue) == ANSC_STATUS_SUCCESS);
@@ -2683,12 +2694,12 @@ WebAccessLevel_SetParamIntValue
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 10, 2, iValue) == ANSC_STATUS_SUCCESS);
     }
-
+#if !defined (NO_MTA_FEATURE_SUPPORT)
 	if (strcmp(ParamName, "AdvUser_Mta_Level") == 0)
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 10, 16, iValue) == ANSC_STATUS_SUCCESS);
     }
-
+#endif
 	if (strcmp(ParamName, "AdvUser_WanRG_Level") == 0)
     {
         return (CosaDmlDcSetWebAccessLevel(NULL, 10, 40, iValue) == ANSC_STATUS_SUCCESS);

@@ -81,6 +81,7 @@
 #include "dml_tr181_custom_cfg.h"
 #include "safec_lib_common.h"
 #include "secure_wrapper.h"
+#include "syscfg/syscfg.h"
 
 #ifdef _BWG_PRODUCT_REQ_
 //CGWTDETS-8800 : Usable Statics will no longer support 1-1 NAT :: START
@@ -294,7 +295,6 @@ CosaDmlNatInit
     )
 {
     g_nat_pportmapping_callback = pValueGenFn;
-
     return ANSC_STATUS_SUCCESS;
 
 }
@@ -1292,6 +1292,96 @@ CosaDmlNatGetLanIP
 
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+
+
+#define SYSEVENT_MAPT_TOTAL_PORTS "mapt_total_ports"
+#define SYSEVENT_MAPT_CONFIG_FLAG "mapt_config_flag"
+#define MAX_PORTS 65536    // max port number
+
+// Count unique dports from conntrack output
+int count_unique_ports(const char *proto) {
+    char line[512];
+    CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
+
+  //  snprintf(cmd, sizeof(cmd), "conntrack -L -p %s 2>/dev/null", proto);
+    FILE * fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null", proto);
+
+    if (!fp) return 0;
+
+    int ports[MAX_PORTS] = {0};
+    int unique_count = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        char *tok = strtok(line, " ");
+        int dport = -1;
+        int count = 0;
+        while (tok != NULL) {
+            if (strncmp(tok, "dport=", 6) == 0) {
+                count++;
+                if (count == 2) { // second dport = destination port
+                    dport = atoi(tok + 6);
+                    break;
+                }
+            }
+            tok = strtok(NULL, " ");
+        }
+        if (dport > 0 && dport < MAX_PORTS) {
+            if (!ports[dport]) { ports[dport] = 1; unique_count++; }
+        }
+    }
+    v_secure_pclose(fp);
+    CcspTraceDebug(("Exiting %s...\n", __FUNCTION__));
+
+    return unique_count;
+}
+
+int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
+{
+    CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
+    char buf[64] = {0};
+    size_t size = sizeof(buf);
+    memset(buf, 0, sizeof(buf));
+    commonSyseventGet(SYSEVENT_MAPT_CONFIG_FLAG, buf, size);
+    CcspTraceDebug(("MAP-T config flag: %s\n", buf));
+    if ( strcmp(buf, "set") == 0 )
+    {
+        memset(buf, 0, sizeof(buf));
+        commonSyseventGet(SYSEVENT_MAPT_TOTAL_PORTS, buf, size);
+        int total_ports = atoi(buf);
+        if (total_ports == 0) 
+        {
+            CcspTraceWarning(("MAP-T total ports not set\n"));
+            return -1;
+        }
+        int active_ports = count_unique_ports(protocol);
+        int pct = total_ports ? active_ports * 100 / total_ports : 0;
+        snprintf(pValue, *pUlSize, "%d|%d|%d",active_ports,total_ports,pct);
+
+        CcspTraceInfo(("MAP-T Port Usage | Protocol: %s | Total Ports: %d | Active Ports: %d | Utilization: %d%%\n",
+            protocol, total_ports, active_ports, pct));
+
+        if ( pct >= 100 )
+        {
+            if ( strcmp(protocol, "tcp") == 0 )
+            {
+                CcspTraceError(("MAP-T: Active TCP Ports Fully Used\n"));
+            }
+            else if ( strcmp(protocol, "udp") == 0 )
+            {
+                CcspTraceError(("MAP-T: Active UDP Ports Fully Used\n"));
+            }                
+        } 
+        return 0;
+    }
+    else
+    {
+        CcspTraceDebug(("MAP-T not configured\n"));
+        return -1;
+    }
+    CcspTraceDebug(("Exiting %s...\n", __FUNCTION__));
+    return 0;    
+}
+
 /**********************************************************************
 
     caller:     self
@@ -1769,6 +1859,7 @@ ANSC_STATUS _Update_TriggerEnable(UtopiaContext   *pCtx, boolean_t enabled){
 
 int _Check_PF_parameter(PCOSA_DML_NAT_PMAPPING pPortMapping)
 {      
+    CcspTraceInfo(("%s Entry \n", __FUNCTION__));
     if( pPortMapping->PublicIP.Value == 0 &&
         ((pPortMapping->ExternalPort == 0) || 
          (pPortMapping->ExternalPortEndRange < pPortMapping->ExternalPort) ||
@@ -1790,10 +1881,17 @@ int _Check_PF_parameter(PCOSA_DML_NAT_PMAPPING pPortMapping)
         return FALSE;
     }
 
+    if( IsPortOverlapWithManagementAccess(pPortMapping->ExternalPort,pPortMapping->ExternalPortEndRange))
+    {
+        CcspTraceDebug(("%s Mgmt port Overlaps from start port=%d to end port=%d\n", __FUNCTION__, pPortMapping->ExternalPort,pPortMapping->ExternalPortEndRange));
+        return FALSE;
+    }
+
 #if defined (SPEED_BOOST_SUPPORTED)
     if( IsPortOverlapWithSpeedboostPortRange(pPortMapping->ExternalPort, pPortMapping->ExternalPortEndRange, pPortMapping->InternalPort , pPortMapping->InternalPort))
         return FALSE;
 #endif
+    CcspTraceInfo(("%s Exit \n", __FUNCTION__));
 
     return TRUE;
 }
@@ -1801,6 +1899,7 @@ int _Check_PF_parameter(PCOSA_DML_NAT_PMAPPING pPortMapping)
 
 int _Check_PT_parameter(PCOSA_DML_NAT_PTRIGGER pPortTrigger)
 {
+    CcspTraceInfo(("%s Entry \n", __FUNCTION__));
     /* Check parameter setting */
     if( (pPortTrigger->TriggerProtocol > 3 || pPortTrigger->TriggerProtocol < 1) ||
         (pPortTrigger->TriggerPortStart == 0) || 
@@ -1819,12 +1918,77 @@ int _Check_PT_parameter(PCOSA_DML_NAT_PTRIGGER pPortTrigger)
         return FALSE;
     }
 
+    if( (IsPortOverlapWithManagementAccess(pPortTrigger->TriggerPortStart, pPortTrigger->TriggerPortEnd)) ||
+          (IsPortOverlapWithManagementAccess(pPortTrigger->ForwardPortStart, pPortTrigger->ForwardPortEnd)))
+    {
+        CcspTraceDebug(("%s: Mgmt port overlaps with trgr port start =%d to end=%d\n", __FUNCTION__, pPortTrigger->TriggerPortStart,pPortTrigger->TriggerPortEnd));
+        CcspTraceDebug(("%s: Mgmt port overlaps with frwd port start =%d to end=%d\n", __FUNCTION__, pPortTrigger->ForwardPortStart, pPortTrigger->ForwardPortEnd));
+        return FALSE;
+    }
 #if defined (SPEED_BOOST_SUPPORTED)
     if( IsPortOverlapWithSpeedboostPortRange(pPortTrigger->TriggerPortStart, pPortTrigger->TriggerPortEnd , pPortTrigger->ForwardPortStart, pPortTrigger->ForwardPortEnd))
         return FALSE;
 #endif
+    CcspTraceInfo(("%s Exit \n", __FUNCTION__));
 
     return TRUE;
+}
+
+/*
+- *  Procedure     : IsPortOverlapWithManagementAccess
+- *  Purpose       : check if ExternalPort ranges are overlap with management UI access ports
+- *  Parameters    :
+- *    fp          : External port ranges from PF or PT user defined
+- *  Return        :
+- *    TRUE        : PF/PT port ranges are overlapping with webui management ports
+- *    FALSE       : management access not enabled or PF/PT ports are not overlapping with management UI
+- *
+- */
+
+int IsPortOverlapWithManagementAccess(int PortStart, int PortEndRange)
+{
+    CcspTraceInfo(("%s Entry Port Start =%d and End=%d\n", __FUNCTION__,PortStart,PortEndRange));
+    char mgmt_wan_access[8]={0};
+    char mgmt_wan_httpaccess[8]={0};
+    char mgmt_wan_httpsaccess[8]={0};
+    char mgmt_wan_httpport[16]={0};
+    char mgmt_wan_httpsport[16]={0};
+
+    int rc = syscfg_get( NULL, "mgmt_wan_access" , mgmt_wan_access , sizeof( mgmt_wan_access ) ) ;
+
+    if (rc == 0 && (0 == strcmp("1", mgmt_wan_access) || 0 == strcasecmp("true", mgmt_wan_access)))
+    {
+#if defined(CONFIG_CCSP_WAN_MGMT_ACCESS)
+    char sysCfghttpAccess[30] = "mgmt_wan_httpaccess_ert";
+    char syscfghttpPort[30] = "mgmt_wan_httpport_ert";
+#else
+    char sysCfghttpAccess[30] = "mgmt_wan_httpaccess";
+    char syscfghttpPort[30] = "mgmt_wan_httpport";
+#endif
+       rc = syscfg_get( NULL, sysCfghttpAccess , mgmt_wan_httpaccess , sizeof( mgmt_wan_httpaccess ) );
+       rc |= syscfg_get( NULL, syscfghttpPort , mgmt_wan_httpport , sizeof( mgmt_wan_httpport ) );
+       if (rc == 0 && (0 == strcmp("1", mgmt_wan_httpaccess) || 0 == strcasecmp("true", mgmt_wan_httpaccess)))
+       {
+          if (PortStart <= atoi(mgmt_wan_httpport) && atoi(mgmt_wan_httpport) <= PortEndRange)
+          {
+             CcspTraceError((" Port is overlapping with management http port, exit from %s\n", __FUNCTION__));
+             return TRUE;
+          }
+       }
+
+       rc = syscfg_get( NULL, "mgmt_wan_httpsaccess" , mgmt_wan_httpsaccess , sizeof( mgmt_wan_httpsaccess ) );
+       rc |= syscfg_get( NULL, "mgmt_wan_httpsport" , mgmt_wan_httpsport , sizeof( mgmt_wan_httpsport ) );
+       if (rc == 0 && (0 == strcmp("1", mgmt_wan_httpsaccess) || 0 == strcasecmp("true", mgmt_wan_httpsaccess)))
+       {
+          if (PortStart <= atoi(mgmt_wan_httpsport) && atoi(mgmt_wan_httpsport) <= PortEndRange)
+          {
+             CcspTraceError((" Port is overlapping with management https port, exit from %s\n", __FUNCTION__));
+             return TRUE;
+          }
+       }
+    }
+    CcspTraceInfo(("%s Exit \n", __FUNCTION__));
+    return FALSE;
 }
 
 #if defined (SPEED_BOOST_SUPPORTED)

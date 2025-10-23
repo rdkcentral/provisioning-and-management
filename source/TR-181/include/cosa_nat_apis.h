@@ -67,7 +67,8 @@
 #include "cosa_apis.h"
 #include "cosa_nat_apis_custom.h"
 
-
+#include "cosa_drg_common.h"
+#include <telemetry_busmessage_sender.h>
 
 #define COSA_NAT_SYSCFG_NAMESPACE "CosaNAT"
 #define COSA_NAT_ID_SYSCFG_NAMESPACE COSA_NAT_SYSCFG_NAMESPACE"IDs"
@@ -393,6 +394,8 @@ CosaDmlNatChkPortMappingMaxRuleNum(PCOSA_DML_NAT_PMAPPING pEntry);
 
 void CosaDmlNatDelDynPortMappings (void);
 
+int IsPortOverlapWithManagementAccess(int PortStart, int PortEndRange);
+
 #if defined (SPEED_BOOST_SUPPORTED)
 int
 IsPortOverlapWithSpeedboostPortRange(int ExternalPort, int ExternalPortEndRange, int InternalPort , int InternalPortend);
@@ -412,5 +415,9 @@ CosaDmlNatGetActiveIPv4TcpInternalPorts
     (
         int*                       nports        
     );
+
+int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize);
+int count_unique_ports(const char *proto) ;
+
 #endif
 #endif
