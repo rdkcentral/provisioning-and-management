@@ -96,7 +96,7 @@ checkForWanFailOver()
 			echo_t "Network Response: checkForWanFailOver : enabled"
 			return 1
 		elif [[ "x$HS_Interface_Available_Status" != "x" ]]
-                then
+		then
 			#Hotspot wan interface is available
 			echo_t "Network Response: checkForWanFailOver : enabled"
 			return 1
