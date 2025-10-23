@@ -295,7 +295,6 @@ CosaDmlNatInit
     )
 {
     g_nat_pportmapping_callback = pValueGenFn;
-
     return ANSC_STATUS_SUCCESS;
 
 }
@@ -1293,6 +1292,96 @@ CosaDmlNatGetLanIP
 
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+
+
+#define SYSEVENT_MAPT_TOTAL_PORTS "mapt_total_ports"
+#define SYSEVENT_MAPT_CONFIG_FLAG "mapt_config_flag"
+#define MAX_PORTS 65536    // max port number
+
+// Count unique dports from conntrack output
+int count_unique_ports(const char *proto) {
+    char line[512];
+    CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
+
+  //  snprintf(cmd, sizeof(cmd), "conntrack -L -p %s 2>/dev/null", proto);
+    FILE * fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null", proto);
+
+    if (!fp) return 0;
+
+    int ports[MAX_PORTS] = {0};
+    int unique_count = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        char *tok = strtok(line, " ");
+        int dport = -1;
+        int count = 0;
+        while (tok != NULL) {
+            if (strncmp(tok, "dport=", 6) == 0) {
+                count++;
+                if (count == 2) { // second dport = destination port
+                    dport = atoi(tok + 6);
+                    break;
+                }
+            }
+            tok = strtok(NULL, " ");
+        }
+        if (dport > 0 && dport < MAX_PORTS) {
+            if (!ports[dport]) { ports[dport] = 1; unique_count++; }
+        }
+    }
+    v_secure_pclose(fp);
+    CcspTraceDebug(("Exiting %s...\n", __FUNCTION__));
+
+    return unique_count;
+}
+
+int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
+{
+    CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
+    char buf[64] = {0};
+    size_t size = sizeof(buf);
+    memset(buf, 0, sizeof(buf));
+    commonSyseventGet(SYSEVENT_MAPT_CONFIG_FLAG, buf, size);
+    CcspTraceDebug(("MAP-T config flag: %s\n", buf));
+    if ( strcmp(buf, "set") == 0 )
+    {
+        memset(buf, 0, sizeof(buf));
+        commonSyseventGet(SYSEVENT_MAPT_TOTAL_PORTS, buf, size);
+        int total_ports = atoi(buf);
+        if (total_ports == 0) 
+        {
+            CcspTraceWarning(("MAP-T total ports not set\n"));
+            return -1;
+        }
+        int active_ports = count_unique_ports(protocol);
+        int pct = total_ports ? active_ports * 100 / total_ports : 0;
+        snprintf(pValue, *pUlSize, "%d|%d|%d",active_ports,total_ports,pct);
+
+        CcspTraceInfo(("MAP-T Port Usage | Protocol: %s | Total Ports: %d | Active Ports: %d | Utilization: %d%%\n",
+            protocol, total_ports, active_ports, pct));
+
+        if ( pct >= 100 )
+        {
+            if ( strcmp(protocol, "tcp") == 0 )
+            {
+                CcspTraceError(("MAP-T: Active TCP Ports Fully Used\n"));
+            }
+            else if ( strcmp(protocol, "udp") == 0 )
+            {
+                CcspTraceError(("MAP-T: Active UDP Ports Fully Used\n"));
+            }                
+        } 
+        return 0;
+    }
+    else
+    {
+        CcspTraceDebug(("MAP-T not configured\n"));
+        return -1;
+    }
+    CcspTraceDebug(("Exiting %s...\n", __FUNCTION__));
+    return 0;    
+}
+
 /**********************************************************************
 
     caller:     self

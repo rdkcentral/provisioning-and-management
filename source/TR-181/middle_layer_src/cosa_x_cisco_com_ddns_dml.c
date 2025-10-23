@@ -1687,11 +1687,7 @@ Service_SetParamStringValue
         }
         else
         {
-#if !defined(_64BIT_ARCH_SUPPORT_)
-            CcspTraceWarning(("'%s' value should be less than (%d) charecters\n", ParamName, sizeof(pDdnsService->AssociatedConnection) ));
-#else
             CcspTraceWarning(("'%s' value should be less than (%zu) charecters\n", ParamName, sizeof(pDdnsService->AssociatedConnection) ));
-#endif
             return FALSE;
         }
     }
@@ -1710,11 +1706,7 @@ Service_SetParamStringValue
         }
         else
         {
-#if !defined(_64BIT_ARCH_SUPPORT_)
-            CcspTraceWarning(("'%s' value should be less than (%d) charecters\n", ParamName, sizeof(pDdnsService->Alias) ));
-#else
             CcspTraceWarning(("'%s' value should be less than (%zu) charecters\n", ParamName, sizeof(pDdnsService->Alias) ));
-#endif
             return FALSE;
         }
 
@@ -1734,11 +1726,7 @@ Service_SetParamStringValue
         }
         else
         {
-#if !defined(_64BIT_ARCH_SUPPORT_)
-            CcspTraceWarning(("'%s' value should be less than (%d) charecters\n", ParamName, sizeof(pDdnsService->Domain) ));
-#else
             CcspTraceWarning(("'%s' value should be less than (%zu) charecters\n", ParamName, sizeof(pDdnsService->Domain) ));
-#endif
             return FALSE;
         }
     }
@@ -1757,11 +1745,7 @@ Service_SetParamStringValue
         }
         else
         {
-#if !defined(_64BIT_ARCH_SUPPORT_)
-            CcspTraceWarning(("'%s' value should be less than (%d) charecters\n", ParamName, sizeof(pDdnsService->Password) ));
-#else
             CcspTraceWarning(("'%s' value should be less than (%zu) charecters\n", ParamName, sizeof(pDdnsService->Password) ));
-#endif
             return FALSE;
         }
     }
@@ -1780,11 +1764,7 @@ Service_SetParamStringValue
         }
         else
         {
-#if !defined(_64BIT_ARCH_SUPPORT_)
-            CcspTraceWarning(("'%s' value should be less than (%d) charecters\n", ParamName, sizeof(pDdnsService->Username) ));
-#else
             CcspTraceWarning(("'%s' value should be less than (%zu) charecters\n", ParamName, sizeof(pDdnsService->Username) ));
-#endif
             return FALSE;
         }
     }
@@ -1803,11 +1783,7 @@ Service_SetParamStringValue
         }
         else
         {
-#if !defined(_64BIT_ARCH_SUPPORT_)
-            CcspTraceWarning(("'%s' value should be less than (%d) charecters\n", ParamName, sizeof(pDdnsService->Mail_exch) ));
-#else
             CcspTraceWarning(("'%s' value should be less than (%zu) charecters\n", ParamName, sizeof(pDdnsService->Mail_exch) ));
-#endif
             return FALSE;
         }
     }

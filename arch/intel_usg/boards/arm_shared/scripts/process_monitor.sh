@@ -23,6 +23,7 @@ export DBUS_SYSTEM_BUS_ADDRESS=unix:path=/var/run/dbus/system_bus_socket
 
 source /etc/utopia/service.d/log_env_var.sh
 source /lib/rdk/t2Shared_api.sh
+source /etc/device.properties
 
 SUBSYSLOCATION="/usr/ccsp"
 rebootNeeded=0
@@ -150,7 +151,7 @@ do
 		fi
 	fi
 
-	
+if [ "$MODEL_NUM" != "CWA438TCOM" ]; then	
 	# Checking MTA's PID
 	MTA_PID=`pidof CcspMtaAgentSsp`
 	if [ "$MTA_PID" = "" ]; then
@@ -159,6 +160,7 @@ do
 		/usr/bin/CcspMtaAgentSsp -subsys $Subsys
 		cd ..
 	fi
+fi	
 
 	# Checking CM's PID
 	CM_PID=`pidof CcspCMAgentSsp`
