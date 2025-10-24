@@ -2338,7 +2338,7 @@ CosaDmlDcSetFactoryReset
 #endif
 
 #if defined(_SR213_PRODUCT_REQ_) || defined(FEATURE_RDKB_LED_MANAGER_FACTORY_RESET)
-               if( (factory_reset_mask & FR_ROUTER) {
+               if( (factory_reset_mask & FR_ROUTER) ) {
                     CcspTraceInfo(("LED Transition: GREEN LED will blink, Reason: Factory Reset\n"));
                     sysevent_led_fd = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "FactoryResetHandler", &sysevent_led_token);
                     if(sysevent_led_fd != -1)
