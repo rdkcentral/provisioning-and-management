@@ -3754,7 +3754,7 @@ void _cosa_dhcpsv6_refresh_config()
     Fail when return 1
     Succeed when return 0
 */
-static int CosaDmlDHCPv6sGetDNS(char *Dns, char *output, int outputLen)
+int CosaDmlDHCPv6sGetDNS(char *Dns, char *output, int outputLen)
 {
     char oneDns[64]  = {0};
     int  len         = _ansc_strlen(Dns);
@@ -3801,7 +3801,7 @@ int format_dibbler_option(char *option)
     return 0;
 }
 
-static int remove_single_quote (char *buf)
+int remove_single_quote (char *buf)
 {
   int i = 0;
   int j = 0;
