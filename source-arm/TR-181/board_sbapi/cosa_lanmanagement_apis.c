@@ -90,7 +90,7 @@ extern  ANSC_HANDLE  bus_handle;
 extern void* g_pDslhDmlAgent;
 extern ANSC_HANDLE bus_handle;
 extern int commonSyseventFd ;
-extern int commonSyseventToken;
+extern token_t commonSyseventToken;
 
 COSA_DML_LANMANAGEMENT_CFG    g_LanMngmCfg = {0};
 

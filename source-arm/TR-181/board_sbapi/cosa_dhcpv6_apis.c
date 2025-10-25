@@ -1075,6 +1075,16 @@ BOOL tagPermitted(int tag)
 #include <netinet/in.h>
 #endif
 
+#ifdef MONITOR_IPV6_NETLINK
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <unistd.h>
+#include <ifaddrs.h>
+#include <netinet/icmp6.h>
+#endif
+
 #define SYSCFG_FORMAT_DHCP6C "tr_dhcpv6c"
 #define CLIENT_DUID_FILE "/var/lib/dibbler/client-duid"
 #define SERVER_DUID_FILE "/var/lib/dibbler/server-duid"
@@ -1151,6 +1161,21 @@ typedef struct ipv6_prefix {
 } ipv6_prefix_t;
 
 #endif
+
+#ifdef MONITOR_IPV6_NETLINK
+#ifndef ND_OPT_RDNSS
+#define ND_OPT_RDNSS 25
+#endif
+
+/* Minimal definition of RDNSS option (RFC 8106) */
+struct nd_opt_rdnss {
+    uint8_t  nd_opt_type;
+    uint8_t  nd_opt_len;
+    uint16_t reserved;
+    uint32_t lifetime;
+};
+#endif
+
 
 #if 0
 
@@ -9425,6 +9450,25 @@ void UnSetV6RouteFromTable(char* ifname , char* route_addr,int metric_val, int t
 #define MESH_WAN_WAN_IPV6ADDR "MeshWANInterface_UlaAddr"
 #define MESH_REMWAN_WAN_IPV6ADDR "MeshRemoteWANInterface_UlaAddr"
 
+#define HOTSPOT_WAN_IFNAME "dmsb.wanmanager.if.3.Name"
+
+void getHotSpotWanIfName(char *wanmgr_ifname,int size)
+{
+    char* val=NULL;
+    if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, HOTSPOT_WAN_IFNAME, NULL, &val) != CCSP_SUCCESS )
+    {
+        return;
+    }
+    if (val)
+    {
+        snprintf(wanmgr_ifname,size,"%s",val);
+        ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(val);
+
+    }
+    CcspTraceWarning(("%s :WAN Mgr IfName is (%s)\n", __FUNCTION__,wanmgr_ifname));
+    return;
+}
+
 void getMeshWanIfName(char *mesh_wan_ifname,int size)
 {
     char* val=NULL;
@@ -11208,6 +11252,146 @@ void SwitchToULAIpv6()
     commonSyseventSet("firewall-restart","");
 }
 
+#ifdef MONITOR_IPV6_NETLINK
+int open_netlink_socket(void)
+{
+    int sock = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+    if (sock < 0) {
+        perror("socket");
+        return -1;
+    }
+
+    struct sockaddr_nl addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.nl_family = AF_NETLINK;
+    addr.nl_groups = RTMGRP_IPV6_IFADDR; // Listen to IPv6 address changes
+
+    if (bind(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        perror("bind");
+        close(sock);
+        return -1;
+    }
+    return sock;
+}
+
+void* monitor_ipv6_assignments(void *arg)
+{
+    char *hotspot_wan_ifname = (char *)arg;
+
+    CcspTraceWarning((" Entering %s line:%d for ifname:%s\n", __FUNCTION__, __LINE__, hotspot_wan_ifname));
+
+    int sock = open_netlink_socket();
+    if (sock < 0) {
+        free(hotspot_wan_ifname);
+        return NULL;
+    }
+
+    char buf[8192];  // larger buffer for RA options
+    char sysEventName[256];
+    struct iovec iov = { buf, sizeof(buf) };
+    struct sockaddr_nl sa;
+    struct msghdr msg = { &sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
+
+    // ---- internal accumulator for all DNS servers in one RA ----
+    char dns_accumulator[1024];
+
+    while (1) {
+        ssize_t len = recvmsg(sock, &msg, 0);
+        if (len <= 0) continue;
+
+        struct nlmsghdr *nh;
+        for (nh = (struct nlmsghdr*)buf; NLMSG_OK(nh, len); nh = NLMSG_NEXT(nh, len)) {
+            if (nh->nlmsg_type == NLMSG_DONE) break;
+            if (nh->nlmsg_type == NLMSG_ERROR) continue;
+
+            /* ---- 1. Handle IPv6 address assignments ---- */
+            if (nh->nlmsg_type == RTM_NEWADDR) {
+                struct ifaddrmsg *ifa = NLMSG_DATA(nh);
+                if (ifa->ifa_family != AF_INET6) continue;
+
+                char ifname[IF_NAMESIZE];
+                if_indextoname(ifa->ifa_index, ifname);
+
+                if (strcmp(ifname, hotspot_wan_ifname) == 0) {
+                    struct rtattr *rta = (struct rtattr*)IFA_RTA(ifa);
+                    int rtl = IFA_PAYLOAD(nh);
+                    char ipv6_addr[INET6_ADDRSTRLEN];
+
+                    for (; RTA_OK(rta, rtl); rta = RTA_NEXT(rta, rtl)) {
+                        if (rta->rta_type == IFA_ADDRESS) {
+                            inet_ntop(AF_INET6, RTA_DATA(rta), ipv6_addr, sizeof(ipv6_addr));
+
+                            if (strncmp(ipv6_addr, "fe80", 4) != 0) { // skip link-local
+                                CcspTraceWarning((" Global IPv6 assigned on %s: %s/%d\n",
+                                    ifname, ipv6_addr, ifa->ifa_prefixlen));
+
+                                memset(sysEventName, 0, sizeof(sysEventName));
+                                snprintf(sysEventName, sizeof(sysEventName),
+                                         COSA_DML_WANIface_ADDR_SYSEVENT_NAME, hotspot_wan_ifname);
+                                commonSyseventSet(sysEventName, ipv6_addr);
+                            }
+                        }
+                    }
+                }
+            }
+
+	    /* ---- 2. Handle Router Advertisements with RDNSS (DNS) ---- */
+            else if (nh->nlmsg_type == RTM_NEWNDUSEROPT) {
+                struct nduseroptmsg *ndmsg = NLMSG_DATA(nh);
+                int ifindex = ndmsg->nduseropt_ifindex;
+
+                char ifname[IF_NAMESIZE];
+                if_indextoname(ifindex, ifname);
+
+                if (strcmp(ifname, hotspot_wan_ifname) == 0) {
+                    int optlen = NLMSG_PAYLOAD(nh, sizeof(*ndmsg));
+                    unsigned char *opt = (unsigned char *)(ndmsg + 1);
+
+                    // reset accumulator at start of new RA
+                    dns_accumulator[0] = '\0';
+
+                    while (optlen > 0) {
+                        struct nd_opt_hdr *hdr = (struct nd_opt_hdr *)opt;
+                        if (hdr->nd_opt_len == 0) break; // avoid infinite loop
+
+                        if (hdr->nd_opt_type == ND_OPT_RDNSS) {
+                            struct nd_opt_rdnss *rdnss = (struct nd_opt_rdnss *)opt;
+                            int addr_count = (hdr->nd_opt_len * 8 - sizeof(*rdnss)) / sizeof(struct in6_addr);
+                            struct in6_addr *addr = (struct in6_addr *)(rdnss + 1);
+
+                            for (int i = 0; i < addr_count; i++) {
+                                char dns[INET6_ADDRSTRLEN];
+                                inet_ntop(AF_INET6, &addr[i], dns, sizeof(dns));
+
+                                if (strlen(dns_accumulator) > 0) {
+                                    strncat(dns_accumulator, " ", sizeof(dns_accumulator) - strlen(dns_accumulator) - 1);
+                                }
+                                strncat(dns_accumulator, dns, sizeof(dns_accumulator) - strlen(dns_accumulator) - 1);
+
+                                CcspTraceWarning(("  RDNSS nameserver on %s: %s\n", ifname, dns));
+                            }
+                        }
+
+                        int step = hdr->nd_opt_len * 8;
+                        optlen -= step;
+                        opt += step;
+                    }
+
+                    // set sysevent once per RA
+                    if (strlen(dns_accumulator) > 0) {
+                        commonSyseventSet("ipv6_nameserver", dns_accumulator);
+                        CcspTraceWarning(("Set sysevent ipv6_nameserver = %s\n", dns_accumulator));
+                    }
+                }
+            }
+        }
+    }
+
+    close(sock);
+    free(hotspot_wan_ifname);
+    return NULL;
+}
+#endif
 /** Switching  between Primary and Secondary Wan for LTE Backup **/
 void Switch_ipv6_mode(char *ifname, int length)
 {
@@ -11216,8 +11400,11 @@ void Switch_ipv6_mode(char *ifname, int length)
     {
 #ifdef FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE
         char mesh_wan_ifname[32] = {0};
+        char hotspot_wan_ifname[32] = {0};
         getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
-        if(strncmp(ifname, mesh_wan_ifname,length ) == 0)
+        getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
+	CcspTraceWarning((" %s :MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__,ifname, hotspot_wan_ifname));
+        if((strncmp(ifname, mesh_wan_ifname,length ) == 0) || (strncmp(ifname, hotspot_wan_ifname,length ) == 0))
 #else
         char default_wan_ifname[64];
         memset(default_wan_ifname, 0, sizeof(default_wan_ifname));
@@ -11225,7 +11412,20 @@ void Switch_ipv6_mode(char *ifname, int length)
         if(strncmp(ifname,default_wan_ifname,length) != 0)
 #endif
         {
+#ifdef MONITOR_IPV6_NETLINK
+	    pthread_t MonitorIpv6_tid;
+            char *hotspotIfname_copy = strdup(hotspot_wan_ifname); // pass to thread
+
+            if (pthread_create(&MonitorIpv6_tid, NULL, monitor_ipv6_assignments, (void *)hotspotIfname_copy) != 0) {
+                perror("pthread_create failed");
+                free(hotspotIfname_copy);
+            } else {
+                pthread_detach(MonitorIpv6_tid); // thread will run independently
+            }
+#endif
+
             SwitchToULAIpv6(); //Secondary Wan
+            CcspTraceWarning(("%s: Switched to ULA IPv6\n", __FUNCTION__));
 #if defined(WAN_MANAGER_UNIFICATION_ENABLED)
             addRemoteWanIpv6Route();
 #endif
@@ -11235,6 +11435,7 @@ void Switch_ipv6_mode(char *ifname, int length)
 #if defined(WAN_MANAGER_UNIFICATION_ENABLED)
             delRemoteWanIpv6Route();
 #endif
+            CcspTraceWarning(("%s: Switching to Global IPv6\n", __FUNCTION__));
             SwitchToGlobalIpv6(); //Primary Wan
         }
     }else
