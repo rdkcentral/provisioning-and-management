@@ -90,13 +90,8 @@ input_t* createScheduleInput(size_t iActionExecCount)
 
     if (iActionExecCount > iMaxActions)
     {
-#ifdef _64BIT_ARCH_SUPPORT_
-        CcspTraceError(("create_schedule_input() Error Request %ld exceeds maximum %ld\n",
+        CcspTraceError(("create_schedule_input() Error Request %zu exceeds maximum %zu\n",
                      iActionExecCount, iMaxActions));
-#else
-	CcspTraceError(("create_schedule_input() Error Request %d exceeds maximum %d\n",
-                     iActionExecCount, iMaxActions));
-#endif
         return pScheduleInfo;
     }
 
