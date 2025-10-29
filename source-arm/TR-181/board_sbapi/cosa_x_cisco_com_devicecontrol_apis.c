@@ -2004,11 +2004,7 @@ void* restoreAllDBs(void* arg)
             else
             {
                 // we are the child
-#ifdef ARRIS_XB3_PLATFORM_CHANGES
-                char *args[] = {"rpcclient", urlPtr, "/bin/rm -f /nvram/syscfg.db /nvram/.keys/vyinerkyo.wyr", (char *) 0 };
-#else
                 char *args[] = {"rpcclient", urlPtr, "/bin/rm -f /nvram/syscfg.db", (char *) 0 };
-#endif
                 execv(args[0], args);
                 _exit(EXIT_FAILURE);   // exec never returns
             }
@@ -2338,7 +2334,7 @@ CosaDmlDcSetFactoryReset
 #endif
 
 #if defined(_SR213_PRODUCT_REQ_) || defined(FEATURE_RDKB_LED_MANAGER_FACTORY_RESET)
-               if( (factory_reset_mask & FR_ROUTER) {
+               if( (factory_reset_mask & FR_ROUTER) ) {
                     CcspTraceInfo(("LED Transition: GREEN LED will blink, Reason: Factory Reset\n"));
                     sysevent_led_fd = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "FactoryResetHandler", &sysevent_led_token);
                     if(sysevent_led_fd != -1)
@@ -3433,14 +3429,6 @@ CosaDmlDcSetReinitMacThreshold
         ULONG                       value
     )
 {
-#ifdef ARRIS_XB3_PLATFORM_CHANGES
-    UNREFERENCED_PARAMETER(hContext);
-    if ( cm_hal_set_ReinitMacThreshold(value) != RETURN_OK )
-        return ANSC_STATUS_FAILURE;
-    else
-        return ANSC_STATUS_SUCCESS;
-
-#else
     UNREFERENCED_PARAMETER(hContext);
     char buf[12];
     errno_t safec_rc = -1;
@@ -3459,7 +3447,6 @@ CosaDmlDcSetReinitMacThreshold
     {
         return ANSC_STATUS_SUCCESS;
     }
-#endif
 }
 
 ANSC_STATUS
@@ -3469,14 +3456,6 @@ CosaDmlDcGetReinitMacThreshold
         ULONG                       *pValue
     )
 {
-#ifdef ARRIS_XB3_PLATFORM_CHANGES
-    UNREFERENCED_PARAMETER(hContext);
-    if ( cm_hal_get_ReinitMacThreshold(pValue) != RETURN_OK )
-        return ANSC_STATUS_FAILURE;
-    else
-        return ANSC_STATUS_SUCCESS;
-
-#else
     char buf[12];
 
     if( (syscfg_get( NULL, "rdkbReinitMacThreshold", buf, sizeof(buf))) == 0 )
@@ -3489,7 +3468,6 @@ CosaDmlDcGetReinitMacThreshold
     	CosaDmlDcSetReinitMacThreshold(hContext, *pValue);
     }
     return ANSC_STATUS_SUCCESS;
-#endif
 }
 
 ANSC_STATUS
