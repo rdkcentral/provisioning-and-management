@@ -1329,7 +1329,7 @@ int count_unique_ports(const char *proto) {
             if (!ports[dport]) { ports[dport] = 1; unique_count++; }
         }
     }
-    pclose(fp);
+    v_secure_pclose(fp);
     CcspTraceDebug(("Exiting %s...\n", __FUNCTION__));
 
     return unique_count;
