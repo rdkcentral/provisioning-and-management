@@ -2045,7 +2045,7 @@ void* restoreAllDBs(void* arg)
         v_secure_system("touch /nvram/brcm_wifi_factory_reset"); 
 #endif
 
-#if  defined (_XB10_PRODUCT_REQ_)
+#if  defined (_XB10_PRODUCT_REQ_) ||  defined(WAN_MANAGER_UNIFICATION_ENABLED) //If Wan unification is enabled. clear the ethwan flags on FR. The Wan Manager should configure this based on the scanning policy.
      v_secure_system("rm -f /nvram/ethwan_interface"); 
      v_secure_system("rm -f /nvram/ETHWAN_ENABLE"); 
      v_secure_system("syscfg set selected_wan_mode 2");
