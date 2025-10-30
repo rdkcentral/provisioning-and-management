@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -93,8 +93,8 @@
     ANSC_HANDLE                         hIrepFolderCOSA;                    \
     ANSC_HANDLE                         hIrepFolderEthLink;                 \
     ANSC_HANDLE                         hIrepFolderEthVlanTermination;      \
-    
-    
+
+
 typedef  struct
 _COSA_DATAMODEL_ETHERNET_CLASS_CONTENT
 {
@@ -105,6 +105,14 @@ COSA_DATAMODEL_ETHERNET, *PCOSA_DATAMODEL_ETHERNET;
 /*
     Standard function declaration
 */
+/**
+ * @brief Create the Ethernet backend object.
+ *
+ * @return Handle to the newly created Ethernet backend object.
+ * @retval non-NULL Handle on success.
+ * @retval NULL Memory allocation failed or object creation error.
+ */
+
 ANSC_HANDLE
 CosaEthernetCreate
 
@@ -112,24 +120,61 @@ CosaEthernetCreate
         VOID
     );
 
+/**
+ * @brief Initialize the Ethernet backend.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthernetInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the Ethernet backend object.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthernetRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Retrieves Ethernet link configuration from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful retrieval.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthLinkRegGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Adds an Ethernet link entry to persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the link entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful addition.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthLinkRegAddInfo
     (
@@ -137,6 +182,16 @@ CosaEthLinkRegAddInfo
         ANSC_HANDLE                 hCosaContext
     );
 
+/**
+ * @brief Deletes an Ethernet link entry from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the link entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful deletion.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthLinkRegDelInfo
     (
@@ -144,12 +199,31 @@ CosaEthLinkRegDelInfo
         ANSC_HANDLE                 hCosaContext
     );
 
+/**
+ * @brief Retrieves Ethernet VLAN termination configuration from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful retrieval.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthVlanTerminationRegGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Adds an Ethernet VLAN termination entry to persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the VLAN termination entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful addition.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthVlanTerminationRegAddInfo
     (
@@ -157,21 +231,51 @@ CosaEthVlanTerminationRegAddInfo
         ANSC_HANDLE                 hCosaContext
     );
 
+/**
+ * @brief Deletes an Ethernet VLAN termination entry from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Ethernet backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the VLAN termination entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful deletion.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthVlanTerminationRegDelInfo
     (
         ANSC_HANDLE                 hThisObject,
         ANSC_HANDLE                 hCosaContext
     );
+/**
+ * @brief Retrieves associated devices connected to an Ethernet port.
+ *
+ * This function queries the Ethernet port to retrieve a list of associated devices connected.
+ *
+ * @param[in] mac Pointer to the MAC address of the Ethernet port to query.
+ * @param[out] maclist Pointer to a character buffer to store the comma-separated list of MAC addresses.
+ * @param[in] numMacAddr Maximum number of MAC addresses to retrieve.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful retrieval.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaEthPortGetAssocDevices
     (
         UCHAR       *mac,
         CHAR        *maclist,
         int         numMacAddr
-  
+
     );
 
+/**
+ * @brief Ethernet WAN telemetry logging thread function.
+ *
+ * @param[in] data Pointer to thread-specific data or context.
+ *
+ * @return NULL on thread termination.
+ */
 void * EthWan_TelementryLogger_Thread(void *data);
 
 
