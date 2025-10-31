@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -70,7 +70,7 @@
 #define COSA_IFSTACK_ALIAS_LENGTH              64
 
 
-/* 
+/*
     Object definition
 */
 
@@ -82,7 +82,7 @@
     ULONG                           ulEntryCount;                       \
 
 typedef  struct
-_COSA_DATAMODEL_IFSTACK                                               
+_COSA_DATAMODEL_IFSTACK
 {
     COSA_DATAMODEL_IFSTACK_CLASS_CONTENT
 }
@@ -103,40 +103,92 @@ COSA_DML_IFSTACK_ENTRY,  *PCOSA_DML_IFSTACK_ENTRY;
 
 
 /**********************************
-    Standard function declaration 
+    Standard function declaration
 ***********************************/
+/**
+ * @brief Create the InterfaceStack backend object.
+ *
+ * @return Handle to the newly created InterfaceStack backend object.
+ * @retval A non-NULL ANSC_HANDLE if successful.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaIFStackCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the InterfaceStack backend object.
+ *
+ * @param[in] hThisObject Handle to the InterfaceStack backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval Error code otherwise
+ */
 ANSC_STATUS
 CosaIFStackInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the InterfaceStack backend object.
+ *
+ * @param[in] hThisObject Handle to the InterfaceStack backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval Error code otherwise
+ */
 ANSC_STATUS
 CosaIFStackRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Adds an InterfaceStack entry to the backend table.
+ *
+ * @param[in] hThisObject Handle to the InterfaceStack backend object.
+ * @param[in] pEntry Pointer to the InterfaceStack entry structure to add.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful addition.
+ * @retval Error code otherwise
+ */
 ANSC_STATUS
 CosaIFStackAddEntry
     (
-    
         ANSC_HANDLE                 hThisObject,
         PCOSA_DML_IFSTACK_ENTRY     pEntry
     );
 
+/**
+ * @brief Creates and populates the complete InterfaceStack table.
+ *
+ * @param[in] hThisObject Handle to the InterfaceStack backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful table creation.
+ * @retval Error code otherwise
+ */
 ANSC_STATUS
-CosaIFStackCreateAll 
+CosaIFStackCreateAll
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Empties the InterfaceStack table and deallocates all entries.
+ *
+ * @param[in] hThisObject Handle to the InterfaceStack backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful table emptying.
+ * @retval Error code otherwise
+ */
 ANSC_STATUS
 CosaIFStackEmptyTable
     (

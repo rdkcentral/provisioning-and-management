@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -68,7 +68,7 @@
 
 
 /*
-  *   This is cosa middle layer definition 
+  *   This is cosa middle layer definition
   *
   */
 #define  COSA_IREP_FOLDER_NAME_DHCPV4                      "Dhcpv4"
@@ -162,7 +162,7 @@ COSA_CONTEXT_POOL_LINK_OBJECT, *PCOSA_CONTEXT_POOL_LINK_OBJECT;
     BOOL                            syncStaticClientsTable;                                \
 
 typedef  struct
-_COSA_DATAMODEL_DHCPV4                                               
+_COSA_DATAMODEL_DHCPV4
 {
     COSA_DATAMODEL_DHCPV4_CLASS_CONTENT
 }
@@ -177,7 +177,7 @@ COSA_DATAMODEL_DHCPV4,  *PCOSA_DATAMODEL_DHCPV4;
 
 #define   DHCPV4_SENDOPTION_ENTRY_MATCH(src,dst)                   \
     (strcmp((src)->Alias, (dst)->Alias) == 0)
-        
+
 #define   DHCPV4_SENDOPTION_ENTRY_MATCH2(src,dst)                  \
     (strcmp((src), (dst)) == 0)
 
@@ -195,7 +195,7 @@ COSA_DATAMODEL_DHCPV4,  *PCOSA_DATAMODEL_DHCPV4;
 
 #define   DHCPV4_STATICADDRESS_ENTRY_MATCH(src,dst)                \
     (strcmp((src)->Alias, (dst)->Alias) == 0)
-    
+
 #define   DHCPV4_STATICADDRESS_ENTRY_MATCH2(src,dst)               \
     (strcmp((src), (dst)) == 0)
 
@@ -231,7 +231,7 @@ COSA_DATAMODEL_DHCPV4,  *PCOSA_DATAMODEL_DHCPV4;
     (pSendOption)->bEnabled                   = FALSE;                                 \
      (pSendOption)->Tag                        = 0;                                    \
      AnscZeroMemory( (pSendOption)->Value, sizeof( (pSendOption)->Value ) );           \
-    
+
 
 #define DHCPV4_REQOPTION_SET_DEFAULTVALUE(pReqOption)                                  \
     (pReqOption)->bEnabled                    = FALSE;                                 \
@@ -275,39 +275,91 @@ COSA_DATAMODEL_DHCPV4,  *PCOSA_DATAMODEL_DHCPV4;
     (strcmp((src), (dst)) == 0)
 
 /*
-    Function declaration 
-*/ 
+    Function declaration
+*/
 
+/**
+ * @brief Create the DHCPv4 backend object.
+ *
+ * @return Handle to the newly created DHCPv4 backend object
+ * @retval Handle to the newly added DHCPv4 backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaDhcpv4Create
     (
         VOID
     );
 
+/**
+ * @brief Initialize the DHCPv4 backend object
+ *
+ * @param[in] hThisObject  Handle to the DHCPv4 object to initialize
+ *
+ * @return The status of operation
+ * @retval ANSC_STATUS_SUCCESS on success
+ * @retval error code otherwise
+ */
 ANSC_STATUS
 CosaDhcpv4Initialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Remove and cleanup the DHCPv4 backend object
+ *
+ * @param[in] hThisObject  Handle to the DHCPv4 object to remove
+ *
+ * @return The status of operation
+ * @retval ANSC_STATUS_SUCCESS on success
+ * @retval error code otherwise
+ */
 ANSC_STATUS
 CosaDhcpv4Remove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Retrieve DHCPv4 configuration from persistent registry
+ *
+ * @param[in] hThisObject  Handle to the DHCPv4 backend object
+ *
+ * @return The status of operation
+ * @retval ANSC_STATUS_SUCCESS on success
+ * @retval error code otherwise
+ */
 ANSC_STATUS
 CosaDhcpv4RegGetDhcpv4Info
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Store DHCPv4 configuration to persistent registry
+ *
+ * @param[in] hThisObject  Handle to the DHCPv4 backend object
+ *
+ * @return The status of operation
+ * @retval ANSC_STATUS_SUCCESS on success
+ * @retval error code otherwise
+ */
 ANSC_STATUS
 CosaDhcpv4RegSetDhcpv4Info
     (
         ANSC_HANDLE                 hThisObject
     );
 #ifndef FEATURE_RDKB_WAN_MANAGER
+/**
+ * @brief Check if DHCPv4 client has delayed-add child objects
+ *
+ * @param[in] hContext  Pointer to the DHCP client context link object
+ *
+ * @return The status of operation
+ * @retval TRUE if delayed-add children exist
+ * @retval FALSE otherwise
+ */
 BOOL
 CosaDhcpv4ClientHasDelayAddedChild
     (
@@ -315,27 +367,68 @@ CosaDhcpv4ClientHasDelayAddedChild
     );
 
 #endif
+/**
+ * @brief Check if DHCPv4 pool has delayed-add child objects
+ *
+ * @param[in] hContext  Pointer to the DHCP pool context link object
+ *
+ * @return The status of operation
+ * @retval TRUE if delayed-add children exist
+ * @retval FALSE otherwise
+ */
 BOOL
 CosaDhcpv4PoolHasDelayAddedChild
     (
         PCOSA_CONTEXT_POOL_LINK_OBJECT      hContext
     );
 
+/**
+ * @brief Retrieve DHCPv4 information from backend APIs
+ *
+ * @param[in] hThisObject  Handle to the DHCPv4 backend object
+ *
+ * @return The status of operation
+ * @retval ANSC_STATUS_SUCCESS on success
+ * @retval error code otherwise
+ */
 ANSC_STATUS
 CosaDhcpv4BackendGetDhcpv4Info
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Convert IP address string to unsigned long array
+ *
+ * @param[out] pIPAddr    Pointer to array to store IP address values
+ * @param[in] pString     IP address string to parse
+ * @param[in] MaxNumber   Maximum number of IP address values to parse
+ *
+ * @return The status of the operation
+ * @retval TRUE on successful conversion
+ * @retval FALSE otherwise
+ */
 BOOL
 CosaDmlSetIpaddr
     (
-        PULONG pIPAddr, 
-        PCHAR pString, 
-        ULONG MaxNumber 
+        PULONG pIPAddr,
+        PCHAR pString,
+        ULONG MaxNumber
     );
 
-BOOL 
+/**
+ * @brief Convert IP address array to string representation
+ *
+ * @param[out] pString       Buffer to store the IP address string
+ * @param[in,out] pulStrLength  Size of the buffer (input), length of the string (output)
+ * @param[in] pIPAddr        Pointer to array of IP address values
+ * @param[in] MaxNumber      Number of IP address values to convert
+ *
+ * @return The status of the operation
+ * @retval TRUE on successful conversion
+ * @retval FALSE otherwise
+ */
+BOOL
 CosaDmlGetIpaddrString
     (
         char *pString,
@@ -344,6 +437,15 @@ CosaDmlGetIpaddrString
         ULONG MaxNumber
     );
 
+/**
+ * @brief Get DHCPv4 client content by client context
+ *
+ * @param[in] hClientContext  Handle to the DHCPv4 client context
+ *
+ * @return Handle to DHCPV4 client content structure
+ * @retval Handle to the client content structure
+ * @retval NULL if not found
+ */
 ANSC_HANDLE
 CosaDhcpv4GetClientContentbyClient
     (

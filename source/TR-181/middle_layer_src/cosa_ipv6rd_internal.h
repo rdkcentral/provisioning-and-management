@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -88,7 +88,7 @@
     ANSC_HANDLE             hIrepFolderIPv6rdIF;    \
 
 
-typedef struct 
+typedef struct
 _COSA_DATAMODEL_IPV6RD
 {
 #if 0
@@ -98,44 +98,98 @@ _COSA_DATAMODEL_IPV6RD
     PFN_COSADM_CREATE       Create;
     PFN_COSADM_REMOVE       Remove;
     PFN_COSADM_INITIALIZE   Initialize;
-    /* param of object Device.IPv6rd. */            
-    BOOL                    Enable;                 
-    ULONG                   NumOfInterface;         
-    /* interface list (Device.IPv6rd.InterfaceSetting. */ 
-    SLIST_HEADER            IfList;                 
-    ULONG                   ulIfNextInstance;       
-    ANSC_HANDLE             hIrepFolderCOSA;        
-    ANSC_HANDLE             hIrepFolderIPv6rdIF;    
+    /* param of object Device.IPv6rd. */
+    BOOL                    Enable;
+    ULONG                   NumOfInterface;
+    /* interface list (Device.IPv6rd.InterfaceSetting. */
+    SLIST_HEADER            IfList;
+    ULONG                   ulIfNextInstance;
+    ANSC_HANDLE             hIrepFolderCOSA;
+    ANSC_HANDLE             hIrepFolderIPv6rdIF;
 #endif
 }
 COSA_DATAMODEL_IPV6RD, *PCOSA_DATAMODEL_IPV6RD;
 
+/**
+ * @brief Create IPv6rd data model instance.
+ *
+ * @return Handle to the created object.
+ * @retval non-NULL Handle to the created object.
+ * @retval NULL Creation failed.
+ */
 ANSC_HANDLE
 CosaIPv6rdCreate(
         VOID
         );
 
+/**
+ * @brief Initialize IPv6rd data model instance.
+ *
+ * @param[in] hThisObject Handle to the IPv6rd data model object.
+ *
+ * @return Status of operation.
+ * @retval ANSC_STATUS_SUCCESS Initialization successful.
+ * @retval ANSC_STATUS_FAILURE Initialization failed.
+ */
 ANSC_STATUS
 CosaIPv6rdInitialize(
         ANSC_HANDLE hThisObject
         );
 
+/**
+ * @brief Remove IPv6rd data model instance.
+ *
+ * @param[in] hThisObject Handle to the IPv6rd data model object.
+ *
+ * @return Status of operation.
+ * @retval ANSC_STATUS_SUCCESS Removal successful.
+ * @retval ANSC_STATUS_FAILURE Removal failed.
+ */
 ANSC_STATUS
 CosaIPv6rdRemove(
         ANSC_HANDLE hThisObject
         );
 
+/**
+ * @brief Get IPv6rd interface registration information.
+ *
+ * @param[in] hThisObject Handle to the IPv6rd data model object.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Registration information retrieved successfully.
+ * @retval ANSC_STATUS_FAILURE Retrieval failed.
+ */
 ANSC_STATUS
 CosaIPv6rdIfRegGetInfo(
         ANSC_HANDLE hThisObject
         );
 
+/**
+ * @brief Add IPv6rd interface registration information.
+ *
+ * @param[in] hThisObject Handle to the IPv6rd data model object.
+ * @param[in] hCosaContext Handle to the interface context to register.
+ *
+ * @return Status of operation.
+ * @retval ANSC_STATUS_SUCCESS Registration information added successfully.
+ * @retval ANSC_STATUS_FAILURE Addition failed.
+ */
 ANSC_STATUS
 CosaIPv6rdIfRegAddInfo(
         ANSC_HANDLE hThisObject,
         ANSC_HANDLE hCosaContext
         );
 
+/**
+ * @brief Delete IPv6rd interface registration information.
+ *
+ * @param[in] hThisObject Handle to the IPv6rd data model object.
+ * @param[in] hCosaContext Handle to the interface context to unregister.
+ *
+ * @return Status of operation.
+ * @retval ANSC_STATUS_SUCCESS Registration information deleted successfully.
+ * @retval ANSC_STATUS_FAILURE Deletion failed.
+ */
 ANSC_STATUS
 CosaIPv6rdIfRegDelInfo(
         ANSC_HANDLE hThisObject,

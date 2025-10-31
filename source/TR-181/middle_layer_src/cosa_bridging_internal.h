@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -86,7 +86,7 @@
     Actual definition declaration
 ************************************/
 
-/* 
+/*
     Object definition
 */
 
@@ -102,39 +102,102 @@
 
 
 typedef  struct
-_COSA_DATAMODEL_BRIDGING                                              
+_COSA_DATAMODEL_BRIDGING
 {
     COSA_DATAMODEL_BRIDGING_CLASS_CONTENT
 }
 COSA_DATAMODEL_BRIDGING,  *PCOSA_DATAMODEL_BRIDGING;
 
 /**********************************
-    Standard function declaration 
+    Standard function declaration
 ***********************************/
+/**
+ * @brief Create the Bridging backend object.
+ *
+ * This function constructs Bridging backend object and return handle.
+ *
+ * @return  newly created Bridging backend object.
+ * @retval Handle to the newly created Bridging backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaBridgingCreate
     (
         VOID
     );
 
+/**
+ * @brief Initialize the Bridging data model object.
+ *
+ * This function initializes the Bridging data model object and loads configuration data.
+ *
+ * @param[in] hThisObject - Handle to the Bridging object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the initialization is successful.
+ * @retval ANSC_STATUS_FAILURE if the initialization fails.
+ *
+ */
 ANSC_STATUS
 CosaBridgingInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Remove the Bridging data model object.
+ *
+ * This function removes and frees the Bridging data model object and associated resources.
+ *
+ * @param[in] hThisObject - Handle to the Bridging object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the removal is successful.
+ * @retval ANSC_STATUS_FAILURE if the removal fails.
+ *
+ */
 ANSC_STATUS
 CosaBridgingRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Get Bridging configuration information from registry.
+ *
+ * This function retrieves Bridging configuration information from the persistent registry.
+ *
+ * @param[in] hThisObject - Handle to the Bridging object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaBridgingRegGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Add Bridging configuration information to registry.
+ *
+ * This function adds Bridging configuration information to the persistent registry.
+ *
+ * @param[in] hThisObject      - Handle to the Bridging object.
+ * @param[in] pNextInsNumName  - Pointer to the next instance number name.
+ * @param[in] ulNextInsNum     - The next instance number value.
+ * @param[in] pPreffix         - Pointer to the prefix string.
+ * @param[in] ulUpperInsNum    - The upper instance number.
+ * @param[in] pAlias           - Pointer to the alias string.
+ * @param[in] hCosaContext     - Handle to the COSA context.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaBridgingRegAddInfo
     (
@@ -147,6 +210,19 @@ CosaBridgingRegAddInfo
         ANSC_HANDLE                 hCosaContext
     );
 
+/**
+ * @brief Delete Bridging configuration information from registry.
+ *
+ * This function deletes Bridging configuration information from the persistent registry.
+ *
+ * @param[in] hThisObject  - Handle to the Bridging object.
+ * @param[in] hCosaContext - Handle to the COSA context to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaBridgingRegDelInfo
     (

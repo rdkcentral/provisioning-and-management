@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -92,6 +92,17 @@
     *  RemoteAccess_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Retrieves a boolean parameter value from Device.UserInterface.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pBool Pointer to receive the boolean value.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 UserInterface_GetParamBoolValue
     (
@@ -99,6 +110,17 @@ UserInterface_GetParamBoolValue
         char*                       ParamName,
         BOOL*                       pBool
     );
+/**
+ * @brief Sets a boolean parameter value for Device.UserInterface.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 UserInterface_SetParamBoolValue
     (
@@ -107,6 +129,17 @@ UserInterface_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Retrieves an unsigned long parameter value from Device.UserInterface.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] puLong Pointer to receive the unsigned long value.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 UserInterface_GetParamUlongValue
     (
@@ -115,6 +148,17 @@ UserInterface_GetParamUlongValue
         ULONG*                      puLong
     );
 
+/**
+ * @brief Sets an unsigned long parameter value for Device.UserInterface.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] uValue Unsigned long value to set.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 UserInterface_SetParamUlongValue
     (
@@ -123,6 +167,17 @@ UserInterface_SetParamUlongValue
         ULONG                       uValue
     );
 
+/**
+ * @brief Validates pending changes to Device.UserInterface.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer(128 bytes) to receive the name of the parameter if there is a validation .
+ * @param[in,out] puLength Pointer to buffer size; receives actual length of parameter name.
+ *
+ * @return status of operation
+ * @retval TRUE if there is no validation
+ * @retval FALSE if there's validation.
+ */
 BOOL
 UserInterface_Validate
     (
@@ -131,6 +186,15 @@ UserInterface_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits pending changes to Device.UserInterface.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return status of operation
+ * @retval 0 on success
+ * @retval error code otherwise.
+ */
 ULONG
 UserInterface_Commit
     (
@@ -157,6 +221,17 @@ UserInterface_Commit
     *  RemoteAccess_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Retrieves a boolean parameter value from Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pBool Pointer to receive the boolean value.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 RemoteAccess_GetParamBoolValue
     (
@@ -165,6 +240,17 @@ RemoteAccess_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves an integer parameter value from Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pInt Pointer to receive the integer value.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 RemoteAccess_GetParamIntValue
     (
@@ -173,6 +259,17 @@ RemoteAccess_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves an unsigned long parameter value from Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pUlong Pointer to receive the unsigned long value.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 RemoteAccess_GetParamUlongValue
     (
@@ -181,6 +278,19 @@ RemoteAccess_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves a string parameter value from Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pValue Buffer to receive the string value (typically 256 bytes).
+ * @param[in,out] pUlSize Pointer to buffer size; receives actual string length. Usually the size of 1023 is used.
+ *
+ * @return status of operation
+ * @retval 0 if successful
+ * @retval 1 if buffer too small
+ * @retval -1 if not supported
+ */
 ULONG
 RemoteAccess_GetParamStringValue
     (
@@ -190,6 +300,17 @@ RemoteAccess_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets a boolean parameter value for Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE  otherwise
+ */
 BOOL
 RemoteAccess_SetParamBoolValue
     (
@@ -198,6 +319,17 @@ RemoteAccess_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets an integer parameter value for Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] value Integer value to set.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 RemoteAccess_SetParamIntValue
     (
@@ -206,6 +338,17 @@ RemoteAccess_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets an unsigned long parameter value for Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
 BOOL
 RemoteAccess_SetParamUlongValue
     (
@@ -214,6 +357,17 @@ RemoteAccess_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets a string parameter value for Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] strValue String value to set.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 RemoteAccess_SetParamStringValue
     (
@@ -222,6 +376,17 @@ RemoteAccess_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates pending changes to Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer(128 bytes) to receive the name of the parameter if there is a validation.
+ * @param[in,out] puLength Pointer to buffer size; receives actual length of parameter name.
+ *
+ * @return status of operation
+ * @retval TRUE if there is no validation
+ * @retval FALSE if there's validation.
+ */
 BOOL
 RemoteAccess_Validate
     (
@@ -230,12 +395,29 @@ RemoteAccess_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits pending changes to Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return status of operation
+ * @retval 0 on success
+ * @retval error code otherwise.
+ */
 ULONG
 RemoteAccess_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back pending changes to Device.UserInterface.RemoteAccess.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return
+ 0 on success, error code otherwise.
+ */
 ULONG
 RemoteAccess_Rollback
     (

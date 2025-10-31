@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,7 +36,7 @@
 
 /**************************************************************************
 
-    module: cosa_x_cisco_com_devicecontrol_dml.h 
+    module: cosa_x_cisco_com_devicecontrol_dml.h
 
         For COSA Data Model Library Development
 
@@ -88,6 +88,19 @@
     *  X_CISCO_COM_DeviceControl_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values from Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function gets boolean parameter values for Cisco device control settings.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_GetParamBoolValue
     (
@@ -96,6 +109,19 @@ X_CISCO_COM_DeviceControl_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function gets integer parameter values for Cisco device control settings.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_GetParamIntValue
     (
@@ -104,6 +130,19 @@ X_CISCO_COM_DeviceControl_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function gets unsigned long parameter values for Cisco device control settings.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_GetParamUlongValue
     (
@@ -112,6 +151,21 @@ X_CISCO_COM_DeviceControl_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function gets string parameter values for Cisco device control settings.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 if not supported.
+ */
 ULONG
 X_CISCO_COM_DeviceControl_GetParamStringValue
     (
@@ -121,6 +175,18 @@ X_CISCO_COM_DeviceControl_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function sets boolean parameter values for Cisco device control actions.
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_SetParamBoolValue
     (
@@ -129,6 +195,19 @@ X_CISCO_COM_DeviceControl_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function sets integer parameter values for Cisco device control settings.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] value Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_SetParamIntValue
     (
@@ -137,6 +216,19 @@ X_CISCO_COM_DeviceControl_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function sets unsigned long parameter values for Cisco device control settings.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_SetParamUlongValue
     (
@@ -145,6 +237,19 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets string parameter values for Device.X_CISCO_COM_DeviceControl.
+ *
+ * This function sets string parameter values for Cisco device control settings.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] strValue String value to set (buffer size: 1024 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_SetParamStringValue
     (
@@ -153,6 +258,19 @@ X_CISCO_COM_DeviceControl_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates Device.X_CISCO_COM_DeviceControl parameter changes before commit.
+ *
+ * This function validates all pending parameter changes for Cisco device control configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name, if there's a validation(buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's validation.
+ */
 BOOL
 X_CISCO_COM_DeviceControl_Validate
     (
@@ -161,24 +279,68 @@ X_CISCO_COM_DeviceControl_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.X_CISCO_COM_DeviceControl parameter changes to persistent storage.
+ *
+ * This function applies all validated parameter changes to the Cisco device control configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed, rollback should be called.
+ */
 ULONG
 X_CISCO_COM_DeviceControl_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.X_CISCO_COM_DeviceControl parameter changes.
+ *
+ * This function reverts all uncommitted parameter changes for Cisco device control configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 on success.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 X_CISCO_COM_DeviceControl_Rollback
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Gets the number of LAN management entries in Device.X_CISCO_COM_DeviceControl.LanManagementEntry table.
+ *
+ * This function returns the count of configured LAN management entries.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return Number of LAN management entries.
+ */
 ULONG
 LanMngm_GetEntryCount
     (
         ANSC_HANDLE
     );
 
+/**
+ * @brief Gets a LAN management entry from Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i} table by index.
+ *
+ * This function retrieves a LAN management entry handle at the specified index.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] nIndex Zero-based index of the entry.
+ * @param[out] pInsNumber Pointer to store instance number of the entry.
+ *
+ * @return Handle to the entry context, or NULL if not found.
+ * @retval non-NULL Handle to the entry context.
+ * @retval NULL Entry not found.
+ */
 ANSC_HANDLE
 LanMngm_GetEntry
     (
@@ -187,6 +349,18 @@ LanMngm_GetEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Adds a new LAN management entry to Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i} table.
+ *
+ * This function creates a new LAN management entry in the table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pInsNumber Pointer to store instance number of newly created entry.
+ *
+ * @return Handle to the new entry context, or NULL if addition failed.
+ * @retval non-NULL Handle to the new entry context.
+ * @retval NULL Addition failed.
+ */
 ANSC_HANDLE
 LanMngm_AddEntry
     (
@@ -194,6 +368,18 @@ LanMngm_AddEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Deletes a LAN management entry from Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i} table.
+ *
+ * This function removes a LAN management entry from the table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] hInstance Handle to the entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS Entry deleted successfully.
+ * @retval error code otherwise.
+ */
 ULONG
 LanMngm_DelEntry
     (
@@ -201,6 +387,19 @@ LanMngm_DelEntry
         ANSC_HANDLE                 hInstance
     );
 
+/**
+ * @brief Retrieves boolean parameter values from Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function gets boolean parameter values for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 LanMngm_GetParamBoolValue
     (
@@ -209,6 +408,19 @@ LanMngm_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function gets integer parameter values for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 LanMngm_GetParamIntValue
     (
@@ -217,6 +429,19 @@ LanMngm_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function gets unsigned long parameter values for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 LanMngm_GetParamUlongValue
     (
@@ -225,6 +450,21 @@ LanMngm_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function gets string parameter values for a LAN management entry (LanNetwork, LanNetworksAllow, LanIPAddress, LanSubnetMask, LanDhcpStartIp, LanDhcpEndIp).
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 if not supported.
+ */
 ULONG
 LanMngm_GetParamStringValue
     (
@@ -234,6 +474,19 @@ LanMngm_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function sets boolean parameter values for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 LanMngm_SetParamBoolValue
     (
@@ -242,6 +495,19 @@ LanMngm_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function sets integer parameter values for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] value Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 LanMngm_SetParamIntValue
     (
@@ -250,6 +516,19 @@ LanMngm_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function sets unsigned long parameter values for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 LanMngm_SetParamUlongValue
     (
@@ -258,6 +537,19 @@ LanMngm_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets string parameter values for Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i}.
+ *
+ * This function sets string parameter values for a LAN management entry (LanNetwork, LanNetworksAllow, LanIPAddress, LanSubnetMask, LanDhcpStartIp, LanDhcpEndIp).
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] strValue String value to set (buffer size: 256 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 LanMngm_SetParamStringValue
     (
@@ -266,6 +558,19 @@ LanMngm_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i} parameter changes before commit.
+ *
+ * This function validates all pending parameter changes for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name if there's a validation(buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's validation.
+ */
 BOOL
 LanMngm_Validate
     (
@@ -274,12 +579,34 @@ LanMngm_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i} parameter changes to persistent storage.
+ *
+ * This function applies all validated parameter changes to the LAN management entry configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed.
+ */
 ULONG
 LanMngm_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.X_CISCO_COM_DeviceControl.LanManagementEntry.{i} parameter changes.
+ *
+ * This function reverts all uncommitted parameter changes for a LAN management entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 on success.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 LanMngm_Rollback
     (
@@ -288,6 +615,19 @@ LanMngm_Rollback
 
 #if !defined (RESOURCE_OPTIMIZATION)
 
+/**
+ * @brief Retrieves boolean parameter values from Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function gets boolean parameter values for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 WebAccessLevel_GetParamBoolValue
     (
@@ -296,6 +636,19 @@ WebAccessLevel_GetParamBoolValue
         int*                        pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function gets integer parameter values for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 WebAccessLevel_GetParamIntValue
     (
@@ -304,6 +657,19 @@ WebAccessLevel_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function gets unsigned long parameter values for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] puLong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 WebAccessLevel_GetParamUlongValue
     (
@@ -312,6 +678,21 @@ WebAccessLevel_GetParamUlongValue
         ULONG*                      puLong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function gets string parameter values for web access level configuration (HomeUser, AccessLevel).
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pulSize bytes).
+ * @param[in,out] pulSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Parameter not found.
+ */
 ULONG
 WebAccessLevel_GetParamStringValue
     (
@@ -321,6 +702,19 @@ WebAccessLevel_GetParamStringValue
         ULONG*                      pulSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function sets boolean parameter values for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 WebAccessLevel_SetParamBoolValue
     (
@@ -329,6 +723,19 @@ WebAccessLevel_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function sets integer parameter values for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] iValue Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 WebAccessLevel_SetParamIntValue
     (
@@ -337,6 +744,19 @@ WebAccessLevel_SetParamIntValue
         int                         iValue
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function sets unsigned long parameter values for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValue Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 WebAccessLevel_SetParamUlongValue
     (
@@ -345,6 +765,19 @@ WebAccessLevel_SetParamUlongValue
         ULONG                       uValue
     );
 
+/**
+ * @brief Sets string parameter values for Device.X_CISCO_COM_DeviceControl.WebAccessLevel.
+ *
+ * This function sets string parameter values for web access level configuration (HomeUser, AccessLevel).
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] pString String value to set (buffer size: 256 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 WebAccessLevel_SetParamStringValue
     (
@@ -353,6 +786,19 @@ WebAccessLevel_SetParamStringValue
         char*                       pString
     );
 
+/**
+ * @brief Validates Device.X_CISCO_COM_DeviceControl.WebAccessLevel parameter changes before commit.
+ *
+ * This function validates all pending parameter changes for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name if there's a validation (buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of failed parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's validation.
+ */
 BOOL
 WebAccessLevel_Validate
     (
@@ -361,12 +807,34 @@ WebAccessLevel_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.X_CISCO_COM_DeviceControl.WebAccessLevel parameter changes to persistent storage.
+ *
+ * This function applies all validated parameter changes to the web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed, rollback should be called.
+ */
 ULONG
 WebAccessLevel_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.X_CISCO_COM_DeviceControl.WebAccessLevel parameter changes.
+ *
+ * This function reverts all uncommitted parameter changes for web access level configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 on success.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 WebAccessLevel_Rollback
     (
