@@ -222,7 +222,6 @@ int id = 0;
 #define NUM_OF_DEVICEINFO_VALUES (sizeof(deviceinfo_set_table)/sizeof(deviceinfo_set_table[0]))
 
 #define CALC_SPACE_LEFT(x) (sizeof(x) - strlen(x) - 1)
-#define RDM_COMM_PATH "/etc/rdm/rdmBundleMgr.sh"
 enum  pString_val {
     UIACCESS,
     UISUCCESS,
@@ -13804,7 +13803,7 @@ RDKDownloadManager_SetParamStringValue
     if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
-    const char *rdm_comm = RDM_COMM_PATH;
+   
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
