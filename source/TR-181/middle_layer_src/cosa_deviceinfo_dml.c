@@ -13810,9 +13810,9 @@ RDKDownloadManager_SetParamStringValue
         return FALSE;
     }
 
-    CcspTraceWarning(("[%s] Executing command - rdm -v %s & \n", __FUNCTION__, pString));
+    CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
 
-    ret = v_secure_system("/usr/bin/rdm -v \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
+    ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
