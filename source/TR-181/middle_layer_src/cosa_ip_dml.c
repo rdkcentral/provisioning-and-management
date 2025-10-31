@@ -1211,6 +1211,14 @@ Interface2_GetParamUlongValue
 
     if (strcmp(ParamName, "MaxMTUSize") == 0)
     {
+#if defined (_PLATFORM_IPQ_)
+        /* After reboot without setting MaxMTUSize, if we get value from local data structure it will return 0
+         * need to get default MaxMTUSize from CosaUtilIoctlXXX once the interface is up */
+        if (!pIPInterface->Cfg.MaxMTUSize)
+        {
+            pIPInterface->Cfg.MaxMTUSize = CosaUtilIoctlXXX((char *)pIPInterface->Cfg.LinkName, "mtu", NULL);
+        }
+#endif
         /* collect value */
         *puLong = pIPInterface->Cfg.MaxMTUSize;
 
