@@ -56,13 +56,11 @@ typedef void (*destroy_fn_t)(void *);
  * @param[in] buf          - Pointer to the buffer to decode.
  * @param[in] len          - The length of the buffer in bytes.
  * @param[in] struct_size  - The size of the structure to allocate and pass to process.
- * @param wrapper          - The optional wrapper to look for & enforce
- * @param expect_type      - The type of object expected
  * @param[in] optional     - If the inner wrapper layer is optional.
  * @param[in] process      - The process function to call if successful.
  * @param[in] destroy      - The destroy function to call if there was an error.
  *
- * @return Pointer to the processed object on success, NULL on error.
+ * @return Pointer to the processed object
  * @retval Non-NULL Pointer to the processed object after successful conversion.
  * @retval NULL on error
  *
