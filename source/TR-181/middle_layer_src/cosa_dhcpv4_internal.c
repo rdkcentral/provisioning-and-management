@@ -3418,8 +3418,8 @@ EXIT1:
     if ( pPoamIrepFoEnumClient )
         pPoamIrepFoEnumClient->Remove((ANSC_HANDLE)pPoamIrepFoEnumClient);
 
-     /*CID 53921,66535,59843, 58572,73009,72655,53404 Logically dead code -
-      goto EXIT only hit in NULL Case*/
+     /*CID 73009, 53921,66535,59843, 58572,72655,53404 Logically dead code fix -
+      goto EXIT only hit in NULL Case - Proper cleanup path*/
 
     if ( pPoamIrepFoEnumSndOpt)
         pPoamIrepFoEnumSndOpt->Remove((ANSC_HANDLE)pPoamIrepFoEnumSndOpt);
@@ -3587,6 +3587,14 @@ CosaDmlSetIpaddr
 
     if ( !pIPAddr || !pString || !MaxNumber )
         return FALSE;
+
+    /* CID 559749: Overflowed constant - Validate MaxNumber against array size */
+    if ( MaxNumber > COSA_DML_DHCP_MAX_ENTRIES )
+    {
+        CcspTraceWarning(("MaxNumber %lu exceeds COSA_DML_DHCP_MAX_ENTRIES %d, truncating\n",
+                         MaxNumber, COSA_DML_DHCP_MAX_ENTRIES));
+        MaxNumber = COSA_DML_DHCP_MAX_ENTRIES;
+    }
 
     while( pTmpString[i] )                                                       
     {

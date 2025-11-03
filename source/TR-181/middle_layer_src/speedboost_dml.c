@@ -43,78 +43,81 @@ bool setBlobDataOfSpeedBoost(ANSC_HANDLE hInsContext, char* pParamName,char* pPa
 bool getBlobDataOfSpeedBoost(ANSC_HANDLE hInsContext, char* pParamName, char *pVal, int iValSize)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    bool bRet = true;
 
+    /* CID 418966, 428914: Dereference after null check fix - return early for null parameters */
     if ((NULL == pParamName) || (NULL == pVal) || (0 == iValSize))
     {
         CcspTraceError(("%s:%d, NULL parameters passed\n", __FUNCTION__, __LINE__));
-        bRet = false;
+        return false;
     }
 
     if (strcmp(pParamName, "Data") == 0)
     {
         CcspTraceInfo(("%s:%d, ParamName: %s\n", __FUNCTION__, __LINE__, pParamName));
         snprintf(pVal, iValSize, "%s", "   ");
+        return true;
     }
     else
     {
         CcspTraceError(("%s:%d, Invalid Parameter Name:%s\n",__FUNCTION__,__LINE__,pParamName));
-        bRet = false;
+        return false;
     }
-    return bRet;
 }
 
 bool getParamIntValOfSpeedBoost (ANSC_HANDLE hInsContext, char* pParamName, int* pVal)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    bool bRet = true;
 
+    /* CID 418983, 428913: Dereference after null check fix - return early for null parameters */
     if ((NULL == pParamName) || (NULL == pVal))
     {
         CcspTraceError(("%s:%d, Invalid input parameters\n", __FUNCTION__, __LINE__));
-        bRet = false;
+        return false;
     }
+
     if (strcmp(pParamName, "NumberConfiguredDevices") == 0)
     {
         CcspTraceInfo(("%s:%d, ParamName: %s\n", __FUNCTION__, __LINE__, pParamName));
         *pVal = getNumOfConfiguredClients();
+        return true;
     }
     else if (strcmp(pParamName, "NumberEligibleDevices") == 0)
     {
         CcspTraceInfo(("%s:%d, ParamName:%s\n",__FUNCTION__, __LINE__, pParamName));
         *pVal = getNumOfActiveClients();
+        return true;
     }
     else
     {
         CcspTraceError(("%s:%d, Invalid Parameter Name:%s\n",__FUNCTION__,__LINE__,pParamName));
-        bRet = false;
+        return false;
     }
-    return bRet;
 }
 
 bool getParamStringValOfSpeedBoost(ANSC_HANDLE hInsContext, char* pParamName, char* pParamVal, int iParamValSize)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    bool bRet = true;
 
+    /* CID 428915: Dereference after null check fix - return early for null parameters */
     if ((NULL == pParamName) || (NULL == pParamVal) || (0 == iParamValSize))
     {
         CcspTraceError(("%s:%d, NULL parameter passed\n", __FUNCTION__, __LINE__));
-        bRet = false;
+        return false;
     }
+
     if (strcmp(pParamName, "CurrentDeviceList") == 0)
     {
         CcspTraceInfo(("%s:%d, ParamName: %s\n", __FUNCTION__, __LINE__, pParamName));
         if(!getActiveDevicesListOfSpeedBoost(pParamVal, iParamValSize))
         {
             CcspTraceError(("%s:%d, Failed to get active devices list\n", __FUNCTION__, __LINE__));
-            bRet = false;
+            return false;
         }
+        return true;
     }
     else
     {
         CcspTraceError(("%s:%d, Invalid Parameter Name:%s\n",__FUNCTION__,__LINE__,pParamName));
-        bRet = false;
+        return false;
     }
-    return bRet;
 }

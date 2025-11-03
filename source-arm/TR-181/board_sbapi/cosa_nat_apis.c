@@ -145,7 +145,12 @@ void logPrintIvictl(char* filename, int line, char *fmt,...)
     int     e;
     struct tm *info;
 
+    /* CID XXXX Unchecked return value fix */
     fpMaptLogFile = fopen(strMaptLogFileName,"a");
+    if (fpMaptLogFile == NULL) {
+        CcspTraceError(("%s:%d Failed to open MAPT log file\n", __FUNCTION__, __LINE__));
+        return;
+    }
 
     time(&ctime); /* Get current time */
     info = localtime(&ctime);

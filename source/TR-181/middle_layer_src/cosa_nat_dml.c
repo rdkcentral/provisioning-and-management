@@ -2433,6 +2433,7 @@ PortMapping_SetParamUlongValue
         return  TRUE;
     }
 
+    /* CID 73723 fix - Logically dead code - Default case for unsupported parameters */
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE ;
 

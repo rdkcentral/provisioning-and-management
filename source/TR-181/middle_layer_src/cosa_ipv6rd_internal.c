@@ -264,15 +264,21 @@ CosaIPv6rdRemove(
     if (AnscSListQueryDepth(&pMyObject->IfList) != 0)
     {
         pSLinkEntry = AnscSListGetFirstEntry(&pMyObject->IfList);
-        while (!pSLinkEntry)
+        while (pSLinkEntry)  /* CID 65282 fix - Correct loop condition to avoid null dereference */
         {
             pLinkObject = ACCESS_COSA_CONTEXT_LINK_OBJECT(pSLinkEntry);
-            /* TODO: deref pSLinkEntry, while condition should be != NULL*/
             pSLinkEntry = AnscSListGetNextEntry(pSLinkEntry);
-            AnscSListPopEntryByLink(&pMyObject->IfList, &pLinkObject->Linkage);
-
-            AnscFreeMemory(pLinkObject->hContext);
-            AnscFreeMemory(pLinkObject);
+            
+            if (pLinkObject)  /* CID 65282 fix - Add null check before accessing pLinkObject */
+            {
+                AnscSListPopEntryByLink(&pMyObject->IfList, &pLinkObject->Linkage);
+                
+                if (pLinkObject->hContext)  /* CID 65282 fix - Check context before freeing */
+                {
+                    AnscFreeMemory(pLinkObject->hContext);
+                }
+                AnscFreeMemory(pLinkObject);
+            }
         }
     }
 

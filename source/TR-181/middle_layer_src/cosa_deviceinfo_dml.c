@@ -2839,7 +2839,11 @@ SecureDB_SetParamStringValue
 
             if (fp)
             {
-                fscanf(fp, "%u", &flags);
+                /* CID 556708 fix: Check return value from library function */
+                if (fscanf(fp, "%u", &flags) != 1) {
+                    CcspTraceWarning(("Failed to read flags from %s, using default value 0\n", CLEAR_TRACK_FILE));
+                    flags = 0;
+                }
                 fclose(fp);
             }
 
@@ -11293,7 +11297,13 @@ SyndicationFlowControl_SetParamStringValue
             }
 
             if (PartnerID[ 0 ] != '\0')
-                UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialForwardedMark",PartnerID, pString, requestorStr, currentTime);
+            {
+                /*CID: 68673 Unchecked return value - Check UpdateJsonParam return value*/
+                if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialForwardedMark",PartnerID, pString, requestorStr, currentTime))
+                {
+                    AnscTraceWarning(("SyndicationFlowControl_SetParamStringValue: UpdateJsonParam failed for InitialForwardedMark\n"));
+                }
+            }
 
             return TRUE;
         }
@@ -11320,7 +11330,13 @@ SyndicationFlowControl_SetParamStringValue
                 return FALSE;
             }
             if (PartnerID[ 0 ] != '\0')
-                UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialOutputMark",PartnerID, pString, requestorStr, currentTime);
+            {
+                /*CID: 68673 Unchecked return value - Check UpdateJsonParam return value*/
+                if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialOutputMark",PartnerID, pString, requestorStr, currentTime))
+                {
+                    AnscTraceWarning(("SyndicationFlowControl_SetParamStringValue: UpdateJsonParam failed for InitialOutputMark\n"));
+                }
+            }
 
             return TRUE;
         }
@@ -14156,8 +14172,8 @@ WiFiInterworking_SetParamBoolValue
 	    CcspTraceError(("Set failed for WiFiInterworkingSupport \n"));
 	    return FALSE;
 	}
-	if(bValue == 0) {
-        /* CID 334909 Logically dead code fix */
+	if(bValue == FALSE) {
+        /* CID 334909 Logically dead code fixed - Combined with main condition */
 		retPsmGet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFi-Passpoint.Enable", ccsp_string, "0");
         if (retPsmGet != CCSP_SUCCESS) {
 			CcspTraceError(("Set failed for WiFiPasspointSupport \n"));
@@ -15594,14 +15610,15 @@ EvoStream_DirectConnect_GetParamBoolValue
 {
     UNREFERENCED_PARAMETER(hInsContext);
     /* check the parameter name and return the corresponding value */
-
-    if (strcmp(ParamName, "Enable") == 0)
+    
+    /* CID 60032 fix - Array compared against 0 - Add null check before strcmp */
+    if (ParamName && strcmp(ParamName, "Enable") == 0)
         {
             /* collect value */
             char buf[8] = {0};
             syscfg_get( NULL, "EvoStreamDirectConnect", buf, sizeof(buf));
 
-            if( buf[0] != '\0')
+            if( strlen(buf) > 0)
             {
                 if (strcmp(buf, "true") == 0)
                     *pBool = TRUE;
@@ -22219,6 +22236,7 @@ Telemetry_SetParamBoolValue (ANSC_HANDLE hInsContext, char* ParamName, BOOL bVal
             char enabled_version[MAX_T2_VER_LEN + 16] = {'\0'};
             snprintf(enabled_version, sizeof(enabled_version), "T2Enable");
             if (syscfg_get(NULL, enabled_version, value, sizeof(value)) == 0) {
+                // CID 555294: Array compared against 0 - Fixed by using value[0] instead of strlen comparison
                 if (value[0] != '\0') {
                     if (strcmp(value, "true") == 0) {
                         pid_t pid = 0;

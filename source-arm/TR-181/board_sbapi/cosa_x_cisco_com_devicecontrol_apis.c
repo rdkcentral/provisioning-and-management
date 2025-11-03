@@ -1978,7 +1978,10 @@ void* restoreAllDBs(void* arg)
 
                 // grab URL from string
                 urlPtr = strstr(buf, "=");
-                urlPtr++;
+                /* CID 71080: Dereference null return value - Check if strstr found the delimiter */
+                if (urlPtr != NULL) {
+                    urlPtr++;
+                }
                 break;
             }
         }
@@ -2843,7 +2846,11 @@ CosaDmlDcSetEnableStaticNameServer
     {
 	// Call set_resolv_conf to delete static dns entries from dns server
         v_secure_system("/bin/sh /etc/utopia/service.d/set_resolv_conf.sh");
-        commonSyseventSet("wan-restart", "");
+        /*CID: 65539 Unchecked return value - Check commonSyseventSet return value*/
+        if (commonSyseventSet("wan-restart", "") != 0)
+        {
+            CcspTraceWarning(("CosaDmlDcSetEnableStaticNameServer: commonSyseventSet failed for wan-restart\n"));
+        }
     }
     else{
         if (v_secure_system("/bin/sh /etc/utopia/service.d/set_resolv_conf.sh") != 0) {
@@ -5165,11 +5172,20 @@ int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDeviceProp
 
             // grab content from string(entry)
             urlPtr = strstr( buf, "=" );
-            urlPtr++;
-			
-            strncpy( pOutput, urlPtr, size );
-			
-          ret=0;
+            
+            /* CID 69589 fix - Check for null return before dereferencing */
+            if ( urlPtr != NULL )
+            {
+                urlPtr++;
+                strncpy( pOutput, urlPtr, size );
+                pOutput[size - 1] = '\0'; /* CID 69589 fix - Ensure null termination */
+                ret = 0;
+            }
+            else
+            {
+                CcspTraceError(("Invalid entry format in device properties file\n"));
+                ret = -1;
+            }
 		  
           break;
         }

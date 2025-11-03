@@ -3581,8 +3581,9 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
 			Utopia_Free(&utctx, 0);
 		}
 		// This check is to prevent P&M crash
+		/* CID 163447 fix - Nesting level mismatch - Proper indentation for null check */
 		if(pVClass != NULL)
-                {
+		{
 			snprintf((char*)pEntry->ClassId, sizeof(pEntry->ClassId), "%s", pVClass);
 		}
 

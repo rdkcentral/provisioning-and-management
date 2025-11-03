@@ -84,6 +84,18 @@ BOOL unpackAndProcessHotspotData(char* pString)
             CcspTraceWarning(("The version is %lu\n", (long)hd->version));
             CcspTraceWarning(("The subdoc_name is %s\n", hd->subdoc_name));
 
+            /* CID 172807 fix - Check array bounds before accessing entries */
+            if (hd->entries == NULL || hd->entries_count < 2)
+            {
+                CcspTraceError(("Invalid entries array: entries=%p, count=%zu\n", 
+                               hd->entries, hd->entries_count));
+                if(hd != NULL)
+                {
+                    hotspotdoc_destroy(hd);
+                }
+                return FALSE;
+            }
+
             //Tunnel Data
             td = tunneldoc_convert( hd->entries[0].value, hd->entries[0].value_size );
 
@@ -358,14 +370,26 @@ void* initialize_hotspot_webconfig(void *arg)
         fseek(fp, 0, SEEK_SET);
         CcspTraceInfo(("%s file size is %ld\n",HOTSPOT_BLOB_FILE,sz));
 
+        /* CID 173223: Untrusted value as argument - Validate file size before allocation */
+        if (sz < 0 || sz > 10485760) { /* Max 10MB for blob file */
+            CcspTraceWarning(("Blob file size %ld is invalid or too large, max allowed is 10MB\n", sz));
+            fclose(fp);
+            return NULL;
+        }
+        
         blob = (char*) malloc(sizeof(char) * (sz + 1));
         if (blob != NULL)
         {
             /* CID: 172835 fix*/
-            if (fscanf(fp,"%s",blob) == 1)
-            {
+            /* CID 173223: Use safer fread instead of fscanf to avoid buffer overflow */
+            size_t bytes_read = fread(blob, 1, sz, fp);
+            if (bytes_read > 0 && bytes_read <= (size_t)sz) {
+                blob[bytes_read] = '\0'; /* Null terminate */
                 gDisableNotification = 1;
-                unpackAndProcessHotspotData(blob); 
+                unpackAndProcessHotspotData(blob);
+            } else {
+                CcspTraceWarning(("Failed to read blob file or read size mismatch: read=%zu, expected=%ld\n", 
+                                 bytes_read, sz));
             }
             free(blob);
             blob = NULL ;  

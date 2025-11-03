@@ -1810,7 +1810,7 @@ EXIT1:
         pPoamIrepFoEnumSntOpt->Remove((ANSC_HANDLE)pPoamIrepFoEnumSntOpt);
 #endif    
    
-    /*CID: 71033, 54427, 57933, 64391 Logically dead code - EXIT1 invoke only when ptr is NULL*/ 
+    /*CID: 58891, 71033, 54427, 57933, 64391 Logically dead code fix - EXIT1 invoke only when ptr is NULL*/ 
 
     return returnStatus;
 }
@@ -1892,18 +1892,16 @@ CosaDhcpv6RegSetDhcpv6Info
         pPoamIrepFoDhcpv6->EnableFileSync((ANSC_HANDLE)pPoamIrepFoDhcpv6, FALSE);
     }
 
-    if ( TRUE )
+    /* CID 56862 fix - remove logically dead code by eliminating always-true condition */
+    pPoamIrepFoDhcpv6->Clear((ANSC_HANDLE)pPoamIrepFoDhcpv6);
+
+    SlapAllocVariable(pSlapVariable);
+
+    if ( !pSlapVariable )
     {
-        pPoamIrepFoDhcpv6->Clear((ANSC_HANDLE)pPoamIrepFoDhcpv6);
+        returnStatus = ANSC_STATUS_RESOURCES;
 
-        SlapAllocVariable(pSlapVariable);
-
-        if ( !pSlapVariable )
-        {
-            returnStatus = ANSC_STATUS_RESOURCES;
-
-            goto  EXIT1;
-        }
+        goto  EXIT1;
     }
 
     /* This is saved structure for DHCPv6

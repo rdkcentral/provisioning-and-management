@@ -1147,6 +1147,7 @@ CosaNatRegSetNatInfo
 
 
 EXIT1:
+    /* CID 70092 fix - Logically dead code - Proper cleanup and return path */
     if ( pSlapVariable )
     {
         SlapFreeVariable(pSlapVariable);

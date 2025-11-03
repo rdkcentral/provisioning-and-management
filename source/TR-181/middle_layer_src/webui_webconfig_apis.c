@@ -122,11 +122,19 @@ pErr webui_webconfig_process_request(void *Data)
                     execRetVal->ErrorCode = ret;
                     if (ret == -1)
                     {
-                       strncpy(execRetVal->ErrorMsg, "Invalid WebUI Mode", sizeof(execRetVal->ErrorMsg)-1);
+                       /* CID 559480: Overflowed constant - Safe string copy with bounds checking */
+                       if (sizeof(execRetVal->ErrorMsg) > 1) {
+                           strncpy(execRetVal->ErrorMsg, "Invalid WebUI Mode", sizeof(execRetVal->ErrorMsg)-1);
+                           execRetVal->ErrorMsg[sizeof(execRetVal->ErrorMsg)-1] = '\0';
+                       }
                     }
                     else if (ret == SYSCFG_FAILURE)
                     {
-                      strncpy(execRetVal->ErrorMsg, "syscfg_set failed for WebUI", sizeof(execRetVal->ErrorMsg)-1);
+                       /* CID 559480: Overflowed constant - Safe string copy with bounds checking */
+                       if (sizeof(execRetVal->ErrorMsg) > 1) {
+                           strncpy(execRetVal->ErrorMsg, "syscfg_set failed for WebUI", sizeof(execRetVal->ErrorMsg)-1);
+                           execRetVal->ErrorMsg[sizeof(execRetVal->ErrorMsg)-1] = '\0';
+                       }
                     }
                 }
             }

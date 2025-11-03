@@ -689,8 +689,15 @@ user_hashandsavepwd
       rc = strcpy_s(pEntry->HashedPassword,sizeof(pEntry->HashedPassword),setHash);
       ERR_CHK(rc);
       CcspTraceWarning(("%s, Hash value is saved to syscfg\n",__FUNCTION__));
-	  syscfg_unset(NULL, "user_password_3");
-	  syscfg_commit();
+      /* CID 349789 Unchecked return value fix - Check syscfg function return values */
+      if (syscfg_unset(NULL, "user_password_3") != 0) {
+          AnscTraceWarning(("syscfg_unset failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
+      if (syscfg_commit() != 0) {
+          AnscTraceWarning(("syscfg_commit failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
       return ANSC_STATUS_SUCCESS;
    }
 
@@ -706,8 +713,15 @@ user_hashandsavepwd
       rc = strcpy_s(pEntry->HashedPassword,sizeof(pEntry->HashedPassword),setHash);
       ERR_CHK(rc);
       CcspTraceWarning(("%s, Hash value is saved to syscfg\n",__FUNCTION__));
-      syscfg_unset(NULL, "user_password_2");
-      syscfg_commit();
+      /* CID 349789 Unchecked return value fix - Check syscfg function return values for cusadmin */
+      if (syscfg_unset(NULL, "user_password_2") != 0) {
+          AnscTraceWarning(("syscfg_unset failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
+      if (syscfg_commit() != 0) {
+          AnscTraceWarning(("syscfg_commit failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
       return ANSC_STATUS_SUCCESS;
    }
 #endif

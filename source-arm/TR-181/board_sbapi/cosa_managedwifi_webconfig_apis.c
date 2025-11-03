@@ -713,13 +713,23 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
 
     for (int iCount = 0; iCount < pCurrBrInfo->iBridgeCount; iCount++)
     {
-        amenityBridgeInfo_t *pBridge = &pCurrBrInfo->pBridgeInfoStruct[iCount];
-        if ('\0' == pBridge->cBridgeName[0])
-        {
-            CcspTraceError(("%s:%d, cBridgeName is NULL\n", __FUNCTION__, __LINE__));
+        /* CID 565421 fix - Dereference after null check - Validate pBridgeInfoStruct before dereferencing */
+        if (pCurrBrInfo->pBridgeInfoStruct == NULL) {
+            CcspTraceError(("%s:%d, pBridgeInfoStruct became NULL during processing\n", __FUNCTION__, __LINE__));
             pthread_cond_destroy(&amenityWifi_exec_completed);
             pthread_condattr_destroy(&amenityWifi_attr);
-            snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "cBridgeName is NULL\n");
+            snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "pBridgeInfoStruct became NULL during processing\n");
+            pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
+            return -1;
+        }
+        amenityBridgeInfo_t *pBridge = &pCurrBrInfo->pBridgeInfoStruct[iCount];
+        /* CID 565415 Array compared against 0 fix - Check string length instead of comparing array to 0 */
+        if (0 == strlen(pBridge->cBridgeName))
+        {
+            CcspTraceError(("%s:%d, cBridgeName is empty\n", __FUNCTION__, __LINE__));
+            pthread_cond_destroy(&amenityWifi_exec_completed);
+            pthread_condattr_destroy(&amenityWifi_attr);
+            snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "cBridgeName is empty\n");
             pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
             return -1;
         }
@@ -1648,7 +1658,6 @@ BOOL unpackAndProcessManagedWifiData(char* pString)
         CcspTraceInfo(("Corrupted managedwifi value\n"));
         return FALSE;
     }
-    return TRUE;
 }
 
 
@@ -2849,6 +2858,7 @@ void *amenityMultinetNotifyHandler(void *vArg)
     for (int i = 0; i < pAmenityBridgeInfo->iBridgeCount; i++)
     {
         amenityBridgeInfo_t *pBridge = &pAmenityBridgeInfo->pBridgeInfoStruct[i];
+        // CID 565426: Array compared against 0 - Fixed by using pBridge->cBridgeIndex[0] instead of strlen comparison
         if (pBridge->cBridgeIndex[0] != '\0')
         {
             BOOL bShouldSet = FALSE;

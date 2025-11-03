@@ -353,9 +353,11 @@ User_AddEntry
     rc = sprintf_s( pUser->Username, sizeof(pUser->Username),"User%lu", pUser->InstanceNumber);
     if(rc < EOK)
     {
-      ERR_CHK(rc);
-      AnscFreeMemory(pCxtLink);
-      goto EXIT1;
+        ERR_CHK(rc);
+        /* CID 58159 Logically dead code fix - Free both allocated objects before exit */
+        AnscFreeMemory(pCxtLink);
+        AnscFreeMemory(pUser);
+        return NULL;
     }
 
     /* Put into our list */

@@ -360,8 +360,9 @@ bool extractSshArguments(char *revSSHConfig) {
 	char* value = NULL;
 	errno_t rc = -1;
 
+        /* CID 348041 fix - Return proper boolean value instead of NULL */
         if (!revSSHConfig)
-            return NULL;
+            return false;
         
         if ((value = strstr(revSSHConfig, "idletimeout="))) {
                 revsshparam.idletimeout = atoi(value+strlen("idletimeout="));
@@ -375,7 +376,8 @@ bool extractSshArguments(char *revSSHConfig) {
 #endif
         }else if ((value = strstr(revSSHConfig, "host="))) {
 #ifdef ENABLE_SHORTS
-                if(stunnelsshargs.host){
+                /* CID 348042 fix - Check array length instead of array name against 0 */
+                if(strlen(stunnelsshargs.host) == 0){
                         rc=strcpy_s(stunnelsshargs.host,512,value+strlen("host="));
                         if(rc < EOK){
                                 ERR_CHK(rc);
@@ -393,7 +395,8 @@ bool extractSshArguments(char *revSSHConfig) {
 #endif
         }else if ((value = strstr(revSSHConfig, "hostIp="))) {
 #ifdef ENABLE_SHORTS
-                if(stunnelsshargs.hostIp){
+                /* CID 348042 fix - Check array length instead of array name against 0 */
+                if(strlen(stunnelsshargs.hostIp) == 0){
                         rc=strcpy_s(stunnelsshargs.hostIp,512,value+strlen("hostIp="));
                         if(rc < EOK){
                                 ERR_CHK(rc);
@@ -1827,6 +1830,12 @@ ULONG COSADmlGetCpuUsage()
 
     CPUNum = sysconf(_SC_NPROCESSORS_ONLN);
     CcspTraceWarning(("There are %d cpus!\n", CPUNum));
+    
+    /* CID 162806 fix - Untrusted divisor - Validate CPUNum before using as divisor */
+    if (CPUNum <= 0) {
+        CcspTraceWarning(("Invalid CPU count %d, using default 1\n", CPUNum));
+        CPUNum = 1;
+    }
         
     if ( !(fp = fopen("/proc/stat", "r")) )
     {   
@@ -2142,7 +2151,7 @@ CosaDmlDiGetProcessorSpeed
     }
 
     pclose(fp);
-    fp = NULL;
+    /* CID 91843 fix: Remove redundant fp = NULL assignment */
 #else
     char *pcur;
 #ifdef _COSA_INTEL_XB3_ARM_
@@ -2157,7 +2166,6 @@ CosaDmlDiGetProcessorSpeed
     {
         fgets(line, MAX_LINE_SIZE, fp);
         pclose( fp );
-        fp = NULL;
         // Remove line \n character from string
         if (( pcur = strchr( line, '\n' )) != NULL )
         {
@@ -2188,7 +2196,7 @@ CosaDmlDiGetProcessorSpeed
        }     
     }
     v_secure_pclose(fp);
-    fp = NULL;
+    /* CID 91843 fix: Remove redundant fp = NULL assignment */
 #endif
     
     *pulSize = AnscSizeOfString(pValue);
@@ -2344,9 +2352,16 @@ int findLocalPortAvailable()
 {
         struct sockaddr_in address;
         int sockfd = -1, status;
-        int port = MIN_PORT_RANGE;
+        /* CID 559553: Overflowed return value - Use unsigned type to prevent overflow */
+        unsigned int port = MIN_PORT_RANGE;
 
-        while (port <= MAX_PORT_RANGE) {
+        /* CID 559553: Add bounds checking to prevent integer overflow */
+        if (MIN_PORT_RANGE < 0 || MAX_PORT_RANGE > 65535 || MIN_PORT_RANGE > MAX_PORT_RANGE) {
+            CcspTraceWarning(("Invalid port range: MIN=%d, MAX=%d\n", MIN_PORT_RANGE, MAX_PORT_RANGE));
+            return -1;
+        }
+
+        while (port <= (unsigned int)MAX_PORT_RANGE) {
                 address.sin_family = AF_INET;
                 address.sin_addr.s_addr = inet_addr("127.0.0.1");
                 address.sin_port = htons(port);
@@ -2363,11 +2378,16 @@ int findLocalPortAvailable()
                 status = connect(sockfd, (struct sockaddr *)&address, sizeof(address));
 
                 if (status<0){
-                         CcspTraceInfo(("[%s] Port %d is available.\n", __FUNCTION__, port));
+                         CcspTraceInfo(("[%s] Port %u is available.\n", __FUNCTION__, port));
                          close(sockfd);
-                         return port;
+                         /* CID 559553: Ensure port fits in int return type */
+                         if (port > INT_MAX) {
+                             CcspTraceWarning(("Port %u exceeds INT_MAX, returning -1\n", port));
+                             return -1;
+                         }
+                         return (int)port;
                 }
-                CcspTraceInfo(("[%s] Port %d is in use.\n", __FUNCTION__, port));
+                CcspTraceInfo(("[%s] Port %u is in use.\n", __FUNCTION__, port));
                 close(sockfd);
                 port++;
         }
@@ -4733,11 +4753,14 @@ CosaDmlDi_ValidateRebootDeviceParam( char *pValue )
 		  IsSourceValid 	= FALSE,
 		  IsDelayValid		= FALSE;
         char *st = NULL;
-	CcspTraceWarning(("%s %d - String :%s", __FUNCTION__, __LINE__, ( pValue != NULL ) ?  pValue : "NULL" ));
 
-        /*CID: 61097 Dereference before null check*/
+        /* CID 74460 fix - Check for null before any dereference */
         if (!pValue)
             return FALSE;
+            
+	CcspTraceWarning(("%s %d - String :%s", __FUNCTION__, __LINE__, pValue ));
+
+        /*CID: 61097 Dereference before null check - Already handled above*/
         
 	if (strcasestr(pValue, "delay=")) {
 		IsDelayValid = TRUE;

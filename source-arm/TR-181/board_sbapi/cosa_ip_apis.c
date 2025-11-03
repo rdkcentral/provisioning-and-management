@@ -2184,7 +2184,11 @@ CosaDmlIpIfGetEntry
         {
            ERR_CHK(safec_rc);
         }
-        Utopia_RawGet(&utctx,NULL,buf,out,sizeof(out));
+        /*CID: 54740 Unchecked return value - Check Utopia_RawGet return value*/
+        if (!Utopia_RawGet(&utctx,NULL,buf,out,sizeof(out)))
+        {
+           AnscTraceWarning(("CosaDmlIpIfGetEntry: Utopia_RawGet failed for key %s\n", buf));
+        }
         Utopia_Free(&utctx,0);
 
         if (out[0]) 
@@ -2194,18 +2198,31 @@ CosaDmlIpIfGetEntry
         else 
         {
             /*if the alias is not set before, we initialize it here rather than get a default value from middile layer*/
-            Utopia_Init(&utctx);
+            /*CID: 54740 Unchecked return value - Check Utopia_Init return value*/
+            if (!Utopia_Init(&utctx))
+            {
+               AnscTraceWarning(("CosaDmlIpIfGetEntry: Utopia_Init failed for setting alias\n"));
+               return ANSC_STATUS_FAILURE;
+            }
             safec_rc = sprintf_s(buf, sizeof(buf), "tr_ip_interface_%s_alias", pEntry->Info.Name);
             if(safec_rc < EOK)
             {
                ERR_CHK(safec_rc);
+               Utopia_Free(&utctx,0);
+               return ANSC_STATUS_FAILURE;
             }
             safec_rc = sprintf_s(out, sizeof(out), "Interface_%s", pEntry->Info.Name);
             if(safec_rc < EOK)
             {
                ERR_CHK(safec_rc);
+               Utopia_Free(&utctx,0);
+               return ANSC_STATUS_FAILURE;
             }
-            Utopia_RawSet(&utctx,NULL,buf,out);
+            /*CID: 54740 Unchecked return value - Check Utopia_RawSet return value*/
+            if (!Utopia_RawSet(&utctx,NULL,buf,out))
+            {
+               AnscTraceWarning(("CosaDmlIpIfGetEntry: Utopia_RawSet failed for key %s\n", buf));
+            }
             Utopia_Free(&utctx,1);
 
             _ansc_strncpy(pEntry->Cfg.Alias, out, COSA_DML_IF_NAME_LENGTH-1);  
@@ -2444,8 +2461,14 @@ CosaDmlIpIfSetCfg
             if(safec_rc < EOK)
             {
                ERR_CHK(safec_rc);
+               Utopia_Free(&utctx,0);
+               return ANSC_STATUS_FAILURE;
             }
-            Utopia_RawSet(&utctx,NULL,buf,pCfg->Alias);
+            /*CID: 68667 Unchecked return value - Check Utopia_RawSet return value*/
+            if (!Utopia_RawSet(&utctx,NULL,buf,pCfg->Alias))
+            {
+               AnscTraceWarning(("CosaDmlIpIfSetCfg: Utopia_RawSet failed for key %s\n", buf));
+            }
             Utopia_Free(&utctx,1);
 
             safec_rc = strcpy_s(p_be_buf_cfg->Alias,sizeof(p_be_buf_cfg->Alias), pCfg->Alias);
@@ -2866,7 +2889,11 @@ CosaDmlIpIfGetV4Addr
             {
                ERR_CHK(safec_rc);
             }
-            Utopia_RawGet(&utctx,NULL,buf,out,sizeof(out));
+            /*CID: 53826 Unchecked return value - Check Utopia_RawGet return value*/
+            if (!Utopia_RawGet(&utctx,NULL,buf,out,sizeof(out)))
+            {
+               AnscTraceWarning(("CosaDmlIpIfGetV4Addr: Utopia_RawGet failed for key %s\n", buf));
+            }
             Utopia_Free(&utctx,0);
 
             if (out[0]) 
@@ -2876,18 +2903,29 @@ CosaDmlIpIfGetV4Addr
             else 
             {
                 /*if the alias is not set before, we initialize it here rather than get a default value from middile layer*/
-                Utopia_Init(&utctx);
+                /*CID: 53826 Unchecked return value*/
+                if(!Utopia_Init(&utctx))
+                   return ANSC_STATUS_FAILURE;
+                   
                 safec_rc = sprintf_s(buf, sizeof(buf), "tr_ip_interface_%s_v4addr_alias", g_ipif_names[ulIpIfInstanceNumber-1]);
                 if(safec_rc < EOK)
                 {
                    ERR_CHK(safec_rc);
+                   Utopia_Free(&utctx,0);
+                   return ANSC_STATUS_FAILURE;
                 }
                 safec_rc = sprintf_s(out, sizeof(out), "Interface_%lu", pEntry->InstanceNumber);
                 if(safec_rc < EOK)
                 {
                    ERR_CHK(safec_rc);
+                   Utopia_Free(&utctx,0);
+                   return ANSC_STATUS_FAILURE;
                 }
-                Utopia_RawSet(&utctx,NULL,buf,out);
+                /*CID: 53826 Unchecked return value - Check Utopia_RawSet return value*/
+                if (!Utopia_RawSet(&utctx,NULL,buf,out))
+                {
+                   AnscTraceWarning(("CosaDmlIpIfGetV4Addr: Utopia_RawSet failed for key %s\n", buf));
+                }
                 Utopia_Free(&utctx,1);
 
                 _ansc_strncpy(pEntry->Alias, out, COSA_DML_IF_NAME_LENGTH-1);  
@@ -3120,8 +3158,14 @@ CosaDmlIpIfSetV4Addr
             if(safec_rc < EOK)
             {
                ERR_CHK(safec_rc);
+               Utopia_Free(&utctx,0);
+               return ANSC_STATUS_FAILURE;
             }
-            Utopia_RawSet(&utctx,NULL,buf,pEntry->Alias);
+            /*CID: 74354 Unchecked return value - Check Utopia_RawSet return value*/
+            if (!Utopia_RawSet(&utctx,NULL,buf,pEntry->Alias))
+            {
+               AnscTraceWarning(("CosaDmlIpIfSetV4Addr: Utopia_RawSet failed for key %s\n", buf));
+            }
             Utopia_Free(&utctx,1);
 
             safec_rc = strcpy_s(p_be_buf->Alias,sizeof(p_be_buf->Alias), pEntry->Alias);
@@ -3254,13 +3298,41 @@ int _datetime_to_secs(char * p_dt)
             )!= 6 )
         return 0;
     
+    /* CID 559761: Overflowed return value - Validate date components before processing */
+    if (t2.tm_year < 1900 || t2.tm_year > 3000 || 
+        t2.tm_mon < 1 || t2.tm_mon > 12 ||
+        t2.tm_mday < 1 || t2.tm_mday > 31 ||
+        t2.tm_hour < 0 || t2.tm_hour > 23 ||
+        t2.tm_min < 0 || t2.tm_min > 59 ||
+        t2.tm_sec < 0 || t2.tm_sec > 59) {
+        CcspTraceWarning(("Invalid date/time components: %d-%d-%d %d:%d:%d\n",
+                         t2.tm_year, t2.tm_mon, t2.tm_mday, 
+                         t2.tm_hour, t2.tm_min, t2.tm_sec));
+        return 0;
+    }
+    
     t2.tm_year -= 1900;
     t2.tm_mon-- ;
 
     /*todo: what about time zone?*/
     t1 = mktime(&t2);
+    
+    if (t1 == (time_t)-1) {
+        CcspTraceWarning(("mktime failed for date conversion\n"));
+        return 0;
+    }
 
-    return (t1-time(NULL));
+    /* CID 559761: Overflowed return value - Check for overflow before return */
+    time_t current_time = time(NULL);
+    time_t diff = t1 - current_time;
+    
+    if (diff > INT_MAX || diff < INT_MIN) {
+        CcspTraceWarning(("Time difference %ld exceeds int range [%d, %d]\n", 
+                         (long)diff, INT_MIN, INT_MAX));
+        return (diff > 0) ? INT_MAX : INT_MIN;
+    }
+
+    return (int)diff;
 }
 
 /* ret:

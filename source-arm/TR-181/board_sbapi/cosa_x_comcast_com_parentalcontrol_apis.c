@@ -1814,14 +1814,24 @@ CosaDmlBlkURL_SetConf(ULONG ins, COSA_DML_BLOCKEDURL *pEntry)
     else
     {
 #if defined(CONFIG_CISCO_FEATURE_CISCOCONNECT) || defined(CONFIG_CISCO_PARCON_WALLED_GARDEN)  
-        v_secure_system("ipset flush %lu", blkurl.ins_num);
-        v_secure_system("ipset flush %lu_v6", blkurl.ins_num);
+        /* CID 104460 fix - Unchecked return value from library - Check v_secure_system return values */
+        if (v_secure_system("ipset flush %lu", blkurl.ins_num) != 0) {
+            AnscTraceWarning(("CosaDmlBlkURL_SetConf: ipset flush failed for ins_num %lu\n", blkurl.ins_num));
+        }
+        if (v_secure_system("ipset flush %lu_v6", blkurl.ins_num) != 0) {
+            AnscTraceWarning(("CosaDmlBlkURL_SetConf: ipset flush IPv6 failed for ins_num %lu\n", blkurl.ins_num));
+        }
 #else
         char url2ipFilePath[256];
         snprintf(url2ipFilePath, sizeof(url2ipFilePath), URL2IP_PATH, ins);
-        remove(url2ipFilePath);
+        /* CID 104460 fix - Unchecked return value from library - Check remove return values */
+        if (remove(url2ipFilePath) != 0) {
+            AnscTraceWarning(("CosaDmlBlkURL_SetConf: Failed to remove file %s\n", url2ipFilePath));
+        }
         snprintf(url2ipFilePath, sizeof(url2ipFilePath), URL2IP6_PATH, ins);
-        remove(url2ipFilePath);
+        if (remove(url2ipFilePath) != 0) {
+            AnscTraceWarning(("CosaDmlBlkURL_SetConf: Failed to remove IPv6 file %s\n", url2ipFilePath));
+        }
 #endif
 
         commonSyseventSet("pp_flush", "1");

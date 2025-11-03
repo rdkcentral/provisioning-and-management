@@ -1232,7 +1232,16 @@ void CosaDmlNeighborTableGetEntry
             while(*p != ' ') p++;
             *p = 0;
             /*61751 - Calling risky function - Fix*/
-	    strncpy((*ppNbTbl)[i].Address, p1, (sizeof((*ppNbTbl)[i].Address)-1));
+            /* CID 135486: Untrusted value as argument - Validate address length before copying */
+            if (strlen(p1) < sizeof((*ppNbTbl)[i].Address)) {
+	        strncpy((*ppNbTbl)[i].Address, p1, (sizeof((*ppNbTbl)[i].Address)-1));
+	        (*ppNbTbl)[i].Address[sizeof((*ppNbTbl)[i].Address)-1] = '\0';
+	    } else {
+	        CcspTraceWarning(("Address length %zu exceeds buffer size %zu, truncating\n", 
+	                         strlen(p1), sizeof((*ppNbTbl)[i].Address)-1));
+	        strncpy((*ppNbTbl)[i].Address, p1, (sizeof((*ppNbTbl)[i].Address)-1));
+	        (*ppNbTbl)[i].Address[sizeof((*ppNbTbl)[i].Address)-1] = '\0';
+	    }
             p++;
 
             //get interface
@@ -1250,7 +1259,16 @@ void CosaDmlNeighborTableGetEntry
             while(*p != ' ') p++;
             *p = 0;
             
-            strncpy((*ppNbTbl)[i].Interface, p1, (sizeof((*ppNbTbl)[i].Interface)-1));
+            /* CID 135486: Untrusted value as argument - Validate interface length before copying */
+            if (strlen(p1) < sizeof((*ppNbTbl)[i].Interface)) {
+                strncpy((*ppNbTbl)[i].Interface, p1, (sizeof((*ppNbTbl)[i].Interface)-1));
+                (*ppNbTbl)[i].Interface[sizeof((*ppNbTbl)[i].Interface)-1] = '\0';
+            } else {
+                CcspTraceWarning(("Interface length %zu exceeds buffer size %zu, truncating\n", 
+                                 strlen(p1), sizeof((*ppNbTbl)[i].Interface)-1));
+                strncpy((*ppNbTbl)[i].Interface, p1, (sizeof((*ppNbTbl)[i].Interface)-1));
+                (*ppNbTbl)[i].Interface[sizeof((*ppNbTbl)[i].Interface)-1] = '\0';
+            }
             p++;
             
             //get mac
@@ -1268,7 +1286,16 @@ void CosaDmlNeighborTableGetEntry
             while(*p != ' ') p++;
             *p = 0;
             
-            strncpy((*ppNbTbl)[i].MACAddress, p1, (sizeof((*ppNbTbl)[i].MACAddress)-1));
+            /* CID 135486: Untrusted value as argument - Validate MAC address length before copying */
+            if (strlen(p1) < sizeof((*ppNbTbl)[i].MACAddress)) {
+                strncpy((*ppNbTbl)[i].MACAddress, p1, (sizeof((*ppNbTbl)[i].MACAddress)-1));
+                (*ppNbTbl)[i].MACAddress[sizeof((*ppNbTbl)[i].MACAddress)-1] = '\0';
+            } else {
+                CcspTraceWarning(("MAC address length %zu exceeds buffer size %zu, truncating\n", 
+                                 strlen(p1), sizeof((*ppNbTbl)[i].MACAddress)-1));
+                strncpy((*ppNbTbl)[i].MACAddress, p1, (sizeof((*ppNbTbl)[i].MACAddress)-1));
+                (*ppNbTbl)[i].MACAddress[sizeof((*ppNbTbl)[i].MACAddress)-1] = '\0';
+            }
             p++;
 
             //get status

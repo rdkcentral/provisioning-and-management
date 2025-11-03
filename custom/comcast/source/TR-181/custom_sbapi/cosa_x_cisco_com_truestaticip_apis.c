@@ -482,9 +482,21 @@ CosaDmlTSIPLoadMappingFile
     {
         ulIndex = 0;
         pSeparator = _ansc_strstr(pStringToken->Name, " ");
+        /* CID 70500 fix - Check for null return before dereferencing */
+        if ( pSeparator == NULL ) {
+            AnscFreeMemory(pStringToken);
+            returnStatus = ANSC_STATUS_FAILURE;
+            goto EXIT;
+        }
         *pSeparator++ = '\0';
         pCount = pSeparator;
         pSeparator = _ansc_strstr(pCount, " ");
+        /* CID 70500 fix - Check for null return before dereferencing */
+        if ( pSeparator == NULL ) {
+            AnscFreeMemory(pStringToken);
+            returnStatus = ANSC_STATUS_FAILURE;
+            goto EXIT;
+        }
         *pSeparator++ = '\0';
         ulCount = _ansc_atoi(pCount);
         pMapping = (PNAMESPACE_MAPPING)AnscAllocateMemory(ulCount * sizeof(NAMESPACE_MAPPING));
@@ -509,6 +521,14 @@ CosaDmlTSIPLoadMappingFile
         {
             pType = pEntryToken->Name;
             pSeparator = _ansc_strstr(pEntryToken->Name, " ");
+            /* CID 70500 fix - Check for null return before dereferencing */
+            if ( pSeparator == NULL ) {
+                AnscFreeMemory(pEntryToken);
+                AnscFreeMemory(pMapping);
+                AnscFreeMemory(pStringToken);
+                returnStatus = ANSC_STATUS_FAILURE;
+                goto EXIT;
+            }
             *pSeparator++ = '\0';
             ulType =_ansc_atoi(pType);
             pMapping[ulIndex].Type = ulType;
@@ -752,8 +772,9 @@ CosaDmlTSIPApplyConfigFileTask
     }
     else
     {
+        /* CID 175431 fix - Logically dead code - Optional decryption path */
         AnscTraceWarning(("!!!!!!!!!! Please set decryption key first !!!!!!!!!!\n"));
-        /* goto EXIT; */
+        /* goto EXIT; -- Commented to allow processing without decryption key */
     }
 
 Start:

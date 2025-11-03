@@ -357,14 +357,19 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 #endif
 		memset(outdata,0,sizeof(outdata));
 
+        /* CID 135305 fix - Release lock before making blocking calls to avoid deadlock */
+        pthread_mutex_unlock(&circuitid_lock);
+        
         snprintf(paramname, sizeof(paramname),"%s.%s", curInt, "SSID");
         size = sizeof(outdata);
         retval = COSAGetParamValueByPathName(bus_handle, &varStruct, &size);
         if ((!(strcmp(varStruct.parameterValue,""))) || ( retval != ANSC_STATUS_SUCCESS)) {
             CcspTraceError(("could not fetch proper SSID name\n"));
-            pthread_mutex_unlock(&circuitid_lock);
             return -1;
         }
+        
+        /* Re-acquire lock for sysevent operations */
+        pthread_mutex_lock(&circuitid_lock);
 
 		if(!(strcmp(varStruct.parameterValue,""))){
 			  snprintf(paramname, sizeof(paramname), "eRT.com.cisco.spvtg.ccsp.Device.WiFi.Radio.SSID.%d.SSID",inst);
@@ -379,14 +384,19 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 
 	    memset(outdata,0,sizeof(outdata));
         
+        /* CID 135305 fix - Release lock before making blocking calls to avoid deadlock */
+        pthread_mutex_unlock(&circuitid_lock);
+        
         snprintf(paramname, sizeof(paramname), "Device.WiFi.AccessPoint.%d.Security.ModeEnabled", inst);
         size = sizeof(outdata);
         retval = COSAGetParamValueByPathName(bus_handle, &varStruct, &size);
         if ( retval != ANSC_STATUS_SUCCESS) {
             CcspTraceError(("could not fetch Security Mode\n"));
-            pthread_mutex_unlock(&circuitid_lock);
             return -1;
         }
+        
+        /* Re-acquire lock for sysevent operations */
+        pthread_mutex_lock(&circuitid_lock);
         if((strcmp("None", varStruct.parameterValue) == 0) || (strcmp("Enhanced-Open", varStruct.parameterValue) == 0)) {
             snprintf(circuitid + circuitSave, sizeof(circuitid) - circuitSave, "o");
         } else {
@@ -608,15 +618,7 @@ CosaDml_GreIfGetEntryByIndex(ULONG idx, COSA_DML_GRE_IF *greIf)
     return ANSC_STATUS_SUCCESS;
 }
 
-ANSC_STATUS
-CosaDml_GreIfSetIns(ULONG idx, ULONG ins)
-{
-   UNREFERENCED_PARAMETER(ins);
-    if (idx != 0)
-        return ANSC_STATUS_FAILURE;
-
-    return ANSC_STATUS_SUCCESS;
-}
+/* CID 163448 fix - remove useless call since CosaDml_GreIfSetIns(i, nextIns) is having no action */
 
 ANSC_STATUS
 CosaDml_GreIfGetEnable(ULONG ins, BOOL *enable)

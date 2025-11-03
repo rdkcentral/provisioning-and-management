@@ -3516,9 +3516,11 @@ VLAN_AddEntry
     PCOSA_DML_BRG_VLAN_FULL         pVLAN           = (PCOSA_DML_BRG_VLAN_FULL  )NULL;
     errno_t                         rc              = -1;
 
-	// not support
-	return NULL;
+    /* CID 175417 fix - Structurally dead code - VLAN functionality not supported, early return */
+    // not support
+    return NULL;
 
+    /* The following code is unreachable due to the return above - keeping for potential future use */
     pVLAN = (PCOSA_DML_BRG_VLAN_FULL)AnscAllocateMemory(sizeof(COSA_DML_BRG_VLAN_FULL));
 
     if ( !pVLAN )

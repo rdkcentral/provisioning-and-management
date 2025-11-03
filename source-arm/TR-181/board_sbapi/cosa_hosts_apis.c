@@ -884,6 +884,12 @@ CosaDmlHostsGetHosts
 
     if(LM_RET_SUCCESS == lm_get_all_hosts(hosts))
     {
+        /* CID 135512: Untrusted loop bound - Validate host count before using it as loop bound */
+        if (hosts->count > 10000) { /* Reasonable maximum limit for host count */
+            CcspTraceWarning(("Host count %d exceeds maximum limit, truncating to 10000\n", hosts->count));
+            hosts->count = 10000;
+        }
+        
         *pulCount = hosts->count;
         _init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
 #if !defined (NO_MOCA_FEATURE_SUPPORT)
