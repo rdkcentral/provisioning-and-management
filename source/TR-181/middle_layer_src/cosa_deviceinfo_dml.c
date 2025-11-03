@@ -222,7 +222,6 @@ int id = 0;
 #define NUM_OF_DEVICEINFO_VALUES (sizeof(deviceinfo_set_table)/sizeof(deviceinfo_set_table[0]))
 
 #define CALC_SPACE_LEFT(x) (sizeof(x) - strlen(x) - 1)
-#define RDM_COMM_PATH "/etc/rdm/rdmBundleMgr.sh"
 enum  pString_val {
     UIACCESS,
     UISUCCESS,
@@ -13804,7 +13803,6 @@ RDKDownloadManager_SetParamStringValue
     if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
-    const char *rdm_comm = RDM_COMM_PATH;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
@@ -13812,9 +13810,9 @@ RDKDownloadManager_SetParamStringValue
         return FALSE;
     }
 
-    CcspTraceWarning(("[%s] Executing command - sh %s & \n", __FUNCTION__ , rdm_comm));
+    CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
 
-    ret = v_secure_system("sh %s %s &", rdm_comm, pString);
+    ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
