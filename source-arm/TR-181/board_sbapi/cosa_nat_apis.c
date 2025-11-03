@@ -1354,7 +1354,8 @@ int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
             return -1;
         }
         int active_ports = count_unique_ports(protocol);
-        int pct = total_ports ? active_ports * 100 / total_ports : 0;
+        /* CID 733187 fix - Logically deadcode to check total_ports to be 0 */
+        int pct = (active_ports * 100) / total_ports;
         snprintf(pValue, *pUlSize, "%d|%d|%d",active_ports,total_ports,pct);
 
         CcspTraceInfo(("MAP-T Port Usage | Protocol: %s | Total Ports: %d | Active Ports: %d | Utilization: %d%%\n",

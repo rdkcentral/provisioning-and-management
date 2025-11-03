@@ -1152,9 +1152,7 @@ EXIT1:
         SlapFreeVariable(pSlapVariable);
         pSlapVariable = NULL;
     }
-
-    if ( pPoamIrepFoEnumNat )
-        pPoamIrepFoEnumNat->Remove((ANSC_HANDLE)pPoamIrepFoEnumNat);
+    /* CID 70092: pPoamIrepFoEnumNat is always NULL here - removed dead code check */
 
     pPoamIrepFoNat->EnableFileSync((ANSC_HANDLE)pPoamIrepFoNat, TRUE);
 

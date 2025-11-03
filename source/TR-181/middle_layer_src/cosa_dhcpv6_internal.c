@@ -842,7 +842,7 @@ CosaDhcpv6BackendGetDhcpv6Info
                   ERR_CHK(rc);
                   AnscFreeMemory(pPoolOption);
                   AnscFreeMemory(pCxtLink);
-                  returnStatus = ANSC_STATUS_FAILURE;
+                  /* CID: Unused value - REMOVED returnStatus ASSIGNMENT */
                   break;
                 }
         
@@ -896,7 +896,7 @@ CosaDhcpv6BackendGetDhcpv6Info
 
                     AnscFreeMemory(pCxtLink);
                     pCxtLink                  = pCxtLink2;
-                    pCxtLink2                 = NULL;
+                    /* CID: Unused value - REMOVED NULL ASSIGNMENT TO pCxtLink2 */
                 }            
 
             }
@@ -1484,6 +1484,9 @@ ClientEnd:
     /* enumerate server.pool.{i} */
     /*ulEntryCount = pPoamIrepFoPool->GetFolderCount((ANSC_HANDLE)pPoamIrepFoPool);*/
 	/*We don't use PSM to save informaiont for DHCPv6*/
+
+/* CID 58891 fix - logically deadcode - commented the block */
+#if 0
 	ulEntryCount = 0;
     for ( ulIndex = 0; ulIndex < ulEntryCount; ulIndex++ )
     {
@@ -1762,6 +1765,7 @@ PoolEnd:
         pPoamIrepFoEnumPool->Remove((ANSC_HANDLE)pPoamIrepFoEnumPool);
         pPoamIrepFoEnumPool = NULL;
     }
+#endif
     
     pPoamIrepFoPool->Remove((ANSC_HANDLE)pPoamIrepFoPool);
     pPoamIrepFoPool = NULL;
@@ -1810,7 +1814,7 @@ EXIT1:
         pPoamIrepFoEnumSntOpt->Remove((ANSC_HANDLE)pPoamIrepFoEnumSntOpt);
 #endif    
    
-    /*CID: 71033, 54427, 57933, 64391 Logically dead code - EXIT1 invoke only when ptr is NULL*/ 
+    /*CID: 71033, 54427, 57933, 64391 Logically dead code fix - EXIT1 invoke only when ptr is NULL*/ 
 
     return returnStatus;
 }
@@ -2492,8 +2496,8 @@ EXIT1:
     if ( pPoamIrepFoPoolOption   )
         pPoamIrepFoPoolOption   ->Remove((ANSC_HANDLE)pPoamIrepFoPoolOption   );
 
-    if ( pPoamIrepFoEnumPoolOption   )
-        pPoamIrepFoEnumPoolOption   ->Remove((ANSC_HANDLE)pPoamIrepFoEnumPoolOption   );
+    /* CID 56862: DEADCODE - pPoamIrepFoEnumPoolOption is always NULL because the pool loop (line 2242) 
+       uses 'while(0)' and never executes. Removed unreachable cleanup code. */
 
     pPoamIrepFoDhcpv6->EnableFileSync((ANSC_HANDLE)pPoamIrepFoDhcpv6, TRUE);
 

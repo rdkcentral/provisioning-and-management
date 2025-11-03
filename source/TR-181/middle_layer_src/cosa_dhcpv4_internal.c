@@ -970,7 +970,7 @@ CosaDhcpv4BackendGetDhcpv4Info
 
                     AnscFreeMemory(pCxtLink);
                     pCxtLink                  = pCxtLink2;
-                    pCxtLink2                 = NULL;
+                    /* CID: Unused value - REMOVED NULL ASSIGNMENT TO pCxtLink2 */
                 }            
 
             }
@@ -1086,7 +1086,7 @@ CosaDhcpv4BackendGetDhcpv4Info
         
                     AnscFreeMemory(pCxtLink);
                     pCxtLink                  = pCxtLink2;
-                    pCxtLink2                 = NULL;
+                    /* CID: Unused value - REMOVED NULL ASSIGNMENT TO pCxtLink2 */
                 }            
         
             }
@@ -1901,7 +1901,7 @@ ClientEnd:
         }
 
         pPoamIrepFoEnumX_COM_CISCO_SAddr->Remove((ANSC_HANDLE)pPoamIrepFoEnumX_COM_CISCO_SAddr);
-        pPoamIrepFoEnumX_COM_CISCO_SAddr = NULL;
+        /* CID 65057 Unused value: fix  - REMOVED NULL ASSIGNMENT */
     }
 
     pPoamIrepFoX_COM_CISCO_SAddr->Remove((ANSC_HANDLE)pPoamIrepFoX_COM_CISCO_SAddr);
@@ -3262,7 +3262,7 @@ ClientEnd:
         }
 
         pPoamIrepFoStaticAddress->Remove((ANSC_HANDLE)pPoamIrepFoStaticAddress);
-        pPoamIrepFoStaticAddress = NULL;
+        /* CID: Unused value - REMOVED NULL ASSIGNMENT TO pPoamIrepFoStaticAddress */
 
         /*
                     begin add Option
@@ -3386,7 +3386,7 @@ ClientEnd:
             }
 
             pPoamIrepFoEnumOption->Remove((ANSC_HANDLE)pPoamIrepFoEnumOption);
-            pPoamIrepFoEnumOption = NULL;
+            /* CID: Unused value - REMOVED NULL ASSIGNMENT TO pPoamIrepFoEnumOption (similar to CID 67348 fix) */
         }
 
         pPoamIrepFoOption->Remove((ANSC_HANDLE)pPoamIrepFoOption);
@@ -3418,8 +3418,8 @@ EXIT1:
     if ( pPoamIrepFoEnumClient )
         pPoamIrepFoEnumClient->Remove((ANSC_HANDLE)pPoamIrepFoEnumClient);
 
-     /*CID 53921,66535,59843, 58572,73009,72655,53404 Logically dead code -
-      goto EXIT only hit in NULL Case*/
+     /*CID 53921,66535,59843, 58572,72655,53404 Logically dead code fix -
+      goto EXIT only hit in NULL Case - Proper cleanup path*/
 
     if ( pPoamIrepFoEnumSndOpt)
         pPoamIrepFoEnumSndOpt->Remove((ANSC_HANDLE)pPoamIrepFoEnumSndOpt);
@@ -3431,10 +3431,13 @@ EXIT1:
     if ( pPoamIrepFoEnumPool)
         pPoamIrepFoEnumPool->Remove((ANSC_HANDLE)pPoamIrepFoEnumPool);
     
-
-    if ( pPoamIrepFoEnumStaticAddress)
-        pPoamIrepFoEnumStaticAddress->Remove((ANSC_HANDLE)pPoamIrepFoEnumStaticAddress);
-    
+    /* CID 73009: Logically dead code - DEADCODE
+     * pPoamIrepFoEnumStaticAddress is always NULL when EXIT1 is reached.
+     * It's only used in the static address loop (lines 3205-3261) and is
+     * explicitly set to NULL at line 3261 after cleanup. Since goto EXIT1
+     * only occurs on error paths where this variable is already NULL,
+     * the cleanup check is unreachable and has been removed.
+     */
 
     pPoamIrepFoDhcpv4->EnableFileSync((ANSC_HANDLE)pPoamIrepFoDhcpv4, TRUE);
 
@@ -3588,6 +3591,14 @@ CosaDmlSetIpaddr
     if ( !pIPAddr || !pString || !MaxNumber )
         return FALSE;
 
+    /* CID 559749: Overflowed constant - Validate MaxNumber against array size */
+    if ( MaxNumber > COSA_DML_DHCP_MAX_ENTRIES )
+    {
+        CcspTraceWarning(("MaxNumber %lu exceeds COSA_DML_DHCP_MAX_ENTRIES %d, truncating\n",
+                         MaxNumber, COSA_DML_DHCP_MAX_ENTRIES));
+        MaxNumber = COSA_DML_DHCP_MAX_ENTRIES;
+    }
+
     while( pTmpString[i] )                                                       
     {
         if ( pTmpString[i] == ',' )
@@ -3616,8 +3627,9 @@ CosaDmlSetIpaddr
         i++;                                                                   
     }  
     
-    /* The last one  */                                                       
-    if ( ( n < MaxNumber ) && ( (i-j) >= 7 ) )
+    /* The last one  */
+    /* CID 559749: INTEGER_OVERFLOW - Check i >= j to prevent unsigned underflow in subtraction */
+    if ( ( n < MaxNumber ) && ( i >= j ) && ( (i-j) >= 7 ) )
     {                                                       
         pIPAddr2[n]  = _ansc_inet_addr(&pTmpString[j]); 
         if (pIPAddr2[n] == INADDR_NONE)                
@@ -3626,8 +3638,9 @@ CosaDmlSetIpaddr
             bReturn = FALSE;                               
             goto EXIT;
         }
-    }                                                       
-    else if ( (i-j) > 1 )                                   
+    }
+    /* CID 559749: INTEGER_OVERFLOW - Check i > j to prevent unsigned underflow in subtraction */
+    else if ( ( i > j ) && ( (i-j) > 1 ) )                                   
     {                                    
         /*This case means there a illegal length ip address.*/
         bReturn = FALSE;                                    

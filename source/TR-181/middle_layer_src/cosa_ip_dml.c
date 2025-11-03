@@ -3062,10 +3062,16 @@ IPv4Address_Rollback
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_IP_V4ADDR             pIPv4Addr    = (PCOSA_DML_IP_V4ADDR)pCosaContext->hContext;
     PCOSA_DML_IP_IF_FULL2           pIPInterface = (PCOSA_DML_IP_IF_FULL2)pCosaContext->hParentTable;
+    ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
 
     CcspTraceWarning(("IPv4Address_Rollback()----begin to rollback......\n"));
 
-    CosaDmlIpIfGetV4Addr2(pMyObject->hSbContext, pIPInterface->Cfg.InstanceNumber, pIPv4Addr);
+    returnStatus = CosaDmlIpIfGetV4Addr2(pMyObject->hSbContext, pIPInterface->Cfg.InstanceNumber, pIPv4Addr);
+    if (returnStatus != ANSC_STATUS_SUCCESS)
+    {
+        CcspTraceWarning(("IPv4Address_Rollback: Failed to get IPv4 address, status=%lu\n", returnStatus));
+        return 1; /* Return non-zero to indicate rollback failure */
+    }
 
     return 0;
 }
@@ -5262,6 +5268,8 @@ IPv6Prefix_SetParamBoolValue
         BOOL                        bValue
     )
 {
+    
+    UNREFERENCED_PARAMETER(bValue);
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_IP_V6PREFIX           pIPv6Pre     = (PCOSA_DML_IP_V6PREFIX)pCosaContext->hContext;
 
@@ -5271,12 +5279,12 @@ IPv6Prefix_SetParamBoolValue
         /* save update to backup */
 #ifndef _COSA_SIM_
         /*not supported, even for static Prefix, we set Enable always true when adding one entry*/
+        /* CID 55375 fix: Remove dead code by restructuring conditional logic */
         return FALSE;
-    
-#endif
-
-		pIPv6Pre->bEnabled = bValue;
+#else
+        pIPv6Pre->bEnabled = bValue;
         return TRUE;
+#endif
     }
 
     if (pIPv6Pre->Origin != COSA_DML_IP6PREFIX_ORIGIN_Static)
@@ -5288,9 +5296,8 @@ IPv6Prefix_SetParamBoolValue
 #ifndef _COSA_SIM_
         /*not supported, even for static Prefix, */
         return FALSE;
-    
 #else
-		pIPv6Pre->bOnlink = bValue;
+        pIPv6Pre->bOnlink = bValue;
         return TRUE;
 #endif
     }
@@ -5301,9 +5308,8 @@ IPv6Prefix_SetParamBoolValue
 #ifndef _COSA_SIM_
         /*not supported, even for static Prefix, */
         return FALSE;
-    
 #else
-		pIPv6Pre->bAutonomous = bValue;
+        pIPv6Pre->bAutonomous = bValue;
         return TRUE;
 #endif
     }

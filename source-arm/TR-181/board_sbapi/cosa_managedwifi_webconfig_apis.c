@@ -2401,7 +2401,14 @@ void getBridgeDetailsFromPsm(void)
     /* Update key of manage wifi structure*/
     strncpy(sManageWiFiInfo.aKey, "ManagedWifi:", sizeof(sManageWiFiInfo.aKey)-1);
 
-    psmGet(MANAGE_WIFI_BRIDGE_INDEX, sManageWiFiInfo.aBridgeIndex, BUFF_LEN_8);
+    /* CID 347167 Unchecked return value fix */
+    int ret = psmGet(MANAGE_WIFI_BRIDGE_INDEX, sManageWiFiInfo.aBridgeIndex, BUFF_LEN_8);
+    if (ret != 0) {
+        CcspTraceError(("%s:%d, Failed to get bridge index\n",__FUNCTION__,__LINE__));
+    } else {
+        CcspTraceInfo(("%s: aBridgeIndex=%s\n", __FUNCTION__, sManageWiFiInfo.aBridgeIndex));
+    }
+
     CcspTraceInfo(("%s: aBridgeIndex=%s\n", __FUNCTION__,sManageWiFiInfo.aBridgeIndex));
     if ('\0' == sManageWiFiInfo.aBridgeIndex[0])
     {
@@ -2417,7 +2424,7 @@ void getBridgeDetailsFromPsm(void)
     CcspTraceInfo(("%s: aParamName=%s\n", __FUNCTION__,aParamName));
 
     /* CID 347167 Unchecked return value fix */
-    int ret = psmGet(aParamName, sManageWiFiInfo.aBridgeName, BUFF_LEN_32);
+    ret = psmGet(aParamName, sManageWiFiInfo.aBridgeName, BUFF_LEN_32);
     if (ret != 0) {
         CcspTraceError(("%s:%d, Failed to get bridge details\n",__FUNCTION__,__LINE__));
     } else {

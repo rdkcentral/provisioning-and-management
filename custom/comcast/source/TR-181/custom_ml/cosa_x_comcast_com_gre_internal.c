@@ -95,7 +95,7 @@ CosaGreInitialize
         if (gre->GreIf[i].InstanceNumber == 0)
         {
             gre->GreIf[i].InstanceNumber = nextIns;
-            CosaDml_GreIfSetIns(i, nextIns);
+            /* CID 163448 fix - remove useless call since CosaDml_GreIfSetIns(i, nextIns) is having no action */
             nextIns++;
         }
         else if (nextIns <= gre->GreIf[i].InstanceNumber)

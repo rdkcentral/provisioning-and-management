@@ -87,10 +87,11 @@ SnmpOnboardReboot_SetParamBoolValue
             else
                     returnStatus = CosaXpcDisable(pMyObject);
 
+            /* CID 560102: Overflowed return value - Return proper BOOL instead of ANSC_STATUS */
             if ( returnStatus != ANSC_STATUS_SUCCESS )
             {
-                CcspTraceInfo(("%s EXIT Error\n", __FUNCTION__));
-                return  returnStatus;
+                CcspTraceInfo(("%s EXIT Error, status=0x%x\n", __FUNCTION__, (unsigned int)returnStatus));
+                return FALSE;
             }
             return TRUE;
         }

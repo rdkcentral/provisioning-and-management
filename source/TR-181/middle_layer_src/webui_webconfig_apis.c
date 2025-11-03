@@ -119,14 +119,15 @@ pErr webui_webconfig_process_request(void *Data)
                 CcspTraceInfo(("%s: Return value = %d\n",__FUNCTION__, ret));
                 if ( ret != BLOB_EXEC_SUCCESS )
                 {
-                    execRetVal->ErrorCode = ret;
+                    /* CID 559480: Overflowed constant fix - return proper error code */
+                    execRetVal->ErrorCode = ANSC_STATUS_FAILURE;
                     if (ret == -1)
                     {
                        strncpy(execRetVal->ErrorMsg, "Invalid WebUI Mode", sizeof(execRetVal->ErrorMsg)-1);
                     }
                     else if (ret == SYSCFG_FAILURE)
                     {
-                      strncpy(execRetVal->ErrorMsg, "syscfg_set failed for WebUI", sizeof(execRetVal->ErrorMsg)-1);
+                       strncpy(execRetVal->ErrorMsg, "syscfg_set failed for WebUI", sizeof(execRetVal->ErrorMsg)-1);
                     }
                 }
             }

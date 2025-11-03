@@ -1138,6 +1138,7 @@ CosaDmlDcSetWanAddressMode
 {
     UNREFERENCED_PARAMETER(hContext);
     UtopiaContext utctx;
+    int rc = ANSC_STATUS_FAILURE;
 
     if (!Utopia_Init(&utctx))
     {
@@ -1148,10 +1149,20 @@ CosaDmlDcSetWanAddressMode
     switch(mode)
     {
         case COSA_DML_WanAddrMode_DHCP:
-            Utopia_Set(&utctx, UtopiaValue_WAN_Proto, "dhcp");
+            /* CID 68838 fix - Unchecked return value for Utopia_Set */
+            rc = Utopia_Set(&utctx, UtopiaValue_WAN_Proto, "dhcp");
+            if(rc != 0)
+            {
+                CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN Protocol to DHCP!!! \n" ));
+            }
             break;
         case COSA_DML_WanAddrMode_Static:
-            Utopia_Set(&utctx, UtopiaValue_WAN_Proto, "static");
+            /* CID 68838 fix - Unchecked return value for Utopia_Set */
+            rc = Utopia_Set(&utctx, UtopiaValue_WAN_Proto, "static");
+            if(rc != 0)
+            {
+                CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN Protocol to Static!!! \n" ));
+            }
             break;
         /*
         case COSA_DML_WanAddrMode_DHALIP:
@@ -1159,10 +1170,22 @@ CosaDmlDcSetWanAddressMode
             break;
         */
         default:
-            Utopia_Set(&utctx, UtopiaValue_WAN_Proto, "dhcp");
+            /* CID 68838 fix - Unchecked return value for Utopia_Set */
+            rc = Utopia_Set(&utctx, UtopiaValue_WAN_Proto, "dhcp");
+            if(rc != 0)
+            {
+                CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN Protocol to DHCP!!! \n" ));
+            }
             break;
     }
-    
+
+    /* CID 68838 fix - Unchecked return value for Utopia_Set */
+    if( rc != 0 )
+    {
+        Utopia_Free(&utctx, 0);
+        return ANSC_STATUS_FAILURE;
+    }
+
     Utopia_Free(&utctx, 1);
 	
     return ANSC_STATUS_SUCCESS;
@@ -1192,7 +1215,14 @@ CosaDmlDcSetWanStaticIPAddress
        ERR_CHK(safec_rc);
     }
 
-    Utopia_Set(&utctx, UtopiaValue_WAN_IPAddr, buf);
+    /* CID 60677 fix - Unchecked return value for Utopia_Set */
+    int rc = Utopia_Set(&utctx, UtopiaValue_WAN_IPAddr, buf);
+    if( rc != 0 )
+    {
+        Utopia_Free(&utctx, 0);
+        CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN IP Address!!! \n" ));
+        return ANSC_STATUS_FAILURE;
+    }
 
     Utopia_Free(&utctx, 1);
 
@@ -1223,7 +1253,14 @@ CosaDmlDcSetWanStaticSubnetMask
        ERR_CHK(safec_rc);
     }
 
-    Utopia_Set(&utctx, UtopiaValue_WAN_Netmask, buf);
+    /* CID 65032 fix - Unchecked return value for Utopia_Set */
+    int rc = Utopia_Set(&utctx, UtopiaValue_WAN_Netmask, buf);
+    if( rc != 0 )
+    {
+        Utopia_Free(&utctx, 0);
+        CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN Netmask!!! \n" ));
+        return ANSC_STATUS_FAILURE;
+    }
 	
     Utopia_Free(&utctx, 1);
 
@@ -1254,7 +1291,14 @@ CosaDmlDcSetWanStaticGatewayIP
        ERR_CHK(safec_rc);
     }
 
-    Utopia_Set(&utctx, UtopiaValue_WAN_DefaultGateway, buf);
+    /* CID 74759 fix - Unchecked return value for Utopia_Set */
+    int rc = Utopia_Set(&utctx, UtopiaValue_WAN_DefaultGateway, buf);
+    if( rc != 0 )
+    {
+        Utopia_Free(&utctx, 0);
+        CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN Default Gateway!!! \n" ));
+        return ANSC_STATUS_FAILURE;
+    }
 
     Utopia_Free(&utctx, 1);
 
@@ -1329,7 +1373,14 @@ CosaDmlDcSetWanNameServer
         CcspTraceWarning(("Device.X_CISCO_COM_DeviceControl.NameServer: Error in Accepting private ip range \n"));
         return ANSC_STATUS_FAILURE;
     }
-    Utopia_Set(&utctx, nameServerNo == 1 ? UtopiaValue_WAN_NameServer1 : UtopiaValue_WAN_NameServer2, buf);
+    /* CID 69379 fix - Unchecked return value for Utopia_Set */
+    int rc = Utopia_Set(&utctx, nameServerNo == 1 ? UtopiaValue_WAN_NameServer1 : UtopiaValue_WAN_NameServer2, buf);
+    if( rc != 0 )
+    {
+        Utopia_Free(&utctx, 0);
+        CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN Name Server!!! \n" ));
+        return ANSC_STATUS_FAILURE;
+    }
 	
     Utopia_Free(&utctx, 1);
     
@@ -1355,8 +1406,14 @@ CosaDmlDcSetHostName
         CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in initializing context!!! \n" ));
         return ANSC_STATUS_FAILURE;
     }
-	
-    Utopia_Set(&utctx, UtopiaValue_HostName, pValue);
+	/* CID 72650 fix - Unchecked return value for Utopia_Set */
+    int rc = Utopia_Set(&utctx, UtopiaValue_HostName, pValue);
+    if( rc != 0 )
+    {
+        Utopia_Free(&utctx, 0);
+        CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting Host Name!!! \n" ));
+        return ANSC_STATUS_FAILURE;
+    }
 	
     Utopia_Free(&utctx,1);
 
@@ -1393,8 +1450,15 @@ CosaDmlDcSetDomainName
         CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in initializing context!!! \n" ));
         return ANSC_STATUS_FAILURE;
     }
-	
-    Utopia_Set(&utctx, UtopiaValue_WAN_ProtoAuthDomain, pValue);
+
+    /* CID 73187 fix - Unchecked return value for Utopia_Set */
+    int rc = Utopia_Set(&utctx, UtopiaValue_WAN_ProtoAuthDomain, pValue);
+    if( rc != 0 )
+    {
+        Utopia_Free(&utctx, 0);
+        CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting WAN Proto Auth Domain!!! \n" ));
+        return ANSC_STATUS_FAILURE;
+    }
 	
     Utopia_Free(&utctx,1);
 
@@ -1978,7 +2042,11 @@ void* restoreAllDBs(void* arg)
 
                 // grab URL from string
                 urlPtr = strstr(buf, "=");
-                urlPtr++;
+                /* CID 71080: Dereference null return value - Check if strstr found the delimiter */
+                if (urlPtr != NULL)
+                {
+                    urlPtr++;
+                }
                 break;
             }
         }
@@ -2394,9 +2462,10 @@ CosaDmlDcSetFactoryReset
                         char buf[128]={0};
                         #define FACTORY_RESET_COUNT_FILE "/nvram/.factory_reset_count"
                         pdbFile = fopen(FACTORY_RESET_COUNT_FILE, "r");
-                        /* CID 79131 - Ignoring number of bytes read : fix */
+                        /* CID 79131 fix - Ignoring number of bytes read */
                         if(pdbFile != NULL){
-                            if ( fread(buf, 1, sizeof(buf), pdbFile) == 0 ) {
+                            size_t bytes_read = fread(buf, 1, sizeof(buf), pdbFile);
+                            if (bytes_read == 0) {
                                 CcspTraceError(("[%s]: Failed to read\n", __FUNCTION__));
                             } else {
                                 dbValue = atoi(buf);
@@ -2416,9 +2485,10 @@ CosaDmlDcSetFactoryReset
                         char buf[128]={0};
                         #define ROUTER_RESET_COUNT_FILE "/nvram/.router_reset_count"
                         pdbFile = fopen(ROUTER_RESET_COUNT_FILE, "r");
-                        /* CID 79131 */
+                        /* CID 79131 fix - Ignoring number of bytes read */
                         if(pdbFile != NULL){
-                            if ( fread(buf, 1, sizeof(buf), pdbFile) == 0 ) {
+                            size_t bytes_read = fread(buf, 1, sizeof(buf), pdbFile);
+                            if (bytes_read == 0) {
                                 CcspTraceError(("[%s]: Failed to read\n", __FUNCTION__));
                             } else {
                                 dbValue = atoi(buf);
@@ -2462,6 +2532,9 @@ CosaDmlDcSetFactoryReset
         int rc = -1;
         UtopiaContext ctx;
         firewall_t fw;
+        /* Initialize entire struct to zero to avoid uninitialized fields */
+        memset(&fw, 0, sizeof(firewall_t));
+
    		CcspTraceWarning(("FactoryReset:%s Resetting Firewall to factory defaults ...\n",__FUNCTION__));
         fwSync = 1; //inform middle layer to get data from backend not cache
         if (!Utopia_Init(&ctx))
@@ -2478,8 +2551,25 @@ CosaDmlDcSetFactoryReset
         fw.filter_anon_req = 0;
         fw.filter_p2p_from_wan = 0;
         fw.filter_http_from_wan = 0;
-        Utopia_Set(&ctx, UtopiaValue_Firewall_Level, "Low");
-        Utopia_Set(&ctx, UtopiaValue_Firewall_LevelV6, "High");
+
+        /* CID 55258 fix - Unchecked return value for Utopia_Set */
+        rc = Utopia_Set(&ctx, UtopiaValue_Firewall_Level, "Low");
+        if( rc != 0 )
+        {
+            Utopia_Free(&ctx, 0);
+            CcspTraceWarning(("X_CISCO_SECURITY: Error in setting firewall level!!! \n" ));
+            return ANSC_STATUS_FAILURE;
+        }
+
+        /* CID 55258 fix - Unchecked return value for Utopia_Set */
+        rc = Utopia_Set(&ctx, UtopiaValue_Firewall_LevelV6, "High");
+        if( rc != 0 )
+        {
+            Utopia_Free(&ctx, 0);
+            CcspTraceWarning(("X_CISCO_SECURITY: Error in setting firewall levelV6!!! \n" ));
+            return ANSC_STATUS_FAILURE;
+        }
+
         fw.spi_protection = 1;
         rc = Utopia_SetFirewallSettings(&ctx, fw);
         Utopia_Free(&ctx, !rc);
@@ -2676,14 +2766,18 @@ CosaDmlDcSetFactoryReset
 	}
 	// Delete rfc agent files & do backup logs 
 	if (factory_reset_mask & FR_ROUTER) {
-        if ( access("/nvram/rfc.json", F_OK) == 0 )
+        /* CID 419749 fix - TOCTOU: Remove access() check, just call remove() directly */
+        /* remove() returns 0 on success, -1 if file doesn't exist (safe to ignore) */
+        if (remove("/nvram/rfc.json") != 0 && errno != ENOENT)
         {
-            remove("/nvram/rfc.json");
+            CcspTraceWarning(("Failed to remove /nvram/rfc.json: %s\n", strerror(errno)));
         }
 
-        if ( access("/opt/secure/RFC/.RFC_SSHWhiteList.list", F_OK) == 0 )
+        /* CID 419749 fix - TOCTOU: Remove access() check, just call remove() directly */
+        /* remove() returns 0 on success, -1 if file doesn't exist (safe to ignore) */
+        if (remove("/opt/secure/RFC/.RFC_SSHWhiteList.list") != 0 && errno != ENOENT)
         {
-            remove("/opt/secure/RFC/.RFC_SSHWhiteList.list");
+            CcspTraceWarning(("Failed to remove /opt/secure/RFC/.RFC_SSHWhiteList.list: %s\n", strerror(errno)));
         }
            pthread_t logs;
 	      if (wifiThreadStarted){
@@ -2843,7 +2937,11 @@ CosaDmlDcSetEnableStaticNameServer
     {
 	// Call set_resolv_conf to delete static dns entries from dns server
         v_secure_system("/bin/sh /etc/utopia/service.d/set_resolv_conf.sh");
-        commonSyseventSet("wan-restart", "");
+        /*CID: 65539 Unchecked return value - Check commonSyseventSet return value*/
+        if (commonSyseventSet("wan-restart", "") != 0)
+        {
+            CcspTraceWarning(("CosaDmlDcSetEnableStaticNameServer: commonSyseventSet failed for wan-restart\n"));
+        }
     }
     else{
         if (v_secure_system("/bin/sh /etc/utopia/service.d/set_resolv_conf.sh") != 0) {
@@ -4640,7 +4738,10 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 
                     // grab URL from string
                     urlPtr = strstr(buf, "=");
-                    urlPtr++;
+                    /* CID 71080 fix - Dereference after null check */
+                    if (urlPtr != NULL) {
+                        urlPtr++;
+                    }
                     break;
                 }
             }
@@ -5165,11 +5266,20 @@ int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDeviceProp
 
             // grab content from string(entry)
             urlPtr = strstr( buf, "=" );
-            urlPtr++;
-			
-            strncpy( pOutput, urlPtr, size );
-			
-          ret=0;
+            
+            /* CID 69589 fix - Check for null return before dereferencing */
+            if ( urlPtr != NULL )
+            {
+                urlPtr++;
+                strncpy( pOutput, urlPtr, size );
+                pOutput[size - 1] = '\0'; /* CID 69589 fix - Ensure null termination */
+                ret = 0;
+            }
+            else
+            {
+                CcspTraceError(("Invalid entry format in device properties file\n"));
+                ret = -1;
+            }
 		  
           break;
         }

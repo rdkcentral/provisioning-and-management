@@ -707,7 +707,12 @@ Time_SetParamStringValue
 
     IS_UPDATE_ALLOWED_IN_DM(ParamName, requestorStr);
     char PartnerID[PARTNER_ID_LEN] = {0};
-    getPartnerId(PartnerID);
+
+    /* CID: 58946 Unchecked return value - Check getPartnerId return value */
+    if (ANSC_STATUS_SUCCESS != getPartnerId(PartnerID))
+    {
+        CcspTraceWarning(("Time_SetParamStringValue: getPartnerId failed\n"));
+    }
 
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "NTPServer1") == 0)
@@ -734,7 +739,13 @@ Time_SetParamStringValue
             return FALSE;
         }
         if( (PartnerID[ 0 ] != '\0') )
-             UpdateJsonParam("Device.Time.NTPServer1",PartnerID, wrapped_inputparam, requestorStr, currentTime);
+        {
+             /*CID: 58946 Unchecked return value - Check UpdateJsonParam return value*/
+             if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.Time.NTPServer1",PartnerID, wrapped_inputparam, requestorStr, currentTime))
+             {
+                 AnscTraceWarning(("Time_SetParamStringValue: UpdateJsonParam failed for NTPServer1\n"));
+             }
+        }
         return TRUE;
     }
 
@@ -760,7 +771,13 @@ Time_SetParamStringValue
             return FALSE;
         }
         if( (PartnerID[ 0 ] != '\0') )
-             UpdateJsonParam("Device.Time.NTPServer2",PartnerID, wrapped_inputparam, requestorStr, currentTime);
+        {
+             /*CID: 58946 Unchecked return value - Check UpdateJsonParam return value*/
+             if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.Time.NTPServer2",PartnerID, wrapped_inputparam, requestorStr, currentTime))
+             {
+                 AnscTraceWarning(("Time_SetParamStringValue: UpdateJsonParam failed for NTPServer2\n"));
+             }
+        }
         return TRUE;
     }
 
@@ -786,7 +803,13 @@ Time_SetParamStringValue
             return FALSE;
         }
         if( (PartnerID[ 0 ] != '\0') )
-             UpdateJsonParam("Device.Time.NTPServer3",PartnerID, wrapped_inputparam, requestorStr, currentTime);
+        {
+             /*CID: 58946 Unchecked return value - Check UpdateJsonParam return value*/
+             if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.Time.NTPServer3",PartnerID, wrapped_inputparam, requestorStr, currentTime))
+             {
+                 AnscTraceWarning(("Time_SetParamStringValue: UpdateJsonParam failed for NTPServer3\n"));
+             }
+        }
         return TRUE;
     }
 
@@ -812,7 +835,13 @@ Time_SetParamStringValue
             return FALSE;
         }
         if( (PartnerID[ 0 ] != '\0') )
-             UpdateJsonParam("Device.Time.NTPServer4",PartnerID, wrapped_inputparam, requestorStr, currentTime);
+        {
+             /*CID: 58946 Unchecked return value - Check UpdateJsonParam return value*/
+             if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.Time.NTPServer4",PartnerID, wrapped_inputparam, requestorStr, currentTime))
+             {
+                 AnscTraceWarning(("Time_SetParamStringValue: UpdateJsonParam failed for NTPServer4\n"));
+             }
+        }
         return TRUE;
     }
 
@@ -838,7 +867,13 @@ Time_SetParamStringValue
             return FALSE;
         }
         if( (PartnerID[ 0 ] != '\0') )
-             UpdateJsonParam("Device.Time.NTPServer5",PartnerID, wrapped_inputparam, requestorStr, currentTime);
+        {
+             /*CID: 58946 Unchecked return value - Check UpdateJsonParam return value*/
+             if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.Time.NTPServer5",PartnerID, wrapped_inputparam, requestorStr, currentTime))
+             {
+                 AnscTraceWarning(("Time_SetParamStringValue: UpdateJsonParam failed for NTPServer5\n"));
+             }
+        }
         return TRUE;
     }
 

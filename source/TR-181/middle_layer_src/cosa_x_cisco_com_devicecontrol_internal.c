@@ -172,6 +172,13 @@ CosaDeviceControlInitialize
     CosaDmlDcInit(NULL, NULL);
 
     ulLmCnt = CosaDmlLanMngm_GetNumberOfEntries();
+    
+    /* CID 55365: Negative loop bound - Validate entry count to prevent negative loop */
+    if (ulLmCnt < 0 )
+    {
+        CcspTraceError(("%s: Invalid LanMngm entry count from CosaDmlLanMngm_GetNumberOfEntries\n", __FUNCTION__));
+        ulLmCnt = 0;  /* Safe default */
+    }
 
     AnscSListInitializeHeader(&pMyObject->LanMngmList);
     pMyObject->ulLanMngmNextInsNum = 1;

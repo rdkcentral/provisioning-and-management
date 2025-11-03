@@ -4179,10 +4179,11 @@ Pool1_AddEntry
     PCOSA_CONTEXT_POOLV6_LINK_OBJECT  pCxtLink          = NULL;
     PCOSA_DML_DHCPSV6_POOL_FULL       pPool             = NULL;
     errno_t                           rc                = -1;
+
 #ifndef MULTILAN_FEATURE
         /* We just have one Pool. Not permit to add/delete. */
         return NULL;
-#endif
+#else /* CID 67180 Structurally dead code fix */
     
     pPool  = (PCOSA_DML_DHCPSV6_POOL_FULL)AnscAllocateMemory( sizeof(COSA_DML_DHCPSV6_POOL_FULL) );
     if ( !pPool )
@@ -4194,7 +4195,7 @@ Pool1_AddEntry
     DHCPV6_POOL_SET_DEFAULTVALUE(pPool);
 
     pCxtLink = (PCOSA_CONTEXT_POOLV6_LINK_OBJECT)AnscAllocateMemory( sizeof(COSA_CONTEXT_POOLV6_LINK_OBJECT) );
-    if ( !pPool )
+    if ( !pCxtLink )
     {
         goto EXIT1;
     }
@@ -4236,6 +4237,7 @@ EXIT1:
 EXIT2:        
     
     return NULL; /* return the handle */
+#endif
 }
 
 /**********************************************************************  
@@ -4275,17 +4277,13 @@ Pool1_DelEntry
     UNREFERENCED_PARAMETER(hInsContext);
 
 #ifndef MULTILAN_FEATURE
- {
 	 UNREFERENCED_PARAMETER(hInstance);
 	/* We just have one Pool. Not permit to add/delete. */
 	return ANSC_STATUS_FAILURE;
- }
-
 #else
     /* Normally, two sublinks are empty because our framework will firstly 
               call delEntry for them before coming here. We needn't care them.
            */
-  {
     PCOSA_CONTEXT_POOLV6_LINK_OBJECT  pCxtLink          = (PCOSA_CONTEXT_POOLV6_LINK_OBJECT)hInstance;
     ANSC_STATUS                       returnStatus      = ANSC_STATUS_SUCCESS;
     PCOSA_DML_DHCPSV6_POOL_FULL       pPool             = (PCOSA_DML_DHCPSV6_POOL_FULL)pCxtLink->hContext;
@@ -4307,8 +4305,8 @@ Pool1_DelEntry
         AnscFreeMemory(pCxtLink);
     }
     
+    /* CID 57530 fix - Structurally dead code - Ensure proper return */
     return returnStatus;
-   }
 #endif
 }
 
@@ -7387,14 +7385,12 @@ Option4_AddEntry
     )
 {
 #ifndef MULTILAN_FEATURE
- {
 	 UNREFERENCED_PARAMETER(hInsContext);
 	 UNREFERENCED_PARAMETER(pInsNumber);
 	/* We just have two option:DNS, domain. Not permit to add/delete. */
 	return NULL;
- }
-#else
- {
+#else /* CID 74014 Structurally dead code fix */
+ 
     PCOSA_CONTEXT_POOLV6_LINK_OBJECT  pCxtPoolLink         = (PCOSA_CONTEXT_POOLV6_LINK_OBJECT)hInsContext;
     PCOSA_CONTEXT_LINK_OBJECT         pCxtLink             = NULL;
     PCOSA_DML_DHCPSV6_POOL_OPTION     pDhcpOption          = NULL;
@@ -7450,7 +7446,7 @@ EXIT1:
 EXIT2:   
         
     return NULL;
- }
+
 #endif
 }
 
@@ -7488,14 +7484,11 @@ Option4_DelEntry
     )
 {
 #ifndef MULTILAN_FEATURE
- {
 	UNREFERENCED_PARAMETER(hInstance);
 	UNREFERENCED_PARAMETER(hInsContext);
 	/* We just have two option:DNS, domain. Not permit to add/delete. */
 	return ANSC_STATUS_FAILURE;
- }
 #else
- {
     ANSC_STATUS                       returnStatus         = ANSC_STATUS_SUCCESS;
     PCOSA_CONTEXT_POOLV6_LINK_OBJECT  pCxtPoolLink         = (PCOSA_CONTEXT_POOLV6_LINK_OBJECT)hInsContext;
     PCOSA_DML_DHCPSV6_POOL_FULL       pDhcpPool           = (PCOSA_DML_DHCPSV6_POOL_FULL)pCxtPoolLink->hContext;
@@ -7519,8 +7512,8 @@ Option4_DelEntry
         AnscFreeMemory(pCxtLink);
     }
     
+    /* CID 60640 fix - Structurally dead code - Ensure proper return path */
     return returnStatus;
- }
 #endif       
 }
 

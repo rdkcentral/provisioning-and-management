@@ -360,8 +360,9 @@ bool extractSshArguments(char *revSSHConfig) {
 	char* value = NULL;
 	errno_t rc = -1;
 
+        /* CID 348041 fix - Return proper boolean value instead of NULL */
         if (!revSSHConfig)
-            return NULL;
+            return false;
         
         if ((value = strstr(revSSHConfig, "idletimeout="))) {
                 revsshparam.idletimeout = atoi(value+strlen("idletimeout="));
@@ -375,7 +376,8 @@ bool extractSshArguments(char *revSSHConfig) {
 #endif
         }else if ((value = strstr(revSSHConfig, "host="))) {
 #ifdef ENABLE_SHORTS
-                if(stunnelsshargs.host){
+                /* CID 348042 fix - Check array length instead of array name against 0 */
+                if(strlen(stunnelsshargs.host) == 0){
                         rc=strcpy_s(stunnelsshargs.host,512,value+strlen("host="));
                         if(rc < EOK){
                                 ERR_CHK(rc);
@@ -393,7 +395,8 @@ bool extractSshArguments(char *revSSHConfig) {
 #endif
         }else if ((value = strstr(revSSHConfig, "hostIp="))) {
 #ifdef ENABLE_SHORTS
-                if(stunnelsshargs.hostIp){
+                /* CID 348042 fix - Check array length instead of array name against 0 */
+                if(strlen(stunnelsshargs.hostIp) == 0){
                         rc=strcpy_s(stunnelsshargs.hostIp,512,value+strlen("hostIp="));
                         if(rc < EOK){
                                 ERR_CHK(rc);
@@ -1833,7 +1836,14 @@ ULONG COSADmlGetCpuUsage()
         CcspTraceWarning(("Failed to open /proc/stat!\n"));
         return 0;
     }
-    num = fscanf(fp, "cpu %lu %lu %lu %lu %lu %lu %lu %lu\n", &time[0].UserTime, &time[0].NiceTime,
+    /* CID 162806 fix - Use safer fgets/sscanf instead of fscanf to avoid tainted data issues */
+    char line_buffer[512] = {0};
+    if (!fgets(line_buffer, sizeof(line_buffer), fp)) {
+        CcspTraceWarning(("Failed to read cpu time info line!\n"));
+        fclose(fp);
+        return 0;
+    }
+    num = sscanf(line_buffer, "cpu %lu %lu %lu %lu %lu %lu %lu %lu", &time[0].UserTime, &time[0].NiceTime,
                &time[0].SystemTime, &time[0].IdleTime, &time[0].IowaitTime, &time[0].IrqTime,
                &time[0].SoftirqTime, &time[0].GuestTime);
                      
@@ -1846,7 +1856,14 @@ ULONG COSADmlGetCpuUsage()
     sleep(1);
     rewind(fp);
     fflush(fp);
-    num = fscanf(fp, "cpu %lu %lu %lu %lu %lu %lu %lu %lu\n", &time[1].UserTime, &time[1].NiceTime,
+    /* CID 162806 fix - Use safer fgets/sscanf instead of fscanf to avoid tainted data issues */
+    memset(line_buffer, 0, sizeof(line_buffer));
+    if (!fgets(line_buffer, sizeof(line_buffer), fp)) {
+        CcspTraceWarning(("Failed to read cpu time info line!\n"));
+        fclose(fp);
+        return 0;
+    }
+    num = sscanf(line_buffer, "cpu %lu %lu %lu %lu %lu %lu %lu %lu", &time[1].UserTime, &time[1].NiceTime,
                &time[1].SystemTime, &time[1].IdleTime, &time[1].IowaitTime, &time[1].IrqTime,
                &time[1].SoftirqTime, &time[1].GuestTime);
            
@@ -2344,9 +2361,16 @@ int findLocalPortAvailable()
 {
         struct sockaddr_in address;
         int sockfd = -1, status;
-        int port = MIN_PORT_RANGE;
+        /* CID 559553: Overflowed return value - Use unsigned type to prevent overflow */
+        unsigned int port = MIN_PORT_RANGE;
 
-        while (port <= MAX_PORT_RANGE) {
+        /* CID 559553: Add bounds checking to prevent integer overflow */
+        if (MIN_PORT_RANGE < 0 || MAX_PORT_RANGE > 65535 || MIN_PORT_RANGE > MAX_PORT_RANGE) {
+            CcspTraceWarning(("Invalid port range: MIN=%d, MAX=%d\n", MIN_PORT_RANGE, MAX_PORT_RANGE));
+            return -1;
+        }
+
+        while (port <= (unsigned int)MAX_PORT_RANGE) {
                 address.sin_family = AF_INET;
                 address.sin_addr.s_addr = inet_addr("127.0.0.1");
                 address.sin_port = htons(port);
@@ -2363,11 +2387,16 @@ int findLocalPortAvailable()
                 status = connect(sockfd, (struct sockaddr *)&address, sizeof(address));
 
                 if (status<0){
-                         CcspTraceInfo(("[%s] Port %d is available.\n", __FUNCTION__, port));
+                         CcspTraceInfo(("[%s] Port %u is available.\n", __FUNCTION__, port));
                          close(sockfd);
-                         return port;
+                         /* CID 559553: Ensure port fits in int return type */
+                         if (port > INT_MAX) {
+                             CcspTraceWarning(("Port %u exceeds INT_MAX, returning -1\n", port));
+                             return -1;
+                         }
+                         return (int)port;
                 }
-                CcspTraceInfo(("[%s] Port %d is in use.\n", __FUNCTION__, port));
+                CcspTraceInfo(("[%s] Port %u is in use.\n", __FUNCTION__, port));
                 close(sockfd);
                 port++;
         }
@@ -4733,7 +4762,6 @@ CosaDmlDi_ValidateRebootDeviceParam( char *pValue )
 		  IsSourceValid 	= FALSE,
 		  IsDelayValid		= FALSE;
         char *st = NULL;
-	CcspTraceWarning(("%s %d - String :%s", __FUNCTION__, __LINE__, ( pValue != NULL ) ?  pValue : "NULL" ));
 
         /*CID: 61097 Dereference before null check*/
         if (!pValue)

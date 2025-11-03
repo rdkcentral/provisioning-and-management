@@ -2079,7 +2079,7 @@ CosaDmlRoutingSetV4Entry
             g_RouterFull.V4ForwardList[i].DestIPAddress.Value    = pEntry->DestIPAddress.Value;
             g_RouterFull.V4ForwardList[i].DestSubnetMask.Value   = pEntry->DestSubnetMask.Value;
             g_RouterFull.V4ForwardList[i].GatewayIPAddress.Value = pEntry->GatewayIPAddress.Value;
-            
+
             rc = STRCPY_S_NOCLOBBER(g_RouterFull.V4ForwardList[i].Alias,sizeof(g_RouterFull.V4ForwardList[i].Alias), pEntry->Alias);
             ERR_CHK(rc);
             rc = STRCPY_S_NOCLOBBER(g_RouterFull.V4ForwardList[i].Interface,sizeof(g_RouterFull.V4ForwardList[i].Interface), pEntry->Interface);
@@ -3782,17 +3782,25 @@ AddRouteEntryToKernel(void *arg)
 
     for (index = 0; index < Config_Num; index++) {
         if (Router_Alias[index].Enabled) { // add route entry to kernel when initialize
+            /* CID 70146 fix: Validate inet_addr return value before use */
+            unsigned long netmask_addr = inet_addr(sroute[index].netmask);
+            if (netmask_addr == INADDR_NONE) {
+                CcspTraceError(("AddRouteEntryToKernel: Invalid netmask %s\n", sroute[index].netmask));
+                Router_Alias[index].Enabled = FALSE;
+                continue;
+            }
+            
 #if defined (_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
 #ifdef CORE_NET_LIB
-                    ret = route_add_va_arg("%s/%d via %s ", sroute[index].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[index].netmask)), sroute[index].gateway);
+                    ret = route_add_va_arg("%s/%d via %s ", sroute[index].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[index].gateway);
 #else
-                    ret = v_secure_system("ip route add %s/%d via %s ", sroute[index].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[index].netmask)), sroute[index].gateway);
+                    ret = v_secure_system("ip route add %s/%d via %s ", sroute[index].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[index].gateway);
 #endif /* CORE_NET_LIB */
 #else
 #ifdef CORE_NET_LIB
-                    ret = route_add_va_arg("%s/%d via %s table erouter metric %d", sroute[index].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[index].netmask)), sroute[index].gateway, sroute[index].metric);
+                    ret = route_add_va_arg("%s/%d via %s table erouter metric %d", sroute[index].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[index].gateway, sroute[index].metric);
 #else
-                    ret = v_secure_system("ip route add %s/%d via %s table erouter metric %d", sroute[index].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[index].netmask)), sroute[index].gateway, sroute[index].metric);
+                    ret = v_secure_system("ip route add %s/%d via %s table erouter metric %d", sroute[index].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[index].gateway, sroute[index].metric);
 #endif /* CORE_NET_LIB */
 #endif
             if (ret != 0)
@@ -4356,21 +4364,30 @@ CosaDmlRoutingDelV4Entry
 
         /* delete the previous one */
         uindex = Router_Alias[index].Index;
+        
+        /* CID 57588 fix: Validate inet_addr return value before use */
+        unsigned long netmask_addr = inet_addr(sroute[uindex].netmask);
+        if (netmask_addr == INADDR_NONE) {
+            CcspTraceError(("CosaDmlRoutingDelV4Entry: Invalid netmask %s\n", sroute[uindex].netmask));
+            Utopia_Free(&ctx, 0);
+            return ANSC_STATUS_FAILURE;
+        }
+        
 #if defined (_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
         if(AnscSizeOfString(sroute[uindex].dest_intf))
         {
 #ifdef CORE_NET_LIB
-            err = route_delete_va_arg("%s/%d via %s %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway, "dev", sroute[uindex].dest_intf);
+            err = route_delete_va_arg("%s/%d via %s %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway, "dev", sroute[uindex].dest_intf);
 #else
-            err = v_secure_system("ip route del %s/%d via %s %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway, "dev", sroute[uindex].dest_intf);
+            err = v_secure_system("ip route del %s/%d via %s %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway, "dev", sroute[uindex].dest_intf);
 #endif /* CORE_NET_LIB */
         }
         else 
         {
 #ifdef CORE_NET_LIB
-            err = route_delete_va_arg("%s/%d via %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway);
+            err = route_delete_va_arg("%s/%d via %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway);
 #else
-            err = v_secure_system("ip route del %s/%d via %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway);
+            err = v_secure_system("ip route del %s/%d via %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway);
 #endif /* CORE_NET_LIB */
         }
         break;
@@ -4379,17 +4396,17 @@ CosaDmlRoutingDelV4Entry
         if(AnscSizeOfString(sroute[uindex].dest_intf))
         {
 #ifdef CORE_NET_LIB
-            err = route_delete_va_arg("%s/%d via %s table erouter metric %d %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway, metric, "dev", sroute[uindex].dest_intf);
+            err = route_delete_va_arg("%s/%d via %s table erouter metric %d %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway, metric, "dev", sroute[uindex].dest_intf);
 #else
-            err = v_secure_system("ip route del %s/%d via %s table erouter metric %d %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway, metric, "dev", sroute[uindex].dest_intf);
+            err = v_secure_system("ip route del %s/%d via %s table erouter metric %d %s %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway, metric, "dev", sroute[uindex].dest_intf);
 #endif /* CORE_NET_LIB */
         }
         else
         {
 #ifdef CORE_NET_LIB
-            err = route_delete_va_arg("%s/%d via %s table erouter metric %d ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway, metric);
+            err = route_delete_va_arg("%s/%d via %s table erouter metric %d ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway, metric);
 #else
-            err = v_secure_system("ip route del %s/%d via %s table erouter metric %d ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway, metric);
+            err = v_secure_system("ip route del %s/%d via %s table erouter metric %d ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(netmask_addr), sroute[uindex].gateway, metric);
 #endif /* CORE_NET_LIB */
         }
         break;
@@ -4538,7 +4555,7 @@ CosaDmlRoutingSetV4Entry
             err = v_secure_system("ip route del %s/%d via %s ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway);
 #endif /* CORE_NET_LIB */
         }
-        break;
+        /*`CID 172806 fix - Removing unecessary break statement to avoid dead code */
 #else
         if(AnscSizeOfString(sroute[uindex].dest_intf))
         {
@@ -4556,7 +4573,7 @@ CosaDmlRoutingSetV4Entry
             err = v_secure_system("ip route del %s/%d via %s table erouter metric %d ", sroute[uindex].dest_lan_ip, Count_NetmaskBitNum(inet_addr(sroute[uindex].netmask)), sroute[uindex].gateway, metric);
 #endif /* CORE_NET_LIB */
         }
-        break;
+        /*`CID 172806 fix - Removing unecessary break statement to avoid dead code */
 #endif
         pEntry->Status           = 1;
 
@@ -4615,7 +4632,7 @@ CosaDmlRoutingSetV4Entry
             err = v_secure_system("ip route add %d.%d.%d.%d/%d via %s ", pEntry->DestIPAddress.Dot[0], pEntry->DestIPAddress.Dot[1], pEntry->DestIPAddress.Dot[2], pEntry->DestIPAddress.Dot[3], Count_NetmaskBitNum(pEntry->DestSubnetMask.Value), inet_ntoa(*(struct in_addr *)&(pEntry->GatewayIPAddress.Value)));
 #endif /* CORE_NET_LIB */
         }
-        break;
+        /*`CID 172806 fix - Removing unecessary break statement to avoid dead code */
 #else
         metric = (pEntry->ForwardingMetric)?pEntry->ForwardingMetric+1:pEntry->ForwardingMetric;
         if(AnscSizeOfString(pEntry->Interface))
@@ -4634,7 +4651,7 @@ CosaDmlRoutingSetV4Entry
             err = v_secure_system("ip route add %d.%d.%d.%d/%d via %s table erouter metric %d ", pEntry->DestIPAddress.Dot[0], pEntry->DestIPAddress.Dot[1], pEntry->DestIPAddress.Dot[2], pEntry->DestIPAddress.Dot[3], Count_NetmaskBitNum(pEntry->DestSubnetMask.Value), inet_ntoa(*(struct in_addr *)&(pEntry->GatewayIPAddress.Value)), metric);
 #endif /* CORE_NET_LIB */
         }
-        break;
+        /*`CID 172806 fix - Removing unecessary break statement to avoid dead code */
 #endif
         if (returnStatus == ANSC_STATUS_SUCCESS)
         {
@@ -6021,7 +6038,8 @@ static int _routeinfo_get_lft(char * prefix, char * lft_str, int lft_str_size)
             {
                 p_str = strstr(line, "expires");
                 
-                if (sscanf(p_str, "expires %dsec", &expire_time) == 1)
+                /* CID 71015: Dereference null return value - Add null check for strstr result */
+                if (p_str && sscanf(p_str, "expires %dsec", &expire_time) == 1)
                 {
                     _get_datetime_offset(expire_time, lft_str, lft_str_size);
                     found = 1;
