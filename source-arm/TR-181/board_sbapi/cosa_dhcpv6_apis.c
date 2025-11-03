@@ -3696,9 +3696,15 @@ char * CosaDmlDhcpv6sGetStringFromHex(char * hexString){
     }
 
     memset(newString,0, sizeof(newString));
-    while( hexString[i] && (i < strlen(hexString)) && (j < sizeof(newString)-2) )  /* CID 350121 fix - Out-of-bounds write */
+    /* CID 559610 fix: Cache strlen to avoid potential overflow and limit input size */
+    size_t hexStringLen = strlen(hexString);
+    if (hexStringLen > 1024) {  /* Reasonable limit to prevent overflow */
+        CcspTraceError(("CosaDmlDhcpv6sGetStringFromHex: Input string too long (%zu), truncating\n", hexStringLen));
+        hexStringLen = 1024;
+    }
+    while( hexString[i] && (i < hexStringLen) && (j < sizeof(newString)-2) )  /* CID 350121 fix - Out-of-bounds write */
     {
-        buff[k++]        = hexString[i++];
+        buff[k++] = hexString[i++];
         if ( k%2 == 0 ) {
              char c =  (char)strtol(buff, (char **)NULL, 16);
              if( !iscntrl(c) && j < sizeof(newString)-1 )
@@ -3727,7 +3733,7 @@ void __cosa_dhcpsv6_refresh_config();
 void _cosa_dhcpsv6_refresh_config()
 {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    
+
     pthread_mutex_lock(&mutex);
     __cosa_dhcpsv6_refresh_config();
     pthread_mutex_unlock(&mutex);
@@ -7641,7 +7647,13 @@ void _cosa_dhcpsv6_get_client()
         if ( _ansc_strcmp(pTmp1, "ClientNum") == 0 )
         {
             // this case must be first one
-            g_dhcps6v_client_num = atoi(pTmp3);
+            /* CID 162912: Untrusted loop bound - Validate client count from external input */
+            int temp_client_num = atoi(pTmp3);
+            if (temp_client_num < 0 || temp_client_num > 1000) {
+                CcspTraceWarning(("DHCPv6 client count %d invalid or exceeds maximum limit 1000, defaulting to 0\n", temp_client_num));
+                temp_client_num = 0;
+            }
+            g_dhcps6v_client_num = temp_client_num;
 
             if ( g_dhcps6v_client_num ) 
             {
@@ -7879,12 +7891,13 @@ void _cosa_dhcpsv6_get_client()
                     else
                     {
                         localtime_r(&t1, &t2);
-                        snprintf(buf, sizeof(buf), "%d-%d-%dT%02d:%02d:%02dZ%c", 
+                        snprintf(buf, sizeof(buf), "%d-%d-%dT%02d:%02d:%02dZ%c",
                             1900+t2.tm_year, t2.tm_mon+1, t2.tm_mday,
                             t2.tm_hour, t2.tm_min, t2.tm_sec, '\0');
                     }
 
                     rc = STRCPY_S_NOCLOBBER((char*)g_dhcps6v_clientcontent[Index].pIPv6Prefix[g_dhcps6v_clientcontent[Index].NumberofIPv6Prefix-1].PreferredLifetime, sizeof(g_dhcps6v_clientcontent[Index].pIPv6Prefix[g_dhcps6v_clientcontent[Index].NumberofIPv6Prefix-1].PreferredLifetime), buf);
+
                     ERR_CHK(rc);
                 }
             }
@@ -9021,14 +9034,10 @@ int handle_MocaIpv6(char *status)
         CcspTraceError(("%s PSM_Get_Record_Value2 failed for dmsb.l2net.9.Name \n",__FUNCTION__));
         return -1;
     }
-    if(!retPsmGet)
-    {
-        retPsmGet = CCSP_SUCCESS;
-		if(NULL == Inf_name){
-			Inf_name = (char *)AnscAllocateMemory( (strlen("brlan10") + 1) );
-			strncpy(Inf_name, "brlan10", strlen("brlan10") +1);
-		}
-    }
+
+    /* CID 278548 fix - Logically dead code - Remove !retPSsmGet block since retPsmGet is always CCSP_SUCCESS
+    the block caused crash according to TCXB7-4601, so removed this as deadcode fix */
+
     if(strcmp((const char*)status, "ready") == 0)
     {
         /*CID: 173691  - Array Compared against null - Fix */
@@ -9079,6 +9088,7 @@ int handle_MocaIpv6(char *status)
             }
         }
     }
+
     if (restart_zebra)
     {
         v_secure_system("sysevent set zebra-restart");
@@ -11233,7 +11243,14 @@ void SwitchToULAIpv6()
 void Switch_ipv6_mode(char *ifname, int length)
 {
     static char last_wan_ifname[64] = {0};
-    if (ifname && strlen(ifname)>0 && strncmp(ifname, last_wan_ifname,length))
+    
+    /* CID 349553: Dereference after null check fix - check ifname at start */
+    if (ifname == NULL) {
+        CcspTraceError(("[%s] ERROR, ifname is NULL \n", __FUNCTION__));
+        return;
+    }
+    
+    if (strlen(ifname)>0 && strncmp(ifname, last_wan_ifname,length))
     {
 #ifdef FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE
         char mesh_wan_ifname[32] = {0};
@@ -11263,12 +11280,8 @@ void Switch_ipv6_mode(char *ifname, int length)
         CcspTraceInfo(("%s : Current_wan_ifname:%s last_wan_ifname : %s. Ipv6 Mode not changed.\n",__FUNCTION__, ifname, last_wan_ifname));
     }
     
-    if (ifname != NULL) {
+    /* ifname is guaranteed to be non-null at this point */
     strncpy(last_wan_ifname, ifname, sizeof(last_wan_ifname) -1);
-    }
-    else {
-	    CcspTraceError(("[%s] ERROR, ifname is NULL \n", __FUNCTION__));
-    }
 }
 
 void *Ipv6ModeHandler_thrd(void *data)

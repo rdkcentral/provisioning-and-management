@@ -482,9 +482,21 @@ CosaDmlTSIPLoadMappingFile
     {
         ulIndex = 0;
         pSeparator = _ansc_strstr(pStringToken->Name, " ");
+        /* CID 70500 fix - Check for null return before dereferencing */
+        if ( pSeparator == NULL ) {
+            AnscFreeMemory(pStringToken);
+            returnStatus = ANSC_STATUS_FAILURE;
+            goto EXIT;
+        }
         *pSeparator++ = '\0';
         pCount = pSeparator;
         pSeparator = _ansc_strstr(pCount, " ");
+        /* CID 70500 fix - Check for null return before dereferencing */
+        if ( pSeparator == NULL ) {
+            AnscFreeMemory(pStringToken);
+            returnStatus = ANSC_STATUS_FAILURE;
+            goto EXIT;
+        }
         *pSeparator++ = '\0';
         ulCount = _ansc_atoi(pCount);
         pMapping = (PNAMESPACE_MAPPING)AnscAllocateMemory(ulCount * sizeof(NAMESPACE_MAPPING));
@@ -509,6 +521,14 @@ CosaDmlTSIPLoadMappingFile
         {
             pType = pEntryToken->Name;
             pSeparator = _ansc_strstr(pEntryToken->Name, " ");
+            /* CID 70500 fix - Check for null return before dereferencing */
+            if ( pSeparator == NULL ) {
+                AnscFreeMemory(pEntryToken);
+                AnscFreeMemory(pMapping);
+                AnscFreeMemory(pStringToken);
+                returnStatus = ANSC_STATUS_FAILURE;
+                goto EXIT;
+            }
             *pSeparator++ = '\0';
             ulType =_ansc_atoi(pType);
             pMapping[ulIndex].Type = ulType;
@@ -609,8 +629,8 @@ CosaDmlTSIPApplyConfigFileTask
     char*                           pFaultParamName        = NULL;    
     FILE*                           fpConfig               = NULL;
     ULONG                           ulParamCount           = 0;
-    ULONG                           len                    = 0;
-    ULONG                           len2                   = 0;
+    LONG                            len                    = 0;  /* CID: 60096 Argument cannot be negative - Changed from ULONG to LONG*/
+    LONG                            len2                   = 0;  /* CID: 60096 Argument cannot be negative - changed from ULONG to LONG*/
     int                             InsNum                 = 0;
     int                             i                      = 0;
     int                             ret                    = CCSP_SUCCESS;
@@ -682,6 +702,7 @@ CosaDmlTSIPApplyConfigFileTask
     
     fseek(fpConfig, 0L, SEEK_END);
     len = ftell(fpConfig);
+
     if ( len <= 0 )
     {
         AnscTraceWarning(("CosaDmlTSIPApplyConfigFile: Config file is empty!\n"));
@@ -699,6 +720,7 @@ CosaDmlTSIPApplyConfigFileTask
 
     fseek(fpConfig, 0L, SEEK_SET);
     len2 = fread(pBuffer, 1, len, fpConfig);
+
     if ( len2 != len )
     {
         AnscTraceWarning(("CosaDmlTSIPLoadMappingFile: config file read error!\n"));
@@ -738,7 +760,7 @@ CosaDmlTSIPApplyConfigFileTask
 
         DES_set_key( &Key2, &schedule );
         
-        for (i = 0; (unsigned int)i < len / 8; i++ )
+        for (i = 0; i < len / 8; i++ )
         {
             DES_ecb_encrypt((const_DES_cblock*)(pBuffer + (i*8)), (DES_cblock*)(pBuffer2 + (i*8)), &schedule, DES_DECRYPT);
         }
@@ -781,9 +803,9 @@ Start:
         }
         *pSeparator++ = '\0';
         pValue = pSeparator;
-        /*CID: 68094 Dereference before null check*/
-        if (!pValue)
-            goto EXIT;
+
+        /*CID: 175431 fix - Logically dead code - Null Check for pValue is removed, Since it will never be NULL*/
+
         if (( p = _ansc_strstr(pValue, "\r") ))
         {
             *p = '\0';

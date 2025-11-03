@@ -3509,16 +3509,21 @@ VLAN_AddEntry
         ULONG*                      pInsNumber
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(pInsNumber);
+#if 0
     PCOSA_DATAMODEL_BRIDGING        pCosaDMBridging = (PCOSA_DATAMODEL_BRIDGING )g_pCosaBEManager->hBridging;
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_BRG_FULL_ALL          pDmlBridge      = (PCOSA_DML_BRG_FULL_ALL   )pCosaContext->hContext;
     PSLIST_HEADER                   pListHead       = (PSLIST_HEADER            )&pDmlBridge->VLANList;
     PCOSA_DML_BRG_VLAN_FULL         pVLAN           = (PCOSA_DML_BRG_VLAN_FULL  )NULL;
     errno_t                         rc              = -1;
+#endif
+    /* CID 175417 fix - Structurally dead code - VLAN functionality not supported, early return */
+    return NULL;
 
-	// not support
-	return NULL;
-
+#if 0
+    /* The following code is unreachable due to the return above - keeping for potential future use */
     pVLAN = (PCOSA_DML_BRG_VLAN_FULL)AnscAllocateMemory(sizeof(COSA_DML_BRG_VLAN_FULL));
 
     if ( !pVLAN )
@@ -3583,7 +3588,8 @@ VLAN_AddEntry
 
     *pInsNumber = pCosaContext->InstanceNumber;
 
-    return (ANSC_HANDLE)pCosaContext; /* return the handle */
+    return (ANSC_HANDLE)pCosaContext;/* return the handle */
+#endif
 }
 
 /**********************************************************************  

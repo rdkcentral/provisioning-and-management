@@ -2839,7 +2839,11 @@ SecureDB_SetParamStringValue
 
             if (fp)
             {
-                fscanf(fp, "%u", &flags);
+                /* CID 556708 fix: Check return value from library function */
+                if (fscanf(fp, "%u", &flags) != 1) {
+                    CcspTraceWarning(("Failed to read flags from %s, using default value 0\n", CLEAR_TRACK_FILE));
+                    flags = 0;
+                }
                 fclose(fp);
             }
 
@@ -9773,9 +9777,15 @@ WPA3_Personal_Transition_RFC_SetParamBoolValue
 
             //Restore the value in PSM
             char *previous = bValue ? "0" : "1";
-            PSM_Set_Record_Value2(bus_handle,g_Subsystem,
+            /* Fix unchecked return value - check PSM_Set_Record_Value2 return value */
+            ret = PSM_Set_Record_Value2(bus_handle,g_Subsystem,
                                "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WPA3_Personal_Transition.Enable",
                                ccsp_string, previous);
+            if(ret != CCSP_SUCCESS)
+            {
+                CcspTraceError(("%s - %d - Failed to set the parameter Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WPA3_Personal_Transition.Enable\n", __FUNCTION__, __LINE__));
+            }
+
             return FALSE;
         }
 #endif
@@ -11234,7 +11244,13 @@ SyndicationFlowControl_SetParamBoolValue
             char *value = ( bValue ==TRUE ) ?  "true" : "false";
             char PartnerID[PARTNER_ID_LEN] = {0};
             if((CCSP_SUCCESS == getPartnerId(PartnerID) ) && (PartnerID[ 0 ] != '\0') )
-                UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.Enable",PartnerID, value, requestorStr, currentTime);
+            {
+                /* CID 68673 unchecked return value fix - check UpdateJsonParam return value*/
+                if( ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.Enable",PartnerID, value, requestorStr, currentTime))
+                {
+                    AnscTraceWarning(("RDK_LOG_WARN, UpdateJsonParam failed for SyndicationFlowControl.Enable %s %d\n", __FUNCTION__, __LINE__));
+                }
+            }
 
             return TRUE;
         }
@@ -11266,7 +11282,12 @@ SyndicationFlowControl_SetParamStringValue
     IS_UPDATE_ALLOWED_IN_DM(ParamName, requestorStr);
 
     char PartnerID[PARTNER_ID_LEN] = {0};
-    getPartnerId(PartnerID);
+
+    /*CID: 68673 Unchecked return value - Check the getPartnerId return value*/
+    if(CCSP_SUCCESS == getPartnerId(PartnerID))
+    {
+        CcspTraceWarning(("\nSyndicationFlowControl_SetParamStringValue: getPartnerId is success\n"));
+    }
 
     rc = strcmp_s("InitialForwardedMark", strlen("InitialForwardedMark"), ParamName, &ind);
     ERR_CHK(rc);
@@ -11293,7 +11314,13 @@ SyndicationFlowControl_SetParamStringValue
             }
 
             if (PartnerID[ 0 ] != '\0')
-                UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialForwardedMark",PartnerID, pString, requestorStr, currentTime);
+            {
+                /*CID: 68673 Unchecked return value - Check UpdateJsonParam return value*/
+                if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialForwardedMark",PartnerID, pString, requestorStr, currentTime))
+                {
+                    AnscTraceWarning(("SyndicationFlowControl_SetParamStringValue: UpdateJsonParam failed for InitialForwardedMark\n"));
+                }
+            }
 
             return TRUE;
         }
@@ -11320,7 +11347,13 @@ SyndicationFlowControl_SetParamStringValue
                 return FALSE;
             }
             if (PartnerID[ 0 ] != '\0')
-                UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialOutputMark",PartnerID, pString, requestorStr, currentTime);
+            {
+                /*CID: 68673 Unchecked return value - Check UpdateJsonParam return value*/
+                if (ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl.InitialOutputMark",PartnerID, pString, requestorStr, currentTime))
+                {
+                    AnscTraceWarning(("SyndicationFlowControl_SetParamStringValue: UpdateJsonParam failed for InitialOutputMark\n"));
+                }
+            }
 
             return TRUE;
         }
@@ -14087,7 +14120,7 @@ WiFiInterworking_SetParamBoolValue
 	int retPsmGet = CCSP_SUCCESS;
 	errno_t rc = -1;
 
-        if(bValue == FALSE)
+    if(bValue == FALSE)
 	{
 		CcspTraceError(("turn off WiFiInterworkingSupport \n"));
 		int ret = -1;
@@ -14149,15 +14182,15 @@ WiFiInterworking_SetParamBoolValue
 			}
 			free_componentStruct_t(bus_handle, size, ppComponents);
 		}
-        }
+    }
 
 	retPsmGet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFi-Interworking.Enable", ccsp_string, bValue ? "1" : "0");
 	if (retPsmGet != CCSP_SUCCESS) {
 	    CcspTraceError(("Set failed for WiFiInterworkingSupport \n"));
 	    return FALSE;
 	}
-	if(bValue == 0) {
-        /* CID 334909 Logically dead code fix */
+	if(bValue == FALSE) {
+        /* CID 334909 Logically dead code fixed - Combined with main condition */
 		retPsmGet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WiFi-Passpoint.Enable", ccsp_string, "0");
         if (retPsmGet != CCSP_SUCCESS) {
 			CcspTraceError(("Set failed for WiFiPasspointSupport \n"));
@@ -16529,26 +16562,27 @@ MaintenanceWindow_GetParamStringValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    BOOL bReturnValue = FALSE;
+    /* CID 559649 fix - Type mismatch: Use ANSC_STATUS for backend API return values */
+    ANSC_STATUS retStatus = ANSC_STATUS_FAILURE;
 
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "FirmwareUpgradeStartTime") == 0)
     {
         /* collect value */
-        bReturnValue = CosaDmlDiGetFirmwareUpgradeStartTime(NULL, pValue,pulSize);
-        return bReturnValue;
+        retStatus = CosaDmlDiGetFirmwareUpgradeStartTime(NULL, pValue,pulSize);
+        return (retStatus == ANSC_STATUS_SUCCESS) ? TRUE : FALSE;
     }
 
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "FirmwareUpgradeEndTime") == 0)
     {
         /* collect value */
-        bReturnValue = CosaDmlDiGetFirmwareUpgradeEndTime (NULL, pValue,pulSize);
-        return bReturnValue;
+        retStatus = CosaDmlDiGetFirmwareUpgradeEndTime (NULL, pValue,pulSize);
+        return (retStatus == ANSC_STATUS_SUCCESS) ? TRUE : FALSE;
     }
 
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
-    return bReturnValue;
+    return FALSE;
 }
 
 
@@ -17860,9 +17894,19 @@ Syndication_SetParamStringValue
                         {
                              AnscTraceWarning(("RDK_LOG_WARN, safeclib strcpy_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
                         }
-                        getPartnerId(PartnerID);
+                        /*CID 68673 unchecked return value fix - check getPartnerId return value*/
+                        if(getPartnerId(PartnerID) == CCSP_SUCCESS)
+                        {
+                            AnscTraceInfo(("[SET-TR69CertLocation] getPartnerId is success\n"));
+                        }
                         if ( PartnerID[ 0 ] != '\0')
-                            UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.TR69CertLocation",PartnerID, pString, requestorStr, currentTime);
+                        {
+                            /* CID 68673 unchecked return value fix - check UpdateJsonParam return value*/
+                            if( ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.TR69CertLocation",PartnerID, pString, requestorStr, currentTime))
+                            {
+                                AnscTraceWarning(("RDK_LOG_WARN, UpdateJsonParam failed for TR69CertLocation %s %d\n", __FUNCTION__, __LINE__));
+                            }
+                        }
 		}
 	        return TRUE;
         }
@@ -18544,9 +18588,15 @@ WANsideSSH_SetParamBoolValue
         char *value = ( bValue ==TRUE ) ?  "true" : "false";
         char PartnerID[PARTNER_ID_LEN] = {0};
         if((CCSP_SUCCESS == getPartnerId(PartnerID) ) && (PartnerID[ 0 ] != '\0') )
-            UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.WANsideSSH.Enable",PartnerID, value, requestorStr, currentTime);
+        {
+            /* CID 68673 unchecked return value fix - check UpdateJsonParam return value*/
+            if( ANSC_STATUS_SUCCESS != UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.WANsideSSH.Enable",PartnerID, value, requestorStr, currentTime))
+            {
+                AnscTraceWarning(("RDK_LOG_WARN, UpdateJsonParam failed for WANsideSSH.Enable %s %d\n", __FUNCTION__, __LINE__));
+            }
+        }
 
-	return TRUE;
+	    return TRUE;
 
    }
    return FALSE;
@@ -20600,6 +20650,13 @@ BOOL                        bValue
 
     FILE *log_fp = fopen("/rdklogs/logs/sysevent_tracer.txt", "a+");
 
+    /* Fix for dereference of NULL pointer */
+    if(log_fp == NULL)
+    {
+        CcspTraceError(("Failed to open sysevent_tracer log file\n"));
+        return FALSE;
+    }
+
     if (strcmp(ParamName, "Enable") == 0)
     {
         if (bValue == 1)
@@ -22219,6 +22276,7 @@ Telemetry_SetParamBoolValue (ANSC_HANDLE hInsContext, char* ParamName, BOOL bVal
             char enabled_version[MAX_T2_VER_LEN + 16] = {'\0'};
             snprintf(enabled_version, sizeof(enabled_version), "T2Enable");
             if (syscfg_get(NULL, enabled_version, value, sizeof(value)) == 0) {
+                // CID 555294: Array compared against 0 - Fixed by using value[0] instead of strlen comparison
                 if (value[0] != '\0') {
                     if (strcmp(value, "true") == 0) {
                         pid_t pid = 0;

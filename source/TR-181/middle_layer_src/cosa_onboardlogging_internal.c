@@ -158,6 +158,13 @@ static int getValueFromDevicePropsFile(char *str, char **value)
             {
                 buf[strcspn( buf, "\r\n" )] = 0; // Strip off any carriage returns
                 tempStr = strstr( buf, "=" );
+                /* CID 71356 fix - Check for null return before dereferencing */
+                if ( tempStr == NULL )
+                {
+                    CcspTraceError(("No '=' found in line: %s\n", buf));
+                    fclose(fp);
+                    return -1;
+                }
                 tempStr++;
                 /*CID: 73940 fix */
                 *value = strdup(tempStr);

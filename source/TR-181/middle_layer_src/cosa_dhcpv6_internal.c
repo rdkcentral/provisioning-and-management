@@ -842,7 +842,7 @@ CosaDhcpv6BackendGetDhcpv6Info
                   ERR_CHK(rc);
                   AnscFreeMemory(pPoolOption);
                   AnscFreeMemory(pCxtLink);
-                  returnStatus = ANSC_STATUS_FAILURE;
+                  /* CID: Unused value - REMOVED returnStatus ASSIGNMENT */
                   break;
                 }
         
@@ -896,7 +896,7 @@ CosaDhcpv6BackendGetDhcpv6Info
 
                     AnscFreeMemory(pCxtLink);
                     pCxtLink                  = pCxtLink2;
-                    pCxtLink2                 = NULL;
+                    /* CID: Unused value - REMOVED NULL ASSIGNMENT TO pCxtLink2 */
                 }            
 
             }
@@ -1047,44 +1047,44 @@ CosaDhcpv6RegGetDhcpv6Info
     PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoSntOpt = (PPOAM_IREP_FOLDER_OBJECT )NULL;
 #endif
     PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoPool   = (PPOAM_IREP_FOLDER_OBJECT )NULL;
-    PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoPoolOption       = (PPOAM_IREP_FOLDER_OBJECT )NULL;
+    //PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoPoolOption       = (PPOAM_IREP_FOLDER_OBJECT )NULL;
 #ifndef FEATURE_RDKB_WAN_MANAGER
     PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoEnumClient       = (PPOAM_IREP_FOLDER_OBJECT )NULL;
     PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoEnumSntOpt    = (PPOAM_IREP_FOLDER_OBJECT )NULL;
 #endif
-    PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoEnumPool         = (PPOAM_IREP_FOLDER_OBJECT )NULL;
-    PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoEnumPoolOption   = (PPOAM_IREP_FOLDER_OBJECT )NULL;
+    //PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoEnumPool         = (PPOAM_IREP_FOLDER_OBJECT )NULL;
+    //PPOAM_IREP_FOLDER_OBJECT        pPoamIrepFoEnumPoolOption   = (PPOAM_IREP_FOLDER_OBJECT )NULL;
 #ifndef FEATURE_RDKB_WAN_MANAGER
     PCOSA_CONTEXT_DHCPCV6_LINK_OBJECT pCosaDhcpcContext = NULL;
     PCOSA_CONTEXT_LINK_OBJECT         pCosaSentOptionContext     = NULL;
 
 #endif
-    PCOSA_CONTEXT_POOLV6_LINK_OBJECT  pCosaPoolContext = NULL;
+    //PCOSA_CONTEXT_POOLV6_LINK_OBJECT  pCosaPoolContext = NULL;
 
-    ULONG                           ulEntryCount2     = 0;
-    PCOSA_CONTEXT_LINK_OBJECT         pCosaPoolOptionContext     = NULL;
+    //PCOSA_CONTEXT_LINK_OBJECT         pCosaPoolOptionContext     = NULL;
     
     PSLAP_VARIABLE                  pSlapVariable     = NULL;
+#ifndef FEATURE_RDKB_WAN_MANAGER
+    ULONG                           ulEntryCount2     = 0;
     ULONG                           ulEntryCount      = 0;
     ULONG                           ulIndex           = 0;
-
     ULONG                           ulIndex2          = 0;
     ULONG                           uInstanceNumber   = 0;
     BOOL                            bNew              = FALSE;
-#ifndef FEATURE_RDKB_WAN_MANAGER
+
     char*                           pAliasClient      = NULL;
     char*                           pAliasSentOption  = NULL;
-#endif
-    char*                           pAliasPool        = NULL;
-    char*                           pAliasPoolOption  = NULL;
     char*                           pFolderName       = NULL;
+#endif
+    //char*                           pAliasPool        = NULL;
+    //char*                           pAliasPoolOption  = NULL;
 #ifndef FEATURE_RDKB_WAN_MANAGER
     PCOSA_DML_DHCPCV6_FULL          pDhcpv6Client     = NULL;
     PCOSA_DML_DHCPCV6_SENT          pDhcpv6SntOpt     = NULL;
+    errno_t                         rc                = -1;
 #endif
-    PCOSA_DML_DHCPSV6_POOL_FULL     pDhcpv6Pool       = NULL;
-    PCOSA_DML_DHCPSV6_POOL_OPTION      pDhcpv6PoolOption = NULL;
-    errno_t  rc = -1;
+    //PCOSA_DML_DHCPSV6_POOL_FULL        pDhcpv6Pool       = NULL;
+    //PCOSA_DML_DHCPSV6_POOL_OPTION      pDhcpv6PoolOption = NULL;
 
     if ( !pPoamIrepFoDhcpv6 )
     {
@@ -1484,6 +1484,9 @@ ClientEnd:
     /* enumerate server.pool.{i} */
     /*ulEntryCount = pPoamIrepFoPool->GetFolderCount((ANSC_HANDLE)pPoamIrepFoPool);*/
 	/*We don't use PSM to save informaiont for DHCPv6*/
+
+/* CID 58891 fix - logically deadcode - commented the block */
+#if 0
 	ulEntryCount = 0;
     for ( ulIndex = 0; ulIndex < ulEntryCount; ulIndex++ )
     {
@@ -1762,36 +1765,34 @@ PoolEnd:
         pPoamIrepFoEnumPool->Remove((ANSC_HANDLE)pPoamIrepFoEnumPool);
         pPoamIrepFoEnumPool = NULL;
     }
+#endif
     
     pPoamIrepFoPool->Remove((ANSC_HANDLE)pPoamIrepFoPool);
     pPoamIrepFoPool = NULL;
 
-    
-EXIT3:
 #ifndef FEATURE_RDKB_WAN_MANAGER
+EXIT3:
     if(pDhcpv6Client)
         AnscFreeMemory(pDhcpv6Client);
-#endif
+/*
     if(pDhcpv6Pool )
         AnscFreeMemory(pDhcpv6Pool);
 
     if(pDhcpv6PoolOption   )
         AnscFreeMemory(pDhcpv6PoolOption   );
-        
+*/
 EXIT2:
-#ifndef FEATURE_RDKB_WAN_MANAGER
     if(pAliasSentOption)
         AnscFreeMemory(pAliasSentOption);
     
     if(pAliasClient)
         AnscFreeMemory(pAliasClient);
-#endif
-    if(pAliasPool)
+/*  if(pAliasPool)
         AnscFreeMemory(pAliasPool);
     
     if(pAliasPoolOption)
         AnscFreeMemory(pAliasPoolOption);
-#ifndef FEATURE_RDKB_WAN_MANAGER
+*/
     if(pDhcpv6SntOpt )
         AnscFreeMemory(pDhcpv6SntOpt);
 #endif
@@ -1810,7 +1811,7 @@ EXIT1:
         pPoamIrepFoEnumSntOpt->Remove((ANSC_HANDLE)pPoamIrepFoEnumSntOpt);
 #endif    
    
-    /*CID: 71033, 54427, 57933, 64391 Logically dead code - EXIT1 invoke only when ptr is NULL*/ 
+    /*CID: 71033, 54427, 57933, 64391 Logically dead code fix - EXIT1 invoke only when ptr is NULL*/ 
 
     return returnStatus;
 }
@@ -2492,8 +2493,8 @@ EXIT1:
     if ( pPoamIrepFoPoolOption   )
         pPoamIrepFoPoolOption   ->Remove((ANSC_HANDLE)pPoamIrepFoPoolOption   );
 
-    if ( pPoamIrepFoEnumPoolOption   )
-        pPoamIrepFoEnumPoolOption   ->Remove((ANSC_HANDLE)pPoamIrepFoEnumPoolOption   );
+    /* CID 56862: DEADCODE - pPoamIrepFoEnumPoolOption is always NULL because the pool loop (line 2242) 
+       uses 'while(0)' and never executes. Removed unreachable cleanup code. */
 
     pPoamIrepFoDhcpv6->EnableFileSync((ANSC_HANDLE)pPoamIrepFoDhcpv6, TRUE);
 

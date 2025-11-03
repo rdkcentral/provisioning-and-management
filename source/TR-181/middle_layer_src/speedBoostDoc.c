@@ -175,10 +175,7 @@ static int processMap(msgpack_object_map *pMsgPackObjMap, input_t **ppScheduleIn
         }
 
         pMsgPackObjKeyVal++;
-        if (NULL == pMsgPackObjKeyVal)
-        {
-            break;
-        }
+        /* CID 418972: Logically dead code - NULL check removed after pointer increment */
         pMsgPackObjKey = &pMsgPackObjKeyVal->key;
         pMsgPackObjVal = &pMsgPackObjKeyVal->val;
     }
@@ -374,7 +371,8 @@ int processSpeedBoostInfo( schedule_info_t * pSchedulerInfo, msgpack_object_map 
         errno = HELPERS_OK;
     }
 
-    return (0 == iSize) ? 0 : iRetVal;
+    /* CID 418965 Logically dead code fix - remove iSize == 0 */
+    return iRetVal;
 }
 
 static int processSpeedBoostDoc( speedBoostDoc_t *pSpeedBoostDoc, int iNum, ... )
@@ -395,6 +393,8 @@ static int processSpeedBoostDoc( speedBoostDoc_t *pSpeedBoostDoc, int iNum, ... 
     if (NULL == pMsgPackObj)
     {
         CcspTraceError(("%s:%d, pMsgPackObj is NULL\n", __FUNCTION__, __LINE__));
+        /* CID 418964: Missing varargs cleanup - Call va_end before return */
+        va_end(vaList);
         return -1;
     }
     msgpack_object_map *pMsgPackObjMap = &pMsgPackObj->via.map;
@@ -403,6 +403,8 @@ static int processSpeedBoostDoc( speedBoostDoc_t *pSpeedBoostDoc, int iNum, ... 
     if (NULL == pMsgPackObj1)
     {
         CcspTraceError(("%s:%d, pMsgPackObj1 is NULL\n", __FUNCTION__, __LINE__));
+        /* CID 418964: Missing varargs cleanup - Call va_end before return */
+        va_end(vaList);
         return -1;
     }
 
@@ -412,6 +414,8 @@ static int processSpeedBoostDoc( speedBoostDoc_t *pSpeedBoostDoc, int iNum, ... 
     if (NULL == pMsgPackObj2)
     {
         CcspTraceError(("%s:%d, pMsgPackObj2 is NULL\n", __FUNCTION__, __LINE__));
+        /* CID 418964: Missing varargs cleanup - Call va_end before return */
+        va_end(vaList);
         return -1;
     }
     pSpeedBoostDoc->ui32Version = (uint32_t) pMsgPackObj2->via.u64;
@@ -420,6 +424,8 @@ static int processSpeedBoostDoc( speedBoostDoc_t *pSpeedBoostDoc, int iNum, ... 
     if (NULL == pMsgPackObj3)
     {
         CcspTraceError(("%s:%d, pMsgPackObj3 is NULL\n", __FUNCTION__, __LINE__));
+        /* CID 418964: Missing varargs cleanup - Call va_end before return */
+        va_end(vaList);
         return -1;
     }
     pSpeedBoostDoc->ui16TranscationId = (uint16_t) pMsgPackObj3->via.u64;

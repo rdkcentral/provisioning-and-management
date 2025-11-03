@@ -2382,12 +2382,20 @@ LanMngm_Validate
             if(*end_ptr)
                 return TRUE;
 
-            if(prefix < 0 || prefix > 31)
+            if(prefix < 0 || prefix > 32)
             {
                 CcspTraceWarning(("Invalid wan_netmask address \n"));
                 return TRUE;
             }
-            wan_netmask.s_addr = htonl(~((1 << (32 - prefix)) - 1));
+            
+            /* CID 279978: Bad bit shift operation - Safe bit shift handling */
+            if(prefix == 0) {
+                wan_netmask.s_addr = 0; /* No mask bits set */
+            } else if(prefix == 32) {
+                wan_netmask.s_addr = htonl(0xFFFFFFFF); /* All mask bits set */
+            } else {
+                wan_netmask.s_addr = htonl(~((1U << (32 - prefix)) - 1));
+            }
         }
         else if (inet_aton(wan_netmask_buf, &wan_netmask) == 0){
                  CcspTraceWarning(("Invalid wan_netmask address \n"));

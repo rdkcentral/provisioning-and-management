@@ -1171,6 +1171,7 @@ CosaDmlNeighdiscIfBERemove
 
 #define NEIGHBOR_TABLE_RESULT_FILE        "/tmp/nbtbl.txt"
 #define NEIGHBOR_TABLE_LINENUM_FILE       "/tmp/nbtbl_linenumber.txt"
+#define MAX_NEIGHBOR_TABLE_ENTRIES        1024
 
 void CosaDmlNeighborTableGetEntry
     (
@@ -1206,8 +1207,16 @@ void CosaDmlNeighborTableGetEntry
         fclose(fp);
     }
 
+
     if ( counter <= 0 ){
         return;
+    }
+
+    /* CID 135486: Untrusted value as argument - Validate counter before using as allocation size */
+    /* Limit counter to reasonable maximum to prevent excessive allocation or integer overflow */
+    if (counter > MAX_NEIGHBOR_TABLE_ENTRIES) {
+        CcspTraceWarning(("Neighbor table entry count %d exceeds maximum 1024, truncating\n", counter));
+        counter = MAX_NEIGHBOR_TABLE_ENTRIES;
     }
 
     *ppNbTbl = malloc(sizeof(COSA_DML_NEIGHTABLE_INFO)*counter);
@@ -1232,7 +1241,8 @@ void CosaDmlNeighborTableGetEntry
             while(*p != ' ') p++;
             *p = 0;
             /*61751 - Calling risky function - Fix*/
-	    strncpy((*ppNbTbl)[i].Address, p1, (sizeof((*ppNbTbl)[i].Address)-1));
+            strncpy((*ppNbTbl)[i].Address, p1, (sizeof((*ppNbTbl)[i].Address)-1));
+            (*ppNbTbl)[i].Address[sizeof((*ppNbTbl)[i].Address)-1] = '\0';
             p++;
 
             //get interface
@@ -1251,6 +1261,7 @@ void CosaDmlNeighborTableGetEntry
             *p = 0;
             
             strncpy((*ppNbTbl)[i].Interface, p1, (sizeof((*ppNbTbl)[i].Interface)-1));
+            (*ppNbTbl)[i].Interface[sizeof((*ppNbTbl)[i].Interface)-1] = '\0';
             p++;
             
             //get mac
@@ -1267,8 +1278,9 @@ void CosaDmlNeighborTableGetEntry
             p1 = p;
             while(*p != ' ') p++;
             *p = 0;
-            
+
             strncpy((*ppNbTbl)[i].MACAddress, p1, (sizeof((*ppNbTbl)[i].MACAddress)-1));
+            (*ppNbTbl)[i].MACAddress[sizeof((*ppNbTbl)[i].MACAddress)-1] = '\0';
             p++;
 
             //get status
