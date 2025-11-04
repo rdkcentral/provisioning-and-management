@@ -572,7 +572,7 @@ user_validatepwd
 
    if(fromDB[0] == '\0')
    {
-#if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_) || defined(_PLATFORM_BANANAPI_R4_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_) || defined(_PLATFORM_BANANAPI_R4_) || defined(_PLATFORM_IPQ_)
          user_hashandsavepwd(hContext,pEntry->Password,pEntry);
 #elif defined(LIBRDKCONFIG_BUILD)
 #if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
@@ -729,7 +729,7 @@ CosaDmlUserResetPassword
    errno_t safec_rc = -1;
    if(!strcmp(pEntry->Username,"admin"))
    {
-#if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_)  || defined(_PLATFORM_BANANAPI_R4_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_)  || defined(_PLATFORM_BANANAPI_R4_) || defined(_PLATFORM_IPQ_)
          //TODO: Avoid the hardcoded password.        
          safec_rc = strcpy_s(defPassword,sizeof(defPassword),"password");
          if(safec_rc != EOK)
