@@ -498,6 +498,9 @@ int main(int argc, char* argv[])
     errno_t rc    = -1;
     int     ret   = 0;
 
+    v_secure_system("echo /tmp/core.%%e.%%p.%%h.%%t > /proc/sys/kernel/core_pattern");
+    v_secure_system("ulimit -c unlimited");
+
     // Buffer characters till newline for stdout and stderr
     setlinebuf(stdout);
     setlinebuf(stderr);
