@@ -5529,7 +5529,6 @@ void __cosa_dhcpsv6_refresh_config()
                     CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
                 }
 
-                fprintf(fp, "   subnet %s\n", prefixValue);
                 fprintf(fp, "   class {\n");
 
 #ifdef CONFIG_CISCO_DHCP6S_REQUIREMENT_FROM_DPC3825
