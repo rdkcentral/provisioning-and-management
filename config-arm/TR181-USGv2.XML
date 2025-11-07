@@ -972,7 +972,7 @@
 	  <writable>true</writable>
         </parameter>
 
-<?ifndef _SR213_PRODUCT_REQ_ & _WNXL11BWL_PRODUCT_REQ_?>
+<?ifndef _WNXL11BWL_PRODUCT_REQ_?>
         <parameter>
          <name>X_RDKCENTRAL-COM_InActiveFirmware</name>
           <type>string(64)</type>
