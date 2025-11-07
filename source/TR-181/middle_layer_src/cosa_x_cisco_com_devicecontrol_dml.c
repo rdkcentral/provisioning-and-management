@@ -1974,6 +1974,9 @@ LanMngm_GetParamUlongValue
     PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_LAN_MANAGEMENT        pLanMngm    = (PCOSA_DML_LAN_MANAGEMENT)pLinkObj->hContext;
 
+    char ip_buff[16]  = {0};
+    struct in_addr addr;
+
     if (strcmp(ParamName, "LanMode") == 0)
     {
         *pUlong = pLanMngm->LanMode;
@@ -1991,12 +1994,22 @@ LanMngm_GetParamUlongValue
     }
     if (strcmp(ParamName, "LanSubnetMask") == 0)
     {
-        *pUlong = pLanMngm->LanSubnetMask.Value;
+        syscfg_get(NULL, DHCPV4_LAN_NETMASK , ip_buff, sizeof(ip_buff));
+        if (inet_pton(AF_INET, ip_buff, &addr) != 1) {
+            CcspTraceWarning(("inet_pton: Invalid IPv4 address\n"));
+            return FALSE;
+        }
+        *pUlong = addr.s_addr;
         return TRUE;
     }
     if (strcmp(ParamName, "LanIPAddress") == 0)
     {
-        *pUlong = pLanMngm->LanIPAddress.Value;
+        syscfg_get(NULL, DHCPV4_LAN_IP, ip_buff, sizeof(ip_buff));
+        if (inet_pton(AF_INET, ip_buff, &addr) != 1) {
+            CcspTraceWarning(("inet_pton: Invalid IPv4 address\n"));
+            return FALSE;
+        }
+        *pUlong = addr.s_addr;
         return TRUE;
     }
     if (strcmp(ParamName, "LanTos") == 0)
@@ -2111,6 +2124,9 @@ LanMngm_SetParamUlongValue
     BOOL                                      bridgeMode;
     ULONG                                     deviceMode;
 
+    char ip_buff[16]  = {0};
+    struct in_addr addr;
+
     if (CosaDmlDcGetDeviceMode(NULL, &deviceMode) != ANSC_STATUS_SUCCESS)
             return FALSE;
     
@@ -2173,6 +2189,11 @@ LanMngm_SetParamUlongValue
     }
     if (strcmp(ParamName, "LanSubnetMask") == 0)
     {
+        addr.s_addr = uValuepUlong;
+        if (inet_ntop(AF_INET, &addr, ip_buff, sizeof(ip_buff)) == NULL) {
+            CcspTraceWarning(("inet_ntop: Invalid IPv4 address\n"));
+            return FALSE;
+        }
         if (Dhcpv4_Lan_MutexTryLock() != 0)
         {
             CcspTraceWarning(("%s not supported if already lan blob update is inprogress\n",ParamName));
@@ -2180,6 +2201,7 @@ LanMngm_SetParamUlongValue
         }
 
 		CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanSubnetMask value  ...\n"));
+        syscfg_set_commit(NULL, DHCPV4_LAN_NETMASK, ip_buff);
         pLanMngm->LanSubnetMask.Value = uValuepUlong;
         lan_ip_config_modified=true;
         Dhcpv4_Lan_MutexUnLock();
@@ -2187,6 +2209,11 @@ LanMngm_SetParamUlongValue
     }
     if (strcmp(ParamName, "LanIPAddress") == 0)
     {
+        addr.s_addr = uValuepUlong;
+        if (inet_ntop(AF_INET, &addr, ip_buff, sizeof(ip_buff)) == NULL) {
+            CcspTraceWarning(("inet_ntop: Invalid IPv4 address\n"));
+            return FALSE;
+        }
         if (Dhcpv4_Lan_MutexTryLock() != 0)
         {
             CcspTraceWarning(("%s not supported if already lan blob update is inprogress\n",ParamName));
@@ -2194,6 +2221,7 @@ LanMngm_SetParamUlongValue
         }
 
 		CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanIPAddress value  ...\n"));
+        syscfg_set_commit(NULL, DHCPV4_LAN_IP, ip_buff);
         pLanMngm->LanIPAddress.Value = uValuepUlong;
         lan_ip_config_modified=true;
         Dhcpv4_Lan_MutexUnLock();
