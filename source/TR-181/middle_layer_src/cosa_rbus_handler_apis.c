@@ -1367,8 +1367,25 @@ static void Cosa_Rbus_Handler_WanStatus_EventHandler(rbusHandle_t handle, rbusEv
         value = rbusObject_GetValue(event->data, NULL);
 
         char acStatus[16] = {0};
-        strncpy(acStatus, rbusValue_GetString(value, NULL), sizeof(acStatus) - 1);
-        acStatus[sizeof(acStatus) - 1] = '\0';
+        if (value != NULL)
+        {
+            const char* statusStr = rbusValue_GetString(value, NULL);
+            if (statusStr != NULL)
+            {
+                strncpy(acStatus, statusStr, sizeof(acStatus) - 1);
+                acStatus[sizeof(acStatus) - 1] = '\0';
+            }
+            else
+            {
+                CcspTraceError(("%s %d : FAILED , rbusValue_GetString returned NULL\n",__FUNCTION__, __LINE__));
+                return;
+            }
+        }
+        else
+        {
+            CcspTraceError(("%s %d : FAILED , rbusObject_GetValue returned NULL\n",__FUNCTION__, __LINE__));
+            return;
+        }
         CcspTraceInfo(("%s: Event:%s Status:%s\n", __FUNCTION__, eventName, acStatus));
 
         // Trigger Network Response script
