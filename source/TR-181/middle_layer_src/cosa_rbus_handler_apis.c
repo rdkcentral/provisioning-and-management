@@ -1389,7 +1389,7 @@ static void Cosa_Rbus_Handler_WanStatus_EventHandler(rbusHandle_t handle, rbusEv
         CcspTraceInfo(("%s: Event:%s Status:%s\n", __FUNCTION__, eventName, acStatus));
 
         // Trigger Network Response script
-        if( 0 == strncmp(acStatus, "Up", 2) )
+        if( 0 == strcmp(acStatus, "Up") )
         {
             v_secure_system("sh /etc/network_response.sh &");
         }
