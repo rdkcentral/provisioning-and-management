@@ -1410,7 +1410,7 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
     rc = rbusEvent_Subscribe(handle, WANMGR_CURRENT_STATUS_TR181, Cosa_Rbus_Handler_WanStatus_EventHandler, NULL, 60);
     if(rc != RBUS_ERROR_SUCCESS)
     {
-        CcspTraceError(("%s %d - Failed to Subscribe %s, Error=%s \n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181, rbusError_ToString(rc)));
+        CcspTraceError(("%s %d - Failed to Subscribe %s, Error=%s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181, rbusError_ToString(rc)));
         return;
     }
 }
