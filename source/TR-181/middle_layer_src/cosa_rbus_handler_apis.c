@@ -1405,7 +1405,7 @@ static void Cosa_Rbus_Handler_WanStatus_EventHandler(rbusHandle_t handle, rbusEv
 /** Cosa_Rbus_Handler_SubscribeWanStatusEvent() */
 void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
 {
-    rbusError_t rc = RBUS_ERROR_SUCCESS;
+    rbusError_t rc;
 
     rc = rbusEvent_Subscribe(handle, WANMGR_CURRENT_STATUS_TR181, Cosa_Rbus_Handler_WanStatus_EventHandler, NULL, 60);
     if(rc != RBUS_ERROR_SUCCESS)
