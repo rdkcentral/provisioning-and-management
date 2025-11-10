@@ -1413,6 +1413,7 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
         CcspTraceError(("%s %d - Failed to Subscribe %s, Error=%s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181, rbusError_ToString(rc)));
         return;
     }
+    CcspTraceInfo(("%s %d - Successfully subscribed to %s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181));
 }
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
 
