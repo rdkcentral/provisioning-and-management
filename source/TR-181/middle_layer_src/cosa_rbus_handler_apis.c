@@ -1352,7 +1352,7 @@ static void Cosa_Rbus_Handler_WanStatus_EventHandler(rbusHandle_t handle, rbusEv
 
     const char* eventName = event->name;
 
-    if((eventName == NULL))
+    if (eventName == NULL)
     {
         CcspTraceError(("%s %d : FAILED , value is NULL\n",__FUNCTION__, __LINE__));
         return;
