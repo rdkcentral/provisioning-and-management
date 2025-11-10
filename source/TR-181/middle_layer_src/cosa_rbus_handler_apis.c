@@ -1407,6 +1407,8 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
 {
     rbusError_t rc;
 
+    /* Timeout value of 60 seconds is chosen to balance responsiveness and resource usage for WAN status event subscription.
+       This duration allows sufficient time for event delivery and processing under typical network conditions. */
     rc = rbusEvent_Subscribe(handle, WANMGR_CURRENT_STATUS_TR181, Cosa_Rbus_Handler_WanStatus_EventHandler, NULL, 60);
     if(rc != RBUS_ERROR_SUCCESS)
     {
