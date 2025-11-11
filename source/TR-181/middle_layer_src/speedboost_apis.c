@@ -15,6 +15,72 @@ static bool is_pvd_thread_running = false ;
 SpeedBoost sSpeedBoost;
 SpeedBoostType boostType;
 
+#define SYSCTL_PATH "/proc/sys/net/ipv4/ip_local_reserved_ports"
+#define MAX_VAL_LEN 4096
+#define MAX_PORT_RANGE_DIFF 2000
+
+static int readSysctl(char *pBuf, size_t iBuflen)
+{
+    FILE *pFile = fopen(SYSCTL_PATH, "r");
+    if (NULL == pFile)
+        return -1;
+    if (NULL == fgets(pBuf, iBuflen, pFile))
+    {
+        fclose(pFile);
+        return -1;
+    }
+    pBuf[strcspn(pBuf, "\n")] = '\0';
+    fclose(pFile);
+    return 0;
+}
+
+static int writeSysctl(const char *pBuf)
+{
+    FILE *pFile = fopen(SYSCTL_PATH, "w");
+    if (NULL == pFile)
+        return -1;
+    if (fputs(pBuf, pFile) == EOF)
+    {
+        fclose(pFile);
+        return -1;
+    }
+    fclose(pFile);
+    return 0;
+}
+
+void appendToLocalReservedPorts(char * pStartingPort, char * pEndingPort)
+{
+    char cLocalReservedPorts[MAX_VAL_LEN] = {0};
+
+    if (NULL == pStartingPort || NULL == pEndingPort)
+    {
+        CcspTraceError(("%s:%d, NULL parameter passed\n", __FUNCTION__, __LINE__));
+        return;
+    }
+    if (0 == strlen(pStartingPort) || 0 == strlen(pEndingPort))
+    {
+        CcspTraceError(("%s:%d, Empty port range passed\n", __FUNCTION__, __LINE__));
+        return;
+    }
+    if (0 != readSysctl(cLocalReservedPorts, sizeof(cLocalReservedPorts)))
+    {
+        CcspTraceError(("%s:%d, Failed to read %s\n", __FUNCTION__, __LINE__, SYSCTL_PATH));
+        return;
+    }
+    CcspTraceInfo(("%s:%d, Current local reserved ports: %s\n", __FUNCTION__, __LINE__, cLocalReservedPorts));
+    if (0 != strlen(cLocalReservedPorts))
+    {
+        strncat(cLocalReservedPorts, ",", sizeof(cLocalReservedPorts) - strlen(cLocalReservedPorts) - 1);
+    }
+    strncat(cLocalReservedPorts, pStartingPort, sizeof(cLocalReservedPorts) - strlen(cLocalReservedPorts) - 1);
+    strncat(cLocalReservedPorts, "-", sizeof(cLocalReservedPorts) - strlen(cLocalReservedPorts) - 1);
+    strncat(cLocalReservedPorts, pEndingPort, sizeof(cLocalReservedPorts) - strlen(cLocalReservedPorts) - 1);
+    CcspTraceInfo(("%s:%d, Local reserved ports updated: %s\n", __FUNCTION__, __LINE__, cLocalReservedPorts));
+    if (0 != writeSysctl(cLocalReservedPorts))
+    {
+        CcspTraceError(("%s:%d, Failed to write %s\n", __FUNCTION__, __LINE__, SYSCTL_PATH));
+    }
+}
 
 void trigger_ra_service_restart() 
 {
@@ -137,6 +203,18 @@ void initializeSpeedBoostStructVal()
                  "IPv4 %s %s %s,IPv6 %s %s %s",
                  protoV4, startPortV4, endPortV4, protoV6, startPortV6, endPortV6);
         CcspTraceInfo(("current_speedboost_value: %s\n", current_speedboost_value));
+
+        if (atoi(endPortV4) - atoi(startPortV4) <= MAX_PORT_RANGE_DIFF)
+        {
+            appendToLocalReservedPorts(startPortV4, endPortV4);
+        }
+        else
+        {
+            CcspTraceInfo(("%s:%d, Port range is more than 2000 ports \n", __FUNCTION__, __LINE__));
+            char cEndPort[16] = {0};
+            snprintf(cEndPort, sizeof(cEndPort), "%d", atoi(startPortV4) + (MAX_PORT_RANGE_DIFF - 1));
+            appendToLocalReservedPorts(startPortV4, cEndPort);
+        }
     }
     
     //initialise speedboost normal value
@@ -303,6 +381,17 @@ int processSpeedBoostValue(const char* str, const char* prev_val, char* target_v
                 syscfg_set_commit(NULL, "SpeedBoost_Port_StartV4", startPortStr_ipv4);
                 syscfg_set_commit(NULL, "SpeedBoost_Port_EndV4", endPortStr_ipv4);
 		
+            if (atoi(endPortStr_ipv4) - atoi(startPortStr_ipv4) <= MAX_PORT_RANGE_DIFF)
+            {
+                appendToLocalReservedPorts(startPortStr_ipv4, endPortStr_ipv4);
+            }
+            else
+            {
+                CcspTraceInfo(("%s:%d, Port range is more than 2000 ports \n", __FUNCTION__, __LINE__));
+                char cEndPort[16] = {0};
+                snprintf(cEndPort, sizeof(cEndPort), "%d", atoi(startPortStr_ipv4) + (MAX_PORT_RANGE_DIFF - 1));
+                appendToLocalReservedPorts(startPortStr_ipv4, cEndPort);
+            }
                 CcspTraceInfo(("subtoken is IPv6\n"));
 	        
                 syscfg_set_commit(NULL, "SpeedBoost_ProtoV6", protocol_ipv6);

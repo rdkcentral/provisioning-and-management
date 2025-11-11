@@ -9497,6 +9497,8 @@ void addRemoteWanIpv6Route()
             {
                 char mesh_wan_ifname[32] = {0};
                 char ipv6_address[128] = {0};
+                char current_wan_ifname [32] = {0};
+                commonSyseventGet("current_wan_ifname", current_wan_ifname, sizeof(current_wan_ifname));
                 getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
 		if ((mesh_wan_ifname[0] != '\0') && (strcmp(mesh_wan_ifname, current_wan_ifname) == 0))
                 {
