@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <syscfg/syscfg.h>
 #include "ccsp_trace.h"
 #include "speedboost_apis.h"
@@ -48,53 +50,6 @@ static int writeSysctl(const char *pBuf)
     }
     fclose(pFile);
     return 0;
-}
-
-void extractIpv4Ipv6Range(const char * pPrevVal, int *pIPv4Start, int *pIPv4End,
-                          int *pIPv6Start, int *pIPv6End)
-{
-    if (pPrevVal == NULL || pIPv4Start == NULL || pIPv4End == NULL ||
-        pIPv6Start == NULL || pIPv6End == NULL)
-    {
-        CcspTraceError(("%s:%d, NULL parameter passed\n", __FUNCTION__, __LINE__));
-        return;
-    }
-    /*"IPV4 tcp 60000 65000,IPv6 BOTH 50000 65000"
-      "IpV4 Udp 40000 55000,IpV6 BoTH 40000 55000"
-      "IPV4 BOth 30000 31000,IPv6 uDp 60000 64000"
-      extract the port ranges of all combinations of protocols */
-    char* pStrCopy = strdup(pPrevVal);
-    char *pToken, *pSubtoken, *pSaveptr1, *pSaveptr2;
-    for(pToken = strtok_r(pStrCopy, ",", &pSaveptr1); pToken != NULL; pToken = strtok_r(NULL, ",", &pSaveptr1))
-    {
-        pSubtoken = strtok_r(pToken, " ", &pSaveptr2);
-        if (pSubtoken == NULL)
-            continue;
-        if (strcasecmp(pSubtoken, "IPv4") == 0)
-        {
-            strtok_r(NULL, " ", &pSaveptr2); // Skip protocol
-            char* pStartPortStr = strtok_r(NULL, " ", &pSaveptr2);
-            char* pEndPortStr = strtok_r(NULL, " ", &pSaveptr2);
-            if (pStartPortStr != NULL && pEndPortStr != NULL)
-            {
-                *pIPv4Start = atoi(pStartPortStr);
-                *pIPv4End = atoi(pEndPortStr);
-            }
-        }
-        else if (strcasecmp(pSubtoken, "IPv6") == 0)
-        {
-            strtok_r(NULL, " ", &pSaveptr2); // Skip protocol
-            char* pStartPortStr = strtok_r(NULL, " ", &pSaveptr2);
-            char* pEndPortStr = strtok_r(NULL, " ", &pSaveptr2);
-            if (pStartPortStr != NULL && pEndPortStr != NULL)
-            {
-                *pIPv6Start = atoi(pStartPortStr);
-                *pIPv6End = atoi(pEndPortStr);
-            }
-        }
-    }
-    free(pStrCopy);
-    return;
 }
 
 void appendToLocalReservedPorts(int iPrevStartPort, int iPrevEndPort,
@@ -331,6 +286,7 @@ void initializeSpeedBoostStructVal()
         if (true == sSpeedBoost.pvd_enabled)
         {
             appendToLocalReservedPorts(0, 0, atoi(startPortV4), atoi(endPortV4));
+            appendToLocalReservedPorts(0, 0, atoi(startPortV6), atoi(endPortV6));
         }
     }
     
@@ -492,39 +448,52 @@ int processSpeedBoostValue(const char* str, const char* prev_val, char* target_v
         {
             case CURRENT_SPEEDBOOST_VALUE:
 	    	CcspTraceInfo(("syscfg_set_commit for current_speedboost_value\n"));
-		CcspTraceInfo(("subtoken is IPv4\n"));
-	        
-                syscfg_set_commit(NULL, "SpeedBoost_ProtoV4", protocol_ipv4);
-                syscfg_set_commit(NULL, "SpeedBoost_Port_StartV4", startPortStr_ipv4);
-                syscfg_set_commit(NULL, "SpeedBoost_Port_EndV4", endPortStr_ipv4);
+            CcspTraceInfo(("subtoken is IPv4\n"));
             if (true == sSpeedBoost.pvd_enabled)
             {
                 int iPrevStartIpv4Port = 0, iPrevEndIpv4Port = 0;
                 int iPrevStartIpv6Port = 0, iPrevEndIpv6Port = 0;
-                extractIpv4Ipv6Range(prev_val, &iPrevStartIpv4Port, &iPrevEndIpv4Port,
-                                     &iPrevStartIpv6Port, &iPrevEndIpv6Port);
+                if (NULL != prev_val && strlen(prev_val) > 0)
+                {
+                    char cBuf [ 256 ] = {0};
+                    syscfg_get(NULL, "SpeedBoost_Port_StartV4", cBuf, sizeof(cBuf));
+                    iPrevStartIpv4Port = atoi(cBuf);
+                    memset(cBuf, 0, sizeof(cBuf));
+                    syscfg_get(NULL, "SpeedBoost_Port_EndV4", cBuf, sizeof(cBuf));
+                    iPrevEndIpv4Port = atoi(cBuf);
+                    memset(cBuf, 0, sizeof(cBuf));
+                    syscfg_get(NULL, "SpeedBoost_Port_StartV6", cBuf, sizeof(cBuf));
+                    iPrevStartIpv6Port = atoi(cBuf);
+                    memset(cBuf, 0, sizeof(cBuf));
+                    syscfg_get(NULL, "SpeedBoost_Port_EndV6", cBuf, sizeof(cBuf));
+                    iPrevEndIpv6Port = atoi(cBuf);
+                }
                 int iCurrStartIpv4Port = atoi(startPortStr_ipv4);
                 int iCurrEndIpv4Port = atoi(endPortStr_ipv4);
                 int iCurrStartIpv6Port = atoi(startPortStr_ipv6);
                 int iCurrEndIpv6Port = atoi(endPortStr_ipv6);
-                if (iPrevEndIpv4Port == iPrevEndIpv6Port && iPrevStartIpv4Port == iPrevStartIpv6Port &&
+                if (iPrevStartIpv4Port == iPrevStartIpv6Port && iPrevEndIpv4Port == iPrevEndIpv6Port &&
                     iCurrStartIpv4Port == iCurrStartIpv6Port && iCurrEndIpv4Port == iCurrEndIpv6Port)
                 {
                     CcspTraceInfo(("Previous IPv4 and IPv6 port ranges are identical (%d-%d)\n",
-                                   iPrevStartIpv4Port, iPrevEndIpv4Port));
+                               iPrevStartIpv4Port, iPrevEndIpv4Port));
                     appendToLocalReservedPorts(iPrevStartIpv4Port, iPrevEndIpv4Port, iCurrStartIpv4Port, iCurrEndIpv4Port);
                 }
                 else
                 {
                     CcspTraceInfo(("Previous IPv4 (%d-%d) and IPv6 (%d-%d) port ranges are different\n",
-                                   iPrevStartIpv4Port, iPrevEndIpv4Port, iPrevStartIpv6Port, iPrevEndIpv6Port));
+                                iPrevStartIpv4Port, iPrevEndIpv4Port, iPrevStartIpv6Port, iPrevEndIpv6Port));
                     appendToLocalReservedPorts(iPrevStartIpv4Port, iPrevEndIpv4Port, iCurrStartIpv4Port, iCurrEndIpv4Port);
                     appendToLocalReservedPorts(iPrevStartIpv6Port, iPrevEndIpv6Port, iCurrStartIpv6Port, iCurrEndIpv6Port);
                 }
             }
 
+                syscfg_set_commit(NULL, "SpeedBoost_ProtoV4", protocol_ipv4);
+                syscfg_set_commit(NULL, "SpeedBoost_Port_StartV4", startPortStr_ipv4);
+                syscfg_set_commit(NULL, "SpeedBoost_Port_EndV4", endPortStr_ipv4);
+
                 CcspTraceInfo(("subtoken is IPv6\n"));
-	        
+
                 syscfg_set_commit(NULL, "SpeedBoost_ProtoV6", protocol_ipv6);
 	        syscfg_set_commit(NULL, "SpeedBoost_Port_StartV6", startPortStr_ipv6);
 	        syscfg_set_commit(NULL, "SpeedBoost_Port_EndV6", endPortStr_ipv6);
