@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <syscfg/syscfg.h>
 #include "ccsp_trace.h"
 #include "speedboost_apis.h"
@@ -18,6 +19,7 @@ SpeedBoostType boostType;
 #define SYSCTL_PATH "/proc/sys/net/ipv4/ip_local_reserved_ports"
 #define MAX_VAL_LEN 4096
 #define MAX_PORT_RANGE_DIFF 2000
+#define DEFAULT_SPEEDBOOST_RANGE "40001-41000"
 
 static int readSysctl(char *pBuf, size_t iBuflen)
 {
@@ -48,143 +50,160 @@ static int writeSysctl(const char *pBuf)
     return 0;
 }
 
-
-void appendToLocalReservedPorts(const char * pPrevVal, char * pCurrentStartPort, char * pCurrentEndPort)
+void extractIpv4Ipv6Range(const char * pPrevVal, int *pIPv4Start, int *pIPv4End,
+                          int *pIPv6Start, int *pIPv6End)
 {
-    char cLocalReservedPorts[MAX_VAL_LEN] = {0};
-    char cTmp[MAX_VAL_LEN] = {0};
-    char cOut[MAX_VAL_LEN] = {0};
-    char cPrevRange[64] = {0};
-    char cCurrntRange[64] = {0};
-    char *pToken = NULL, *pSave = NULL;
-
-    /* validate current range */
-    if (NULL == pCurrentStartPort || NULL == pCurrentEndPort) {
+    if (pPrevVal == NULL || pIPv4Start == NULL || pIPv4End == NULL ||
+        pIPv6Start == NULL || pIPv6End == NULL)
+    {
         CcspTraceError(("%s:%d, NULL parameter passed\n", __FUNCTION__, __LINE__));
         return;
     }
-    if (pCurrentStartPort[0] == '\0' || pCurrentEndPort[0] == '\0') {
-        CcspTraceError(("%s:%d, Empty port range passed\n", __FUNCTION__, __LINE__));
+    /*"IPV4 tcp 60000 65000,IPv6 BOTH 50000 65000"
+      "IpV4 Udp 40000 55000,IpV6 BoTH 40000 55000"
+      "IPV4 BOth 30000 31000,IPv6 uDp 60000 64000"
+      extract the port ranges of all combinations of protocols */
+    char* pStrCopy = strdup(pPrevVal);
+    char *pToken, *pSubtoken, *pSaveptr1, *pSaveptr2;
+    for(pToken = strtok_r(pStrCopy, ",", &pSaveptr1); pToken != NULL; pToken = strtok_r(NULL, ",", &pSaveptr1))
+    {
+        pSubtoken = strtok_r(pToken, " ", &pSaveptr2);
+        if (pSubtoken == NULL)
+            continue;
+        if (strcasecmp(pSubtoken, "IPv4") == 0)
+        {
+            strtok_r(NULL, " ", &pSaveptr2); // Skip protocol
+            char* pStartPortStr = strtok_r(NULL, " ", &pSaveptr2);
+            char* pEndPortStr = strtok_r(NULL, " ", &pSaveptr2);
+            if (pStartPortStr != NULL && pEndPortStr != NULL)
+            {
+                *pIPv4Start = atoi(pStartPortStr);
+                *pIPv4End = atoi(pEndPortStr);
+            }
+        }
+        else if (strcasecmp(pSubtoken, "IPv6") == 0)
+        {
+            strtok_r(NULL, " ", &pSaveptr2); // Skip protocol
+            char* pStartPortStr = strtok_r(NULL, " ", &pSaveptr2);
+            char* pEndPortStr = strtok_r(NULL, " ", &pSaveptr2);
+            if (pStartPortStr != NULL && pEndPortStr != NULL)
+            {
+                *pIPv6Start = atoi(pStartPortStr);
+                *pIPv6End = atoi(pEndPortStr);
+            }
+        }
+    }
+    free(pStrCopy);
+    return;
+}
+
+void appendToLocalReservedPorts(int iPrevStartPort, int iPrevEndPort,
+                                int iCurrStartPort, int iCurrEndPort)
+{
+    char cSysctlBuf[MAX_VAL_LEN] = {0};
+    char cRangeToAppend[64] = {0};
+    char cRangeToRemove[64] = {0};
+
+    // Validate current range
+    if (iCurrStartPort < 0 || iCurrStartPort > 65535 ||
+        iCurrEndPort < iCurrStartPort || iCurrEndPort > 65535) {
+        CcspTraceError(("%s:%d, Invalid current port range %d-%d\n",
+                       __FUNCTION__, __LINE__, iCurrStartPort, iCurrEndPort));
         return;
     }
 
-    /* read existing sysctl */
-    if (0 != readSysctl(cLocalReservedPorts, sizeof(cLocalReservedPorts))) {
-        CcspTraceError(("%s:%d, Failed to read %s\n", __FUNCTION__, __LINE__, SYSCTL_PATH));
-        return;
-    }
+    int iCurrDiff = iCurrEndPort - iCurrStartPort;
+    CcspTraceInfo(("%s:%d, Current range: %d-%d (diff=%d)\n",
+                   __FUNCTION__, __LINE__, iCurrStartPort, iCurrEndPort, iCurrDiff));
 
-    CcspTraceInfo(("%s:%d, previous port range: %s\n", __FUNCTION__, __LINE__, pPrevVal));
-    CcspTraceInfo(("%s:%d, current local reserved ports: %s\n", __FUNCTION__, __LINE__, cLocalReservedPorts));
-    /* prepare current range */
-    snprintf(cCurrntRange, sizeof(cCurrntRange), "%s-%s", pCurrentStartPort, pCurrentEndPort);
-
-    /* extract IPv4 start/end from pPrevVal (format: "IPv4 PROTO START END,IPv6 ...") */
-    if (pPrevVal && pPrevVal[0]) {
-        char *pVal = strdup(pPrevVal);
-        if (pVal) {
-            char *pToken1 = NULL, *pSave1 = NULL;
-            for (pToken1 = strtok_r(pVal, ",", &pSave1); pToken1 != NULL; pToken1 = strtok_r(NULL, ",", &pSave1)) {
-                char *pToken = pToken1;
-                while (*pToken == ' ' || *pToken == '\t') pToken++;
-                char *pToken2 = NULL, *pSave2 = NULL;
-                pToken2 = strtok_r(pToken, " ", &pSave2); /* "IPv4" or "IPv6" */
-                if (pToken2 && strcasecmp(pToken2, "IPv4") == 0) {
-                    /* skip proto */
-                    (void)strtok_r(NULL, " ", &pSave2);
-                    char *pStart = strtok_r(NULL, " ", &pSave2);
-                    char *pEnd = strtok_r(NULL, " ", &pSave2);
-                    if (pStart && pEnd) {
-                        /* if prev range span > MAX_PORT_RANGE_DIFF, clamp prev end */
-                        int iPrevStart = atoi(pStart);
-                        int iPrevEnd = atoi(pEnd);
-                        if (iPrevEnd - iPrevStart > MAX_PORT_RANGE_DIFF) {
-                            iPrevEnd = iPrevStart + MAX_PORT_RANGE_DIFF;
-                        }
-                        snprintf(cPrevRange, sizeof(cPrevRange), "%d-%d", iPrevStart, iPrevEnd);
-                        CcspTraceInfo(("%s:%d, extracted previous range: %s\n", __FUNCTION__, __LINE__, cPrevRange));
-                    }
-                    break;
-                }
-            }
-            free(pVal);
-        }
-    }
-
-    /* If prev and current are identical, nothing to do */
-    if (cPrevRange[0] != '\0' && strcmp(cPrevRange, cCurrntRange) == 0) {
-        CcspTraceInfo(("%s:%d, Prev range equals current range (%s) - no change\n", __FUNCTION__, __LINE__, cCurrntRange));
-        return;
-    }
-
-    /* Flags to control behavior */
-    bool bCurrentFound = false;
-
-    /* If existing list non-empty, scan tokens.
-       If prev_range present -> rebuild cOut skipping it.
-       If prev_range not present -> keep full list in cOut. */
-    if (cLocalReservedPorts[0] != '\0') {
-        strncpy(cTmp, cLocalReservedPorts, sizeof(cTmp) - 1);
-        for (pToken = strtok_r(cTmp, ",", &pSave); pToken != NULL; pToken = strtok_r(NULL, ",", &pSave)) {
-            /* trim leading/trailing spaces */
-            char *pStr = pToken;
-            while (*pStr == ' ' || *pStr == '\t') pStr++;
-            size_t iLen = strlen(pStr);
-            while (iLen > 0 && (pStr[iLen - 1] == ' ' || pStr[iLen - 1] == '\t' || pStr[iLen - 1] == '\n' || pStr[iLen - 1] == '\r')) {
-                pStr[--iLen] = '\0';
-            }
-
-            if (cPrevRange[0] != '\0' && strcmp(pStr, cPrevRange) == 0) {
-                /* skip adding prev token */
-                continue;
-            }
-
-            if (strcmp(pStr, cCurrntRange) == 0) {
-                bCurrentFound = true;
-            }
-
-            if (cOut[0] != '\0') {
-                strncat(cOut, ",", sizeof(cOut) - strlen(cOut) - 1);
-            }
-            strncat(cOut, pStr, sizeof(cOut) - strlen(cOut) - 1);
-        }
-    }
-
-    /*
-     Behavior required:
-      - if prev_range found and prev != current: remove prev and append current (unless current already present)
-      - if prev_range found and prev == current: do nothing (handled above)
-      - if prev_range NOT found: append current (avoid duplicate)
-    */
-
-    /* If prev was not found we kept original list in cOut; if prev was found we rebuilt skipping it. */
-    if (false == bCurrentFound) {
-        /* Append current range */
-        if (cOut[0] != '\0') {
-            if (strlen(cOut) + 1 + strlen(cCurrntRange) + 1 < sizeof(cOut)) {
-                strncat(cOut, ",", sizeof(cOut) - strlen(cOut) - 1);
-                strncat(cOut, cCurrntRange, sizeof(cOut) - strlen(cOut) - 1);
-            } else {
-                CcspTraceError(("%s:%d, Resulting reserved ports string too long\n", __FUNCTION__, __LINE__));
-                return;
-            }
-        } else {
-            if (strlen(cCurrntRange) + 1 < sizeof(cOut)) {
-                strncpy(cOut, cCurrntRange, sizeof(cOut) - 1);
-            } else {
-                CcspTraceError(("%s:%d, Resulting reserved ports string too long\n", __FUNCTION__, __LINE__));
-                return;
-            }
-        }
+    // Determine what range to append for current
+    if (iCurrDiff <= MAX_PORT_RANGE_DIFF) {
+        snprintf(cRangeToAppend, sizeof(cRangeToAppend), "%d-%d", iCurrStartPort, iCurrEndPort);
+        CcspTraceInfo(("%s:%d, Will append actual range: %s\n", __FUNCTION__, __LINE__, cRangeToAppend));
     } else {
-        CcspTraceInfo(("%s:%d, Current range %s already present; not appending\n", __FUNCTION__, __LINE__, cCurrntRange));
+        snprintf(cRangeToAppend, sizeof(cRangeToAppend), DEFAULT_SPEEDBOOST_RANGE);
+        CcspTraceInfo(("%s:%d, Current range diff > %d, using fixed token %s\n",
+                       __FUNCTION__, __LINE__, MAX_PORT_RANGE_DIFF, cRangeToAppend));
     }
 
-    CcspTraceInfo(("%s:%d, Local reserved ports updated: %s\n", __FUNCTION__, __LINE__, cOut));
+    // Process previous range if provided (non-zero values indicate valid previous range)
+    if (iPrevStartPort > 0 && iPrevEndPort > 0) {
+        int iPrevDiff = iPrevEndPort - iPrevStartPort;
+        CcspTraceInfo(("%s:%d, Previous range: %d-%d (diff=%d)\n",
+                       __FUNCTION__, __LINE__, iPrevStartPort, iPrevEndPort, iPrevDiff));
 
-    if (0 != writeSysctl(cOut)) {
-        CcspTraceError(("%s:%d, Failed to write %s\n", __FUNCTION__, __LINE__, SYSCTL_PATH));
+        // Determine what was actually written to sysctl for previous
+        if (iPrevDiff <= MAX_PORT_RANGE_DIFF) {
+            snprintf(cRangeToRemove, sizeof(cRangeToRemove), "%d-%d", iPrevStartPort, iPrevEndPort);
+            CcspTraceInfo(("%s:%d, Previous was actual range: %s\n", __FUNCTION__, __LINE__, cRangeToRemove));
+        } else {
+            snprintf(cRangeToRemove, sizeof(cRangeToRemove), DEFAULT_SPEEDBOOST_RANGE);
+            CcspTraceInfo(("%s:%d, Previous range diff > %d, sysctl token was %s\n",
+                           __FUNCTION__, __LINE__, MAX_PORT_RANGE_DIFF, cRangeToRemove));
+        }
+
+        // If prev and current are identical, no-op
+        if (strcmp(cRangeToRemove, cRangeToAppend) == 0) {
+            CcspTraceInfo(("%s:%d, Previous and current ranges are identical (%s) - no change\n",
+                           __FUNCTION__, __LINE__, cRangeToAppend));
+            return;
+        }
     }
+
+    // Read existing sysctl
+    if (0 != readSysctl(cSysctlBuf, sizeof(cSysctlBuf))) {
+        CcspTraceError(("%s:%d, Failed to read sysctl\n", __FUNCTION__, __LINE__));
+        return;
+    }
+    CcspTraceInfo(("%s:%d, Current reserved ports before update: %s\n", __FUNCTION__, __LINE__, cSysctlBuf));
+
+    // Remove previous range if it exists
+    if (cRangeToRemove[0] != '\0') {
+        char *pPos = strstr(cSysctlBuf, cRangeToRemove);
+        if (pPos != NULL) {
+            size_t lenToRemove = strlen(cRangeToRemove);
+            // Remove trailing comma if exists
+            if (pPos[lenToRemove] == ',') {
+                lenToRemove++;
+            }
+            // Or remove leading comma if at start
+            else if (pPos != cSysctlBuf && pPos[-1] == ',') {
+                pPos--;
+                lenToRemove++;
+            }
+            memmove(pPos, pPos + lenToRemove, strlen(pPos + lenToRemove) + 1);
+            CcspTraceInfo(("%s:%d, Removed previous range %s, updated ports: %s\n",
+                           __FUNCTION__, __LINE__, cRangeToRemove, cSysctlBuf));
+        } else {
+            CcspTraceInfo(("%s:%d, Previous range %s not found in sysctl (may have been normalized by kernel)\n",
+                           __FUNCTION__, __LINE__, cRangeToRemove));
+        }
+    }
+
+    // Check if the range to append already exists (avoid duplicate)
+    if (strstr(cSysctlBuf, cRangeToAppend) != NULL) {
+        CcspTraceInfo(("%s:%d, Range %s already present - no append needed\n",
+                       __FUNCTION__, __LINE__, cRangeToAppend));
+        // Still write back (kernel may have normalized/sorted)
+        if (0 != writeSysctl(cSysctlBuf)) {
+            CcspTraceError(("%s:%d, Failed to write sysctl\n", __FUNCTION__, __LINE__));
+        }
+        return;
+    }
+
+    // Append current range
+    if (cSysctlBuf[0] != '\0') {
+        strncat(cSysctlBuf, ",", sizeof(cSysctlBuf) - strlen(cSysctlBuf) - 1);
+    }
+    strncat(cSysctlBuf, cRangeToAppend, sizeof(cSysctlBuf) - strlen(cSysctlBuf) - 1);
+    CcspTraceInfo(("%s:%d, Reserved ports after appending %s: %s\n",
+                   __FUNCTION__, __LINE__, cRangeToAppend, cSysctlBuf));
+
+    if (0 != writeSysctl(cSysctlBuf)) {
+        CcspTraceError(("%s:%d, Failed to write sysctl\n", __FUNCTION__, __LINE__));
+        return;
+    }
+    CcspTraceInfo(("%s:%d, Successfully updated reserved ports\n", __FUNCTION__, __LINE__));
 }
 
 void trigger_ra_service_restart() 
@@ -309,16 +328,9 @@ void initializeSpeedBoostStructVal()
                  protoV4, startPortV4, endPortV4, protoV6, startPortV6, endPortV6);
         CcspTraceInfo(("current_speedboost_value: %s\n", current_speedboost_value));
 
-        if (atoi(endPortV4) - atoi(startPortV4) <= MAX_PORT_RANGE_DIFF)
+        if (true == sSpeedBoost.pvd_enabled)
         {
-            appendToLocalReservedPorts(NULL, startPortV4, endPortV4);
-        }
-        else
-        {
-            CcspTraceInfo(("%s:%d, Port range is more than 2000 ports \n", __FUNCTION__, __LINE__));
-            char cEndPort[16] = {0};
-            snprintf(cEndPort, sizeof(cEndPort), "%d", atoi(startPortV4) + MAX_PORT_RANGE_DIFF);
-            appendToLocalReservedPorts(NULL, startPortV4, cEndPort);
+            appendToLocalReservedPorts(0, 0, atoi(startPortV4), atoi(endPortV4));
         }
     }
     
@@ -485,18 +497,32 @@ int processSpeedBoostValue(const char* str, const char* prev_val, char* target_v
                 syscfg_set_commit(NULL, "SpeedBoost_ProtoV4", protocol_ipv4);
                 syscfg_set_commit(NULL, "SpeedBoost_Port_StartV4", startPortStr_ipv4);
                 syscfg_set_commit(NULL, "SpeedBoost_Port_EndV4", endPortStr_ipv4);
-		
-            if (atoi(endPortStr_ipv4) - atoi(startPortStr_ipv4) <= MAX_PORT_RANGE_DIFF)
+            if (true == sSpeedBoost.pvd_enabled)
             {
-                appendToLocalReservedPorts(prev_val, startPortStr_ipv4, endPortStr_ipv4);
+                int iPrevStartIpv4Port = 0, iPrevEndIpv4Port = 0;
+                int iPrevStartIpv6Port = 0, iPrevEndIpv6Port = 0;
+                extractIpv4Ipv6Range(prev_val, &iPrevStartIpv4Port, &iPrevEndIpv4Port,
+                                     &iPrevStartIpv6Port, &iPrevEndIpv6Port);
+                int iCurrStartIpv4Port = atoi(startPortStr_ipv4);
+                int iCurrEndIpv4Port = atoi(endPortStr_ipv4);
+                int iCurrStartIpv6Port = atoi(startPortStr_ipv6);
+                int iCurrEndIpv6Port = atoi(endPortStr_ipv6);
+                if (iPrevEndIpv4Port == iPrevEndIpv6Port && iPrevStartIpv4Port == iPrevStartIpv6Port &&
+                    iCurrStartIpv4Port == iCurrStartIpv6Port && iCurrEndIpv4Port == iCurrEndIpv6Port)
+                {
+                    CcspTraceInfo(("Previous IPv4 and IPv6 port ranges are identical (%d-%d)\n",
+                                   iPrevStartIpv4Port, iPrevEndIpv4Port));
+                    appendToLocalReservedPorts(iPrevStartIpv4Port, iPrevEndIpv4Port, iCurrStartIpv4Port, iCurrEndIpv4Port);
+                }
+                else
+                {
+                    CcspTraceInfo(("Previous IPv4 (%d-%d) and IPv6 (%d-%d) port ranges are different\n",
+                                   iPrevStartIpv4Port, iPrevEndIpv4Port, iPrevStartIpv6Port, iPrevEndIpv6Port));
+                    appendToLocalReservedPorts(iPrevStartIpv4Port, iPrevEndIpv4Port, iCurrStartIpv4Port, iCurrEndIpv4Port);
+                    appendToLocalReservedPorts(iPrevStartIpv6Port, iPrevEndIpv6Port, iCurrStartIpv6Port, iCurrEndIpv6Port);
+                }
             }
-            else
-            {
-                CcspTraceInfo(("%s:%d, Port range is more than 2000 ports \n", __FUNCTION__, __LINE__));
-                char cEndPort[16] = {0};
-                snprintf(cEndPort, sizeof(cEndPort), "%d", atoi(startPortStr_ipv4) + MAX_PORT_RANGE_DIFF);
-                appendToLocalReservedPorts(prev_val, startPortStr_ipv4, cEndPort);
-            }
+
                 CcspTraceInfo(("subtoken is IPv6\n"));
 	        
                 syscfg_set_commit(NULL, "SpeedBoost_ProtoV6", protocol_ipv6);
