@@ -683,6 +683,7 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
     if (0 != iRet)
     {
         pthread_condattr_destroy(&amenityWifi_attr);
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         CcspTraceError(("%s:%d, pthread_condattr_setclock failed\n", __FUNCTION__, __LINE__));
         snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "pthread_condattr_setclock failed\n");
         pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
@@ -706,7 +707,9 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
         CcspTraceError(("%s:%d, Failed to create pthread\n", __FUNCTION__, __LINE__));
         snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "Failed to create pthread\n");
         pthread_cond_destroy(&amenityWifi_exec_completed);
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         pthread_condattr_destroy(&amenityWifi_attr);
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
         return -1;
     }
@@ -718,7 +721,9 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
         {
             CcspTraceError(("%s:%d, cBridgeName is NULL\n", __FUNCTION__, __LINE__));
             pthread_cond_destroy(&amenityWifi_exec_completed);
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
             pthread_condattr_destroy(&amenityWifi_attr);
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
             snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "cBridgeName is NULL\n");
             pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
             return -1;
@@ -732,7 +737,9 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
             {
                 CcspTraceError(("%s:%d, commonSyseventSet failed for %s\n", __FUNCTION__, __LINE__, pBridge->cBridgeIndex));
                 pthread_cond_destroy(&amenityWifi_exec_completed);
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
                 pthread_condattr_destroy(&amenityWifi_attr);
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
                 snprintf(pErrVar->ErrorMsg, BUFF_LEN_128, "commonSyseventSet failed for %s\n", pBridge->cBridgeIndex);
                 pErrVar->ErrorCode = BLOB_EXEC_FAILURE;
                 return -1;
@@ -1008,6 +1015,7 @@ static void setBridgeDownFlag(const char *pVapName, uint16_t *pFlag)
 }
 pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
 {
+    CcspTraceWarning(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
     pErr pErrRetVal = (pErr) malloc(sizeof(Err));
     BOOL bHotSpot = FALSE;
 
@@ -1031,7 +1039,7 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
 
     if (NULL == pErrRetVal)
     {
-        CcspTraceError(("%s,%d : malloc failed\n",__FUNCTION__,__LINE__));
+    CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         return NULL;
     }
     memset(pErrRetVal, 0, sizeof(Err));
@@ -1041,6 +1049,7 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
         CcspTraceError(("%s:%d, pLanCfgTunnelInfo is NULL\n",__FUNCTION__,__LINE__));
         snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128, "NULL parameter passed\n");
         pErrRetVal->ErrorCode = NULL_BLOB_EXEC_POINTER;
+    CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         return pErrRetVal;
     }
 
@@ -1088,6 +1097,7 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
             CcspTraceError(("%s:%d, ppVapNames or pVlanIds is NULL\n",__FUNCTION__,__LINE__));
             snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128, "ppVapNames or pVlanIds is NULL\n");
             pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+        CcspTraceError(("%s,%d : malloc failed\n",__FUNCTION__,__LINE__));
             return pErrRetVal;
         }
 
@@ -1311,13 +1321,17 @@ BOOL bringDownManagedWifiBridge(pErr pErrRetVal)
         CcspTraceError(("%s:%d, pthread_condattr_init failed with err=%d\n",__FUNCTION__,__LINE__,iRet));
         snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_condattr_init failed with err=%d\n",iRet);
         pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
+        CcspTraceInfo(("SR : in Fun %s at line %d BLOB_EXEC_FAILURE=%d \n", __FUNCTION__,__LINE__,BLOB_EXEC_FAILURE));
         return 1;
     }
     iRet = pthread_condattr_setclock(&manageWifi_attr, CLOCK_MONOTONIC);
     if (0 != iRet)
     {
         CcspTraceError(("%s:%d, pthread_condattr_setclock failed with err=%d\n",__FUNCTION__,__LINE__,iRet));
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         pthread_condattr_destroy(&manageWifi_attr);
+
+        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"pthread_condattr_setclock failed with err=%d\n",iRet);
         pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
         return 1;

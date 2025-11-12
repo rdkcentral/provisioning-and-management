@@ -37,6 +37,7 @@ int gDisableNotification = 0;
 
 BOOL unpackAndProcessHotspotData(char* pString)
 {
+       CcspTraceInfo(("SR : in Fun %s at line %d pString %s \n", __FUNCTION__,__LINE__,pString));
 
     CcspTraceWarning(("Entering %s\n",__FUNCTION__));
     char * decodeMsg =NULL;
@@ -49,12 +50,15 @@ BOOL unpackAndProcessHotspotData(char* pString)
     retval = get_base64_decodedbuffer(pString, &decodeMsg, &size);
     if (retval == 0)
     {
+       CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         unpack_ret = get_msgpack_unpack_status(decodeMsg,size);
     }
     else
     {
+       CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         if (decodeMsg)
         {
+       CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
 	    free(decodeMsg);
 	    decodeMsg = NULL;
         }
@@ -62,6 +66,7 @@ BOOL unpackAndProcessHotspotData(char* pString)
     }
     if(unpack_ret == MSGPACK_UNPACK_SUCCESS)
     {   
+       CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
         hotspotparam_t *hd = NULL;
         tunneldoc_t * td = NULL;
         wifi_doc_t* wd = NULL;
@@ -80,6 +85,7 @@ BOOL unpackAndProcessHotspotData(char* pString)
         {
             char filename[64]={0};
             FILE    *fp = NULL;
+            CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
             CcspTraceWarning(("The transaction id is %d\n", hd->transaction_id));
             CcspTraceWarning(("The version is %lu\n", (long)hd->version));
             CcspTraceWarning(("The subdoc_name is %s\n", hd->subdoc_name));
@@ -131,20 +137,24 @@ BOOL unpackAndProcessHotspotData(char* pString)
                     send_NACK(hd->subdoc_name,hd->transaction_id,(uint32_t)hd->version,TUNNEL_WIFI_VAP_COUNT_MISMATCH,"Tunnel and Wifi vap count NOT matching");
                     if(td != NULL)
                     {
+                        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
                         tunneldoc_destroy(td);
                     }
                     if(wd != NULL)
                     {
+                        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
                         wifi_doc_destroy(wd);
                     }
 
                     if(hd != NULL)
                     {
+                        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
                         hotspotdoc_destroy(hd);
                     }
 		    // CID 173224: Resource leak (RESOURCE_LEAK)
                     if(wifi_encoded_data)
                     {
+                        CcspTraceInfo(("SR : in Fun %s at line %d \n", __FUNCTION__,__LINE__));
 		        free(wifi_encoded_data);
                         wifi_encoded_data = NULL;
                     }
