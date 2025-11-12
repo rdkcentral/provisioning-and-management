@@ -6391,7 +6391,7 @@ Pool_SetParamUlongValue
     char * currentTime = getTime();
 
     IS_UPDATE_ALLOWED_IN_DM(ParamName, requestorStr);
-
+    CcspTraceInfo(("%s 61855-dbg: Entered --> ParamName:%s\n", __FUNCTION__, ParamName));
     if (strcmp(ParamName, "MinAddress") == 0)
     {
         IS_UPDATE_ALLOWED_IN_JSON(ParamName, requestorStr, pPool->Cfg.MinAddressUpdateSource);
@@ -6549,7 +6549,7 @@ Pool_SetParamUlongValue
         return TRUE;
     }
 
-
+    CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__)); 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
