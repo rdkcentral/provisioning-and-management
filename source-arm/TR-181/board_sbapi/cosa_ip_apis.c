@@ -3156,7 +3156,7 @@ CosaDmlIpIfSetV4Addr
 	CcspTraceInfo(("%s 61855-dbg: pEntry->SubnetMask.Value: %d.%d.%d.%d\n", __FUNCTION__, pEntry->SubnetMask.Dot[0],pEntry->SubnetMask.Dot[1],pEntry->SubnetMask.Dot[2],pEntry->SubnetMask.Dot[3]));
 	CcspTraceInfo(("%s 61855-dbg: p_be_buf->SubnetMask.Value: %d.%d.%d.%d\n", __FUNCTION__, p_be_buf->SubnetMask.Dot[0],p_be_buf->SubnetMask.Dot[1],p_be_buf->SubnetMask.Dot[2],p_be_buf->SubnetMask.Dot[3]));
 
-	CcspTraceInfo(("%s 61855-dbg: pEntry->SubnetMask.Value:%d, p_be_buf->SubnetMask.Value:%d\n", __FUNCTION__, pEntry->SubnetMask.Value, p_be_buf->SubnetMask..Value));
+	CcspTraceInfo(("%s 61855-dbg: pEntry->SubnetMask.Value:%d, p_be_buf->SubnetMask.Value:%d\n", __FUNCTION__, pEntry->SubnetMask.Value, p_be_buf->SubnetMask.Value));
 	if (pEntry->SubnetMask.Value != p_be_buf->SubnetMask.Value)
         {
 		CcspTraceInfo(("%s 61855-dbg: Entered inside the subnetmask value change\n", __FUNCTION__));
