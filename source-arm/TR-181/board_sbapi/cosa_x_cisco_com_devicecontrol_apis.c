@@ -4022,16 +4022,21 @@ static void getLanMgmtUpnp(UtopiaContext *utctx, BOOLEAN *enable)
 
 static void setLanMgmtUpnp(UtopiaContext *utctx, BOOLEAN enable)
 {
+	CcspTraceInfo(("%s 61855-dbg: Entered\n", __FUNCTION__));
     int bEnabled = (enable == TRUE) ? 1 : 0;
 
-	if (utctx == NULL)
+    CcspTraceInfo(("%s 61855-dbg: bEnabled:%d\n", __FUNCTION__, bEnabled));
+	if (utctx == NULL) {
+		CcspTraceInfo(("%s 61855-dbg: utctx is null\n", __FUNCTION__));
 		return;
+	}
 
     /* CID 56042 Unchecked return value : fix */
     if ( Utopia_SetBool(utctx, UtopiaValue_Mgmt_IGDEnabled, bEnabled) != SUCCESS) {
         CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in setting context!!! \n" ));
         return;
     }
+    CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
 }
 
 static 
@@ -4042,12 +4047,15 @@ void _Get_LanMngm_Setting(UtopiaContext *utctx, ULONG index, PCOSA_DML_LAN_MANAG
     bridgeInfo_t bridge_info = {0}; /*RDKB-6845, CID-33087, initialize before use*/
     int int_tmp;
     napt_mode_t napt_mode; 
+
+    CcspTraceInfo(("%s 61855-dbg: Entered\n", __FUNCTION__));
     /* Till now,just support only one lan interface */
     /* ignor the index */
     Utopia_GetLanMngmInsNum(utctx, &(pLanMngm->InstanceNumber));
     Utopia_GetLanMngmAlias(utctx, pLanMngm->Alias, sizeof(pLanMngm->Alias));
     Utopia_GetBridgeSettings(utctx, &bridge_info);
 
+    CcspTraceInfo(("%s 61855-dbg: b1\n", __FUNCTION__));
 	/* 
 	  * Configure Bridge Static Mode Configuration 
 	  * if COSA_DML_LanMode_BridgeStatic then BridgeStaticMode then "Advanced Bridge" 2
@@ -4081,6 +4089,7 @@ void _Get_LanMngm_Setting(UtopiaContext *utctx, ULONG index, PCOSA_DML_LAN_MANAG
 		break;
 	}
 
+	CcspTraceInfo(("%s 61855-dbg: b2\n", __FUNCTION__));
     Utopia_GetLanSettings(utctx, &lan);
     inet_pton(AF_INET, lan.ipaddr, &ipaddr);
     memcpy(&(pLanMngm->LanIPAddress), &(ipaddr), sizeof(ANSC_IPV4_ADDRESS));
@@ -4088,10 +4097,13 @@ void _Get_LanMngm_Setting(UtopiaContext *utctx, ULONG index, PCOSA_DML_LAN_MANAG
     memcpy(&(pLanMngm->LanSubnetMask), &(netmask), sizeof(ANSC_IPV4_ADDRESS));
     network.Value = _CALC_NETWORK(ipaddr.Value, netmask.Value);
     memcpy(&(pLanMngm->LanNetwork), &(network), sizeof(ANSC_IPV4_ADDRESS));
+    CcspTraceInfo(("%s 61855-dbg: b3\n", __FUNCTION__));
     
     Utopia_GetLanMngmLanNetworksAllow(utctx, &int_tmp);
     pLanMngm->LanNetworksAllow = (COSA_DML_LanNetworksAllow)int_tmp;
     
+    CcspTraceInfo(("%s 61855-dbg: b4\n", __FUNCTION__));
+
     /* TO-DO */
     /* LanDhcpServer; */
     Utopia_GetLanMngmLanNapt(utctx, &napt_mode);
@@ -4117,12 +4129,13 @@ void _Get_LanMngm_Setting(UtopiaContext *utctx, ULONG index, PCOSA_DML_LAN_MANAG
             pLanMngm->LanNaptType = 0;//COSA_DML_LanNapt_StaticIP;
             break;
     }
-    
+    CcspTraceInfo(("%s 61855-dbg: b5\n", __FUNCTION__));
     /* TO-DO */
     /* LanTos;
      */
 
 	getLanMgmtUpnp(utctx, &pLanMngm->LanUpnp);
+	CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
 }
 
 ULONG
@@ -4497,8 +4510,10 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
     
     COSA_DML_LAN_MANAGEMENT orgLanMngm;
 
+    CcspTraceInfo(("%s 61855-dbg: Entered\n", __FUNCTION__));
     if (Utopia_Init(&utctx))
     {
+	    CcspTraceInfo(("%s 61855-dbg: b1\n", __FUNCTION__));
         _Get_LanMngm_Setting(&utctx, ins, &orgLanMngm);
         Utopia_SetLanMngmAlias(&utctx, pLanMngm->Alias);
         Utopia_SetLanMngmInsNum(&utctx, pLanMngm->InstanceNumber);
@@ -4538,6 +4553,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 			}
 			break;
 		}
+		CcspTraceInfo(("%s 61855-dbg: b2\n", __FUNCTION__));
                /* To delete xi5 device connected file when device entering into bridge-mode */
                if ( pLanMngm->LanMode == COSA_DML_LanMode_BridgeStatic || pLanMngm->LanMode == COSA_DML_LanMode_FullBridgeStatic )
                {
@@ -4551,7 +4567,8 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 #endif
                }
 
-        Utopia_SetBridgeSettings(&utctx,&bridge_info);
+	       CcspTraceInfo(("%s 61855-dbg: b3\n", __FUNCTION__));
+        CcspTraceInfo(("%s 61855-dbg: Utopia_SetBridgeSettings return:%d\n", __FUNCTION__, Utopia_SetBridgeSettings(&utctx,&bridge_info)));
 #if !defined (NO_MOCA_FEATURE_SUPPORT)
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
@@ -4561,6 +4578,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 		    1,
 		    &nval,
 		    &valMoCAstatus);
+		CcspTraceInfo(("%s 61855-dbg: b4 ret:%lu\n", __FUNCTION__, ret));
                  if( CCSP_SUCCESS == ret ){
 			char *MoCAstate;
 			CcspTraceWarning(("valMoCAstatus[0]->parameterValue = %s\n",valMoCAstatus[0]->parameterValue));
@@ -4570,6 +4588,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 				MoCAstate = "0";
 			if ((syscfg_set_commit(NULL, "MoCA_current_status", MoCAstate) != 0))
 		        {
+				CcspTraceInfo(("%s 61855-dbg: b5\n", __FUNCTION__));
                             Utopia_Free(&utctx, 0);
                             CcspTraceWarning(("syscfg_set failed\n"));
                             return -1;
@@ -4582,19 +4601,24 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 		   if(valMoCAstatus){
 			free_parameterValStruct_t (bus_handle, nval, valMoCAstatus);
 		}
+		   CcspTraceInfo(("%s 61855-dbg: b6\n", __FUNCTION__));
 #endif
 		
+		   CcspTraceInfo(("%s 61855-dbg: b7\n", __FUNCTION__));
         
         memset(&lan, 0 ,sizeof(lan));
         inet_ntop(AF_INET, &(pLanMngm->LanIPAddress), str, sizeof(str));
         memcpy(&(lan.ipaddr), str, sizeof(str));
         inet_ntop(AF_INET, &(pLanMngm->LanSubnetMask), str, sizeof(str));
         memcpy(&(lan.netmask), str, sizeof(str));
-        Utopia_SetLanSettings(&utctx, &lan);
+	CcspTraceInfo(("%s 61855-dbg: b8\n", __FUNCTION__));
+        CcspTraceInfo(("%s 61855-dbg:  Utopia_SetLanSettings return:%d\n", __FUNCTION__, Utopia_SetLanSettings(&utctx, &lan)));
+	CcspTraceInfo(("%s 61855-dbg: b9\n", __FUNCTION__));
 
 #if defined(_COSA_INTEL_USG_ARM_) && !defined(INTEL_PUMA7) && defined(ENABLE_FEATURE_MESHWIFI)
         // Send subnet change message to ATOM so that MESH is notified.
         {
+		CcspTraceInfo(("%s 61855-dbg: b10\n", __FUNCTION__));
             #define DATA_SIZE 1024
             FILE *fp1;
             char buf[DATA_SIZE] = {0};
@@ -4639,6 +4663,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
                 else if (pid > 0)
                 {
                     int status;
+		    CcspTraceInfo(("%s 61855-dbg: b10.1\n", __FUNCTION__));
                     waitpid(pid, &status, 0); // wait here until the child completes
                 }
                 else
@@ -4654,6 +4679,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
                     }
                     char *args[] = {"rpcclient", urlPtr, cmd, (char *) 0 };
                     execv(args[0], args);
+		    CcspTraceInfo(("%s 61855-dbg: b11\n", __FUNCTION__));
                     _exit(EXIT_FAILURE);   // exec never returns
                 }
             }
@@ -4662,6 +4688,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
         // In all the other platforms XB6, XF3, etc. PandM is running on the same processor as on Mesh, so we just need to
         // send the sysevent call directly.
         {
+		CcspTraceInfo(("%s 61855-dbg: b12\n", __FUNCTION__));
             #define DATA_SIZE 1024
 
 			pid_t pid = fork();
@@ -4674,6 +4701,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 			else if (pid > 0)
 			{
 				int status;
+				CcspTraceInfo(("%s 61855-dbg: b12.1\n", __FUNCTION__));
 				waitpid(pid, &status, 0); // wait here until the child completes
 			}
 			else
@@ -4688,6 +4716,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 				}
 				char *args[] = {"/usr/bin/sysevent", "set", "subnet_change", cmd, (char *) 0 };
 				execv(args[0], args);
+				CcspTraceInfo(("%s 61855-dbg: b13\n", __FUNCTION__));
 				_exit(EXIT_FAILURE);   // exec never returns
 			}
         }
@@ -4705,6 +4734,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
         else 
             napt = NAPT_MODE_DHCP;
 #endif
+	CcspTraceInfo(("%s 61855-dbg: b14\n", __FUNCTION__));
         if(pLanMngm->LanNaptType == 1 && pLanMngm->LanNaptEnable == TRUE)        
             napt = NAPT_MODE_DHCP;
         else if(pLanMngm->LanNaptType == 1 && pLanMngm->LanNaptEnable == FALSE)        
@@ -4716,22 +4746,26 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
         else 
             napt = NAPT_MODE_DHCP;
 
-        Utopia_SetLanMngmLanNapt(&utctx, napt);
+	CcspTraceInfo(("%s 61855-dbg: b15\n", __FUNCTION__));
+        CcspTraceInfo(("%s 61855-dbg:Utopia_SetLanMngmLanNapt:%d\n", __FUNCTION__, Utopia_SetLanMngmLanNapt(&utctx, napt)));
 		setLanMgmtUpnp(&utctx, pLanMngm->LanUpnp);
         Utopia_Free(&utctx, 1);
+	CcspTraceInfo(("%s 61855-dbg: b16\n", __FUNCTION__));
         pLanMngm->LanNetwork.Value = _CALC_NETWORK(pLanMngm->LanIPAddress.Value, pLanMngm->LanSubnetMask.Value);
         char l_cSecWebUI_Enabled[8] = {0};
         syscfg_get(NULL, "SecureWebUI_Enable", l_cSecWebUI_Enabled, sizeof(l_cSecWebUI_Enabled));
         if (!strncmp(l_cSecWebUI_Enabled, "true", 4)) { 
         /* If lan settings are changed, restart the webgui.sh */
+		CcspTraceInfo(("%s 61855-dbg: b16.1 orgLanMngm.LanIPAddress.Value:%d, pLanMngm->LanIPAddress.Value:%d\n", __FUNCTION__, orgLanMngm.LanIPAddress.Value, pLanMngm->LanIPAddress.Value));
              if(orgLanMngm.LanIPAddress.Value != pLanMngm->LanIPAddress.Value)
              {
+		     CcspTraceInfo(("%s 61855-dbg: b16.2\n", __FUNCTION__));
                  pthread_t tid;
                  pthread_create( &tid, NULL, &WebGuiRestart, NULL);
              }
          }    
         
-
+CcspTraceInfo(("%s 61855-dbg: b17\n", __FUNCTION__));
 #ifdef _HUB4_PRODUCT_REQ_
 	/* If lan settings(gw-ip or subnet-mask) not change, skip refreshing lan_prefix */
 	if( (orgLanMngm.LanIPAddress.Value != pLanMngm->LanIPAddress.Value) ||
@@ -4740,10 +4774,12 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 	    /* SKYH4-1780 : This will help to set Down state to
 	     * sysevent 'ipv6_connection_state' */
 	    CcspTraceInfo(("lan_prefix_clear is setting\n"));
+	    CcspTraceInfo(("%s 61855-dbg: b18\n", __FUNCTION__));
 	    commonSyseventSet("lan_prefix_clear", "");
 	}
 #endif
         if (pLanMngm->LanMode == orgLanMngm.LanMode) {
+CcspTraceInfo(("%s 61855-dbg: b19\n", __FUNCTION__));
             return ANSC_STATUS_SUCCESS;
         }
         
@@ -4757,6 +4793,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
         
         if(bridge_info.mode == BRIDGE_MODE_OFF)
         {
+		CcspTraceInfo(("%s 61855-dbg: b20\n", __FUNCTION__));
             syslog_systemlog("Local Network", LOG_NOTICE, "Status change: IP %s mask %s", lan.ipaddr, lan.netmask);
             #ifdef _XF3_PRODUCT_REQ_            
                 bEnable = 0;
@@ -4764,6 +4801,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
         }
         else
         {
+		CcspTraceInfo(("%s 61855-dbg: b21\n", __FUNCTION__));
             syslog_systemlog("Local Network", LOG_NOTICE, "Status change: Bridge mode");
 #ifndef _XF3_PRODUCT_REQ_
             // stop lan when it is bridge mode
@@ -4778,6 +4816,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
         openCommonSyseventConnection();
         sysevent_set(commonSyseventFd, commonSyseventToken, "bridge_mode",buf,0);
         configBridgeMode(bEnable);
+	CcspTraceInfo(("%s 61855-dbg: b22\n", __FUNCTION__));
 #else
             //bEnable = 1;
         }
@@ -4789,13 +4828,17 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 			 ( is_mesh_enabled( ) || is_mesh_opt_mode_enabled ( ) )
 		   )
         {
+		CcspTraceInfo(("%s 61855-dbg: b23\n", __FUNCTION__));
             CcspTraceWarning(("Setting MESH to disable as LanMode is changed to Bridge mode\n"));
             pthread_t tid;
             pthread_create(&tid, NULL, &set_mesh_disabled, NULL);
         }
 
+	CcspTraceInfo(("%s 61855-dbg: b24\n", __FUNCTION__));
         ret = ANSC_STATUS_SUCCESS;
     }
+CcspTraceInfo(("%s 61855-dbg: b25 ret:%lu\n", __FUNCTION__, ret));
+CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
     return ret;
 }
 

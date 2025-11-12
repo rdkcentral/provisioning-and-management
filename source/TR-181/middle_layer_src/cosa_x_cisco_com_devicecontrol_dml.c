@@ -2133,6 +2133,7 @@ LanMngm_SetParamUlongValue
     if (!(deviceMode-1)) 
         return FALSE;
 
+    CcspTraceInfo(("%s 61855-dbg: Entered\n", __FUNCTION__));
     if (strcmp(ParamName, "LanMode") == 0)
     {
         #if defined(RDKB_EXTENDER)
@@ -2233,6 +2234,7 @@ LanMngm_SetParamUlongValue
         return TRUE;
     }
 
+    CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
     return FALSE;
 }
 
@@ -2273,6 +2275,7 @@ LanMngm_Validate
 
     lanSubnetMask = htonl(pLanMngm->LanSubnetMask.Value);
 
+    CcspTraceInfo(("%s 61855-dbg: Entered\n", __FUNCTION__));
     /* Convert to network byte order and check subnetmask */
 #if defined(_BCI_FEATURE_REQ)
      if(lanSubnetMask != 0xFF000000 &&  //8
@@ -2349,6 +2352,7 @@ LanMngm_Validate
         uint32_t subnet_mask = 0;
         char *str = NULL;
 
+         CcspTraceInfo(("%s 61855-dbg: isPrivate is true \n", __FUNCTION__));
         if ( commonSyseventGet( evt_name, wan_ipaddr_buf, sizeof(wan_ipaddr_buf)) == 0 )
         {
             /*CID: 279976 - Array Compared against null - fixed*/
@@ -2412,6 +2416,7 @@ LanMngm_Validate
 
 RET_ERR:
     CosaDmlLanMngm_GetConf(pLanMngm->InstanceNumber, pLanMngm);
+    CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
     return FALSE;
 }
 
@@ -2425,17 +2430,21 @@ LanMngm_Commit
     PCOSA_DML_LAN_MANAGEMENT        pLanMngm    = (PCOSA_DML_LAN_MANAGEMENT)pLinkObj->hContext;
     PCOSA_DATAMODEL_DEVICECONTROL   pDevCtrl    = (PCOSA_DATAMODEL_DEVICECONTROL)g_pCosaBEManager->hDeviceControl;
 
+    CcspTraceInfo(("%s 61855-dbg: Entered-b1\n", __FUNCTION__));
     if (Dhcpv4_Lan_MutexTryLock() != 0)
     {
         CcspTraceWarning(("%s not supported if already lan blob update is inprogress\n",__FUNCTION__));
+	CcspTraceInfo(("%s 61855-dbg: b2\n", __FUNCTION__));
         return -1; 
     }
 
 
     if (pLinkObj->bNew)
     {
+	    CcspTraceInfo(("%s 61855-dbg: b2.1\n", __FUNCTION__));
         if (CosaDmlLanMngm_AddEntry(pLanMngm) != ANSC_STATUS_SUCCESS)
         {
+		CcspTraceInfo(("%s 61855-dbg: b3\n", __FUNCTION__));
             Dhcpv4_Lan_MutexUnLock();
             return -1;
         }
@@ -2444,14 +2453,17 @@ LanMngm_Commit
     }
     else
     {
+	    CcspTraceInfo(("%s 61855-dbg: b4\n", __FUNCTION__));
         if (CosaDmlLanMngm_SetConf(pLanMngm->InstanceNumber, pLanMngm) != ANSC_STATUS_SUCCESS)
         {
             CosaDmlLanMngm_GetConf(pLanMngm->InstanceNumber, pLanMngm);
+	    CcspTraceInfo(("%s 61855-dbg: b5\n", __FUNCTION__));
             Dhcpv4_Lan_MutexUnLock();
             return -1;
         } 
 #if !defined(_COSA_BCM_MIPS_) && !defined(_ENABLE_DSL_SUPPORT_) 
         else {
+		CcspTraceInfo(("%s 61855-dbg: b6\n", __FUNCTION__));
 
 			char ip[64]={0};
 			char sub[64]={0};
@@ -2465,12 +2477,15 @@ CcspTraceWarning( ("--------- LanMngm_Commit CosaDmlDcResetBr0 <<\n"));
 		}
 #endif
     }
+    CcspTraceInfo(("%s 61855-dbg: b7\n", __FUNCTION__));
     if (lan_ip_config_modified == true)
     {
+	    CcspTraceInfo(("%s 61855-dbg: b8\n", __FUNCTION__));
         commonSyseventSet("lan_ip_config_modified","");
         lan_ip_config_modified=false;
     }
 
+    CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
     Dhcpv4_Lan_MutexUnLock();
     return 0;
 }
@@ -2484,9 +2499,16 @@ LanMngm_Rollback
     PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_LAN_MANAGEMENT        pLanMngm    = (PCOSA_DML_LAN_MANAGEMENT)pLinkObj->hContext;
 
-    if (CosaDmlLanMngm_GetConf(pLanMngm->InstanceNumber, pLanMngm) != ANSC_STATUS_SUCCESS)
-        return -1;
 
+    CcspTraceInfo(("%s 61855-dbg: Entered\n", __FUNCTION__));
+    if (CosaDmlLanMngm_GetConf(pLanMngm->InstanceNumber, pLanMngm) != ANSC_STATUS_SUCCESS) {
+	    
+    CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
+        return -1;
+    }
+
+
+    CcspTraceInfo(("%s 61855-dbg: Exit\n", __FUNCTION__));
     return 0;
 }
 

@@ -3129,9 +3129,13 @@ CosaDmlIpIfSetV4Addr
         }
 
         /*for IPaddr and netmask, it's middle layer's responsibility to check if the AddressingType is Static. Remember we only set these params in Static AddressingType*/
-        if (pEntry->IPAddress.Value != p_be_buf->IPAddress.Value)
-        {
+	CcspTraceInfo(("%s 61855-dbg: pEntry->IPAddress.Value:%d.%d.%d.%d\n", __FUNCTION__, pEntry->IPAddress.Dot[0],pEntry->IPAddress.Dot[1],pEntry->IPAddress.Dot[2],pEntry->IPAddress.Dot[3]));
+	CcspTraceInfo(("%s 61855-dbg: p_be_buf->IPAddress.Value:%d.%d.%d.%d\n", __FUNCTION__, p_be_buf->IPAddress.Dot[0],p_be_buf->IPAddress.Dot[1],p_be_buf->IPAddress.Dot[2],p_be_buf->IPAddress.Dot[3]));
+	CcspTraceInfo(("%s 61855-dbg: pEntry->IPAddress.Value:%d, p_be_buf->IPAddress.Value:%d\n", __FUNCTION__, pEntry->IPAddress.Value, p_be_buf->IPAddress.Value));
 
+	if (pEntry->IPAddress.Value != p_be_buf->IPAddress.Value)
+        {
+		CcspTraceInfo(("%s 61855-dbg: Entered inside the ipaddress value change\n", __FUNCTION__));
              /*CID: 74354 Unchecked return value*/
             if(!Utopia_Init(&utctx))
                return ANSC_STATUS_FAILURE;
@@ -3149,8 +3153,13 @@ CosaDmlIpIfSetV4Addr
             p_be_buf->IPAddress.Value = pEntry->IPAddress.Value;
         }
 
-        if (pEntry->SubnetMask.Value != p_be_buf->SubnetMask.Value)
+	CcspTraceInfo(("%s 61855-dbg: pEntry->SubnetMask.Value: %d.%d.%d.%d\n", __FUNCTION__, pEntry->SubnetMask.Dot[0],pEntry->SubnetMask.Dot[1],pEntry->SubnetMask.Dot[2],pEntry->SubnetMask.Dot[3]));
+	CcspTraceInfo(("%s 61855-dbg: p_be_buf->SubnetMask.Value: %d.%d.%d.%d\n", __FUNCTION__, p_be_buf->SubnetMask.Dot[0],p_be_buf->SubnetMask.Dot[1],p_be_buf->SubnetMask.Dot[2],p_be_buf->SubnetMask.Dot[3]));
+
+	CcspTraceInfo(("%s 61855-dbg: pEntry->SubnetMask.Value:%d, p_be_buf->SubnetMask.Value:%d\n", __FUNCTION__, pEntry->SubnetMask.Value, p_be_buf->SubnetMask.Value));
+	if (pEntry->SubnetMask.Value != p_be_buf->SubnetMask.Value)
         {
+		CcspTraceInfo(("%s 61855-dbg: Entered inside the subnetmask value change\n", __FUNCTION__));
             if (strstr((char *)g_ipif_names[ulIpIfInstanceNumber-1], "lan"))
             {
                 /*CID: 74354 Unchecked return value*/
