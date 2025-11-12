@@ -2202,7 +2202,7 @@ LanMngm_SetParamUlongValue
         }
 
 		CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanSubnetMask value  ...\n"));
-        //syscfg_set_commit(NULL, DHCPV4_LAN_NETMASK, ip_buff);
+        syscfg_set_commit(NULL, DHCPV4_LAN_NETMASK, ip_buff);
         pLanMngm->LanSubnetMask.Value = uValuepUlong;
         lan_ip_config_modified=true;
         Dhcpv4_Lan_MutexUnLock();
@@ -2222,7 +2222,7 @@ LanMngm_SetParamUlongValue
         }
 
 		CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanIPAddress value  ...\n"));
-        //syscfg_set_commit(NULL, DHCPV4_LAN_IP, ip_buff);
+        syscfg_set_commit(NULL, DHCPV4_LAN_IP, ip_buff);
         pLanMngm->LanIPAddress.Value = uValuepUlong;
         lan_ip_config_modified=true;
         Dhcpv4_Lan_MutexUnLock();
