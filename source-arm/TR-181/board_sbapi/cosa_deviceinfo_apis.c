@@ -1607,7 +1607,7 @@ void COSADmlRemoveProcessInfo(PCOSA_DATAMODEL_PROCSTATUS pObj)
     }
 }
 
-static int read_proc_stat(char * line, char * p_cmd, char * p_state, int * p_size, int* p_priority, int * p_start_time)
+static int read_proc_stat(char * line, char * p_cmd, char * p_state, unsigned int * p_size, int* p_priority, int * p_start_time)
 {
     int utime, stime, cutime, cstime;
     char * tmp = NULL, *tmp1 = NULL;
@@ -1632,7 +1632,7 @@ static int read_proc_stat(char * line, char * p_cmd, char * p_state, int * p_siz
 
             tmp += 2;
             if (sscanf(tmp, "%c %*d %*d %*d %*d %*d %*u %*u \
-%*u %*u %*u %d %d %d %d %d %*d %*d 0 %*u %d", 
+%*u %*u %*u %d %d %d %d %d %*d %*d 0 %*u %u", 
                        p_state,
                        &utime,
                        &stime,
@@ -1729,7 +1729,7 @@ void COSADmlGetProcessInfo(PCOSA_DATAMODEL_PROCSTATUS p_info)
 
             memset(state, 0, sizeof(state));
 
-            if (read_proc_stat(name, p_proc->Command, state, (int*)&p_proc->Size, (int*)&p_proc->Priority, (int*)&p_proc->CPUTime ))
+            if (read_proc_stat(name, p_proc->Command, state, (unsigned int*)&p_proc->Size, (int*)&p_proc->Priority, (int*)&p_proc->CPUTime ))
             {
                 CcspTraceWarning(("Failed to parse process %lu information!\n", pid));
                 continue;
