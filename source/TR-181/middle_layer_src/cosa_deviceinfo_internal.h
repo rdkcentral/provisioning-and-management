@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -73,7 +73,7 @@
     /* start of DeviceInfo object class content */                          \
     /* CID: 78739 Out-of-bounds access with PCOSA_DATAMODEL_DEVICEINFO */     \
     UCHAR               ProvisioningCode[256];                               \
-    
+
 
 typedef  struct
 _COSA_DATAMODEL_DEVICEINFO_CLASS_CONTENT
@@ -83,10 +83,10 @@ _COSA_DATAMODEL_DEVICEINFO_CLASS_CONTENT
     BOOL                RollBackParam;
     int                 RollBackIntParam;
 #ifdef CONFIG_INTERNET2P0
-    BOOL		bWiFiConfigued;	
-    BOOL		bCaptivePortalEnable;	
-    BOOL		bCloudCapable;	
-    BOOL		bCloudEnable;				    
+    BOOL		bWiFiConfigued;
+    BOOL		bCaptivePortalEnable;
+    BOOL		bCloudCapable;
+    BOOL		bCloudEnable;
     CHAR		WebURL[64];
 #endif
     char        CloudPersonalizationURL[64];
@@ -95,11 +95,11 @@ _COSA_DATAMODEL_DEVICEINFO_CLASS_CONTENT
 	CHAR 		EMS_MobileNo[64];
 /*change ends here*/
     BOOL		bxfinitywifiEnable;
-	BOOL		bDhcpServDetectEnable;	
-	BOOL		bMultipleGW;					
+	BOOL		bDhcpServDetectEnable;
+	BOOL		bMultipleGW;
 #ifndef FEATURE_FWUPGRADE_MANAGER
 	ULONG		DeferFWDownloadReboot;
-#endif	
+#endif
 	BOOL		AbortReboot;
 	BOOL		FirmwareDownloadCompletedNotification;
 	CHAR 		FirmwareDownloadStartedNotification[128];
@@ -133,18 +133,43 @@ COSA_DATAMODEL_DEVICEINFO, *PCOSA_DATAMODEL_DEVICEINFO;
 /*
     Standard function declaration
 */
+/**
+ * @brief Create the DeviceInfo backend object.
+ *
+ * @return  Handle to newly created DeviceInfo backend object.
+ * @retval Handle to the newly created DeviceInfo backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaDeviceInfoCreate
     (
         VOID
     );
 
+/**
+ * @brief Initialize the DeviceInfo backend object
+ *
+ * @param[in] hThisObject  Handle to the DeviceInfo object to initialize
+ *
+ * @return The status of the operation
+ * @retval ANSC_STATUS_SUCCESS on success
+ * @retval error code otherwise
+ */
 ANSC_STATUS
 CosaDeviceInfoInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Remove and cleanup the DeviceInfo backend object
+ *
+ * @param[in] hThisObject  Handle to the DeviceInfo object to remove
+ *
+ * @return The status of the operation
+ * @retval ANSC_STATUS_SUCCESS on success
+ * @retval error code otherwise
+ */
 ANSC_STATUS
 CosaDeviceInfoRemove
     (

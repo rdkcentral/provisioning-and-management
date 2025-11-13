@@ -32,16 +32,45 @@
     *  OnboardingLogging_SetParamBoolValue
 
 ***********************************************************************/
+/**
+ * @brief Enables onboard logging functionality.
+ *
+ * @param[in] hThisObject Handle to the OnboardLogging object instance.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS if onboard logging was enabled successfully,
+ * @retval ANSC_STATUS_FAILURE otherwise.
+ */
 ANSC_STATUS
 EnableOnboardLogging
     (
         ANSC_HANDLE hThisObject
     );
+/**
+ * @brief Disables onboard logging functionality.
+ *
+ * @param[in] hThisObject Handle to the OnboardLogging object instance.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS if onboard logging was disabled successfully,
+ * @retval ANSC_STATUS_FAILURE otherwise.
+ */
 ANSC_STATUS
 DisableOnboardLogging
     (
         ANSC_HANDLE hThisObject
     );
+/**
+ * @brief Retrieves boolean parameter values for OnboardingLogging configuration.
+ *
+ * @param[in] hInsContext Instance context handle .
+ * @param[in] ParamName Name of the parameter to retrieve
+ * @param[out] pBool Pointer to store the retrieved boolean value.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter was retrieved successfully
+ * @retval FALSE if parameter not found.
+ */
 BOOL
 OnboardingLogging_GetParamBoolValue
     (
@@ -50,6 +79,17 @@ OnboardingLogging_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Sets boolean parameter values for OnboardingLogging configuration.
+ *
+ * @param[in] hInsContext Instance context handle
+ * @param[in] ParamName Name of the parameter to set
+ * @param[in] bValue Boolean value to set for the parameter.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter was set successfully.
+ * @retval FALSE if parameter not found or setting failed.
+ */
 BOOL
 OnboardingLogging_SetParamBoolValue
     (

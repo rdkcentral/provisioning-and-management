@@ -48,21 +48,22 @@ typedef void (*destroy_fn_t)(void *);
 /*----------------------------------------------------------------------------*/
 
 /**
- *  Simple helper function that decodes the msgpack, then checks for a few
- *  sanity items (including an optional wrapper map) before calling the process
- *  argument passed in.  This also allocates the structure for the caller.
+ * @brief Decode msgpack buffer and convert to array structure.
  *
- *  @param buf          the buffer to decode
- *  @param len          the length of the buffer in bytes
- *  @param struct_size  the size of the structure to allocate and pass to process
- *  @param wrapper      the optional wrapper to look for & enforce
- *  @param expect_type  the type of object expected
- *  @param optional     if the inner wrapper layer is optional
- *  @param process      the process function to call if successful
- *  @param destroy      the destroy function to call if there was an error
+ * This helper function decodes the msgpack buffer, checks for sanity items(including an optional wrapper map),
+ * and calls the process function. It also allocates the structure for the caller.
  *
- *  @returns the object after process has done it's magic to it on success, or
- *           NULL on error
+ * @param[in] buf          - Pointer to the buffer to decode.
+ * @param[in] len          - The length of the buffer in bytes.
+ * @param[in] struct_size  - The size of the structure to allocate and pass to process.
+ * @param[in] optional     - If the inner wrapper layer is optional.
+ * @param[in] process      - The process function to call if successful.
+ * @param[in] destroy      - The destroy function to call if there was an error.
+ *
+ * @return Pointer to the processed object
+ * @retval Non-NULL Pointer to the processed object after successful conversion.
+ * @retval NULL on error
+ *
  */
 void* helper_convert_array( const void *buf, size_t len,
                       size_t struct_size, bool optional,

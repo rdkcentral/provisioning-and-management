@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -82,6 +82,17 @@
     *  PPP_GetParamStringValue
 
 ***********************************************************************/
+/**
+ * @brief Retrieves a boolean parameter value from the Device.PPP object.
+ *
+ * @param[in] hInsContext Instance handle for the PPP object context.
+ * @param[in] ParamName Name of the boolean parameter.
+ * @param[out] pBool Pointer to store the retrieved boolean value (TRUE/FALSE).
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found or error occurred.
+ */
 BOOL
 PPP_GetParamBoolValue
     (
@@ -90,6 +101,17 @@ PPP_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves an integer parameter value from the Device.PPP object.
+ *
+ * @param[in] hInsContext Instance handle for the PPP object context.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[out] pInt Pointer to store the retrieved signed integer value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found or error occurred.
+ */
 BOOL
 PPP_GetParamIntValue
     (
@@ -98,6 +120,17 @@ PPP_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves an unsigned long parameter value from the Device.PPP object.
+ *
+ * @param[in] hInsContext Instance handle for the PPP object context.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[out] pUlong Pointer to store the retrieved unsigned long value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found or error occurred.
+ */
 BOOL
 PPP_GetParamUlongValue
     (
@@ -106,6 +139,19 @@ PPP_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves a string parameter value from the Device.PPP object.
+ *
+ * @param[in] hInsContext Instance handle for the PPP object context.
+ * @param[in] ParamName Name of the string parameter.
+ * @param[out] pValue Buffer to store the retrieved string value, size determined by pUlSize.
+ * @param[in,out] pUlSize On input: size of pValue buffer; on output: actual string length. Usually size of 1023 will be used.
+ *
+ * @return status of operation
+ * @retval 0 Parameter retrieved and stored in pValue.
+ * @retval 1 Buffer insufficient, pUlSize contains required size.
+ * @retval -1 if not supported.
+ */
 ULONG
 PPP_GetParamStringValue
     (
@@ -138,12 +184,31 @@ PPP_GetParamStringValue
     *  Interface_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Gets the number of Device.PPP.Interface.{i} table entries.
+ *
+ * @param[in] hInsContext Instance handle.
+ *
+ * @return Number of Interface table entries.
+ * @retval Count of configured PPP interfaces.
+ */
 ULONG
 Interface3_GetEntryCount
     (
         ANSC_HANDLE
     );
 
+/**
+ * @brief Retrieves a specific Device.PPP.Interface.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the PPP context.
+ * @param[in] nIndex Zero-based index of the Interface entry to retrieve.
+ * @param[out] pInsNumber Pointer to store the instance number of the retrieved entry.
+ *
+ * @return Handle to the Interface entry context.
+ * @retval Non-NULL Handle to the Interface entry context.
+ * @retval NULL Entry not found at specified index.
+ */
 ANSC_HANDLE
 Interface3_GetEntry
     (
@@ -152,6 +217,16 @@ Interface3_GetEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Adds a new Device.PPP.Interface.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the PPP context.
+ * @param[out] pInsNumber Pointer to store the allocated instance number for the new entry.
+ *
+ * @return Instance handle of the Interface entry
+ * @retval Non-NULL Handle to the new Interface entry.
+ * @retval NULL Failed to create entry .
+ */
 ANSC_HANDLE
 Interface3_AddEntry
     (
@@ -159,6 +234,16 @@ Interface3_AddEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Deletes a Device.PPP.Interface.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the PPP context.
+ * @param[in] hInstance Instance handle of the Interface entry to delete.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Entry deleted successfully.
+ * @retval ANSC_STATUS_FAILURE Failed to delete entry.
+ */
 ULONG
 Interface3_DelEntry
     (
@@ -166,6 +251,17 @@ Interface3_DelEntry
         ANSC_HANDLE                 hInstance
     );
 
+/**
+ * @brief Retrieves a boolean parameter from a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the boolean parameter.
+ * @param[out] pBool Pointer to store the retrieved boolean value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Interface3_GetParamBoolValue
     (
@@ -174,6 +270,17 @@ Interface3_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves an integer parameter from a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[out] pInt Pointer to store the retrieved signed integer value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Interface3_GetParamIntValue
     (
@@ -182,6 +289,17 @@ Interface3_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves an unsigned long parameter from a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[out] pUlong Pointer to store the retrieved unsigned long value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Interface3_GetParamUlongValue
     (
@@ -190,6 +308,19 @@ Interface3_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves a string parameter from a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the string parameter.
+ * @param[out] pValue Buffer to store the retrieved string, size determined by pUlSize.
+ * @param[in,out] pUlSize On input: buffer size; on output: actual string length.  Usually size of 1023 will be used.
+ *
+ * @return status of operation
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small, pUlSize contains required size.
+ * @retval -1 if not supported
+ */
 ULONG
 Interface3_GetParamStringValue
     (
@@ -199,6 +330,17 @@ Interface3_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets a boolean parameter in a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the boolean parameter
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Interface3_SetParamBoolValue
     (
@@ -207,6 +349,17 @@ Interface3_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets an integer parameter in a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[in] value Signed integer value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Interface3_SetParamIntValue
     (
@@ -215,6 +368,17 @@ Interface3_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets an unsigned long parameter in a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Interface3_SetParamUlongValue
     (
@@ -223,6 +387,17 @@ Interface3_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets a string parameter in a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[in] ParamName Name of the string parameter
+ * @param[in] strValue Null-terminated string value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Interface3_SetParamStringValue
     (
@@ -231,6 +406,17 @@ Interface3_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates staged changes to a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ * @param[out] pReturnParamName Buffer to store the name of the parameter if there's a validation, size determined by puLength.
+ * @param[in,out] puLength On input: buffer size; on output: actual parameter name length if validation fails.
+ *
+ * @return status of operation
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's validation.
+ */
 BOOL
 Interface3_Validate
     (
@@ -239,12 +425,30 @@ Interface3_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits staged changes to a Device.PPP.Interface.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Changes committed and PPP interface configured.
+ * @retval ANSC_STATUS_FAILURE Commit failed .
+ */
 ULONG
 Interface3_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back uncommitted changes to a Device.PPP.Interface.{i} entry whenever there's a validation found.
+ *
+ * @param[in] hInsContext Instance handle for the Interface entry.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Changes rolled back successfully.
+ * @retval ANSC_STATUS_FAILURE Rollback operation failed.
+ */
 ULONG
 Interface3_Rollback
     (
@@ -270,6 +474,18 @@ Interface3_Rollback
     *  PPPoE_Rollback
 
 ***********************************************************************/
+/**
+* @brief Retrieves a boolean parameter value from the PPPoE object.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pBool      - Pointer to store the retrieved boolean value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 PPPoE_GetParamBoolValue
     (
@@ -278,6 +494,18 @@ PPPoE_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+* @brief Retrieves an integer parameter value from the PPPoE object.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pInt       - Pointer to store the retrieved integer value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 PPPoE_GetParamIntValue
     (
@@ -286,6 +514,18 @@ PPPoE_GetParamIntValue
         int*                        pInt
     );
 
+/**
+* @brief Retrieves an unsigned long parameter value from the PPPoE object.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pUlong     - Pointer to store the retrieved unsigned long value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 PPPoE_GetParamUlongValue
     (
@@ -294,6 +534,20 @@ PPPoE_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+* @brief Retrieves a string parameter value from the PPPoE object.
+*
+* @param[in] hInsContext  - Instance handle for the PPPoE object context.
+* @param[in] ParamName    - Pointer to the parameter name.
+* @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+* @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful.
+* @retval 1 if the buffer is too small; pUlSize updated with required size.
+* @retval -1 if not supported.
+*
+*/
 ULONG
 PPPoE_GetParamStringValue
     (
@@ -303,6 +557,18 @@ PPPoE_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+* @brief Sets a boolean parameter value for the PPPoE object.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[in] bValue      - The boolean value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 PPPoE_SetParamBoolValue
     (
@@ -311,6 +577,18 @@ PPPoE_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+* @brief Sets an integer parameter value for the PPPoE object.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[in] value       - The integer value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 PPPoE_SetParamIntValue
     (
@@ -319,6 +597,18 @@ PPPoE_SetParamIntValue
         int                         value
     );
 
+/**
+* @brief Sets an unsigned long parameter value for the PPPoE object.
+*
+* @param[in] hInsContext   - Instance handle for the PPPoE object context.
+* @param[in] ParamName     - Pointer to the parameter name.
+* @param[in] uValuepUlong  - The unsigned long value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 PPPoE_SetParamUlongValue
     (
@@ -327,6 +617,18 @@ PPPoE_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+* @brief Sets a string parameter value for the PPPoE object.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[in] strValue    - Pointer to the string value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 PPPoE_SetParamStringValue
     (
@@ -335,6 +637,18 @@ PPPoE_SetParamStringValue
         char*                       strValue
     );
 
+/**
+* @brief Validates pending parameter changes for the PPPoE object.
+*
+* @param[in] hInsContext       - Instance handle for the PPPoE object context.
+* @param[out] pReturnParamName - Pointer to a buffer(128 bytes) to store the parameter name if there's a validation.
+* @param[in,out] puLength      - Pointer to the buffer size; updated with actual size on return.
+*
+* @return The validation result.
+* @retval TRUE if there's no validation.
+* @retval FALSE if there's validation.
+*
+*/
 BOOL
 PPPoE_Validate
     (
@@ -343,12 +657,32 @@ PPPoE_Validate
         ULONG*                      puLength
     );
 
+/**
+* @brief Commits pending parameter changes for the PPPoE object.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*
+*/
 ULONG
 PPPoE_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+* @brief Rolls back pending parameter changes for the PPPoE object whenever there's a validation found.
+*
+* @param[in] hInsContext - Instance handle for the PPPoE object context.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*
+*/
 ULONG
 PPPoE_Rollback
     (
@@ -374,6 +708,18 @@ PPPoE_Rollback
     *  IPCP_Rollback
 
 ***********************************************************************/
+/**
+* @brief Retrieves a boolean parameter value from the IPCP object.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pBool      - Pointer to store the retrieved boolean value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 IPCP_GetParamBoolValue
     (
@@ -382,6 +728,18 @@ IPCP_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+* @brief Retrieves an integer parameter value from the IPCP object.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pInt       - Pointer to store the retrieved integer value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 IPCP_GetParamIntValue
     (
@@ -390,6 +748,18 @@ IPCP_GetParamIntValue
         int*                        pInt
     );
 
+/**
+* @brief Retrieves an unsigned long parameter value from the IPCP object.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pUlong     - Pointer to store the retrieved unsigned long value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 IPCP_GetParamUlongValue
     (
@@ -398,6 +768,20 @@ IPCP_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+* @brief Retrieves a string parameter value from the IPCP object.
+*
+* @param[in] hInsContext  - Instance handle for the IPCP object context.
+* @param[in] ParamName    - Pointer to the parameter name.
+* @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+* @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful.
+* @retval 1 if the buffer is too small; pUlSize updated with required size.
+* @retval -1 if not supported.
+*
+*/
 ULONG
 IPCP_GetParamStringValue
     (
@@ -407,6 +791,18 @@ IPCP_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+* @brief Sets a boolean parameter value for the IPCP object.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[in] bValue      - The boolean value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 IPCP_SetParamBoolValue
     (
@@ -415,6 +811,18 @@ IPCP_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+* @brief Sets an integer parameter value for the IPCP object.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[in] value       - The integer value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 IPCP_SetParamIntValue
     (
@@ -423,6 +831,18 @@ IPCP_SetParamIntValue
         int                         value
     );
 
+/**
+* @brief Sets an unsigned long parameter value for the IPCP object.
+*
+* @param[in] hInsContext   - Instance handle for the IPCP object context.
+* @param[in] ParamName     - Pointer to the parameter name.
+* @param[in] uValuepUlong  - The unsigned long value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 IPCP_SetParamUlongValue
     (
@@ -431,6 +851,18 @@ IPCP_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+* @brief Sets a string parameter value for the IPCP object.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[in] strValue    - Pointer to the string value to set.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is set successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 IPCP_SetParamStringValue
     (
@@ -439,6 +871,18 @@ IPCP_SetParamStringValue
         char*                       strValue
     );
 
+/**
+* @brief Validates pending parameter changes for the IPCP object.
+*
+* @param[in] hInsContext       - Instance handle for the IPCP object context.
+* @param[out] pReturnParamName - Pointer to a buffer(128 bytes) to store the parameter name if there's a validation.
+* @param[in,out] puLength      - Pointer to the buffer size; updated with actual size on return.
+*
+* @return The validation result.
+* @retval TRUE if there's no validation.
+* @retval FALSE if there's validation .
+*
+*/
 BOOL
 IPCP_Validate
     (
@@ -447,12 +891,32 @@ IPCP_Validate
         ULONG*                      puLength
     );
 
+/**
+* @brief Commits pending parameter changes for the IPCP object.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*
+*/
 ULONG
 IPCP_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+* @brief Rolls back pending parameter changes for the IPCP object whenever there's a validation found.
+*
+* @param[in] hInsContext - Instance handle for the IPCP object context.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*
+*/
 ULONG
 IPCP_Rollback
     (
@@ -471,6 +935,18 @@ IPCP_Rollback
     *  Stats_GetParamStringValue
 
 ***********************************************************************/
+/**
+* @brief Retrieves a boolean parameter value from the Stats object.
+*
+* @param[in] hInsContext - Instance handle for the Stats object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pBool      - Pointer to store the retrieved boolean value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 Stats6_GetParamBoolValue
     (
@@ -479,6 +955,18 @@ Stats6_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+* @brief Retrieves an integer parameter value from the Stats object.
+*
+* @param[in] hInsContext - Instance handle for the Stats object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pInt       - Pointer to store the retrieved integer value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 Stats6_GetParamIntValue
     (
@@ -487,6 +975,18 @@ Stats6_GetParamIntValue
         int*                        pInt
     );
 
+/**
+* @brief Retrieves an unsigned long parameter value from the Stats object.
+*
+* @param[in] hInsContext - Instance handle for the Stats object context.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[out] pUlong     - Pointer to store the retrieved unsigned long value.
+*
+* @return The status of the operation.
+* @retval TRUE if the parameter is found and retrieved successfully.
+* @retval FALSE if the parameter is not found or operation fails.
+*
+*/
 BOOL
 Stats6_GetParamUlongValue
     (
@@ -495,6 +995,20 @@ Stats6_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+* @brief Retrieves a string parameter value from the Stats object.
+*
+* @param[in] hInsContext  - Instance handle for the Stats object context.
+* @param[in] ParamName    - Pointer to the parameter name.
+* @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+* @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful.
+* @retval 1 if the buffer is too small; pUlSize updated with required size.
+* @retval -1 if not supported.
+*
+*/
 ULONG
 Stats6_GetParamStringValue
     (
