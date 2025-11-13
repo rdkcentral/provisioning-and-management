@@ -2430,18 +2430,21 @@ LanMngm_Commit
     PCOSA_DML_LAN_MANAGEMENT        pLanMngm    = (PCOSA_DML_LAN_MANAGEMENT)pLinkObj->hContext;
     PCOSA_DATAMODEL_DEVICECONTROL   pDevCtrl    = (PCOSA_DATAMODEL_DEVICECONTROL)g_pCosaBEManager->hDeviceControl;
 
-    CcspTraceInfo(("%s 61855-dbg: Entered\n", __FUNCTION__));
+    CcspTraceInfo(("%s 61855-dbg: Entered-b1\n", __FUNCTION__));
     if (Dhcpv4_Lan_MutexTryLock() != 0)
     {
         CcspTraceWarning(("%s not supported if already lan blob update is inprogress\n",__FUNCTION__));
+	CcspTraceInfo(("%s 61855-dbg: b2\n", __FUNCTION__));
         return -1; 
     }
 
 
     if (pLinkObj->bNew)
     {
+	    CcspTraceInfo(("%s 61855-dbg: b2.1\n", __FUNCTION__));
         if (CosaDmlLanMngm_AddEntry(pLanMngm) != ANSC_STATUS_SUCCESS)
         {
+		CcspTraceInfo(("%s 61855-dbg: b3\n", __FUNCTION__));
             Dhcpv4_Lan_MutexUnLock();
             return -1;
         }
@@ -2450,14 +2453,17 @@ LanMngm_Commit
     }
     else
     {
+	    CcspTraceInfo(("%s 61855-dbg: b4\n", __FUNCTION__));
         if (CosaDmlLanMngm_SetConf(pLanMngm->InstanceNumber, pLanMngm) != ANSC_STATUS_SUCCESS)
         {
             CosaDmlLanMngm_GetConf(pLanMngm->InstanceNumber, pLanMngm);
+	    CcspTraceInfo(("%s 61855-dbg: b5\n", __FUNCTION__));
             Dhcpv4_Lan_MutexUnLock();
             return -1;
         } 
 #if !defined(_COSA_BCM_MIPS_) && !defined(_ENABLE_DSL_SUPPORT_) 
         else {
+		CcspTraceInfo(("%s 61855-dbg: b6\n", __FUNCTION__));
 
 			char ip[64]={0};
 			char sub[64]={0};
@@ -2471,8 +2477,10 @@ CcspTraceWarning( ("--------- LanMngm_Commit CosaDmlDcResetBr0 <<\n"));
 		}
 #endif
     }
+    CcspTraceInfo(("%s 61855-dbg: b7\n", __FUNCTION__));
     if (lan_ip_config_modified == true)
     {
+	    CcspTraceInfo(("%s 61855-dbg: b8\n", __FUNCTION__));
         commonSyseventSet("lan_ip_config_modified","");
         lan_ip_config_modified=false;
     }
