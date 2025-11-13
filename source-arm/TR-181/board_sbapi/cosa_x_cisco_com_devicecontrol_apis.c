@@ -2045,7 +2045,7 @@ void* restoreAllDBs(void* arg)
         v_secure_system("touch /nvram/brcm_wifi_factory_reset"); 
 #endif
 
-#if  defined (_XB10_PRODUCT_REQ_)
+#if  defined (_XB10_PRODUCT_REQ_) ||  defined(WAN_MANAGER_UNIFICATION_ENABLED) //If Wan unification is enabled. clear the ethwan flags on FR. The Wan Manager should configure this based on the scanning policy.
      v_secure_system("rm -f /nvram/ethwan_interface"); 
      v_secure_system("rm -f /nvram/ETHWAN_ENABLE"); 
      v_secure_system("syscfg set selected_wan_mode 2");
@@ -2383,7 +2383,7 @@ CosaDmlDcSetFactoryReset
 	   	CcspTraceError(("FactoryReset:%s BAD parameter passed to factory defaults parameter ...\n",__FUNCTION__));
 		return ANSC_STATUS_BAD_PARAMETER;
 	    }
-#if (defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)) && defined (_COSA_BCM_ARM_) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined(_COSA_BCM_MIPS_) || defined(_XER5_PRODUCT_REQ_)
+#if (defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)) && defined (_COSA_BCM_ARM_) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined(_COSA_BCM_MIPS_) || defined(_XER5_PRODUCT_REQ_) || defined (_PLATFORM_BANANAPI_R4_)
                 {
                         unsigned int dbValue = 0;
                         FILE *pdbFile = NULL;

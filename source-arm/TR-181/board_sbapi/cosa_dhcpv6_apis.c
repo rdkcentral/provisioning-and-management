@@ -5529,7 +5529,6 @@ void __cosa_dhcpsv6_refresh_config()
                     CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
                 }
 
-                fprintf(fp, "   subnet %s\n", prefixValue);
                 fprintf(fp, "   class {\n");
 
 #ifdef CONFIG_CISCO_DHCP6S_REQUIREMENT_FROM_DPC3825
@@ -9499,7 +9498,7 @@ void addRemoteWanIpv6Route()
                 char mesh_wan_ifname[32] = {0};
                 char ipv6_address[128] = {0};
                 getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
-                if (mesh_wan_ifname[0] != '\0') 
+		if ((mesh_wan_ifname[0] != '\0') && (strcmp(mesh_wan_ifname, current_wan_ifname) == 0))
                 {
                     memset(ipv6_address,0,sizeof(ipv6_address));
 
