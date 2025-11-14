@@ -151,7 +151,7 @@ do
 		fi
 	fi
 
-if [ "$MODEL_NUM" != "CWA438TCOM" ]; then	
+if [ "$VOICE_SUPPORTED" != "false" ]; then
 	# Checking MTA's PID
 	MTA_PID=`pidof CcspMtaAgentSsp`
 	if [ "$MTA_PID" = "" ]; then
