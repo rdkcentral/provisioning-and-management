@@ -1633,7 +1633,7 @@ static int read_proc_stat(char * line, char * p_cmd, char * p_state, unsigned lo
 
             tmp += 2;
             if (sscanf(tmp, "%c %*d %*d %*d %*d %*d %*u %*u \
-%*u %*u %*u %lu %lu %ld %ld %ld %*d %*d %*d %*llu %lu", 
+%*u %*u %*u %lu %lu %ld %ld %ld %*d %*d %*d %*u %lu", 
                        p_state,
                        &utime,
                        &stime,
