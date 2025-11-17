@@ -5415,6 +5415,7 @@ void __cosa_dhcpsv6_refresh_config()
     errno_t rc = -1;
     bool option23_written = false;
 
+	CcspTraceError(("[%s-%d] Entry \n", __FUNCTION__, __LINE__));
     if (!fp)
         goto EXIT;
 
@@ -5473,6 +5474,8 @@ void __cosa_dhcpsv6_refresh_config()
     if ( g_dhcpv6_server_type != DHCPV6_SERVER_TYPE_STATEFUL )
         fprintf(fp, "stateless\n");
 
+	CcspTraceError(("[%s-%d] Entry SerPoolNo[%lu] \n", __FUNCTION__, __LINE__, uDhcpv6ServerPoolNum));
+	
     for ( Index = 0; Index < uDhcpv6ServerPoolNum; Index++ )
     {
         /* We need get interface name according to Interface field*/
@@ -5505,29 +5508,36 @@ void __cosa_dhcpsv6_refresh_config()
         /*begin class
                     fc00:1:0:0:4::/80,fc00:1:0:0:5::/80,fc00:1:0:0:6::/80
                 */
+		CcspTraceError(("[%s-%d] Entry2 \n", __FUNCTION__, __LINE__));
         if ( sDhcpv6ServerPool[Index].Cfg.IANAEnable && sDhcpv6ServerPool[Index].Info.IANAPrefixes[0] )
         {
             pTmp1 = AnscCloneString((char*)sDhcpv6ServerPool[Index].Info.IANAPrefixes);              
             pTmp3 = pTmp1;
-
+			CcspTraceError(("[%s-%d] Entry3 \n", __FUNCTION__, __LINE__));
             for (pTmp2 = pTmp1; ; pTmp2 = NULL) 
             {
                 pTmp1 = strtok_r(pTmp2, ",", &saveptr);
+				CcspTraceError(("[%s-%d] Entry4 \n", __FUNCTION__, __LINE__));
                 if (pTmp1 == NULL)
                     break;
 
+				CcspTraceError(("[%s-%d] Entry5 \n", __FUNCTION__, __LINE__));
+				
                 /* This pTmp1 is IP.Interface.{i}.IPv6Prefix.{i}., we need ipv6 address(eg:2000:1:0:0:6::/64) according to it*/
                 rc = sprintf_s((char*)prefixFullName, sizeof(prefixFullName), "%sPrefix",pTmp1);
                 if(rc < EOK)
                 {
                     ERR_CHK(rc);
                 }
+				CcspTraceError(("[%s-%d] Entry6 \n", __FUNCTION__, __LINE__));
                 uSize = sizeof(prefixValue);
                 returnValue = g_GetParamValueString(g_pDslhDmlAgent, prefixFullName, prefixValue, &uSize);
                 if ( returnValue != 0 )
                 {
                     CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
                 }
+
+				CcspTraceError(("[%s-%d] Entry7 \n", __FUNCTION__, __LINE__));
 
 		fprintf(fp, "   subnet %s\n", prefixValue);
                 fprintf(fp, "   class {\n");
@@ -5643,6 +5653,8 @@ void __cosa_dhcpsv6_refresh_config()
 		}
             AnscFreeMemory(pTmp3);
        }
+
+		CcspTraceError(("[%s-%d] Entry8 \n", __FUNCTION__, __LINE__));
 
 OPTIONS:
         /* For options */
