@@ -28,6 +28,7 @@
 #include "safec_lib_common.h"
 #include "cosa_dhcpv6_apis.h"
 #include "syscfg/syscfg.h"
+#include "secure_wrapper.h"
 
 #if defined (RBUS_WAN_IP)
 #include "cosa_deviceinfo_dml.h"
@@ -1383,6 +1384,81 @@ rbusError_t eventWANIPSubHandler(rbusHandle_t handle, rbusEventSubAction_t actio
 
 #endif /*RBUS_WAN_IP*/
 
+#if defined(RBUS_BUILD_FLAG_ENABLE) && !defined(_HUB4_PRODUCT_REQ_) && !defined(RDKB_EXTENDER_ENABLED)
+static void Cosa_Rbus_Handler_WanStatus_EventHandler(rbusHandle_t handle, rbusEvent_t const* event, rbusEventSubscription_t* subscription)
+{
+    (void)handle;
+    (void)subscription;
+
+    const char* eventName = event->name;
+
+    if (eventName == NULL)
+    {
+        CcspTraceError(("%s %d : FAILED , value is NULL\n",__FUNCTION__, __LINE__));
+        return;
+    }
+
+    CcspTraceInfo(("%s %d: Received %s\n", __FUNCTION__, __LINE__, eventName));
+
+    // CurrentStatus Event
+    if( 0 == strncmp(eventName, WANMGR_CURRENT_STATUS_TR181, strlen(WANMGR_CURRENT_STATUS_TR181)) )
+    {
+        rbusValue_t value;
+        value = rbusObject_GetValue(event->data, NULL);
+
+        char acStatus[16] = {0};
+        if (value != NULL)
+        {
+            const char* statusStr = rbusValue_GetString(value, NULL);
+            if (statusStr != NULL)
+            {
+                strncpy(acStatus, statusStr, sizeof(acStatus) - 1);
+                acStatus[sizeof(acStatus) - 1] = '\0';
+            }
+            else
+            {
+                CcspTraceError(("%s %d : FAILED , rbusValue_GetString returned NULL\n",__FUNCTION__, __LINE__));
+                return;
+            }
+        }
+        else
+        {
+            CcspTraceError(("%s %d : FAILED , rbusObject_GetValue returned NULL\n",__FUNCTION__, __LINE__));
+            return;
+        }
+        CcspTraceInfo(("%s: Event:%s Status:%s\n", __FUNCTION__, eventName, acStatus));
+
+        // Trigger Network Response script
+        if( 0 == strcmp(acStatus, "Up") )
+        {
+            v_secure_system("sh /etc/network_response.sh &");
+        }
+#if defined (_XB6_PRODUCT_REQ_)
+        else
+        {
+            v_secure_system("sh /etc/network_response.sh OnlyForNoRf &");
+        }
+#endif /** _XB6_PRODUCT_REQ_ */
+    }
+}
+
+/** Cosa_Rbus_Handler_SubscribeWanStatusEvent() */
+void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
+{
+    rbusError_t rc;
+
+    /* Timeout value of 60 seconds is chosen to balance responsiveness and resource usage for WAN status event subscription.
+       This duration allows sufficient time for event delivery and processing under typical network conditions. */
+    rc = rbusEvent_Subscribe(handle, WANMGR_CURRENT_STATUS_TR181, Cosa_Rbus_Handler_WanStatus_EventHandler, NULL, 60);
+    if(rc != RBUS_ERROR_SUCCESS)
+    {
+        CcspTraceError(("%s %d - Failed to Subscribe %s, Error=%s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181, rbusError_ToString(rc)));
+        return;
+    }
+    CcspTraceInfo(("%s %d - Successfully subscribed to %s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181));
+}
+#endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
+
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) ||  defined(RBUS_BUILD_FLAG_ENABLE) ||  defined(_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
 /***********************************************************************
 
@@ -1436,7 +1512,10 @@ rbusError_t devCtrlRbusInit()
 #if defined (RDKB_EXTENDER_ENABLED)
     publishInitialDevCtrlVal();
 #endif /*RDKB_EXTENDER_ENABLED*/
-
+#if defined(RBUS_BUILD_FLAG_ENABLE) && !defined(_HUB4_PRODUCT_REQ_) && !defined(RDKB_EXTENDER_ENABLED)
+        //Subscribe WAN Status Event
+	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
+#endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
 	return rc;
 }
 #endif
