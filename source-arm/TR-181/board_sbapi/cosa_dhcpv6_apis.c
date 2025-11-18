@@ -4514,6 +4514,7 @@ void __cosa_dhcpsv6_refresh_config()
     struct stat check_ConfigFile;
     errno_t rc = -1;
 
+#errrrrrrrrrrrrrrr1_rdkb_global_product_req    
     if (!fp)
         goto EXIT;
 
@@ -5415,6 +5416,7 @@ void __cosa_dhcpsv6_refresh_config()
     errno_t rc = -1;
     bool option23_written = false;
 
+#errrrrrrrrrrrrrrr2intelarm_bcm_arm    
     if (!fp)
         goto EXIT;
 
@@ -6345,6 +6347,8 @@ void __cosa_dhcpsv6_refresh_config()
     char responseCode[10];
     struct stat check_ConfigFile;
     errno_t rc = -1;
+
+#errrrrrrrrrrrrrrrr3bcm_mips    
 #ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
     pd_pool_t           pd_pool;
     ia_pd_t             ia_pd;
