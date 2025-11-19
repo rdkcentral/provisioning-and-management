@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <inttypes.h>
 #include "ansc_platform.h"
 #include "webconfig_framework.h"
 #include "cosa_webconfig_api.h"
@@ -92,7 +91,11 @@ bool validateUnixTime(int64_t unixTime, char * pErrMessage, int iSizeOfBuffer)
     bool bRet = true;
 
     currentTime = (int64_t)time(NULL);
-    CcspTraceInfo(("%s:%d, unixTime = %" PRId64  "\n", __FUNCTION__, __LINE__, unixTime));
+#ifdef _64BIT_ARCH_SUPPORT_
+    CcspTraceInfo(("%s:%d, unixTime = %ld\n", __FUNCTION__, __LINE__, unixTime));
+#else
+    CcspTraceInfo(("%s:%d, unixTime = %lld\n", __FUNCTION__, __LINE__, unixTime));
+#endif
     if (unixTime > (currentTime + NINETY_DAYS_IN_SECONDS))
     {
         CcspTraceError (("%s:%d, The Unix time is more than 90 days from now.\n", __FUNCTION__, __LINE__));
@@ -219,8 +222,13 @@ pErr processSpeedBoostWebConfigRequest(void *pVoidData)
         snprintf(execRetVal->ErrorMsg, sizeof(execRetVal->ErrorMsg) - 1, "%s", "NULL pointer passed for absolute");
         return execRetVal;
     }
-    CcspTraceInfo(("%s:%d, Number of Unix Time: %zu\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->absolute_size));
-    CcspTraceInfo(("%s:%d, Number of Mac Addresses: %zu\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->actions_size));
+#ifdef _64BIT_ARCH_SUPPORT_
+    CcspTraceInfo(("%s:%d, Number of Unix Time: %ld\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->absolute_size));
+    CcspTraceInfo(("%s:%d, Number of Mac Addresses: %ld\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->actions_size));
+#else
+    CcspTraceInfo(("%s:%d, Number of Unix Time: %d\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->absolute_size));
+    CcspTraceInfo(("%s:%d, Number of Mac Addresses: %d\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->actions_size));
+#endif
 
     for (size_t iVar = 0; iVar < pSpeedBoostDoc->pSchedulerInfo->absolute_size; iVar++)
     {
@@ -237,7 +245,11 @@ pErr processSpeedBoostWebConfigRequest(void *pVoidData)
 
     if (MAX_MAC_ADDR_COUNT < pSpeedBoostDoc->pSchedulerInfo->actions_size)
     {
-    	CcspTraceError(("%s:%d, Number of Mac Addresses(%zu) exceeds the limit\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->actions_size));
+#ifdef _64BIT_ARCH_SUPPORT_
+    	CcspTraceError(("%s:%d, Number of Mac Addresses(%ld) exceeds the limit\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->actions_size));
+#else
+	CcspTraceError(("%s:%d, Number of Mac Addresses(%d) exceeds the limit\n", __FUNCTION__, __LINE__, pSpeedBoostDoc->pSchedulerInfo->actions_size));
+#endif
 	execRetVal->ErrorCode = VALIDATION_FALIED;
         snprintf(execRetVal->ErrorMsg, sizeof(execRetVal->ErrorMsg) - 1, "%s", "Number of Mac Addresses exceeds the limit");
         return execRetVal;
@@ -272,7 +284,11 @@ pErr processSpeedBoostWebConfigRequest(void *pVoidData)
         else
         {
             iSpeedBoostClientsCount++;
-	    CcspTraceInfo(("%s:%d, MAC Address[%zu]:%s is Valid\n", __FUNCTION__, __LINE__, iVar, pMac));
+#ifdef _64BIT_ARCH_SUPPORT_
+	    CcspTraceInfo(("%s:%d, MAC Address[%ld]:%s is Valid\n", __FUNCTION__, __LINE__, iVar, pMac));
+#else
+	    CcspTraceInfo(("%s:%d, MAC Address[%d]:%s is Valid\n", __FUNCTION__, __LINE__, iVar, pMac));
+#endif
 	    free(pMac);
         }
     }

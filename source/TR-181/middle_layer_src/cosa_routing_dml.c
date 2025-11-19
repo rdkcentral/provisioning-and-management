@@ -1402,7 +1402,11 @@ X_CISCO_COM_StaticIPv4Forwarding_AddEntry
     *pInsNumber                    = pCxtLink->InstanceNumber;
 
     /* We give a permenant name here*/
+#if !defined(_64BIT_ARCH_SUPPORT_)
+    rc = sprintf_s(pEntry->Name, sizeof(pEntry->Name),"StaticRoute_%x_%lu", (UINT)pEntry, pCxtLink->InstanceNumber );
+#else
     rc = sprintf_s(pEntry->Name, sizeof(pEntry->Name),"StaticRoute_%p_%lu", pEntry, pCxtLink->InstanceNumber );
+#endif
     if(rc < EOK)
     {
       ERR_CHK(rc);
