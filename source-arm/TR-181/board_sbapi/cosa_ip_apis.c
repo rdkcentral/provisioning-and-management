@@ -1629,6 +1629,7 @@ IPIF_getEntry_for_Ipv6Pre
         ULONG ulIndex
     )
 {
+    CcspTraceFlow(("%s %d AADHI_DEBUG...\n", __FUNCTION__, __LINE__));
     char buf[256]= {0};
     char buf1[256]= {0};
     char out[1024]= {0};
@@ -1652,6 +1653,7 @@ IPIF_getEntry_for_Ipv6Pre
 #endif
 
     CosaUtilGetIpv6AddrInfo((char *)g_ipif_names[ulIndex], &p_v6addr, &v6addr_num);
+    CcspTraceInfo(("%s %d AADHI_DEBUG...v6addr_num=%d\n", __FUNCTION__, __LINE__, v6addr_num));
 
     g_ipif_be_bufs[ulIndex].ulNumOfV6Pre = 0;
     _obtain_ra_info(&p_ra, &ra_num);
@@ -1661,42 +1663,54 @@ IPIF_getEntry_for_Ipv6Pre
 
     /*for RA prefixes
       note, for DHCPv6 IANA address, the according prefix should be empty, */
+    CcspTraceInfo(("AADHI--DEBUG %s:%d %s - before for i loop v6addr_num=%d ulIndex=%lu\n", __FILE__, __LINE__, __FUNCTION__, v6addr_num, (unsigned long)ulIndex));
     for (i=0; i<v6addr_num && i<MAX_IPV6_ENTRY_NUM; i++, p_v6addr++)
     {
-      
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - enter for i=%d v6pre=%s scope=%d\n", __FILE__, __LINE__, __FUNCTION__, i, p_v6addr->v6pre, p_v6addr->scope));
+
         /*according to tr181, we don't need to support WellKnown prefixes.*/
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - before scope check scope=%d\n", __FILE__, __LINE__, __FUNCTION__, p_v6addr->scope));
         if (p_v6addr->scope == IPV6_ADDR_SCOPE_LINKLOCAL ||
-            p_v6addr->scope == IPV6_ADDR_SCOPE_LOOPBACK)
+            p_v6addr->scope == IPV6_ADDR_SCOPE_LOOPBACK) {
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - skipping linklocal/loopback scope=%d v6pre=%s\n", __FILE__, __LINE__, __FUNCTION__, p_v6addr->scope, p_v6addr->v6pre));
             continue;
+        }
 
         ra_index = -1;
         
         p_dml_v6pre = &g_ipif_be_bufs[ulIndex].V6PreList[g_ipif_be_bufs[ulIndex].ulNumOfV6Pre];
 
-
         p_dml_v6pre->Origin = 0;
 
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - before for j loop ra_num=%d\n", __FILE__, __LINE__, __FUNCTION__, ra_num));
         for (j = 0; j< ra_num ; j++)
         {
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - in for j=%d ra_pref=%s\n", __FILE__, __LINE__, __FUNCTION__, j, p_ra[j].pref));
             if (!__v6pref_mismatches(p_v6addr->v6pre, p_ra[j].pref))
             {
                 p_dml_v6pre->Origin = COSA_DML_IP6PREFIX_ORIGIN_RouterAdvertisement;
                 ra_index = j;
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - matched ra_index=%d\n", __FILE__, __LINE__, __FUNCTION__, ra_index));
                 break;
             }
         }
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - after for j loop ra_index=%d\n", __FILE__, __LINE__, __FUNCTION__, ra_index));
 
         _get_datetime_lfts((char *)p_dml_v6pre->PreferredLifetime, sizeof(p_dml_v6pre->PreferredLifetime),
                            (char *)p_dml_v6pre->ValidLifetime, sizeof(p_dml_v6pre->ValidLifetime),
                            p_v6addr, ulIndex);
 
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - after _get_datetime_lfts Origin=%d\n", __FILE__, __LINE__, __FUNCTION__, p_dml_v6pre->Origin));
         if (!p_dml_v6pre->Origin)
         {
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - no origin, continue\n", __FILE__, __LINE__, __FUNCTION__));
             continue;
         }
 
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - before Utopia_Init\n", __FILE__, __LINE__, __FUNCTION__));
         if (Utopia_Init(&utctx))
         {
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_Init succeeded\n", __FILE__, __LINE__, __FUNCTION__));
             need_write = 0;
 
             safec_rc = sprintf_s(buf, sizeof(buf), SYSCFG_FORMAT_NORMAL_V6PREFIX"_inst_num", g_ipif_names[ulIndex], p_v6addr->v6pre);
@@ -1711,13 +1725,18 @@ IPIF_getEntry_for_Ipv6Pre
             }
             _load_v6_alias_instNum(&utctx, buf, buf1, &p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias, sizeof(p_dml_v6pre->Alias));
 
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - loaded InstanceNumber=%lu Alias=%s\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias));
+
             if (!p_dml_v6pre->InstanceNumber)
             {
                 need_write = 1;
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - generating InstanceNumber (was 0)\n", __FILE__, __LINE__, __FUNCTION__));
                 CosaIPv6PrefGenInstAlias(p_ipif, p_dml_v6pre);
                 _save_v6_alias_instNum(&utctx, buf, buf1, p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias);
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - generated InstanceNumber=%lu Alias=%s\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias));
             }
             Utopia_Free(&utctx,need_write);        
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_Free done need_write=%d\n", __FILE__, __LINE__, __FUNCTION__, need_write));
         }
 
         p_dml_v6pre->bEnabled = TRUE;
@@ -1738,21 +1757,30 @@ IPIF_getEntry_for_Ipv6Pre
         p_dml_v6pre->ChildPrefixBits[0] = 0;
 
         /*normally these 2 fields will be TRUE, I don't believe it's practical to set these fields to FALSE*/
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - before ra_index check ra_index=%d\n", __FILE__, __LINE__, __FUNCTION__, ra_index));
         if (ra_index > -1)
         {
             p_dml_v6pre->bOnlink = p_ra[ra_index].onlink;
             p_dml_v6pre->bAutonomous  = p_ra[ra_index].autoconf;
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - set onlink=%d autoconf=%d from ra_index=%d\n", __FILE__, __LINE__, __FUNCTION__, p_ra[ra_index].onlink, p_ra[ra_index].autoconf, ra_index));
         }
 
         g_ipif_be_bufs[ulIndex].ulNumOfV6Pre++;        
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - end for i=%d ulNumOfV6Pre=%lu\n", __FILE__, __LINE__, __FUNCTION__, i, (unsigned long)g_ipif_be_bufs[ulIndex].ulNumOfV6Pre));
     }
 
 
     /*for dhcpv6 IAPD prefix, IAPD prefix won't show in ifconfig, it only exists in sysevent*/
+    CcspTraceInfo(("AADHI--DEBUG %s:%d %s - before do-block ulNumOfV6Pre=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)g_ipif_be_bufs[ulIndex].ulNumOfV6Pre));
     do
     {
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - enter do-block\n", __FILE__, __LINE__, __FUNCTION__));
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - check max entries ulNumOfV6Pre=%lu MAX=%d\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)g_ipif_be_bufs[ulIndex].ulNumOfV6Pre, MAX_IPV6_ENTRY_NUM));
         if (g_ipif_be_bufs[ulIndex].ulNumOfV6Pre >= MAX_IPV6_ENTRY_NUM)
+        {
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - breaking due to max entries\n", __FILE__, __LINE__, __FUNCTION__));
             break;
+        }
 
 #ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION        
   #if defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
@@ -1767,10 +1795,14 @@ IPIF_getEntry_for_Ipv6Pre
             commonSyseventGet("ipv6_brlan0-prefix", dhcpv6_pref, sizeof(dhcpv6_pref));
         else
             commonSyseventGet(COSA_DML_DHCPV6C_PREF_SYSEVENT_NAME, dhcpv6_pref, sizeof(dhcpv6_pref));
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - after commonSyseventGet dhcpv6_pref=%s\n", __FILE__, __LINE__, __FUNCTION__, dhcpv6_pref));
         if (dhcpv6_pref[0])
             p_dml_v6pre->Origin = (ulIndex == 0) ? COSA_DML_IP6PREFIX_ORIGIN_PrefixDelegation : COSA_DML_IP6PREFIX_ORIGIN_Child;
         else 
+        {
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - no dhcpv6_pref, breaking\n", __FILE__, __LINE__, __FUNCTION__));
             break;
+        }
 #else
   #ifdef _COSA_INTEL_USG_ARM_
         /* We just put this prefix into erouter0 entry */
@@ -1796,10 +1828,13 @@ IPIF_getEntry_for_Ipv6Pre
 
 #endif        
 
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - before Utopia_Init for dhcpv6_pref handling\n", __FILE__, __LINE__, __FUNCTION__));
         if (Utopia_Init(&utctx))
         {
             char val[256] = {0};
             char namespace[256] = {0};
+
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_Init succeeded for dhcpv6_pref\n", __FILE__, __LINE__, __FUNCTION__));
 
             need_write = 0;             
             safec_rc = sprintf_s(buf, sizeof(buf), SYSCFG_FORMAT_NORMAL_V6PREFIX"_inst_num", g_ipif_names[ulIndex], dhcpv6_pref);
@@ -1814,11 +1849,14 @@ IPIF_getEntry_for_Ipv6Pre
             }
             _load_v6_alias_instNum(&utctx, buf, buf1, &p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias, sizeof(p_dml_v6pre->Alias));
 
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - loaded InstanceNumber=%lu Alias=%s for dhcpv6_pref\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias));
+
             /*This instance Number should be fixed to 1 because other place will refer it*/
             p_dml_v6pre->InstanceNumber = g_ipif_be_bufs[ulIndex].ulNumOfV6Pre + 1;
 
             snprintf(namespace, sizeof(namespace)-1, SYSCFG_FORMAT_NAMESPACE_STATIC_V6PREFIX, (char *)g_ipif_names[ulIndex], (ULONG)p_dml_v6pre->InstanceNumber);
             Utopia_RawGet(&utctx,namespace,"Alias",val,sizeof(val));
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_RawGet Alias returned '%s'\n", __FILE__, __LINE__, __FUNCTION__, val));
             if(strlen(val))
             {
                safec_rc = strcpy_s(p_dml_v6pre->Alias, sizeof(p_dml_v6pre->Alias), val);
@@ -1840,12 +1878,15 @@ IPIF_getEntry_for_Ipv6Pre
 
             if (!p_dml_v6pre->InstanceNumber)
             {
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - InstanceNumber is 0, generating one\n", __FILE__, __LINE__, __FUNCTION__));
                 CosaIPv6PrefGenInstAlias(p_ipif, p_dml_v6pre);
                 need_write = 1;
                 _save_v6_alias_instNum(&utctx, buf, buf1, p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias);
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - generated InstanceNumber=%lu Alias=%s\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)p_dml_v6pre->InstanceNumber, p_dml_v6pre->Alias));
             }
 
             Utopia_Free(&utctx,need_write);        
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_Free done for dhcpv6_pref need_write=%d\n", __FILE__, __LINE__, __FUNCTION__, need_write));
         }
 
         p_dml_v6pre->bEnabled = TRUE;
@@ -1961,6 +2002,7 @@ IPIF_getEntry_for_Ipv6Pre
         }
         memset(out, 0, sizeof(out));
         Utopia_RawGet(&utctx,NULL,buf,out,sizeof(out));
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_RawGet static v6pref returned out='%s'\n", __FILE__, __LINE__, __FUNCTION__, out));
         Utopia_Free(&utctx,0);                
     }    
     if (out[0])
@@ -1976,27 +2018,42 @@ IPIF_getEntry_for_Ipv6Pre
         for (str = out; ; str = NULL) 
         {
             p_token = strtok_r(str, ",", &saveptr);
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - strtok_r returned p_token='%s'\n", __FILE__, __LINE__, __FUNCTION__, p_token?p_token:"(null)"));
             if (p_token == NULL)
+            {
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - token loop break\n", __FILE__, __LINE__, __FUNCTION__));
                 break;
+            }
 
             inst_num = atoi(p_token);
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - parsed inst_num=%d from token='%s'\n", __FILE__, __LINE__, __FUNCTION__, inst_num, p_token));
             if (!inst_num)
+            {
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - skipping inst_num==0\n", __FILE__, __LINE__, __FUNCTION__));
                 continue;
+            }
 
             if (index >= MAX_IPV6_ENTRY_NUM)
+            {
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - index %d >= MAX_IPV6_ENTRY_NUM, breaking\n", __FILE__, __LINE__, __FUNCTION__, index));
                 break;
+            }
             else
                 p_dml_v6pre = &g_ipif_be_bufs[ulIndex].V6PreList[index];            
 
             snprintf(namespace, sizeof(namespace)-1, SYSCFG_FORMAT_NAMESPACE_STATIC_V6PREFIX, (char *)g_ipif_names[ulIndex], (ULONG)inst_num);
 
             p_dml_v6pre->InstanceNumber = inst_num;
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - handling static prefix inst_num=%d namespace=%s index=%d\n", __FILE__, __LINE__, __FUNCTION__, inst_num, namespace, index));
 
             if (Utopia_Init(&utctx))
             {
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_Init for static prefix namespace=%s\n", __FILE__, __LINE__, __FUNCTION__, namespace));
                 Utopia_RawGet(&utctx,namespace,"Prefix",val,sizeof(val));
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_RawGet Prefix returned '%s'\n", __FILE__, __LINE__, __FUNCTION__, val));
                 if (!val[0])
                 {
+                    CcspTraceInfo(("AADHI--DEBUG %s:%d %s - no Prefix val, freeing utctx and continue\n", __FILE__, __LINE__, __FUNCTION__));
                     Utopia_Free(&utctx,0);        
                     continue;
                 }
@@ -2007,6 +2064,7 @@ IPIF_getEntry_for_Ipv6Pre
                 }  
                 memset(val, 0, sizeof(val));
                 Utopia_RawGet(&utctx,namespace,"Alias",val,sizeof(val));
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - Utopia_RawGet Alias returned '%s'\n", __FILE__, __LINE__, __FUNCTION__, val));
                 safec_rc = strcpy_s(p_dml_v6pre->Alias, sizeof(p_dml_v6pre->Alias), val);
                 if(safec_rc != EOK)
                 {
@@ -2015,6 +2073,7 @@ IPIF_getEntry_for_Ipv6Pre
                 memset(val, 0, sizeof(val));
                 Utopia_RawGet(&utctx,namespace,"Enable",val,sizeof(val));
                 p_dml_v6pre->bEnabled = (atoi(val) == 1) ? TRUE : FALSE;
+                CcspTraceInfo(("AADHI--DEBUG %s:%d %s - got Alias='%s' Enable='%s' bEnabled=%d\n", __FILE__, __LINE__, __FUNCTION__, p_dml_v6pre->Alias, val, p_dml_v6pre->bEnabled));
 
                 Utopia_Free(&utctx,0);                
             }
@@ -2052,6 +2111,7 @@ IPIF_getEntry_for_Ipv6Pre
                 ERR_CHK(safec_rc);
             }  
             g_ipif_be_bufs[ulIndex].ulNumOfV6Pre++;
+            CcspTraceInfo(("AADHI--DEBUG %s:%d %s - added static prefix index=%d Prefix=%s Alias=%s bEnabled=%d ulNumOfV6Pre=%lu\n", __FILE__, __LINE__, __FUNCTION__, index, p_dml_v6pre->Prefix, p_dml_v6pre->Alias, p_dml_v6pre->bEnabled, (unsigned long)g_ipif_be_bufs[ulIndex].ulNumOfV6Pre));
 
             index++;
         }
@@ -4080,7 +4140,8 @@ CosaDmlIPGetIPv6Prefixes
         PCOSA_DML_IP_IF_FULL2       p_ipif,
         PULONG                      p_num
     )
-{       
+{      
+    CcspTraceInfo(("%s %d : AADHI--DEBUG Enters", __FUNCTION__, __LINE__ )); 
     int i = 0;
     PCOSA_DML_IP_V6PREFIX p_dml_pref = NULL;
 
@@ -4089,16 +4150,20 @@ CosaDmlIPGetIPv6Prefixes
     if (!p_ipif || !p_num)
         return NULL;
 
+    CcspTraceInfo(("%s %d AADHI--DEBUG p_ipif->Cfg.InstanceNumber =%lu\n",__FUNCTION__,__LINE__, p_ipif->Cfg.InstanceNumber));
     if ( p_ipif->Cfg.InstanceNumber > COSA_USG_IF_NUM )
     {
+        CcspTraceInfo(("%s %d AADHI--DEBUG Multinet Prefix Case\n",__FUNCTION__,__LINE__));
         *p_num = 1; /*current only support only one prefix for multinet*/
-
         p_dml_pref = (PCOSA_DML_IP_V6PREFIX)AnscAllocateMemory(*p_num * sizeof(COSA_DML_IP_V6PREFIX));
-
         if (!p_dml_pref)
+        {
+            CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: allocation failed p_dml_pref is NULL\n"));
             return NULL;
+        }
 
         p_dml_pref->InstanceNumber = 1;
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: p_dml_pref->InstanceNumber=%lu\n", p_dml_pref->InstanceNumber));
         CosaDmlIpIfMlanGetV6Prefix2(NULL, p_ipif->Cfg.InstanceNumber, p_dml_pref);
     }
     else
@@ -4108,11 +4173,15 @@ CosaDmlIPGetIPv6Prefixes
                 break;
 
         if (i == g_ipif_num)
+        {
+            CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: interface %s not found, i=%d, g_ipif_num=%d\n", p_ipif->Info.Name, i, g_ipif_num));
             return NULL;
+        }
         
         IPIF_getEntry_for_Ipv6Pre(p_ipif, i);
 
         *p_num = g_ipif_be_bufs[i].ulNumOfV6Pre;
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: *p_num=%lu (from g_ipif_be_bufs[%d].ulNumOfV6Pre)\n", *p_num, i));
         
         if (*p_num)
         {
@@ -4135,34 +4204,45 @@ CosaDmlIPGetIPv6Prefixes
         PULONG                      p_num
     )
 {
+    CcspTraceInfo(("%s %d : AADHI--DEBUG Enters", __FUNCTION__, __LINE__ ));
 #if defined (MULTILAN_FEATURE)
     int i = 0;
     PCOSA_DML_IP_V6PREFIX p_dml_pref = NULL;
 #endif
     /*RDKB-6840, CID-33130, null check before use*/
     if (!p_ipif || !p_num)
+    {
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: invalid args p_ipif=%p p_num=%p\n", p_ipif, p_num));
         return NULL;
+    }
 
     if ( p_ipif->Cfg.InstanceNumber >= COSA_USG_IF_NUM )
     {
 #if defined (MULTILAN_FEATURE)
         *p_num = 1; /*current only support only one prefix for multinet*/
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: multilan *p_num=%lu\n", *p_num));
 
         p_dml_pref = (PCOSA_DML_IP_V6PREFIX)AnscAllocateMemory(*p_num * sizeof(COSA_DML_IP_V6PREFIX));
 
         if (!p_dml_pref)
+        {
+            CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: allocation failed p_dml_pref is NULL\n"));
             return NULL;
+        }
 
         p_dml_pref->InstanceNumber = 1;
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: p_dml_pref->InstanceNumber=%lu\n", p_dml_pref->InstanceNumber));
         CosaDmlIpIfMlanGetV6Prefix2(NULL, p_ipif->Cfg.InstanceNumber, p_dml_pref);
 
         for (i=0; i<g_ipif_num; i++)
             if (!strncmp(g_ipif_names[i], COSA_DML_DHCPV6_CLIENT_IFNAME, strlen(COSA_DML_DHCPV6_CLIENT_IFNAME)))
                 break;
         _ansc_snprintf( p_dml_pref->ParentPrefix, sizeof(p_dml_pref->ParentPrefix), "Device.IP.Interface.%d.IPv6Prefix.1.", i+1);
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: p_dml_pref->ParentPrefix=%s\n", p_dml_pref->ParentPrefix));
 
         _get_datetime_offset(p_dml_pref->iapd_pretm, p_dml_pref->PreferredLifetime, sizeof(p_dml_pref->PreferredLifetime));
         _get_datetime_offset(p_dml_pref->iapd_vldtm, p_dml_pref->ValidLifetime, sizeof(p_dml_pref->ValidLifetime));
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: PreferredLifetime=%s ValidLifetime=%s\n", p_dml_pref->PreferredLifetime, p_dml_pref->ValidLifetime));
 
         if (p_ipif->ulNextIPV6PreInsNum <= p_dml_pref->InstanceNumber)
             p_ipif->ulNextIPV6PreInsNum = p_dml_pref->InstanceNumber + 1;
@@ -4184,20 +4264,30 @@ CosaDmlIPGetIPv6Prefixes
                 break;
 
         if (i == g_ipif_num)
+        {
+            CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: interface %s not found in lookup, i=%d g_ipif_num=%d\n", p_ipif->Info.Name, i, g_ipif_num));
             return NULL;
+        }
         
         IPIF_getEntry_for_Ipv6Pre(p_ipif, i);
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: after IPIF_getEntry_for_Ipv6Pre for interface %s (index %d)\n", p_ipif->Info.Name, i));
 
         *p_num = g_ipif_be_bufs[i].ulNumOfV6Pre;
+        CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: *p_num=%lu (from g_ipif_be_bufs[%d].ulNumOfV6Pre)\n", *p_num, i));
         
         if (*p_num)
         {
             p_dml_pref = (PCOSA_DML_IP_V6PREFIX)AnscAllocateMemory(*p_num * sizeof(COSA_DML_IP_V6PREFIX));
+            CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: allocated p_dml_pref=%p for %lu entries\n", p_dml_pref, *p_num));
         
             if (!p_dml_pref)
+            {
+                CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: allocation failed p_dml_pref is NULL\n"));
                 return NULL;
+            }
             
             AnscCopyMemory(p_dml_pref, g_ipif_be_bufs[i].V6PreList, *p_num*sizeof(COSA_DML_IP_V6PREFIX));
+            CcspTraceInfo(("CosaDmlIPGetIPv6Prefixes: copied %lu prefixes to p_dml_pref (ptr=%p)\n", *p_num, p_dml_pref));
         }
 #if defined (MULTILAN_FEATURE)
     }

@@ -2285,8 +2285,16 @@ CosaDmlIpIfMlanGetV6Addr2
     /*
      *  Retrieve the EthLink
      */
+    {
+        char aadhi_cmd[256] = {0};
+        snprintf(aadhi_cmd, sizeof(aadhi_cmd), "echo \"AADHI--DEBUG %s:%d:%s - before ulIpIfInstanceNumber=%lu\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, (unsigned long)ulIpIfInstanceNumber);
+        v_secure_system(aadhi_cmd);
+    }
     if ( ulIpIfInstanceNumber )
     {
+        char aadhi_cmd_inside[256] = {0};
+        snprintf(aadhi_cmd_inside, sizeof(aadhi_cmd_inside), "echo \"AADHI--DEBUG %s:%d:%s - inside ulIpIfInstanceNumber start\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__);
+        v_secure_system(aadhi_cmd_inside);
         SlapInitVariable(&SlapValue);
 
         rc = sprintf_s
@@ -2321,6 +2329,11 @@ CosaDmlIpIfMlanGetV6Addr2
         }
 
         SlapCleanVariable(&SlapValue);
+        {
+            char aadhi_cmd_after[256] = {0};
+            snprintf(aadhi_cmd_after, sizeof(aadhi_cmd_after), "echo \"AADHI--DEBUG %s:%d:%s - after ulIpIfInstanceNumber\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__);
+            v_secure_system(aadhi_cmd_after);
+        }
 
         /*
          *  Retrieve the l2 Instance of bridgee
@@ -2361,13 +2374,29 @@ CosaDmlIpIfMlanGetV6Addr2
         SlapCleanVariable(&SlapValue);
     }
 
+    {
+        char aadhi_cmd_l2_before[256] = {0};
+        snprintf(aadhi_cmd_l2_before, sizeof(aadhi_cmd_l2_before), "echo \"AADHI--DEBUG %s:%d:%s - before l2_instnum=%u\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, l2_instnum);
+        v_secure_system(aadhi_cmd_l2_before);
+    }
+    {
+        char aadhi_cmd2_l2_before[256] = {0};
+        snprintf(aadhi_cmd2_l2_before, sizeof(aadhi_cmd2_l2_before), "echo \"AADHI--DEBUG %s:%d:%s - before l2_instnum=%u\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, l2_instnum);
+        v_secure_system(aadhi_cmd2_l2_before);
+    }
     if (l2_instnum) {
         snprintf(evt_name, sizeof(evt_name), "multinet_%d-name", l2_instnum);
         commonSyseventGet(evt_name, evt_value, sizeof(evt_value));
+        {
+            char aadhi_cmd_l2_inside[256] = {0};
+            snprintf(aadhi_cmd_l2_inside, sizeof(aadhi_cmd_l2_inside), "echo \"AADHI--DEBUG %s:%d:%s - inside l2_instnum start evt_name=%s\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, evt_name);
+            v_secure_system(aadhi_cmd_l2_inside);
+        }
 
         rc = sprintf_s(evt_name, sizeof(evt_name), "ipv6_%s-addr", evt_value);
         if(rc < EOK)   ERR_CHK(rc);
         commonSyseventGet(evt_name, evt_value, sizeof(evt_value));
+        AnscTraceFlow(("%s...evt_value='%s'\n", __FUNCTION__, evt_value));
         if (evt_value[0] != '\0') {
             strncpy(pEntry->IP6Address, evt_value, sizeof(pEntry->IP6Address));
             pEntry->bEnabled = TRUE;
@@ -2388,6 +2417,18 @@ CosaDmlIpIfMlanGetV6Addr2
                 pEntry->iana_vldtm = atoi(out);
             else
                 pEntry->iana_vldtm = 0;
+            {
+                char cmd[512] = {0};
+                /* Log important variables to PAMlog */
+                snprintf(cmd, sizeof(cmd), "echo \"[PAMDBG] %s: ulIpIfInstanceNumber=%lu l2_instnum=%u ethlink_instnum=%u evt_value=%s pEntryInst=%lu IP6Address=%s iana_pretm=%d iana_vldtm=%d\" >> /rdklogs/logs/PAMlog.txt.0",
+                         __FUNCTION__, (unsigned long)ulIpIfInstanceNumber, l2_instnum, ethlink_instnum, evt_value, (unsigned long)pEntry->InstanceNumber, pEntry->IP6Address, pEntry->iana_pretm, pEntry->iana_vldtm);
+                v_secure_system(cmd);
+            }
+            {
+                char aadhi_cmd_l2_after[256] = {0};
+                snprintf(aadhi_cmd_l2_after, sizeof(aadhi_cmd_l2_after), "echo \"AADHI--DEBUG %s:%d:%s - after l2_instnum handling IP6Address=%s\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, pEntry->IP6Address);
+                v_secure_system(aadhi_cmd_l2_after);
+            }
         }
 
     }
@@ -2409,6 +2450,11 @@ CosaDmlIpIfMlanGetV6Addr2
     /*
      *  Retrieve the EthLink
      */
+    {
+        char aadhi_cmd2[256] = {0};
+        snprintf(aadhi_cmd2, sizeof(aadhi_cmd2), "echo \"AADHI--DEBUG %s:%d:%s - before ulIpIfInstanceNumber=%lu\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, (unsigned long)ulIpIfInstanceNumber);
+        v_secure_system(aadhi_cmd2);
+    }
     if ( ulIpIfInstanceNumber )
     {
         SlapInitVariable(&SlapValue);
@@ -2445,6 +2491,12 @@ CosaDmlIpIfMlanGetV6Addr2
         }
 
         SlapCleanVariable(&SlapValue);
+    
+        {
+            char aadhi_cmd2_after[256] = {0};
+            snprintf(aadhi_cmd2_after, sizeof(aadhi_cmd2_after), "echo \"AADHI--DEBUG %s:%d:%s - after ulIpIfInstanceNumber\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__);
+            v_secure_system(aadhi_cmd2_after);
+        }
     }
 
     if (l2_instnum) {
@@ -2461,7 +2513,7 @@ CosaDmlIpIfMlanGetV6Addr2
             pEntry->V6Status = COSA_DML_IP6_ADDRSTATUS_Preferred;
             pEntry->Origin = COSA_DML_IP6_ORIGIN_AutoConfigured;
             pEntry->bAnycast = FALSE;
-
+            
             /*life time*/
             if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_PRETM_SYSEVENT_NAME, out, sizeof(out)) )
                 pEntry->iana_pretm = atoi(out);
@@ -2472,6 +2524,17 @@ CosaDmlIpIfMlanGetV6Addr2
                 pEntry->iana_vldtm = atoi(out);
             else
                 pEntry->iana_vldtm = 0;
+            {
+                char cmd[512] = {0};
+                snprintf(cmd, sizeof(cmd), "echo \"[PAMDBG] %s: ulIpIfInstanceNumber=%lu l2_instnum=%u evt_value=%s pEntryInst=%lu IP6Address=%s iana_pretm=%d iana_vldtm=%d\" >> /rdklogs/logs/PAMlog.txt.0",
+                         __FUNCTION__, (unsigned long)ulIpIfInstanceNumber, l2_instnum, evt_value, (unsigned long)pEntry->InstanceNumber, pEntry->IP6Address, pEntry->iana_pretm, pEntry->iana_vldtm);
+                v_secure_system(cmd);
+            }
+            {
+                char aadhi_cmd2_l2_after[256] = {0};
+                snprintf(aadhi_cmd2_l2_after, sizeof(aadhi_cmd2_l2_after), "echo \"AADHI--DEBUG %s:%d:%s - after l2_instnum handling IP6Address=%s\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, pEntry->IP6Address);
+                v_secure_system(aadhi_cmd2_l2_after);
+            }
         }
 
     }
@@ -2574,6 +2637,11 @@ CosaDmlIpIfMlanGetV6Prefix2
     /*
      *  Retrieve the EthLink
      */
+    {
+        char aadhi_pfx_cmd[256] = {0};
+        snprintf(aadhi_pfx_cmd, sizeof(aadhi_pfx_cmd), "echo \"AADHI--DEBUG %s:%d:%s - before ulIpIfInstanceNumber=%lu\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, (unsigned long)ulIpIfInstanceNumber);
+        v_secure_system(aadhi_pfx_cmd);
+    }
     if ( ulIpIfInstanceNumber )
     {
         SlapInitVariable(&SlapValue);
@@ -2648,8 +2716,17 @@ CosaDmlIpIfMlanGetV6Prefix2
         }
 
         SlapCleanVariable(&SlapValue);
+        {
+            char aadhi_pfx_after[256] = {0};
+            snprintf(aadhi_pfx_after, sizeof(aadhi_pfx_after), "echo \"AADHI--DEBUG %s:%d:%s - after ulIpIfInstanceNumber\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__);
+            v_secure_system(aadhi_pfx_after);
+        }
     }
-
+    {
+        char aadhi_pfx_l2_before[256] = {0};
+        snprintf(aadhi_pfx_l2_before, sizeof(aadhi_pfx_l2_before), "echo \"AADHI--DEBUG %s:%d:%s - before l2_instnum=%u\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, l2_instnum);
+        v_secure_system(aadhi_pfx_l2_before);
+    }
     if (l2_instnum) {
         snprintf(evt_name, sizeof(evt_name), "multinet_%d-name", l2_instnum);
         commonSyseventGet(evt_name, evt_value, sizeof(evt_value));
@@ -2657,6 +2734,7 @@ CosaDmlIpIfMlanGetV6Prefix2
         rc = sprintf_s(evt_name, sizeof(evt_name), "ipv6_%s-prefix", evt_value);
         if(rc < EOK)   ERR_CHK(rc);
         commonSyseventGet(evt_name, evt_value, sizeof(evt_value));
+        AnscTraceFlow(("%s...evt_value='%s'\n", __FUNCTION__, evt_value));
         if (evt_value[0] != '\0') {
             strncpy(pEntry->Prefix, evt_value, sizeof(pEntry->Prefix));
             pEntry->bEnabled = TRUE;
@@ -2680,6 +2758,17 @@ CosaDmlIpIfMlanGetV6Prefix2
                 pEntry->iapd_vldtm = atoi(out);
             else
                 pEntry->iapd_vldtm = 0;
+            {
+                char cmd[512] = {0};
+                snprintf(cmd, sizeof(cmd), "echo \"[PAMDBG] %s: ulIpIfInstanceNumber=%lu l2_instnum=%u evt_value=%s pEntryInst=%lu Prefix=%s iapd_pretm=%d iapd_vldtm=%d\" >> /rdklogs/logs/PAMlog.txt.0",
+                         __FUNCTION__, (unsigned long)ulIpIfInstanceNumber, l2_instnum, evt_value, (unsigned long)pEntry->InstanceNumber, pEntry->Prefix, pEntry->iapd_pretm, pEntry->iapd_vldtm);
+                v_secure_system(cmd);
+            }
+            {
+                char aadhi_pfx_l2_after[256] = {0};
+                snprintf(aadhi_pfx_l2_after, sizeof(aadhi_pfx_l2_after), "echo \"AADHI--DEBUG %s:%d:%s - after l2_instnum handling Prefix=%s\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, pEntry->Prefix);
+                v_secure_system(aadhi_pfx_l2_after);
+            }
         }
     }
 
@@ -2701,6 +2790,11 @@ CosaDmlIpIfMlanGetV6Prefix2
     /*
      *  Retrieve the EthLink
      */
+    {
+        char aadhi_pfx2_cmd[256] = {0};
+        snprintf(aadhi_pfx2_cmd, sizeof(aadhi_pfx2_cmd), "echo \"AADHI--DEBUG %s:%d:%s - before ulIpIfInstanceNumber=%lu\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, (unsigned long)ulIpIfInstanceNumber);
+        v_secure_system(aadhi_pfx2_cmd);
+    }
     if ( ulIpIfInstanceNumber )
     {
         SlapInitVariable(&SlapValue);
@@ -2737,8 +2831,18 @@ CosaDmlIpIfMlanGetV6Prefix2
         }
 
         SlapCleanVariable(&SlapValue);
+        {
+            char aadhi_pfx2_after[256] = {0};
+            snprintf(aadhi_pfx2_after, sizeof(aadhi_pfx2_after), "echo \"AADHI--DEBUG %s:%d:%s - after ulIpIfInstanceNumber\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__);
+            v_secure_system(aadhi_pfx2_after);
+        }
     }
 
+    {
+        char aadhi_pfx2_l2_before[256] = {0};
+        snprintf(aadhi_pfx2_l2_before, sizeof(aadhi_pfx2_l2_before), "echo \"AADHI--DEBUG %s:%d:%s - before l2_instnum=%u\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, l2_instnum);
+        v_secure_system(aadhi_pfx2_l2_before);
+    }
     if (l2_instnum) {
         snprintf(evt_name, sizeof(evt_name), "multinet_%d-name", l2_instnum);
         commonSyseventGet(evt_name, evt_value, sizeof(evt_value));
@@ -2746,6 +2850,7 @@ CosaDmlIpIfMlanGetV6Prefix2
         rc = sprintf_s(evt_name, sizeof(evt_name), "ipv6_%s-prefix", evt_value);
         if(rc < EOK)  ERR_CHK(rc);
         commonSyseventGet(evt_name, evt_value, sizeof(evt_value));
+        AnscTraceFlow(("%s...evt_value='%s'\n", __FUNCTION__, evt_value));
         if (evt_value[0] != '\0') {
             strncpy(pEntry->Prefix, evt_value, sizeof(pEntry->Prefix));
             pEntry->bEnabled = TRUE;
@@ -2767,6 +2872,17 @@ CosaDmlIpIfMlanGetV6Prefix2
                 pEntry->iapd_vldtm = atoi(out);
             else
                 pEntry->iapd_vldtm = 0;
+            {
+                char cmd[512] = {0};
+                snprintf(cmd, sizeof(cmd), "echo \"[PAMDBG] %s: ulIpIfInstanceNumber=%lu l2_instnum=%u evt_value=%s pEntryInst=%lu Prefix=%s iapd_pretm=%d iapd_vldtm=%d\" >> /rdklogs/logs/PAMlog.txt.0",
+                         __FUNCTION__, (unsigned long)ulIpIfInstanceNumber, l2_instnum, evt_value, (unsigned long)pEntry->InstanceNumber, pEntry->Prefix, pEntry->iapd_pretm, pEntry->iapd_vldtm);
+                v_secure_system(cmd);
+            }
+            {
+                char aadhi_pfx2_l2_after[256] = {0};
+                snprintf(aadhi_pfx2_l2_after, sizeof(aadhi_pfx2_l2_after), "echo \"AADHI--DEBUG %s:%d:%s - after l2_instnum handling Prefix=%s\" >> /rdklogs/logs/PAMlog.txt.0", __FILE__, __LINE__, __FUNCTION__, pEntry->Prefix);
+                v_secure_system(aadhi_pfx2_l2_after);
+            }
         }
     }
 

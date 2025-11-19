@@ -4603,6 +4603,7 @@ IPv6Prefix_Synchronize
         ANSC_HANDLE                 hInsContext
     )
 {
+    CcspTraceInfo(("%s %d AADHI--DEBUG"));
     ANSC_STATUS                           returnStatus      = ANSC_STATUS_FAILURE;
     PCOSA_CONTEXT_LINK_OBJECT             pCosaContext     = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_IP_IF_FULL2                 pIPInterface     = (PCOSA_DML_IP_IF_FULL2)pCosaContext->hContext;
