@@ -67,36 +67,88 @@ COSA_DATAMODEL_DSLITE,  *PCOSA_DATAMODEL_DSLITE;
     Function declaration
 */
 
+/**
+ * @brief Create the DS-Lite backend object.
+ *
+ * @return Handle to the DS-Lite backend object.
+ * @retval Handle to the newly created DS-Lite backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaDsliteCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the DS-Lite backend object.
+ *
+ * @param[in] hThisObject Handle to the DS-Lite backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDsliteInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the DS-Lite backend object.
+ *
+ * @param[in] hThisObject Handle to the DS-Lite backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDsliteRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Fetches DS-Lite information from backend HAL APIs.
+ *
+ * @param[in] hThisObject Handle to the DS-Lite backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful backend fetch.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDsliteBackendGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Loads DS-Lite configuration from persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the DS-Lite backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful configuration load.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDsliteRegGetDsliteInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Saves DS-Lite configuration to persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the DS-Lite backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful configuration save.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDsliteRegSetDsliteInfo
     (
