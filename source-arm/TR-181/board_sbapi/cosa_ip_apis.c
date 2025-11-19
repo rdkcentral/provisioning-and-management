@@ -1629,7 +1629,7 @@ IPIF_getEntry_for_Ipv6Pre
         ULONG ulIndex
     )
 {
-    CcspTraceFlow(("%s %d AADHI_DEBUG...\n", __FUNCTION__, __LINE__));
+    CcspTraceInfo(("%s %d AADHI_DEBUG...\n", __FUNCTION__, __LINE__));
     char buf[256]= {0};
     char buf1[256]= {0};
     char out[1024]= {0};
