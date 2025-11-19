@@ -182,9 +182,7 @@ int fwSync = 0;
 #include "syscfg/syscfg.h"
 
 #include "platform_hal.h"
-#ifndef PON_GATEWAY
 #include "cm_hal.h"
-#endif
 
 #define HTTPD_CONF      "/var/lighttpd.conf"
 #define HTTPD_DEF_CONF  "/etc/lighttpd.conf"
@@ -866,7 +864,7 @@ CosaDmlDcGetWanStaticIPAddress
 ANSC_STATUS 
 CosaDmlDcSetReInitCmMac ()
 {
-#ifndef PON_GATEWAY
+
     if(cm_hal_ReinitMac() == 0)
     {
        return ANSC_STATUS_SUCCESS;
@@ -875,8 +873,7 @@ CosaDmlDcSetReInitCmMac ()
     {
        return ANSC_STATUS_FAILURE;
     }
-#endif
-    return ANSC_STATUS_FAILURE;
+    
 }
 ANSC_STATUS
 CosaDmlDcGetWanStaticSubnetMask
