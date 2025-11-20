@@ -1388,6 +1388,7 @@ int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
     char buf[64] = {0};
     size_t size = sizeof(buf);
     memset(buf, 0, sizeof(buf));
+    int active_ports=0;
     commonSyseventGet(SYSEVENT_MAPT_CONFIG_FLAG, buf, size);
     CcspTraceDebug(("MAP-T config flag: %s\n", buf));
     if ( strcmp(buf, "set") == 0 )
@@ -1400,7 +1401,18 @@ int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
             CcspTraceWarning(("MAP-T total ports not set\n"));
             return -1;
         }
-        int active_ports = count_unique_ports(protocol);
+
+        memset(buf, 0, sizeof(buf));
+        commonSyseventGet("wan-status", buf, size);
+        if ( strcmp(buf, "started") != 0 )
+        {
+            CcspTraceWarning(("WAN not started, MAP-T port usage not available,setting active ports as Zero\n"));
+            active_ports = 0;
+        }
+        else
+        {
+            active_ports = count_unique_ports(protocol);
+        }
         int pct = total_ports ? active_ports * 100 / total_ports : 0;
         snprintf(pValue, *pUlSize, "%d|%d|%d",active_ports,total_ports,pct);
 
