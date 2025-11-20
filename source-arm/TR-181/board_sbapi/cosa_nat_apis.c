@@ -1293,74 +1293,18 @@ CosaDmlNatGetLanIP
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
-#include <sys/ioctl.h> 
-#include <net/if.h>
-
 #define SYSEVENT_MAPT_TOTAL_PORTS "mapt_total_ports"
 #define SYSEVENT_MAPT_CONFIG_FLAG "mapt_config_flag"
 #define MAX_PORTS 65536    // max port number
-#if defined (_XB6_PRODUCT_REQ_) && defined (_COSA_BCM_ARM_)
-#define INTER_PROCESS_COMMUNICATION_INTERFACE "privbr"
-#endif
-
-static int get_ipv4_from_interface(const char *ifname, char *ipbuf, size_t len)
-{
-    if (!ifname || !ipbuf) return -1;
-
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0)
-    {
-        CcspTraceError(("%s socket creation failed\n",__FUNCTION__));
-        return -1;
-
-    }
-
-    struct ifreq ifr;
-    memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
-
-    if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
-        close(sock);
-        CcspTraceError(("%s ioctl SIOCGIFADDR failed for interface %s\n",__FUNCTION__,ifname));
-        return -1;
-    }
-
-    struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
-    if (inet_ntop(AF_INET, &sin->sin_addr, ipbuf, len) == NULL) {
-        close(sock);
-        CcspTraceError(("%s inet_ntop failed\n", __FUNCTION__));
-        return -1;
-    }
-    close(sock);
-    return 0;
-}
 
 // Count unique dports from conntrack output
 int count_unique_ports(const char *proto) {
     char line[512];
     CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
 
-    char ipc_ip[64] = {0};
-    FILE * fp = NULL;
 	
-    #if defined (_XB6_PRODUCT_REQ_) && defined (_COSA_BCM_ARM_)
-
-        if (get_ipv4_from_interface(INTER_PROCESS_COMMUNICATION_INTERFACE,
-                                    ipc_ip, sizeof(ipc_ip)) != 0) {
-            CcspTraceWarning(("%s : Failed to get IPC IP, skipping IPC IP filtering\n",__FUNCTION__));
-            ipc_ip[0] = '\0';
-        }
-        CcspTraceInfo(("IPC interface %s has IP %s\n", INTER_PROCESS_COMMUNICATION_INTERFACE, ipc_ip));
-
-        if (ipc_ip[0] != '\0') {
-            fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v %s | grep -F -v 127.0.0.1", proto, ipc_ip);
-        } else {
-            fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v 127.0.0.1", proto);
-        }   
-        #else
-
-        fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v 127.0.0.1", proto);
-    #endif
+  //  snprintf(cmd, sizeof(cmd), "conntrack -L -p %s 2>/dev/null", proto);
+    FILE * fp = v_secure_popen("r", "conntrack -L --src-nat -p %s 2>/dev/null", proto);
 
     if (!fp) return 0;
 
@@ -1368,7 +1312,6 @@ int count_unique_ports(const char *proto) {
     int unique_count = 0;
 
     while (fgets(line, sizeof(line), fp)) {
-        CcspTraceDebug(("%s conntrack line %s ...\n", __FUNCTION__,line));
         char *tok = strtok(line, " ");
         int dport = -1;
         int count = 0;
