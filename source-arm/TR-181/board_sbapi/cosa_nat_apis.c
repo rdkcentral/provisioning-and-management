@@ -1293,6 +1293,8 @@ CosaDmlNatGetLanIP
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
+#include <sys/ioctl.h> 
+#include <net/if.h>
 
 #define SYSEVENT_MAPT_TOTAL_PORTS "mapt_total_ports"
 #define SYSEVENT_MAPT_CONFIG_FLAG "mapt_config_flag"
@@ -1324,8 +1326,11 @@ static int get_ipv4_from_interface(const char *ifname, char *ipbuf, size_t len)
     }
 
     struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
-    inet_ntop(AF_INET, &sin->sin_addr, ipbuf, len);
-
+    if (inet_ntop(AF_INET, &sin->sin_addr, ipbuf, len) == NULL) {
+        close(sock);
+        CcspTraceError(("%s inet_ntop failed\n", __FUNCTION__));
+        return -1;
+    }
     close(sock);
     return 0;
 }
@@ -1336,20 +1341,25 @@ int count_unique_ports(const char *proto) {
     CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
 
     char ipc_ip[64] = {0};
-
+    FILE * fp = NULL;
+	
     #if defined (_XB6_PRODUCT_REQ_) && defined (_COSA_BCM_ARM_)
 
         if (get_ipv4_from_interface(INTER_PROCESS_COMMUNICATION_INTERFACE,
                                     ipc_ip, sizeof(ipc_ip)) != 0) {
-            CcspTraceWarning(("%s : Copying 0.0.0.0 as ipc ip\n",__FUNCTION__));
-            snprintf(ipc_ip, sizeof(ipc_ip), "0.0.0.0");
+            CcspTraceWarning(("%s : Failed to get IPC IP, skipping IPC IP filtering\n",__FUNCTION__));
+            ipc_ip[0] = '\0';
         }
         CcspTraceInfo(("IPC interface %s has IP %s\n", INTER_PROCESS_COMMUNICATION_INTERFACE, ipc_ip));
 
-        FILE * fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v %s | grep -F -v 127.0.0.1", proto,ipc_ip);
-    #else
+        if (ipc_ip[0] != '\0') {
+            fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v %s | grep -F -v 127.0.0.1", proto, ipc_ip);
+        } else {
+            fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v 127.0.0.1", proto);
+        }   
+        #else
 
-        FILE * fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v 127.0.0.1", proto);
+        fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null | grep -F -v 127.0.0.1", proto);
     #endif
 
     if (!fp) return 0;
