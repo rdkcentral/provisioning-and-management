@@ -31,23 +31,48 @@ _COSA_DATAMODEL_ONBOARDLOGGING
 COSA_DATAMODEL_ONBOARDLOGGING,  *PCOSA_DATAMODEL_ONBOARDLOGGING;
 
 /*
-    Standard function declaration 
+    Standard function declaration
 */
+/**
+ * @brief Creates a new OnboardLogging backend object.
+ *
+ * @return Handle to the OnboardLogging backend object
+ * @retval Handle to the newly created OnboardLogging backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaOnboardLoggingCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the OnboardLogging backend object.
+ *
+ * @param[in] hThisObject Handle to the OnboardLogging backend object.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful initialization
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaOnboardLoggingInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the OnboardLogging backend object.
+ *
+ * @param[in] hThisObject Handle to the OnboardLogging backend object to be removed.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful removal
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaOnboardLoggingRemove
     (
         ANSC_HANDLE                 hThisObject
     );
-#endif 
+#endif
