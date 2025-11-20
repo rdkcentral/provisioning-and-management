@@ -1629,8 +1629,7 @@ IPIF_getEntry_for_Ipv6Pre
         ULONG ulIndex
     )
 {
-    CcspTraceInfo(("%s %d AADHI_DEBUG...\n", __FUNCTION__, __LINE__));
-    char buf[256]= {0};
+    CcspTraceInfo(("%s %d AADHI_DEBUG...\n", __FUNCTION__, __LINE__));    char buf[256]= {0};
     char buf1[256]= {0};
     char out[1024]= {0};
     UtopiaContext utctx = {0};
@@ -1744,6 +1743,7 @@ IPIF_getEntry_for_Ipv6Pre
         p_dml_v6pre->Status = COSA_DML_PREFIXENTRY_STATUS_Enabled;
 
         safec_rc = strcpy_s(p_dml_v6pre->Prefix, sizeof(p_dml_v6pre->Prefix), p_v6addr->v6pre);
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - copied Prefix=%s p_v6addr->v6pre=%s\n", __FILE__, __LINE__, __FUNCTION__, p_dml_v6pre->Prefix, p_v6addr->v6pre));
         if(safec_rc != EOK)
         {
            ERR_CHK(safec_rc);
@@ -1892,6 +1892,7 @@ IPIF_getEntry_for_Ipv6Pre
         p_dml_v6pre->bEnabled = TRUE;
         
         safec_rc = strcpy_s(p_dml_v6pre->Prefix, sizeof(p_dml_v6pre->Prefix), dhcpv6_pref);
+        CcspTraceInfo(("AADHI--DEBUG %s:%d %s - copied Prefix=%s p_v6addr->v6pre=%s\n", __FILE__, __LINE__, __FUNCTION__, p_dml_v6pre->Prefix, p_v6addr->v6pre));
         if(safec_rc != EOK)
         {
            ERR_CHK(safec_rc);
