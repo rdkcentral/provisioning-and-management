@@ -15,7 +15,153 @@ static bool is_pvd_thread_running = false ;
 SpeedBoost sSpeedBoost;
 SpeedBoostType boostType;
 
+#define SYSCTL_PATH "/proc/sys/net/ipv4/ip_local_reserved_ports"
+#define MAX_VAL_LEN 4096
+#define MAX_PORT_RANGE_DIFF 2000
+/*Default speed boost range ports as per the expected speed boost use case*/
+#define DEFAULT_SPEEDBOOST_RANGE "40001-41000"
 
+/**
+ * @brief Reads the content of /proc/sys/net/ipv4/ip_local_reserved_ports
+ * @param pBuf Buffer to store the read value
+ * @param iBuflen Size of the buffer
+ * @return 0 on success, -1 on failure
+ */
+static int readSysctl(char *pBuf, size_t iBuflen)
+{
+    FILE *pFile = fopen(SYSCTL_PATH, "r");
+    if (NULL == pFile)
+        return -1;
+    if (NULL == fgets(pBuf, iBuflen, pFile))
+    {
+        fclose(pFile);
+        return -1;
+    }
+    pBuf[strcspn(pBuf, "\n")] = '\0';
+    fclose(pFile);
+    return 0;
+}
+
+/**
+ * @brief writes to the /proc/sys/net/ipv4/ip_local_reserved_ports by reading content of pBuf
+ * @param pBuf Buffer to write the value
+ * @return 0 on success, -1 on failure
+ */
+static int writeSysctl(const char *pBuf)
+{
+    FILE *pFile = fopen(SYSCTL_PATH, "w");
+    if (NULL == pFile)
+        return -1;
+    if (fputs(pBuf, pFile) == EOF)
+    {
+        fclose(pFile);
+        return -1;
+    }
+    fclose(pFile);
+    return 0;
+}
+
+void appendToLocalReservedPorts(int iPrevStartPort, int iPrevEndPort,
+                                int iCurrStartPort, int iCurrEndPort)
+{
+    char cSysctlBuf[MAX_VAL_LEN] = {0};
+    char cRangeToAppend[64] = {0};
+    char cRangeToRemove[64] = {0};
+
+    // Validate current range
+    if (iCurrStartPort < 0 || iCurrStartPort > 65535 ||
+        iCurrEndPort < iCurrStartPort || iCurrEndPort > 65535) {
+        CcspTraceError(("%s:%d, Invalid current port range %d-%d\n",
+                       __FUNCTION__, __LINE__, iCurrStartPort, iCurrEndPort));
+        return;
+    }
+
+    int iCurrDiff = iCurrEndPort - iCurrStartPort;
+    CcspTraceInfo(("%s:%d, Current range: %d-%d (diff=%d)\n",
+                   __FUNCTION__, __LINE__, iCurrStartPort, iCurrEndPort, iCurrDiff));
+
+    // Determine what range to append for current
+    if (iCurrDiff <= MAX_PORT_RANGE_DIFF) {
+        snprintf(cRangeToAppend, sizeof(cRangeToAppend), "%d-%d", iCurrStartPort, iCurrEndPort);
+        CcspTraceInfo(("%s:%d, Will append actual range: %s\n", __FUNCTION__, __LINE__, cRangeToAppend));
+    } else {
+        snprintf(cRangeToAppend, sizeof(cRangeToAppend), DEFAULT_SPEEDBOOST_RANGE);
+        CcspTraceInfo(("%s:%d, Current range diff > %d, using fixed token %s\n",
+                       __FUNCTION__, __LINE__, MAX_PORT_RANGE_DIFF, cRangeToAppend));
+    }
+
+    // Process previous range if provided (non-zero values indicate valid previous range)
+    if (iPrevStartPort > 0 && iPrevEndPort > 0) {
+        int iPrevDiff = iPrevEndPort - iPrevStartPort;
+        CcspTraceInfo(("%s:%d, Previous range: %d-%d (diff=%d)\n",
+                       __FUNCTION__, __LINE__, iPrevStartPort, iPrevEndPort, iPrevDiff));
+
+        // Determine what was actually written to sysctl for previous
+        if (iPrevDiff <= MAX_PORT_RANGE_DIFF) {
+            snprintf(cRangeToRemove, sizeof(cRangeToRemove), "%d-%d", iPrevStartPort, iPrevEndPort);
+            CcspTraceInfo(("%s:%d, Previous was actual range: %s\n", __FUNCTION__, __LINE__, cRangeToRemove));
+        } else {
+            snprintf(cRangeToRemove, sizeof(cRangeToRemove), DEFAULT_SPEEDBOOST_RANGE);
+            CcspTraceInfo(("%s:%d, Previous range diff > %d, sysctl token was %s\n",
+                           __FUNCTION__, __LINE__, MAX_PORT_RANGE_DIFF, cRangeToRemove));
+        }
+    }
+
+    // Read existing sysctl
+    if (0 != readSysctl(cSysctlBuf, sizeof(cSysctlBuf))) {
+        CcspTraceError(("%s:%d, Failed to read sysctl\n", __FUNCTION__, __LINE__));
+        return;
+    }
+    CcspTraceInfo(("%s:%d, Current reserved ports before update: %s\n", __FUNCTION__, __LINE__, cSysctlBuf));
+
+    // Remove previous range if it exists
+    if (cRangeToRemove[0] != '\0') {
+        char *pPos = strstr(cSysctlBuf, cRangeToRemove);
+        if (pPos != NULL) {
+            size_t lenToRemove = strlen(cRangeToRemove);
+            // Remove trailing comma if exists
+            if (pPos[lenToRemove] == ',') {
+                lenToRemove++;
+            }
+            // Or remove leading comma if at start
+            else if (pPos != cSysctlBuf && pPos[-1] == ',') {
+                pPos--;
+                lenToRemove++;
+            }
+            memmove(pPos, pPos + lenToRemove, strlen(pPos + lenToRemove) + 1);
+            CcspTraceInfo(("%s:%d, Removed previous range %s, updated ports: %s\n",
+                           __FUNCTION__, __LINE__, cRangeToRemove, cSysctlBuf));
+        } else {
+            CcspTraceInfo(("%s:%d, Previous range %s not found in sysctl (may have been normalized by kernel)\n",
+                           __FUNCTION__, __LINE__, cRangeToRemove));
+        }
+    }
+
+    // Check if the range to append already exists (avoid duplicate)
+    if (strstr(cSysctlBuf, cRangeToAppend) != NULL) {
+        CcspTraceInfo(("%s:%d, Range %s already present - no append needed\n",
+                       __FUNCTION__, __LINE__, cRangeToAppend));
+        // Still write back (kernel may have normalized/sorted)
+        if (0 != writeSysctl(cSysctlBuf)) {
+            CcspTraceError(("%s:%d, Failed to write sysctl\n", __FUNCTION__, __LINE__));
+        }
+        return;
+    }
+
+    // Append current range
+    if (cSysctlBuf[0] != '\0') {
+        strncat(cSysctlBuf, ",", sizeof(cSysctlBuf) - strlen(cSysctlBuf) - 1);
+    }
+    strncat(cSysctlBuf, cRangeToAppend, sizeof(cSysctlBuf) - strlen(cSysctlBuf) - 1);
+    CcspTraceInfo(("%s:%d, Reserved ports after appending %s: %s\n",
+                   __FUNCTION__, __LINE__, cRangeToAppend, cSysctlBuf));
+
+    if (0 != writeSysctl(cSysctlBuf)) {
+        CcspTraceError(("%s:%d, Failed to write sysctl\n", __FUNCTION__, __LINE__));
+        return;
+    }
+    CcspTraceInfo(("%s:%d, Successfully updated reserved ports\n", __FUNCTION__, __LINE__));
+}
 void trigger_ra_service_restart() 
 {
         pthread_mutex_lock(&pvd_lock);
