@@ -33,6 +33,21 @@
     *  WebUIconfig_SetParamStringValue
 
 ***********************************************************************/
+/**
+ * @brief Retrieves a string parameter value from Device.X_RDK_WebUI.Data.
+ *
+ * This function returns string parameters of WebUI WebConfig service.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pValue Buffer to receive the string value.
+ * @param[in,out] pUlSize Pointer to buffer size; receives actual string length. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Parameter not found.
+ */
 ULONG
 WebUIconfig_GetParamStringValue
     (
@@ -42,6 +57,19 @@ WebUIconfig_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets a string parameter value for Device.X_RDK_WebUI.Data.
+ *
+ * This function sets string parameters of WebUI Configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] strValue String value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if parameter set successfully.
+ * @retval FALSE otherwise.
+ */
 BOOL
 WebUIconfig_SetParamStringValue
     (

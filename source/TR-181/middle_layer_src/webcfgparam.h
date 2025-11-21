@@ -40,26 +40,32 @@ typedef struct
  *  This function converts a msgpack buffer into an webcfgparam_t structure
  *  if possible.
  *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
+ *  @param[in] buf the buffer to convert
+ *  @param[in] len the length of the buffer in bytes
  *
- *  @return NULL on error, success otherwise
+ * @return Pointer to the converted webcfgparam_t structure.
+ * @retval Valid pointer to webcfgparam_t on success.
+ * @retval NULL if an error occurred.
  */
 webcfgparam_t* webcfgparam_convert( const void *buf, size_t len );
 
 /**
  *  This function destroys an webcfgparam_t object.
  *
- *  @param e the webcfgparam to destroy
+ *  @param[in] d the webcfgparam to destroy
+ *
+ * @return None.
  */
 void webcfgparam_destroy( webcfgparam_t *d );
 
 /**
- *  This function returns a general reason why the conversion failed.
+ * @brief Returns a general reason why the conversion failed.
  *
- *  @param errnum the errno value to inspect
+ *  @param[in] errnum the errno value to inspect
  *
- *  @return the constant string (do not alter or free) describing the error
+ * @return Constant string describing the error.
+ * @retval Error description string (do not alter or free).
+ * @retval Unknown error otherwise
  */
 const char* webcfgparam_strerror( int errnum );
 

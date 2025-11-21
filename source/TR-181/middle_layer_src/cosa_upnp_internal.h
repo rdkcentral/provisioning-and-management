@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -94,18 +94,43 @@ COSA_DATAMODEL_UPNP, *PCOSA_DATAMODEL_UPNP;
 /*
     Standard function declaration
 */
+/**
+ * @brief Creates a new UPnP backend object.
+ *
+ * @return Handle to the newly created UPnP backend object
+ * @retval Non-NULL handle to the newly created UPnP backend object.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaUpnpCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the UPnP backend object.
+ *
+ * @param[in] hThisObject Handle to the UPnP backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaUpnpInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the UPnP backend object.
+ *
+ * @param[in] hThisObject Handle to the UPnP backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaUpnpRemove
     (

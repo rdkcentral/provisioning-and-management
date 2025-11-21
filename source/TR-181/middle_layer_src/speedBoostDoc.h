@@ -46,40 +46,48 @@ typedef struct speedBoostDoc{
 } speedBoostDoc_t;
 
 /**
- *  This function converts a msgpack buffer into an speedBoostDoc_t structure
+ * @brief Converts a msgpack buffer into an speedBoostDoc_t structure
  *  if possible.
  *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
+ *  @param[in] pBuf the buffer to convert
+ *  @param[in] iLen the length of the buffer in bytes
  *
- *  @return NULL on error, success otherwise
+ * @return Pointer to the converted speedBoostDoc_t structure.
+ * @retval Pointer to speedBoostDoc_t on success.
+ * @retval NULL if an error occurred.
  */
 speedBoostDoc_t* speedBoostDocConvert( const void *pBuf, size_t iLen );
 
 /**
- *  This function destroys an speedBoostDoc_t object.
+ * @brief Destroys an speedBoostDoc_t object.
  *
- *  @param sd the speedBoostDoc_t to destroy
+ *  @param[in] pSpeedBoostDoc the speedBoostDoc_t to destroy.
+ *
+ * @return None.
  */
 void speedBoostDocDestroy( speedBoostDoc_t *pSpeedBoostDoc );
 
 /**
- *  allocate a memory for (size of input_t structure * iActionExecCount) of scheduler
+ * @brief Allocate a memory for scheduler input_t structures
  *
- *  @param s  Number of input_t structures of scheduler
+ *  @param[in] iActionExecCount  Number of input_t structures of scheduler
  *
- *  @return pointer to allocated input_t structure, error otherwise
+ * @return Pointer to allocated input_t structure array.
+ * @retval NULL if allocation failed.
+ * @retval Pointer to input_t on success.
  */
 
 input_t* createScheduleInput(size_t iActionExecCount);
 
 /**
- *  Convert the msgpack map into the doc_t structure.
+ * @brief Convert the msgpack map into the schedule_info_t structure.
  *
- *  @param s    the entry pointer
- *  @param map  the msgpack map pointer
+ *  @param[in] pSchedulerInfo the entry pointer
+ *  @param[in] pMsgPackObjMap  the msgpack map pointer
  *
- *  @return 0 on success, error otherwise
+ * @return The status of the operation.
+ * @retval 0 if successful.
+ * @retval Non-zero error code if any error is detected.
  */
 int processSpeedBoostInfo( schedule_info_t * pSchedulerInfo, msgpack_object_map *pMsgPackObjMap );
 #endif /*__SPEEDBOOSTDOC_H__s*/
