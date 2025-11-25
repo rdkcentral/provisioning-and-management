@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -68,7 +68,7 @@
 #include "cosa_dhcpv6_dml.h"
 
 /*
-  *   This is cosa middle layer definition 
+  *   This is cosa middle layer definition
   *
   */
 #define  COSA_IREP_FOLDER_NAME_DHCPV6                      "Dhcpv6"
@@ -159,7 +159,7 @@ COSA_CONTEXT_POOLV6_LINK_OBJECT, *PCOSA_CONTEXT_POOLV6_LINK_OBJECT;
     CHAR                            AliasOfPool[COSA_DML_DHCPV6_ALIAS];                   \
 
 typedef  struct
-_COSA_DATAMODEL_DHCPV6                                               
+_COSA_DATAMODEL_DHCPV6
 {
     COSA_DATAMODEL_DHCPV6_CLASS_CONTENT
 }
@@ -175,7 +175,7 @@ COSA_DATAMODEL_DHCPV6,  *PCOSA_DATAMODEL_DHCPV6;
 
 #define   DHCPV6_SENDOPTION_ENTRY_MATCH(src,dst)                   \
     (strcmp((src)->Alias, (dst)->Alias) == 0)
-        
+
 #define   DHCPV6_SENDOPTION_ENTRY_MATCH2(src,dst)                  \
     (strcmp((src), (dst)) == 0)
 
@@ -195,7 +195,7 @@ COSA_DATAMODEL_DHCPV6,  *PCOSA_DATAMODEL_DHCPV6;
 
 #define   DHCPV6_POOLOPTION_ENTRY_MATCH(src,dst)                \
     (strcmp((src)->Alias, (dst)->Alias) == 0)
-    
+
 #define   DHCPV6_POOLOPTION_ENTRY_MATCH2(src,dst)               \
     (strcmp((src), (dst)) == 0)
 
@@ -253,69 +253,159 @@ COSA_DATAMODEL_DHCPV6,  *PCOSA_DATAMODEL_DHCPV6;
 
 
 /*
-    Function declaration 
-*/ 
+    Function declaration
+*/
 
+/**
+ * @brief Create the DHCPv6 backend object.
+ *
+ * @return Handle to the newly created DHCPv6 backend object
+ * @retval non-NULL Handle to the new create context
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaDhcpv6Create
     (
         VOID
     );
 
+/**
+ * @brief Initializes the DHCPv6 backend object.
+ *
+ * @param[in] hThisObject Handle to the DHCPv6 backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDhcpv6Initialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the DHCPv6 backend object.
+ *
+ * @param[in] hThisObject Handle to the DHCPv6 backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDhcpv6Remove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Loads DHCPv6 configuration from persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the DHCPv6 backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful configuration load
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDhcpv6RegGetDhcpv6Info
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Saves DHCPv6 configuration to persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the DHCPv6 backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful configuration save.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDhcpv6RegSetDhcpv6Info
     (
         ANSC_HANDLE                 hThisObject
     );
 #ifndef FEATURE_RDKB_WAN_MANAGER
+/**
+ * @brief Checks if a DHCPv6 client has delay-added child entries.
+ *
+ * @param[in] hContext Pointer to the DHCPv6 client context link object.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the client has delay-added child entries.
+ * @retval FALSE otherwise.
+ */
 BOOL
 CosaDhcpv6ClientHasDelayAddedChild
     (
         PCOSA_CONTEXT_DHCPCV6_LINK_OBJECT     hContext
     );
 #endif
+/**
+ * @brief Checks if a DHCPv6 pool has delay-added child entries.
+ *
+ * @param[in] hContext Pointer to the DHCPv6 pool context link object.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the pool has delay-added child entries,
+ * @retval FALSE otherwise.
+ */
 BOOL
 CosaDhcpv6PoolHasDelayAddedChild
     (
         PCOSA_CONTEXT_POOLV6_LINK_OBJECT      hContext
     );
 
+/**
+ * @brief Retrieves DHCPv6 client content by client context.
+ *
+ * @param[in] hClientContext Handle to the DHCPv6 client context.
+ *
+ * @return Handle to the DHCPv6 client content structure
+ * @retval non-NULL Handle to the client content
+ * @retval NULL if not found.
+ */
 ANSC_HANDLE
 CosaDhcpv6GetClientContentbyClient
     (
         ANSC_HANDLE                 hClientContext
     );
 
+/**
+ * @brief Fetches DHCPv6 information from backend HAL APIs.
+ *
+ * @param[in] hThisObject Handle to the DHCPv6 backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful backend fetch.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDhcpv6BackendGetDhcpv6Info
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Converts an IP address string to an array of ULONG values.
+ *
+ * @param[out] pIPAddr Pointer to an array of ULONG values to store the converted IP address.
+ * @param[in] pString Pointer to the null-terminated IP address string to be converted.
+ * @param[in] MaxNumber Maximum number of ULONG elements in the pIPAddr array (4 for IPv4, 16 for IPv6 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE on successful conversion.
+ * @retval FALSE on invalid format or buffer overflow.
+ */
 BOOL
 CosaDmlSetIpaddr
     (
-        PULONG pIPAddr, 
-        PCHAR pString, 
-        ULONG MaxNumber 
+        PULONG pIPAddr,
+        PCHAR pString,
+        ULONG MaxNumber
     );
 
 #endif

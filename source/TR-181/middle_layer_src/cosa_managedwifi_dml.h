@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -72,6 +72,22 @@
     *  Lanconfig_SetParamStringValue
 
 ***********************************************************************/
+/**
+ * @brief Retrieves string parameter values for managed WiFi LAN configuration.
+ *
+ * @param[in] hInsContext Instance context handle
+ * @param[in] ParamName Name of the parameter to retrieve
+ * @param[out] pValue Buffer to store the retrieved string value.
+ * @param[in,out] pUlSize As input, size of the pValue buffer in bytes.
+ *                        As output, length of the string value written (including null terminator) if successful,
+ *                        or required buffer size if return value indicates buffer too small.
+ *                        Usually size of 1023 will be used.
+ *
+ * @return status of operation
+ * @retval 0 if parameter retrieved successfully.
+ * @retval 1 if buffer too small.
+ * @retval -1 if parameter not found or error occurred.
+ */
 ULONG
 Lanconfig_GetParamStringValue
     (
@@ -81,6 +97,17 @@ Lanconfig_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets string parameter values for managed WiFi LAN configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] strValue New string value to set for the parameter.
+ *
+ * @return status of operation
+ * @retval TRUE if parameter was set successfully
+ * @retval FALSE otherwise.
+ */
 BOOL
 Lanconfig_SetParamStringValue
     (
