@@ -1293,7 +1293,6 @@ CosaDmlNatGetLanIP
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
-
 #define SYSEVENT_MAPT_TOTAL_PORTS "mapt_total_ports"
 #define SYSEVENT_MAPT_CONFIG_FLAG "mapt_config_flag"
 #define MAX_PORTS 65536    // max port number
@@ -1303,8 +1302,9 @@ int count_unique_ports(const char *proto) {
     char line[512];
     CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
 
+	
   //  snprintf(cmd, sizeof(cmd), "conntrack -L -p %s 2>/dev/null", proto);
-    FILE * fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null", proto);
+    FILE * fp = v_secure_popen("r", "conntrack -L --src-nat -p %s 2>/dev/null", proto);
 
     if (!fp) return 0;
 
@@ -1341,6 +1341,7 @@ int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
     char buf[64] = {0};
     size_t size = sizeof(buf);
     memset(buf, 0, sizeof(buf));
+    int active_ports=0;
     commonSyseventGet(SYSEVENT_MAPT_CONFIG_FLAG, buf, size);
     CcspTraceDebug(("MAP-T config flag: %s\n", buf));
     if ( strcmp(buf, "set") == 0 )
@@ -1353,7 +1354,18 @@ int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
             CcspTraceWarning(("MAP-T total ports not set\n"));
             return -1;
         }
-        int active_ports = count_unique_ports(protocol);
+
+        memset(buf, 0, sizeof(buf));
+        commonSyseventGet("wan-status", buf, size);
+        if ( strcmp(buf, "started") != 0 )
+        {
+            CcspTraceWarning(("WAN not started, MAP-T port usage not available,setting active ports as Zero\n"));
+            active_ports = 0;
+        }
+        else
+        {
+            active_ports = count_unique_ports(protocol);
+        }
         int pct = total_ports ? active_ports * 100 / total_ports : 0;
         snprintf(pValue, *pUlSize, "%d|%d|%d",active_ports,total_ports,pct);
 
