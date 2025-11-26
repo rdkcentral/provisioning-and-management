@@ -82,6 +82,7 @@
 #include "ansc_platform.h"
 #include <syscfg/syscfg.h>
 #include "ccsp_psm_helper.h"
+#include "cosa_common_util.h"
 #include "sys_definitions.h"
 //#include "ccsp_custom.h"
 #include "cosa_mapt_apis.h"
@@ -289,7 +290,6 @@ CosaDmlMaptGetIPv6StringFromHex
   return STATUS_SUCCESS;
 }
 
-
 static RETURN_STATUS
 CosaDmlMaptApplyConfig
 (
@@ -388,13 +388,13 @@ CosaDmlMaptApplyConfig
 
   // override udp timeout for mapt
   MAPT_LOG_INFO("Setting nf_conntrack_udp_timeout to 30 seconds for MAPT!");
-  if ( v_secure_system("sysctl -w net.netfilter.nf_conntrack_udp_timeout=30") )
+  if (sysctl_iface_set("/proc/sys/net/netfilter/nf_conntrack_udp_timeout", NULL, "30") != 0)
   {
        MAPT_LOG_ERROR("Failed to set nf_conntrack_udp_timeout!");
   }
 
   MAPT_LOG_INFO("Setting nf_conntrack_udp_timeout_stream to 120 seconds for MAPT!");
-  if ( v_secure_system("sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=120") )
+  if (sysctl_iface_set("/proc/sys/net/netfilter/nf_conntrack_udp_timeout_stream", NULL, "120") != 0)
   {
        MAPT_LOG_ERROR("Failed to set nf_conntrack_udp_timeout_stream!");
   }
