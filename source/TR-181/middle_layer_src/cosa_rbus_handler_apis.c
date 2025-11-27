@@ -207,7 +207,7 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
         }
 
         /* Updating the Device Networking Mode in PSM database over sysevent */
-        rc = sprintf_s(strValue, sizeof(strValue),"%u", rVal);
+        rc = sprintf_s(strValue, sizeof(strValue),"%lu", rVal);
         if(rc < EOK)
         {
             ERR_CHK(rc);
