@@ -3676,7 +3676,7 @@ Snmpv3DHKickstart_SetParamBoolValue
         CcspTraceInfo(("Snmpv3DHKickstart_SetParamBoolValue: successfully set %s = %s\n", ParamName, bValue == TRUE ? "TRUE" : "FALSE"));
         if( pKickstart->TableUpdated == TRUE && pKickstart->Enabled == TRUE )
         {
-#if !defined(_XER5_PRODUCT_REQ_) && !defined(_SR213_PRODUCT_REQ_) && !defined(PON_GATEWAY) && !defined(_PLATFORM_IPQ_)
+#if !defined(_XER5_PRODUCT_REQ_) && !defined(_SR213_PRODUCT_REQ_) && !defined(_PLATFORM_IPQ_)
 	    i = cm_hal_snmpv3_kickstart_initialize( &Snmpv3_Kickstart_Table );
             CcspTraceError(("cm_hal_snmpv3_kickstart_initialize: return value = %d\n", i));
             pKickstart->TableUpdated = FALSE;

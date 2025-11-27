@@ -707,9 +707,7 @@ void* CosaDmlDcRebootWifi(ANSC_HANDLE   hContext);
 void* CosaDmlDcRestartRouter(void* arg);
 void CosaDmlDcSaveWiFiHealthStatusintoNVRAM( void  );
 int CheckAndGetDevicePropertiesEntry( char *pOutput, int size, char *sDevicePropContent );
-#ifndef PON_GATEWAY
 INT cm_hal_ReinitMac();
-#endif
 BOOL moca_HardwareEquipped(void);
 
 ANSC_STATUS
