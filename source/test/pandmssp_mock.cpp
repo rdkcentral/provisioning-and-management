@@ -47,7 +47,6 @@ msgpackMock *g_msgpackMock = nullptr;
 cosaDeviceInfoApisMock * g_cosaDeviceInfoApisMock = nullptr;
 parodusInterfaceMock *g_parodusInterfaceMock = nullptr;
 cosaDeviceInfoApisCustomMock * g_cosaDeviceInfoApisCustomMock = nullptr;
-AnscWrapperApiMock * g_anscWrapperApiMock = nullptr;
 
 PandMSSPTestFixture::PandMSSPTestFixture()
 {
