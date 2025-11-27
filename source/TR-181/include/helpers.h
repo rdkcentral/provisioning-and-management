@@ -48,27 +48,52 @@ typedef void (*destroy_fn_t)(void *);
 /*----------------------------------------------------------------------------*/
 
 /**
- *  Simple helper function that decodes the msgpack, then checks for a few
- *  sanity items (including an optional wrapper map) before calling the process
- *  argument passed in.  This also allocates the structure for the caller.
- *
- *  @param buf          the buffer to decode
- *  @param len          the length of the buffer in bytes
- *  @param struct_size  the size of the structure to allocate and pass to process
- *  @param wrapper      the optional wrapper to look for & enforce
- *  @param expect_type  the type of object expected
- *  @param optional     if the inner wrapper layer is optional
- *  @param process      the process function to call if successful
- *  @param destroy      the destroy function to call if there was an error
- *
- *  @returns the object after process has done it's magic to it on success, or
- *           NULL on error
- */
+* @brief Helper function that decodes msgpack buffer, validates, and processes it.
+*
+* This function decodes the msgpack buffer, checks for a few sanity items
+* (including an optional wrapper map) before calling the process function passed in.
+* This also allocates the structure for the caller.
+*
+* @param[in] buf  - Pointer to the buffer containing msgpack data to decode.
+* @param[in] len  - Length of the buffer in bytes.
+* @param[in] struct_size  - Size of the structure to allocate and pass to process function.
+* @param[in] wrapper  - Optional wrapper string to look for and enforce (can be NULL).
+* @param[in] expect_type  - Type of msgpack object expected.
+* @param[in] optional  - If true, the inner wrapper layer is optional.
+* @param[in] process  - Process function to call if successful to populate the allocated structure.
+* @param[in] destroy  - Destroy function to call to clean up if there was an error.
+*
+* @return Pointer to the processed object
+* @retval Pointer to the object after process function has populated it on success,
+* @retval NULL on error (memory allocation failure, invalid format, missing wrapper).
+*
+*/
 void* helper_convert( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
                       msgpack_object_type expect_type, bool optional,
                       process_fn_t process,
                       destroy_fn_t destroy );
+
+/**
+ * @brief Simple helper function that decodes msgpack array, validates, and processes it.
+ *
+ * This function decodes the msgpack buffer as an array, checks for a few sanity items
+ * (including an optional wrapper map) before calling the process function passed in.
+ * This also allocates the structure for the caller.
+ *
+ * @param[in] buf Buffer containing msgpack data to decode.
+ * @param[in] len Length of the buffer in bytes.
+ * @param[in] struct_size Size of the structure to allocate and pass to process function.
+ * @param[in] wrapper Optional wrapper string to look for and enforce (can be NULL).
+ * @param[in] expect_type Type of msgpack object expected in the array.
+ * @param[in] optional If true, the inner wrapper layer is optional.
+ * @param[in] process Process function to call if successful to populate the allocated structure.
+ * @param[in] destroy Destroy function to call to clean up if there was an error.
+ *
+ * @return Pointer to the processed object.
+ * @retval Pointer to the object after process function has populated it on success.
+ * @retval NULL on error (memory allocation failure, invalid format, missing wrapper).
+ */
 void* helper_convert_array( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
                       msgpack_object_type expect_type, bool optional,

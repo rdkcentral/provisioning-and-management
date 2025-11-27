@@ -45,6 +45,20 @@ typedef struct _COSA_DML_DSLITE COSA_DML_DSLITE,  *PCOSA_DML_DSLITE;
 /**********************************************************************
                 FUNCTION PROTOTYPES
 **********************************************************************/
+
+/**
+* @brief Initialize the DS-Lite subsystem.
+*
+* This function initializes the DS-Lite Data Model Library subsystem and prepares it for operation.
+*
+* @param[in] hDml - Handle to the DML object.
+* @param[out] phContext - Pointer to a handle where the context will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the operation fails.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteInit
     (
@@ -52,6 +66,20 @@ CosaDmlDsliteInit
         PANSC_HANDLE                phContext
     );
 
+/**
+* @brief Get the DS-Lite enabled status.
+*
+* This function retrieves whether the DS-Lite functionality is enabled.
+*
+* @param[in] hContext - Handle to the context.
+* @param[out] bEnabled - Pointer to a BOOLEAN where the enabled status will be returned.
+*                        \n TRUE if DS-Lite is enabled, FALSE otherwise.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the operation fails.
+*
+*/
 ANSC_STATUS
 CosaDmlGetDsliteEnable
     (
@@ -59,6 +87,19 @@ CosaDmlGetDsliteEnable
         BOOLEAN                     *bEnabled
     );
 
+/**
+* @brief Set the DS-Lite enabled status.
+*
+* This function enables or disables the DS-Lite functionality.
+*
+* @param[in] hContext - Handle to the context.
+* @param[in] bEnabled - Boolean flag indicating whether to enable (TRUE) or disable (FALSE) DS-Lite.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the operation fails.
+*
+*/
 ANSC_STATUS
 CosaDmlSetDsliteEnable
     (
@@ -66,6 +107,20 @@ CosaDmlSetDsliteEnable
         BOOLEAN                     bEnabled
     );
 
+/**
+* @brief Add a new DS-Lite entry.
+*
+* This function adds a new DS-Lite tunnel configuration entry.
+*
+* @param[in] hContext - Handle to the context.
+* @param[in] pEntry - Pointer to a COSA_DML_DSLITE structure containing the DS-Lite configuration
+*                     to be added.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the addition fails.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteAddEntry
     (
@@ -73,6 +128,19 @@ CosaDmlDsliteAddEntry
         PCOSA_DML_DSLITE            pEntry
     );
 
+/**
+* @brief Delete a DS-Lite entry.
+*
+* This function removes a DS-Lite tunnel configuration entry.
+*
+* @param[in] hContext - Handle to the context.
+* @param[in] ulInstanceNumber - Instance number of the DS-Lite entry to be deleted.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the entry is not found or deletion fails.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteDelEntry
     (
@@ -80,6 +148,20 @@ CosaDmlDsliteDelEntry
         ULONG                       ulInstanceNumber
     );
 
+/**
+* @brief Set the configuration of a DS-Lite entry.
+*
+* This function updates the configuration of a DS-Lite tunnel entry.
+*
+* @param[in] hContext - Handle to the context.
+* @param[in] pEntry - Pointer to a COSA_DML_DSLITE structure containing the new configuration.
+*                     \n The InstanceNumber field identifies which entry to update.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the entry is not found or update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteSetCfg
     (
@@ -87,6 +169,21 @@ CosaDmlDsliteSetCfg
         PCOSA_DML_DSLITE            pEntry
     );
 
+/**
+* @brief Get the configuration of a DS-Lite entry.
+*
+* This function retrieves the configuration of a DS-Lite tunnel entry.
+*
+* @param[in] hContext - Handle to the context.
+* @param[in,out] pEntry - Pointer to a COSA_DML_DSLITE structure.
+*                         \n [in] The InstanceNumber field identifies which entry to query.
+*                         \n [out] The structure will be filled with the DS-Lite configuration.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the entry is not found.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteGetCfg
     (
@@ -94,6 +191,19 @@ CosaDmlDsliteGetCfg
         PCOSA_DML_DSLITE            pEntry
     );
 
+/**
+* @brief Get the number of DS-Lite entries.
+*
+* This function retrieves the count of DS-Lite tunnel entries.
+*
+* @param[in] hContext - Handle to the context.
+* @param[out] pNum - Pointer to a ULONG where the number of DS-Lite entries will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the operation fails.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteGetNumberOfEntries
     (
@@ -101,6 +211,20 @@ CosaDmlDsliteGetNumberOfEntries
         ULONG                       *pNum
     );
 
+/**
+* @brief Get a DS-Lite entry by index.
+*
+* This function retrieves a DS-Lite entry at the specified index.
+*
+* @param[in] hContext - Handle to the context.
+* @param[in] ulIndex - Zero-based index of the DS-Lite entry to retrieve.
+* @param[out] pEntry - Pointer to a COSA_DML_DSLITE structure where the configuration will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the entry is not found.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteGetEntry
     (
@@ -109,6 +233,20 @@ CosaDmlDsliteGetEntry
         PCOSA_DML_DSLITE            pEntry
     );
 
+/**
+* @brief Set the instance number for a DS-Lite entry.
+*
+* This function updates the instance number for a DS-Lite entry at the specified index.
+*
+* @param[in] hContext - Handle to the context.
+* @param[in] ulIndex - Zero-based index of the DS-Lite entry to update.
+* @param[in] ulInstanceNumber - New instance number to assign to the entry.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the entry is not found or update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlDsliteSetInsNum
     (
@@ -117,8 +255,48 @@ CosaDmlDsliteSetInsNum
         ULONG                       ulInstanceNumber
     );
 
+/**
+* @brief Set a sysevent key-value pair.
+*
+* This function sets a key-value pair in the sysevent system using the common sysevent connection.
+*
+* @param[in] key - Pointer to a null-terminated string containing the sysevent key name.
+* @param[in] value - Pointer to a null-terminated string containing the value to set for the key.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful.
+* @retval Non-zero error code if the operation fails.
+*
+*/
 int commonSyseventSet(char* key, char* value);
+
+/**
+* @brief Get a sysevent value by key.
+*
+* This function retrieves the value associated with a key from the sysevent system
+* using the common sysevent connection.
+*
+* @param[in] key - Pointer to a null-terminated string containing the sysevent key name.
+* @param[out] value - Pointer to a buffer where the retrieved value will be returned.
+* @param[in] valLen - Maximum length of the value buffer.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful.
+* @retval Non-zero error code if the operation fails.
+*
+*/
 int commonSyseventGet(char* key, char* value, int valLen);
+
+/**
+* @brief Close the common sysevent connection.
+*
+* This function closes the common sysevent connection and releases associated resources.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful or if the connection was not open.
+* @retval Non-zero error code if the operation fails.
+*
+*/
 int commonSyseventClose();
 
 #endif

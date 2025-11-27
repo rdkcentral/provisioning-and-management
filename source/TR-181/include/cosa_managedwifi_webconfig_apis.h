@@ -30,11 +30,77 @@
 #include "cosa_rbus_handler_apis.h"
 #include <syscfg/syscfg.h>
 
+/**
+* @brief Unpack and process Managed WiFi webconfig data.
+*
+* This function decodes and processes the Managed WiFi configuration data received
+* via webconfig. It unpacks the msgpack encoded data and applies the configuration.
+*
+* @param[in] pString Pointer to the encoded configuration data string.
+*
+* @return The status of the operation.
+* @retval TRUE if the operation is successful.
+* @retval FALSE if the operation fails.
+*/
 BOOL unpackAndProcessManagedWifiData(char* pString);
+
+/**
+* @brief Free memory allocated for Managed WiFi configuration.
+*
+* This function releases memory resources allocated for Managed WiFi configuration structures.
+*
+* @param[in] arg Pointer to the memory to be freed.
+*
+* @return None.
+*/
 void freeMem_managedwifi(void* arg);
+
+/**
+* @brief Process Managed WiFi webconfig configuration.
+*
+* This function processes the Managed WiFi configuration data and applies it to the system.
+*
+* @param[in] Data Pointer to the webconfig data structure.
+*
+* @return Pointer to error structure (pErr) containing operation result details.
+* @retval NULL on success, indicating no error occurred during processing.
+* @retval Non-NULL pErr structure on failure.
+*/
 pErr processManagedWebconfigConfig(void *Data);
+
+/**
+* @brief Calculate timeout for Managed WiFi operations.
+*
+* This function calculates the appropriate timeout value based on the number of entries.
+*
+* @param[in] numOfEntries Number of configuration entries to process.
+*
+* @return Calculated timeout value in seconds.
+*/
 size_t calculateTimeout(size_t numOfEntries);
+
+/**
+* @brief Create Managed WiFi bridge.
+*
+* This function creates and configures the Managed WiFi L3 network bridge with the
+* specified LAN configuration parameters.
+*
+* @param[in] pLanConfigParams Pointer to the LAN configuration parameters structure.
+*
+* @return Pointer to error structure (pErr) containing operation result details.
+* @retval NULL on success, indicating no error occurred during processing.
+* @retval Non-NULL pErr structure on failure.
+*/
 pErr create_manage_wifi_bridge(lanconfig_t * pLanConfigParams);
+
+/**
+* @brief Initialize Managed WiFi backup structure.
+*
+* This function initializes the backup configuration structure used for rollback
+* operations in case of configuration failures.
+*
+* @return None.
+*/
 void initManageWiFiBacupStruct(void);
 
 #define BR106_PSM_INDEX "6"
@@ -143,15 +209,75 @@ typedef struct
 {
    amenityBridgeDetails_t ** ppAmenityDetails;
    uint16_t ui16Flag;
-   bool completed;  
+   bool completed;
 }AmenityThread_t;
 
+/**
+* @brief Get amenity network RBUS data.
+*
+* This function retrieves amenity network bridge configuration data via RBUS.
+*
+* @param[out] ppBridgeRbusData Pointer to receive the amenity bridge information array.
+* @param[out] pVapCount Pointer to receive the number of VAPs.
+*
+* @return The status of the operation.
+* @retval 0 on success.
+* @retval -1 on failure.
+*/
 int getAmenityRbusData(amenityBridgeInfo_t ** ppBridgeRbusData, int *pVapCount);
+
+/**
+* @brief Initialize amenity network bridges.
+*
+* This function initializes the amenity network bridges by reading configuration from PSM.
+*
+* @return None.
+*/
 void initializeAmenityBridges(void);
+
+/**
+* @brief Read tunnel details from PSM.
+*
+* This function reads GRE tunnel configuration details for amenity networks from PSM.
+*
+* @param[in] iBridgeCount Number of bridges to read tunnel details for.
+*
+* @return The status of the operation.
+* @retval 0 on success,
+* @retval -1 on failure.
+*/
 int readTunnelDetailsFromPsm(int iBridgeCount);
+
+/**
+* @brief Update amenity network PSM configuration.
+*
+* This function updates the PSM with amenity network VAP configuration including VAP index and VAP name.
+*
+* @param[in] cVapIndex VAP index string.
+* @param[in] cVapName VAP name string.
+* @param[in] iCount Bridge count.
+* @param[out] pErrRetVal Pointer to error structure to receive operation result.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful.
+* @retval 1 if the operation fails.
+*/
 BOOL updateAmenityPSM(char *cVapIndex, char *cVapName , int iCount , pErr pErrRetVal);
+
+/**
+* @brief Bring down Managed WiFi bridge.
+*
+* This function disables and removes the Managed WiFi bridge configuration.
+*
+* @param[out] pErrRetVal Pointer to error structure to receive operation result.
+*
+* @return The status of the operation.
+* @retval 0 if the operation is successful.
+* @retval 1 if the operation fails.
+*/
 BOOL bringDownManagedWifiBridge(pErr pErrRetVal);
 #endif
+
 typedef struct
 {
     InterfaceType_t eInterfaceType;
@@ -164,30 +290,270 @@ typedef struct
 {
    bool bMwEnable;
    char cFlag;
-   bool completed; 
+   bool completed;
 }threadStruct_t;
 
+/**
+* @brief Get bridge details from PSM.
+*
+* This function retrieves bridge configuration details from PSM including bridge name.
+*
+* @return None.
+*/
 void getBridgeDetailsFromPsm(void);
+
+/**
+* @brief Get Managed WiFi details.
+*
+* This function retrieves the current Managed WiFi configuration details from PSM storage.
+*
+* @param[out] pManageWifiInfo Pointer to structure to receive Managed WiFi information.
+*
+* @return None.
+*/
 void getManageWiFiDetails(ManageWiFiInfo_t * pManageWifiInfo);
+
+/**
+* @brief Set Managed WiFi details.
+*
+* This function updates the Managed WiFi configuration details in PSM storage.
+*
+* @param[in] pManageWifiInfo Pointer to structure containing Managed WiFi information to set.
+*
+* @return None.
+*/
 void setManageWiFiDetails(ManageWiFiInfo_t * pManageWifiInfo);
+
+/**
+* @brief Notify via RBUS.
+*
+* This function sends a notification via RBUS for TR-181 parameter changes.
+*
+* @param[in] pTr181Param TR-181 parameter name.
+* @param[in] pTr181ParamVal TR-181 parameter value.
+*
+* @return RBUS error code
+* @retval RBUS_ERROR_SUCCESS on success
+* @retval other RBUS error code otherwise.
+*/
 rbusError_t notifyViaRbus(char * pTr181Param, char *pTr181ParamVal);
+
+/**
+* @brief Process Managed WiFi configuration data.
+*
+* This function processes Managed WiFi configuration updates, applying changes
+* to the system and handling rollback if necessary.
+*
+* @param[in] pLanConfig Pointer to LAN configuration structure.
+* @param[in] cFlag Operation flags.
+* @param[out] pErrRetVal Pointer to error structure to receive operation result.
+*
+* @return None.
+*/
 void processManageWifiData(backupLanconfig_t * pLanConfig, char cFlag, pErr pErrRetVal);
+
+/**
+* @brief Rollback LAN configuration.
+*
+* This function rolls back LAN configuration to the previous backup state
+* when Lan blob execution fails.
+*
+* @return The status of the operation.
+* @retval 0 on success.
+* @retval Non-zero on failure.
+*/
 int rollbackLanconfig(void);
+
+/**
+* @brief Managed WiFi bridge creation thread.
+*
+* This is the thread function that handles Managed WiFi bridge creation and
+* configuration in a separate thread to avoid blocking.
+*
+* @param[in,out] vArg Pointer to thread arguments.
+*
+* @return None
+*/
 void *ManageWiFiBridgeCreationThread(void * vArg);
 #if defined (AMENITIES_NETWORK_ENABLED)
+/**
+* @brief Rollback tunnel LAN configuration.
+*
+* This function rolls back the GRE tunnel and LAN configuration for amenity
+* networks to the previous backup state in case of configuration failures.
+*
+* @return The status of the operation.
+* @retval 0 on success.
+* @retval Non-zero on failure.
+*/
 int rollbackTunnelLanconfig (void);
+
+/**
+* @brief Clear LAN tunnel PSM configuration.
+*
+* This function clears the PSM configuration for a specific LAN tunnel bridge.
+*
+* @param[in] pBridgeIndex Bridge index string to clear PSM configuration.
+*
+* @return None.
+*/
 void lanTunnelPsmClear(char *pBridgeIndex);
+
+/**
+* @brief Amenity multinet notification handler thread.
+*
+* This is the thread function that handles amenity network multinet notifications
+* and processes RBUS events for amenity bridge state changes.
+*
+* @param[in,out] vArg Pointer to thread arguments.
+*
+* @return None
+*/
 void *amenityMultinetNotifyHandler(void * vArg);
+
+/**
+* @brief Update firewall syscfg for amenity networks.
+*
+* This function updates the firewall syscfg configuration based on the number
+* of amenity bridges and their enable state.
+*
+* @param[in] iBridgeCount Number of amenity bridges.
+* @param[in] bIsAmenityEnabled Amenity network enable flag.
+*
+* @return The status of the operation.
+* @retval 0 on success.
+* @retval Non-zero on failure.
+*/
 int updateFirewallSyscfg(int iBridgeCount, bool bIsAmenityEnabled);
 #endif
+
+/**
+* @brief Remove substring from a string.
+*
+* This function removes a specified substring from the main string, with optional
+* extra space removal around the substring.
+*
+* @param[in,out] pMainString Main string to remove substring from.
+* @param[in] pSubstring Substring to remove.
+* @param[in] bExtraSpaceRemoval Flag to remove extra spaces (TRUE) or not (FALSE).
+*
+* @return The status of the operation.
+* @retval 0 on success.
+* @retval -1 on failure.
+*/
 int removeSubstring(char * pMainString, char * pSubstring, bool bExtraSpaceRemoval);
+
+/**
+* @brief Update backup configuration.
+*
+* This function updates the backup configuration structure with the current
+* Managed WiFi configuration for rollback purposes.
+*
+* @return None
+*/
 void updateBackupConfig(void);
+
+/**
+* @brief Get Managed WiFi enable state.
+*
+* This function retrieves the current enable/disable state of Managed WiFi.
+*
+* @param[out] pWiFiEnable Pointer to receive the enable state (TRUE=enabled, FALSE=disabled).
+*
+* @return None.
+*/
 void getManageWiFiEnable(BOOL * pWiFiEnable);
+
+/**
+* @brief Publish event notification.
+*
+* This function publishes configuration change events via the specified
+* notification mechanism (RBUS or other).
+*
+* @param[in] pTr181Param TR-181 parameter name.
+* @param[in] pTr181ParamVal TR-181 parameter value.
+* @param[in] eEventType Event notification type (RBUS or OTHER_EVENT).
+*
+* @return None.
+*/
 void publishEvent(char * pTr181Param, char *pTr181ParamVal, EventType eEventType);
+
+/**
+* @brief Confirm Managed WiFi VAP configuration.
+*
+* This function verifies that the Managed WiFi VAP configuration is correctly
+* applied and operational.
+*
+* @return The status of the operation.
+* @retval 0 on success.
+* @retval -1 on failure.
+*/
 int confirmManageWifiVap(void);
+
+/**
+* @brief Restore previous PSM values.
+*
+* This function restores previous PSM values from the backup configuration
+* during rollback operations.
+*
+* @return None.
+*/
 void restorePreviousPsmValue(void);
+
+/**
+* @brief Validate IP address range.
+*
+* This function validates that an IP address falls within the specified
+* start and end address range.
+*
+* @param[in] pIpAddr IP address to validate.
+* @param[in] pStartAddr Start of valid IP address range.
+* @param[in] pEndAddr End of valid IP address range.
+* @param[out] pErrRetVal Pointer to error structure to receive validation result.
+*
+* @return The status of the validation.
+* @retval 0 if all parameters are valid.
+* @retval -1 if invalid.
+*/
 int validateIpRange(char *pIpAddr, char *pStartAddr, char *pEndAddr, pErr pErrRetVal);
+
+/**
+* @brief Validate DHCP lease time.
+*
+* This function validates that the DHCP lease time is within acceptable limits.
+* Lease time is less then 120 seconds is invalid.
+*
+* @param[in] pLeaseTime Lease time string to validate.
+* @param[out] pErrRetVal Pointer to error structure to receive validation result.
+*
+* @return The status of the validation.
+* @retval 0 if all parameters are valid.
+* @retval -1 if invalid.
+*/
 int validateLeaseTime(char *pLeaseTime, pErr pErrRetVal);
+
+/**
+* @brief Extract lease time from string.
+*
+* This function extracts the lease time value from a string bounded by begin and end markers.
+*
+* @param[in] pBegin Pointer to beginning of lease time string.
+* @param[in] pEnd Pointer to end of lease time string.
+* @param[out] pLeaseTime Pointer to receive the extracted lease time value.
+*
+* @return None.
+*/
 void extractLeaseTime(char *pBegin, char *pEnd, int * pLeaseTime);
+
+/**
+* @brief Get Managed WiFi address range details.
+*
+* This function retrieves the IP address range details for Managed WiFi
+* interface including IP address and DHCP pool ranges.
+*
+* @param[out] pManageWiFiAddrDetails Pointer to structure to receive address details.
+*
+* @return None.
+*/
 void getManageWiFiAddrRange(LanDetails_t * pManageWiFiAddrDetails);
 #endif

@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -220,35 +220,64 @@ extern COSARegisterCallBackAfterInitDmlProc  g_RegisterCallBackAfterInitDml;
     ANSC_HANDLE                  hLanMngm;                                                  \
     ANSC_HANDLE                  hXpc;                                                    \
     ANSC_HANDLE                  hOnboardLogging;                                                    \
-    PCOSA_PLUGIN_INFO            hCosaPluginInfo;								   		
+    PCOSA_PLUGIN_INFO            hCosaPluginInfo;
 
 typedef  struct
 _COSA_BACKEND_MANAGER_OBJECT
 {
     COSA_BACKEND_MANAGER_CLASS_CONTENT
-#ifdef _COSA_SIM_                                                                           
-            ULONG                        has_wifi_slap;                                             
-            ULONG                        has_moca_slap;                                             
-#endif                                                                                      
+#ifdef _COSA_SIM_
+            ULONG                        has_wifi_slap;
+            ULONG                        has_moca_slap;
+#endif
 }
 COSA_BACKEND_MANAGER_OBJECT,  *PCOSA_BACKEND_MANAGER_OBJECT;
 
 extern PCOSA_BACKEND_MANAGER_OBJECT g_pCosaBEManager;
 
-
-
+/**
+ * @brief Creates a new COSA backend manager object instance.
+ *
+ * This function allocates and initializes a backend manager object that coordinates all data model components.
+ *
+ * @return Handle to the newly created backend manager object.
+ * @retval Non-NULL Handle if creation succeeded.
+ * @retval NULL if creation failed.
+ */
 ANSC_HANDLE
 CosaBackEndManagerCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the COSA backend manager object and all its components.
+ *
+ * This function initializes data model subsystems and prepares the backend manager for operation.
+ *
+ * @param[in] hThisObject Handle to the backend manager object to initialize.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if initialization succeeded.
+ * @retval ANSC_STATUS_FAILURE if any error is detected.
+ */
 ANSC_STATUS
 CosaBackEndManagerInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and cleans up the COSA backend manager object.
+ *
+ * This function performs cleanup, releases resources, and destroys the backend manager object.
+ *
+ * @param[in] hThisObject Handle to the backend manager object to remove.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if removal succeeded.
+ * @retval ANSC_STATUS_FAILURE if any error is detected.
+ */
 ANSC_STATUS
 CosaBackEndManagerRemove
     (

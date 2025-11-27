@@ -33,10 +33,49 @@
 #include "webconfig_framework.h"
 #include "webui_doc.h"
 
-
+/**
+ * @brief Processes a WebUI webconfig request.
+ *
+ * This function handles incoming WebUI configuration from webconfig framework.
+ *
+ * @param[in] Data Pointer to webconfig request data.
+ *
+ * @return Pointer to error structure indicating the result of the WebUI blob execution
+ * @retval Non-NULL Pointer to error structure if Memory allocation success.
+ * @retval NULL if memory allocation fails
+ */
 pErr webui_webconfig_process_request(void *Data);
+/**
+ * @brief Rolls back WebUI webconfig to previous state.
+ *
+ * This function restores WebUI configuration from backup when a configuration update fails.
+ *
+ * @return The status of the operation.
+ * @retval 0 if successful.
+ * @retval Non-zero error code if any error is detected.
+ */
 int webui_webconfig_rollback();
+/**
+ * @brief Frees resources allocated for WebUI webconfig processing.
+ *
+ * This function releases memory and resources associated with WebUI webconfig request.
+ *
+ * @param[in] arg Pointer to resource data to free.
+ *
+ * @return void
+ */
 void webui_webconfig_free_resources(void *arg);
+/**
+ * @brief Handles WebUI configuration blob data.
+ *
+ * This function processes the WebUI parameter blob and applies configuration changes.
+ *
+ * @param[in] mode Pointer to webui_param_t structure containing WebUI configuration data.
+ *
+ * @return The status of the operation.
+ * @retval 0 if successful.
+ * @retval Non-zero error code if error detected.
+ */
 int webui_webconfig_handle_blob(webui_param_t *mode);
 
 #endif // _WEBUI_WEBCONFIG_H

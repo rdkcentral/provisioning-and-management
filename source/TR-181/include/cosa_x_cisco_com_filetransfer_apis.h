@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,15 +107,27 @@ typedef  struct
 _COSA_DML_FILETRANSFER_CFG
 {
     ULONG               Server;
-    ULONG               Protocol;                                           
-    UCHAR               FileName[128];                                      
-    UCHAR               Username[128];                                      
-    UCHAR               Password[128];                                      
-    ULONG               AuthType;                                           
-    ULONG               Action;                                                
+    ULONG               Protocol;
+    UCHAR               FileName[128];
+    UCHAR               Username[128];
+    UCHAR               Password[128];
+    ULONG               AuthType;
+    ULONG               Action;
 }
 COSA_DML_FILETRANSFER_CFG,  *PCOSA_DML_FILETRANSFER_CFG;
 
+/**
+* @brief Initialize the file transfer subsystem.
+*
+* This function initializes the file transfer module.
+*
+* @param[in] hDml  - Handle to the DML.
+* @param[out] phContext  - Pointer to handle for storing context.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+*
+*/
 ANSC_STATUS
 CosaDmlFileTransferInit
     (
@@ -123,6 +135,18 @@ CosaDmlFileTransferInit
         PANSC_HANDLE                phContext
 );
 
+/**
+* @brief Get the file transfer configuration.
+*
+* This function retrieves the file transfer configuration from PSM (Persistent Storage Manager).
+*
+* @param[in] hContext  - Handle to the context.
+* @param[out] pCfg  - Pointer to a COSA_DML_FILETRANSFER_CFG structure where configuration will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+*
+*/
 ANSC_STATUS
 CosaDmlFileTransferGetCfg
     (
@@ -130,6 +154,23 @@ CosaDmlFileTransferGetCfg
         PCOSA_DML_FILETRANSFER_CFG  pCfg
     );
 
+/**
+* @brief Get the file transfer status.
+*
+* This function retrieves the current file transfer operation status from the file transfer
+* data model object.
+*
+* @param[in] hContext  - Handle to the COSA_DATAMODEL_FILETRANSFER context.
+*
+* @return The file transfer status.
+* @retval COSA_DML_FILETRANSFER_STATUS_InProgress if transfer is in progress.
+* @retval COSA_DML_FILETRANSFER_STATUS_Complete if transfer completed successfully.
+* @retval COSA_DML_FILETRANSFER_STATUS_Failed if transfer failed.
+* @retval COSA_DML_FILETRANSFER_STATUS_FileNotFound if file was not found.
+* @retval COSA_DML_FILETRANSFER_STATUS_ServerNotFound if server was not found.
+* @retval COSA_DML_FILETRANSFER_STATUS_IncorrectFileFormat if file format is incorrect.
+*
+*/
 ULONG
 CosaDmlFileTransferGetStatus
     (

@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -317,8 +317,22 @@ _LmObjectHosts
 LmObjectHosts,  *PLmObjectHosts;
 
 /*************************************
-    The actual function declaration 
+    The actual function declaration
 **************************************/
+
+/**
+* @brief Initialize the hosts subsystem.
+*
+* This function initializes the hosts data model layer, sets up the LAN Manager hosts
+* structure, and prepares the hosts subsystem for operation.
+*
+* @param[in] hDml - Handle to the DML object.
+* @param[out] phContext - Pointer to a handle where the hosts context will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+*
+*/
 ANSC_STATUS
 CosaDmlHostsInit
     (
@@ -326,14 +340,20 @@ CosaDmlHostsInit
         PANSC_HANDLE                phContext
     );
 
-/**********************************************************
-Description:
-    This routine is to retrieve the complete list of current hosts, which is a dynamic table.
-Arguments:
-    pulCount        To receive the actual number of entries.
-Return:
-The pointer to the array of hosts, allocated by callee. If no entry is found, NULL is returned.
-  **********************************************************/
+/**
+* @brief Retrieve the complete list of current hosts
+*
+* This function retrieves the complete list of current hosts on the network, which is a
+* dynamic table.
+*
+* @param[in] hContext - Handle to the hosts context.
+* @param[out] pulCount - Pointer to a ULONG where the actual number of host entries will be returned, allocated by callee.
+*                        \n If no entry is found, NULL is returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if memory allocation fails or LAN Manager query fails.
+*/
 ANSC_STATUS
 CosaDmlHostsGetHosts
     (
@@ -341,6 +361,20 @@ CosaDmlHostsGetHosts
         PULONG                      pulCount
     );
 
+/**
+* @brief Set the comment for a host.
+*
+* This function sets a user-defined comment for a host identified by its MAC address.
+*
+* @param[in] hContext - Handle to the hosts context.
+* @param[in] pMac - Pointer to a null-terminated string containing the MAC address of the host.
+* @param[in] pComment - Pointer to a null-terminated string containing the comment to set for the host.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if the MAC address conversion fails or the LAN Manager update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlHostsSetHostComment
     (

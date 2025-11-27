@@ -80,6 +80,18 @@ COSA_DML_LANMANAGEMENT_CFG,  *PCOSA_DML_LANMANAGEMENT_CFG;
                 FUNCTION PROTOTYPES
 **********************************************************************/
 
+/**
+* @brief Initialize the LAN Management subsystem.
+*
+* This function initializes the LAN Management data model library and loads IPv6 configuration parameters from persistent storage.
+*
+* @param[in] hDml Handle to the DML object.
+* @param[out] phContext Pointer to receive the context handle.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*/
 ANSC_STATUS
 CosaDmlLanManagementInit
     (
@@ -87,6 +99,18 @@ CosaDmlLanManagementInit
         PANSC_HANDLE                phContext
     );
 
+/**
+* @brief Set LAN Management configuration.
+*
+* This function applies new LAN Management configuration parameters.
+*
+* @param[in] hContext DML context handle.
+* @param[in] pTimeCfg Pointer to the LAN Management configuration structure to apply.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*/
 ANSC_STATUS
 CosaDmlLanManagementSetCfg
     (
@@ -94,6 +118,18 @@ CosaDmlLanManagementSetCfg
         PCOSA_DML_LANMANAGEMENT_CFG          pTimeCfg
     );
 
+/**
+* @brief Get LAN Management configuration.
+*
+* This function retrieves the current LAN Management configuration.
+*
+* @param[in] hContext DML context handle.
+* @param[out] pTimeCfg Pointer to receive the current LAN Management configuration.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*/
 ANSC_STATUS
 CosaDmlLanManagementGetCfg
     (
@@ -102,8 +138,32 @@ CosaDmlLanManagementGetCfg
     );
 
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
+/**
+* @brief Set LAN IPv6 ULA (Unique Local Address).
+*
+* This function configures the IPv6 Unique Local Address for the LAN interface.
+*
+* @param[in] ula_prefix IPv6 ULA prefix string.
+* @param[in] ula Complete IPv6 ULA address string.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+*/
 ANSC_STATUS CosaDmlLanMngm_SetLanIpv6Ula(char *ula_prefix, char *ula);
 #endif
 
+/**
+* @brief Get the device serial number.
+*
+* This function retrieves the device serial number from the platform HAL.
+* The serial number is typically used for device identification and tracking.
+*
+* @param[out] pValue Pointer to a buffer where the serial number string will be returned.
+*
+* @return The status of the operation.
+* @retval RETURN_OK if the operation is successful.
+* @retval RETURN_ERR if any error is detected during the operation.
+*/
 INT platform_hal_GetSerialNumber(CHAR* pValue);
 #endif

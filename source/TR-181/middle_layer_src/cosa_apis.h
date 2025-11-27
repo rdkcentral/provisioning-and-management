@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,7 +44,7 @@
 
     description:
 
-        All cosa_xxx_apis.h will include this file and realize 
+        All cosa_xxx_apis.h will include this file and realize
 		necessary functions in the struct of this file.
 
     ---------------------------------------------------------------
@@ -97,7 +97,7 @@ typedef  ANSC_STATUS
     );
 
 /*
- * the main struct in cosa_xxx_apis.h need includes this struct and realize all functions. 
+ * the main struct in cosa_xxx_apis.h need includes this struct and realize all functions.
  */
 #define  COSA_BASE_CONTENT                                                                  \
     /* start of object class content */                                                     \
@@ -147,7 +147,19 @@ COSA_CONTEXT_LINK_OBJECT,  *PCOSA_CONTEXT_LINK_OBJECT;
 
 #define  COSA_DML_ALIAS_NAME_LENGTH                 64
 
-
+/**
+ * @brief Push a context link entry into a sorted list by instance number.
+ *
+ * This function inserts a COSA context link object into a sorted list based on the instance number.
+ *
+ * @param[in,out] pListHead    - Pointer to the list header.
+ * @param[in] pCosaContext     - Pointer to the COSA context link object to insert.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaSListPushEntryByInsNum
     (
@@ -155,6 +167,19 @@ CosaSListPushEntryByInsNum
         PCOSA_CONTEXT_LINK_OBJECT   pCosaContext
     );
 
+/**
+ * @brief Get a context link entry from a list by instance number.
+ *
+ * This function retrieves a COSA context link object from a list based on the instance number.
+ *
+ * @param[in] pListHead      - Pointer to the list header.
+ * @param[in] InstanceNumber - The instance number to search for.
+ *
+ * @return Pointer to the COSA context link object.
+ * @retval PCOSA_CONTEXT_LINK_OBJECT Pointer to the context link object if found.
+ * @retval NULL if not found.
+ *
+ */
 PCOSA_CONTEXT_LINK_OBJECT
 CosaSListGetEntryByInsNum
     (

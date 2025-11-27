@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,6 +39,19 @@
 #include "cosa_apis.h"
 #include "plugin_main_apis.h"
 
+/**
+ * @brief Retrieves a boolean parameter value from Device.X_RDKCENTRAL-COM_Xpc.SnmpOnboardReboot.
+ *
+ * This function returns the current state of the SnmpOnboardReboot parameter.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pBool Pointer to receive the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE If parameter is found and retrieved successfully.
+ * @retval FALSE If parameter is not supported or retrieval fails.
+ */
 BOOL
 SnmpOnboardReboot_GetParamBoolValue
     (
@@ -47,6 +60,19 @@ SnmpOnboardReboot_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Sets a boolean parameter value for Device.X_RDKCENTRAL-COM_Xpc.SnmpOnboardReboot.
+ *
+ * This function sets the SnmpOnboardReboot parameter.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE If parameter is set successfully.
+ * @retval FALSE If parameter is not supported or set operation fails.
+ */
 BOOL
 SnmpOnboardReboot_SetParamBoolValue
     (

@@ -26,64 +26,98 @@
 #include "libHotspotApi.h"
 
 /**
- *  This function converts a msgpack buffer into an hotspotparam_t structure
- *  if possible.
- *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
- *
- *  @return NULL on error, success otherwise
- */
+* @brief Converts a msgpack buffer into a hotspotparam_t structure.
+*
+* This function converts a msgpack buffer into an hotspotparam_t structure if possible.
+*
+* @param[in] buf - Pointer to the buffer to convert.
+* @param[in] len - The length of the buffer in bytes.
+*
+* @return The status of the operation.
+* @retval Pointer to hotspotparam_t structure if the operation is successful.
+* @retval NULL if any error is detected during the operation.
+*
+*/
 hotspotparam_t* hotspotdoc_convert( const void *buf, size_t len );
+
 /**
- *  This function returns a general reason why the conversion failed.
- *
- *  @param errnum the errno value to inspect
- *
- *  @return the constant string (do not alter or free) describing the error
- */
+* @brief Returns a general reason why the conversion failed.
+*
+* This function returns a constant string describing the error.
+*
+* @param[in] errnum - The errno value to inspect.
+*
+* @return The status of the operation.
+* @retval Constant string describing the error if the operation is successful.
+* @retval unknown error otherwise
+*
+*/
 const char* hotspotdoc_strerror( int errnum );
 
 /**
- *  This function destroys an hotspotparam_t object.
- *
- *  @param e the pamdoc to destroy
- */
+* @brief Destroys a hotspotparam_t object.
+*
+* This function frees all memory associated with the hotspotparam_t object and destroys it.
+*
+* @param[in] hd - Pointer to the hotspotparam_t object to destroy.
+*
+* @return None
+*
+*/
 void hotspotdoc_destroy( hotspotparam_t *hd );
 
 /**
- *  This function converts a msgpack buffer into an tunneldoc_t structure
- *  if possible.
- *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
- *
- *  @return NULL on error, success otherwise
- */
+* @brief Converts a msgpack buffer into a tunneldoc_t structure.
+*
+* This function converts a msgpack buffer into a tunneldoc_t structure if possible.
+*
+* @param[in] buf - Pointer to the buffer to convert.
+* @param[in] len - The length of the buffer in bytes.
+*
+* @return The status of the operation.
+* @retval Pointer to tunneldoc_t structure if the operation is successful.
+* @retval NULL if any error is detected during the operation.
+*
+*/
 tunneldoc_t* tunneldoc_convert(const void *buf, size_t len);
-/**
- *  This function converts a msgpack buffer into an wifi_doc_t structure
- *  if possible.
- *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
- *
- *  @return NULL on error, success otherwise
- */
 
 /**
- *  This function destroys an tunneldoc_t object.
- *
- *  @param e the pamdoc to destroy
- */
+* @brief Destroys a tunneldoc_t object.
+*
+* This function frees all memory associated with the tunneldoc_t object and destroys it.
+*
+* @param[in] td - Pointer to the tunneldoc_t object to destroy.
+*
+* @return None.
+*
+*/
 void tunneldoc_destroy( tunneldoc_t *td );
 
-wifi_doc_t* wifi_doc_convert(const void *buf, size_t len);
 /**
- *  This function destroys an wifi_doc_t object.
- *
- *  @param e the pamdoc to destroy
- */
+* @brief Converts a msgpack buffer into a wifi_doc_t structure.
+*
+* This function converts a msgpack buffer into a wifi_doc_t structure if possible.
+*
+* @param[in] buf - Pointer to the buffer to convert.
+* @param[in] len - The length of the buffer in bytes.
+*
+* @return The status of the operation.
+* @retval Pointer to wifi_doc_t structure if the operation is successful.
+* @retval NULL if any error is detected during the operation.
+*
+*/
+wifi_doc_t* wifi_doc_convert(const void *buf, size_t len);
+
+/**
+* @brief Destroys a wifi_doc_t object.
+*
+* This function frees all memory associated with the wifi_doc_t object and destroys it.
+*
+* @param[in] wd - Pointer to the wifi_doc_t object to destroy.
+*
+* @return None.
+*
+*/
 void wifi_doc_destroy( wifi_doc_t *wd );
 
 #endif
