@@ -58,6 +58,7 @@
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.AdvsecRedirectorURL" : "https://agent.xais.apg.comcast.net:9443",
       "Device.ManagementServer.EnableCWMP" : "false",
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.StartupIPMode" : "0",
+      "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.ConfigMacVlanWithUdhcpc" : "true",
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.IPv4PrimaryDhcpServerOptions" : "FFFFFFFF",
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.IPv4SecondaryDhcpServerOptions" : "FFFFFFFF",
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.IPv6PrimaryDhcpServerOptions" : "FFFFFFFF",
