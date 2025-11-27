@@ -289,7 +289,7 @@ CosaDmlUpnpDevGetAdvPeriod
 	Utopia_RawGet(&utctx, NULL, "upnp_igd_advr_expire", buf, sizeof(buf));
     
 	if (AnscSizeOfString(buf)){
-		*val = (PULONG)strtoul(buf, NULL, 10);
+		*val = (PULONG)*val = (PULONG)strtoul(buf, NULL, 10);
 	}else{
 		*val = (PULONG)g_AdvPeriod; // use default value
 	}
