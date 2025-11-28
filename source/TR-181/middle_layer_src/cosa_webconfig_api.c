@@ -215,13 +215,13 @@ void webConfigFrameworkInit()
     	memset(blobData, 0, SUBDOC_COUNT * sizeof(blobRegInfo));
 
     	blobRegInfo *blobDataPointer = blobData;
-
+        CcspTraceWarning(("%s(): 56410: SUBDOC_COUNT :%d\n", __FUNCTION__, SUBDOC_COUNT));
 
     	for (i=0 ; i < SUBDOC_COUNT ; i++ )
     	{
         	strncpy( blobDataPointer->subdoc_name, sub_docs[i], sizeof(blobDataPointer->subdoc_name)-1);
-
         	blobDataPointer++;
+		CcspTraceWarning(("%s(): 56410: sub_docs[%d]:%s\n", __FUNCTION__, i, sub_docs[i]));
     	}
 
    	    blobDataPointer = blobData ;
