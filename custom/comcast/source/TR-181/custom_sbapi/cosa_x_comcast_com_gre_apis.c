@@ -421,7 +421,7 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 #define POLL_CIRCUIT_ID_SLEEP 3
 #define INITIAL_SNOOPER_QUEUE 1
 
-#if !defined (_SR213_PRODUCT_REQ_) || (defined (_SR213_PRODUCT_REQ_) && !defined(RDK_ONEWIFI)) //SHARMAN-1054
+#if !defined (_HUB4_PRODUCT_REQ_) || (defined (_HUB4_PRODUCT_REQ_) && !defined(RDK_ONEWIFI)) //_HUB4_PRODUCT_REQ_ is enabled for both HUb4 and HUb6
 static void* circuit_id_init_thread(void* arg) {
     UNREFERENCED_PARAMETER(arg);
 #if !defined (_WNXL11BWL_PRODUCT_REQ_)
@@ -452,7 +452,7 @@ ANSC_STATUS
 CosaDml_GreInit(void)
 {
     int shmid;
-#if !defined (_SR213_PRODUCT_REQ_) || (defined (_SR213_PRODUCT_REQ_) && !defined(RDK_ONEWIFI)) //SHARMAN-1054
+#if !defined (_HUB4_PRODUCT_REQ_) || (defined (_HUB4_PRODUCT_REQ_) && !defined(RDK_ONEWIFI)) //_HUB4_PRODUCT_REQ_ is enabled for both HUb4 and HUb6
     void *params = NULL;
 #endif
 	CcspTraceInfo(( "%s %d - Entry\n", __FUNCTION__, __LINE__ ));
@@ -484,7 +484,7 @@ CosaDml_GreInit(void)
         g_hsfdStat = NULL;
         return ANSC_STATUS_FAILURE;
     }
-#if !defined (_SR213_PRODUCT_REQ_) || (defined (_SR213_PRODUCT_REQ_) && !defined(RDK_ONEWIFI)) //SHARMAN-1054
+#if !defined (_HUB4_PRODUCT_REQ_) || (defined (_HUB4_PRODUCT_REQ_) && !defined(RDK_ONEWIFI)) //_HUB4_PRODUCT_REQ_ is enabled for both HUb4 and HUb6
 #if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
     /** In XER10 product, decide to create Hotspot circuit thread based on Hotspot feature
      ** available. Else we are getting excessive logging in devices in case if feature is not
