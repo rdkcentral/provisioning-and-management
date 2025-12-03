@@ -71,6 +71,9 @@
 #define V6_BLOCKFRAGIPPKT   "v6_BlockFragIPPkts"
 #define V6_PORTSCANPROTECT  "v6_PortScanProtect"
 #define V6_IPFLOODDETECT    "v6_IPFloodDetect"
+#define NFT_ENABLE          "nft_enable"
+#define NFT_IPV4_ERROR_FILE "/tmp/.nft4table_error"
+#define NFT_IPV6_ERROR_FILE "/tmp/.nft6table_error"
 
 #ifdef _COSA_SIM_
 
@@ -354,6 +357,76 @@ CosaDmlGatewayV4GetBlockFragIPPkts
     return ANSC_STATUS_SUCCESS;
 }
 
+ULONG
+CosaDmlGatewayNFTGetEnable
+(
+    BOOL                        *pValue
+)
+{
+    char buf[8];
+
+    syscfg_get( NULL, NFT_ENABLE, buf, sizeof(buf));
+    *pValue = (strcmp(buf, "1") == 0);
+
+    return ANSC_STATUS_SUCCESS;
+}
+
+
+// Function to check if a file exists and is empty
+int isFileEmpty(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        return -1; // file not present
+    }
+    int ch = fgetc(fp);
+    fclose(fp);
+
+    if (ch == EOF) {
+        return 1; // empty
+    } else {
+        return 0; // has content
+    }
+}
+
+
+ULONG
+CosaDmlGatewayNFTGetStatus
+(
+    ULONG                        *pValue
+)
+{
+    char buf[8];
+
+    syscfg_get( NULL, NFT_ENABLE, buf, sizeof(buf));
+    if (strcmp(buf, "1") == 0)
+    {
+	const char *file1 = NFT_IPV4_ERROR_FILE;
+	const char *file2 = NFT_IPV6_ERROR_FILE;
+
+	int f1 = isFileEmpty(file1);
+	int f2 = isFileEmpty(file2);
+
+	if (f1 == -1 && f2 == -1)
+           *pValue = 6; //Both files are not present. This is mapped to Error_Other
+	else if (f1 == 1 && f2 == 1)
+            *pValue = 2; //Enabled
+        else  if (f1 == 0 && f2 == 1)
+            *pValue = 3; //Error_IPv4
+        else  if (f1 == 1 && f2 == 0)
+            *pValue = 4; //Error_IPv6
+        else  if (f1 == 0 && f2 == 0)
+            *pValue = 5; //Error_Both
+	else
+           *pValue = 6; //Default set to Error_Other
+    }
+    else
+    {
+            *pValue = 1; //Disabled
+    }
+
+    return ANSC_STATUS_SUCCESS;
+}
+
 /**********************************************************************
 
     caller:     COSA DML
@@ -452,6 +525,27 @@ CosaDmlGatewayV4SetBlockFragIPPkts
 )
 {
     syscfg_set_commit(NULL, V4_BLOCKFRAGIPPKT, bValue ? "1" : "0");
+
+    return ANSC_STATUS_SUCCESS;
+}
+
+ULONG
+CosaDmlGatewayNFTSetEnable
+(
+    BOOL                        bValue
+)
+{
+
+    char buf[8];
+    BOOL nft_prev = 0;
+
+    syscfg_get( NULL, NFT_ENABLE, buf, sizeof(buf));
+    nft_prev = (strcmp(buf, "1") == 0);
+    if (nft_prev != bValue)
+    {
+        syscfg_set_commit(NULL, NFT_ENABLE, bValue ? "1" : "0");
+        system("reboot");
+    }
 
     return ANSC_STATUS_SUCCESS;
 }
