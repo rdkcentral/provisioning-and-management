@@ -273,8 +273,7 @@ CosaDmlNeighdiscIfSetValues
  *
  * @return The status of the operation.
  * @retval ANSC_STATUS_SUCCESS if the interface entry was successfully added, allocated by callee
- * @retval ANSC_STATUS_FAILURE if maximum number of interfaces is reached.
- * @retval NULL if no entry is found.
+ * @retval ANSC_STATUS_FAILURE if maximum number of interfaces is reached or if no entry is found.
  */
 ANSC_STATUS
 CosaDmlNeighdiscIfAddEntry

@@ -427,7 +427,7 @@ CosaDmlBlkURL_SetConf(ULONG ins, COSA_DML_BLOCKEDURL *pEntry);
 *
 * This function retrieves the count from Utopia storage.
 *
-* @return The status of the operation or number ofnumber of Trusted User entries.
+* @return The status of the operation or number of Trusted User entries.
 * @retval The number of Trusted User entries currently configured.
 * @retval ANSC_STATUS_FAILURE if the operation fails.
 *

@@ -164,7 +164,7 @@ CosaDmlTimeSetCfg
 * NTP enable status.
 *
 * @param[in] hContext  - Handle to the context.
-* @param[out] pTimeCfg  - Pointer to the Time configuration structure where retrieved settings will be stored.
+* @param[out] pTimeCfg  - Pointer to a COSA_DML_TIME_CFG structure that will be populated with the retrieved Time configuration parameters.
 
 *
 * @return The status of the operation.
