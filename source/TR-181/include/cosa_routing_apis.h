@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -162,7 +162,7 @@ _COSA_DML_ROUTING_V4_ENTRY
     ANSC_IPV4_ADDRESS               GatewayIPAddress;
     char                            Interface[64];      /* IP interface name */
     int                             ForwardingMetric;
-    COSA_DML_ROUTING_V4_ORIGIN      Origin;                                
+    COSA_DML_ROUTING_V4_ORIGIN      Origin;
     BOOLEAN                         X_CISCO_COM_RIPAdvertise;
 }
 COSA_DML_ROUTING_V4_ENTRY,  *PCOSA_DML_ROUTING_V4_ENTRY;
@@ -175,7 +175,7 @@ _COSA_DML_ROUTING_V6_ENTRY
 
     BOOLEAN                         Enable;
     COSA_DML_ROUTING_STATUS         Status;                 /* Read-only */
-    
+
     char                            DestIPPrefix[64];
     int                             ForwardingPolicy;       /* Not supported for now */
     char                            NextHop[COSA_DML_IPV6_ADDR_LENGTH];
@@ -208,16 +208,16 @@ _COSA_DML_RIP_IF_CFG
 
     CHAR                            Interface[COSA_DML_IF_NAME_LENGTH]; /* IP interface name */
     BOOLEAN                         Enable;
-    
+
     BOOLEAN                         AcceptRA;
     BOOLEAN                         SendRA;
     USHORT                          X_CISCO_COM_SendVersion;
     USHORT                          X_CISCO_COM_ReceiveVersion;
-    
+
     ULONG                           X_CISCO_COM_Neighbor;
-    
+
     ULONG                           X_CISCO_COM_AuthenticationType;
-    ULONG                           X_CISCO_COM_Md5KeyID;    
+    ULONG                           X_CISCO_COM_Md5KeyID;
     CHAR                            X_CISCO_COM_Md5KeyValue[128];
     CHAR                            X_CISCO_COM_SimplePassword[128];
 }
@@ -245,8 +245,8 @@ typedef  enum
 _COSA_DML_ROUTEINFO_PRF_TYPE
 {
     COSA_DML_ROUTEINFO_PRF_High     = 1,
-    COSA_DML_ROUTEINFO_PRF_Medium,     
-    COSA_DML_ROUTEINFO_PRF_Low     
+    COSA_DML_ROUTEINFO_PRF_Medium,
+    COSA_DML_ROUTEINFO_PRF_Low
 }
 COSA_DML_ROUTEINFO_PRF_TYPE, *PCOSA_DML_ROUTEINFO_PRF_TYPE;
 
@@ -294,7 +294,7 @@ _COSA_DML_ROUTER_FULL2
 {
     COSA_DML_ROUTER_CFG             Cfg;
     COSA_DML_ROUTER_INFO            Info;
-    
+
     SLIST_HEADER                    ForwardList;
     ULONG                           ulNextForwardInsNum;
 
@@ -309,7 +309,7 @@ _COSA_PRI_ROUTER_FULL
 {
     COSA_DML_ROUTER_CFG             Cfg;
     COSA_DML_ROUTER_INFO            Info;
-    
+
     USHORT                          ulNumOfForward;
     COSA_DML_ROUTING_V4_ENTRY       V4ForwardList[MAX_ROUTING_LIST_NUM];
 
@@ -386,7 +386,7 @@ typedef struct _COSA_DML_RIPD_CONF
     ULONG  If1SendVersion;
     ULONG  If1ReceiveVersion;
     ULONG  If1Neighbor;
-    
+
 }COSA_DML_RIPD_CONF,*PCOSA_DML_RIPD_CONF;
 
 
@@ -435,28 +435,58 @@ typedef  struct
 _COSA_DML_STATICROUTE_CFG
 {
     BOOLEAN   RIPAdvertise;
-    ULONG     DestIPAddress;       
-    ULONG     DestSubnetMask;      
-    ULONG     GatewayIPAddress;    
-    char      Name[64];            
+    ULONG     DestIPAddress;
+    ULONG     DestSubnetMask;
+    ULONG     GatewayIPAddress;
+    char      Name[64];
 }
 COSA_DML_STATICROUTE_CFG,  *PCOSA_DML_STATICROUTE_CFG;
 
 
 /*************************************
-    The actual function declaration 
+    The actual function declaration
 **************************************/
+
+/**
+ * @brief Initialize the Routing subsystem.
+ *
+ * This function initializes the routing subsystem .
+ *
+ * @param[in] hDml - Handle to the DML (Data Model Library) agent.
+ * @param[out] phContext - Pointer to handle where the routing context will be stored.
+ *                         \n Used for subsequent routing operations.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the routing subsystem was successfully initialized.
+ * @retval ANSC_STATUS_FAILURE if initialization fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingInit
     (
         ANSC_HANDLE                 hDml,
         PANSC_HANDLE                phContext
-);
+    );
 
 /*
  *  Routing Router -- assuming there is only one router in the system
  */
 
+/**
+ * @brief Set the configuration for the router instance.
+ *
+ * This function applies the configuration settings to the single router instance in the
+ * system.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pCfg - Pointer to COSA_DML_ROUTER_CFG structure containing the router
+ *                   configuration to apply.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the router configuration was successfully applied.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingRouterSetCfg
     (
@@ -464,6 +494,21 @@ CosaDmlRoutingRouterSetCfg
         PCOSA_DML_ROUTER_CFG        pCfg
     );
 
+/**
+ * @brief Retrieve the configuration for the router instance.
+ *
+ * This function retrieves the current configuration settings of the single router instance
+ * in the system.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[out] pCfg - Pointer to COSA_DML_ROUTER_CFG structure where the router
+ *                    configuration will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the router configuration was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingRouterGetCfg
     (
@@ -471,6 +516,21 @@ CosaDmlRoutingRouterGetCfg
         PCOSA_DML_ROUTER_CFG        pCfg
     );
 
+/**
+ * @brief Retrieve runtime status information for the router instance.
+ *
+ * This function retrieves the current runtime status of the single router instance in the
+ * system.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[out] pInfo - Pointer to COSA_DML_ROUTER_INFO structure where the router
+ *                     runtime information will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the router information was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingRouterGetInfo
     (
@@ -481,12 +541,42 @@ CosaDmlRoutingRouterGetInfo
 /*
  *  Routing IPv4 Forwarding
  */
+
+/**
+ * @brief Retrieve the number of IPv4 forwarding entries in the routing table.
+ *
+ * This function returns the total count of IPv4 forwarding entries (routes) currently
+ * configured in the system's routing table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ *
+ * @return The number of IPv4 forwarding entries.
+ * @retval Count of IPv4 routes (0 or positive integer).
+ *
+ */
 ULONG
 CosaDmlRoutingGetNumberOfV4Entries
     (
         ANSC_HANDLE                 hContext
     );
 
+/**
+ * @brief Retrieve an IPv4 forwarding entry by index.
+ *
+ * This function retrieves a specific IPv4 forwarding entry (route) from the system's routing
+ * table by its zero-based index. The usual process is the caller gets the total number of entries, then
+ * iterate through those by calling this API.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] ulIndex - Zero-based index of the forwarding entry to retrieve.
+ * @param[out] pEntry - Pointer to COSA_DML_ROUTING_V4_ENTRY structure where the route
+ *                      information will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the entry was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if ulIndex is invalid or retrieval fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingGetV4Entry
     (
@@ -495,6 +585,22 @@ CosaDmlRoutingGetV4Entry
         PCOSA_DML_ROUTING_V4_ENTRY  pEntry
     );
 
+/**
+ * @brief Set the backend values for an IPv4 forwarding entry.
+ *
+ * This function sets the backend values (instance number and alias) for an IPv4 forwarding
+ * entry designated by the specified index.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] ulIndex - Zero-based index of the forwarding entry to update.
+ * @param[in] ulInstanceNumber - Instance number to assign to the entry.
+ * @param[in] pAlias - Alias string to assign to the entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the backend values were successfully set.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingSetV4EntryValues
     (
@@ -504,6 +610,21 @@ CosaDmlRoutingSetV4EntryValues
         char*                       pAlias
     );
 
+/**
+ * @brief Add a new IPv4 forwarding entry to the routing table.
+ *
+ * This function adds a new IPv4 forwarding entry (static route) to the system's routing
+ * table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_ROUTING_V4_ENTRY structure containing the route
+ *                     configuration to add.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the route was successfully added.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route already exists.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingAddV4Entry
     (
@@ -511,6 +632,21 @@ CosaDmlRoutingAddV4Entry
         PCOSA_DML_ROUTING_V4_ENTRY  pEntry
     );
 
+/**
+ * @brief Delete an IPv4 forwarding entry from the routing table.
+ *
+ * This function removes an IPv4 forwarding entry (static route) from the system's routing
+ * table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_ROUTING_V4_ENTRY structure identifying the route
+ *                     to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the route was successfully deleted.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route not found.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingDelV4Entry
     (
@@ -518,6 +654,21 @@ CosaDmlRoutingDelV4Entry
         PCOSA_DML_ROUTING_V4_ENTRY  pEntry
     );
 
+/**
+ * @brief Modify an existing IPv4 forwarding entry in the routing table.
+ *
+ * This function updates the configuration of an existing IPv4 forwarding entry (static route)
+ * in the system's routing table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_ROUTING_V4_ENTRY structure containing the updated
+ *                     route configuration.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the route was successfully updated.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route not found.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingSetV4Entry
     (
@@ -525,16 +676,45 @@ CosaDmlRoutingSetV4Entry
         PCOSA_DML_ROUTING_V4_ENTRY  pEntry
     );
 
+/**
+ * @brief Retrieve an IPv4 forwarding entry by instance number.
+ *
+ * This function retrieves a specific IPv4 forwarding entry from the system's routing table
+ * by its instance number .
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in,out] pEntry - Pointer to COSA_DML_ROUTING_V4_ENTRY structure.
+ *                         \n [in] InstanceNumber must be set to identify the target route.
+ *                         \n [out] Structure populated with current route configuration.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the entry was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingGetV4Entry2
     (
         ANSC_HANDLE                 hContext,
-        PCOSA_DML_ROUTING_V4_ENTRY  pEntry     
+        PCOSA_DML_ROUTING_V4_ENTRY  pEntry
     );
 
 
 /*
  *  Routing IPv6 Forwarding
+ */
+
+/**
+ * @brief Retrieve the number of IPv6 forwarding entries in the routing table.
+ *
+ * This function returns the total count of IPv6 forwarding entries (routes) currently
+ * configured in the system's IPv6 routing table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ *
+ * @return The number of IPv6 forwarding entries.
+ * @retval Count of IPv6 routes (0 or positive integer).
+ *
  */
 ULONG
 CosaDmlRoutingGetNumberOfV6Entries
@@ -542,6 +722,22 @@ CosaDmlRoutingGetNumberOfV6Entries
         ANSC_HANDLE                 hContext
     );
 
+/**
+ * @brief Retrieve an IPv6 forwarding entry by index.
+ *
+ * This function retrieves a specific IPv6 forwarding entry (route) from the system's IPv6
+ * routing table by its zero-based index.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] ulIndex - Zero-based index of the IPv6 forwarding entry to retrieve.
+ * @param[out] pEntry - Pointer to COSA_DML_ROUTING_V6_ENTRY structure where the route
+ *                      information will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the entry was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingGetV6Entry
     (
@@ -550,6 +746,22 @@ CosaDmlRoutingGetV6Entry
         PCOSA_DML_ROUTING_V6_ENTRY  pEntry
     );
 
+/**
+ * @brief Set the backend values for an IPv6 forwarding entry.
+ *
+ * This function sets the backend values (instance number and alias) for an IPv6 forwarding
+ * entry designated by the specified index.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] ulIndex - Zero-based index of the IPv6 forwarding entry to update.
+ * @param[in] ulInstanceNumber - Instance number to assign to the entry.
+ * @param[in] pAlias - Alias string to assign to the entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the backend values were successfully set.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingSetV6EntryValues
     (
@@ -559,6 +771,21 @@ CosaDmlRoutingSetV6EntryValues
         char*                       pAlias
     );
 
+/**
+ * @brief Add a new IPv6 forwarding entry to the routing table.
+ *
+ * This function adds a new IPv6 forwarding entry (static route) to the system's IPv6 routing
+ * table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_ROUTING_V6_ENTRY structure containing the IPv6
+ *                     route configuration to add.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the IPv6 route was successfully added.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route already exists.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingAddV6Entry
     (
@@ -566,6 +793,22 @@ CosaDmlRoutingAddV6Entry
         PCOSA_DML_ROUTING_V6_ENTRY  pEntry
     );
 
+/**
+ * @brief Delete an IPv6 forwarding entry from the routing table.
+ *
+ * This function removes an IPv6 forwarding entry (static route) from the system's IPv6
+ * routing table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_ROUTING_V6_ENTRY structure identifying the route
+ *                     to delete.
+ *                     \n Identified by InstanceNumber.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the IPv6 route was successfully deleted.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route not found.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingDelV6Entry
     (
@@ -573,6 +816,22 @@ CosaDmlRoutingDelV6Entry
         PCOSA_DML_ROUTING_V6_ENTRY  pEntry      /* Identified by InstanceNumber */
     );
 
+/**
+ * @brief Modify an existing IPv6 forwarding entry in the routing table.
+ *
+ * This function updates the configuration of an existing IPv6 forwarding entry (static route)
+ * in the system's IPv6 routing table.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_ROUTING_V6_ENTRY structure containing the updated
+ *                     IPv6 route configuration.
+ *                     \n Identified by InstanceNumber.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the IPv6 route was successfully updated.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route not found.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingSetV6Entry
     (
@@ -580,6 +839,22 @@ CosaDmlRoutingSetV6Entry
         PCOSA_DML_ROUTING_V6_ENTRY  pEntry      /* Identified by InstanceNumber */
     );
 
+/**
+ * @brief Retrieve an IPv6 forwarding entry by instance number.
+ *
+ * This function retrieves a specific IPv6 forwarding entry from the system's IPv6 routing
+ * table by its instance number.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in,out] pEntry - Pointer to COSA_DML_ROUTING_V6_ENTRY structure.
+ *                         \n [in] InstanceNumber must be set to identify the target route.
+ *                         \n [out] Structure populated with current IPv6 route configuration.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the entry was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingGetV6Entry2
     (
@@ -590,6 +865,21 @@ CosaDmlRoutingGetV6Entry2
 /*
  *  RIP
  */
+
+/**
+ * @brief Retrieve the global RIP configuration.
+ *
+ * This function retrieves the current global configuration of the RIP (Routing Information
+ * Protocol) subsystem.
+ * @param[in] hContext - Handle to the routing context.
+ * @param[out] pCfg - Pointer to COSA_DML_RIP_CFG structure where the RIP configuration
+ *                    will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the RIP configuration was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRipGetCfg
     (
@@ -597,6 +887,21 @@ CosaDmlRipGetCfg
         PCOSA_DML_RIP_CFG           pCfg
     );
 
+/**
+ * @brief Set the global RIP configuration.
+ *
+ * This function applies the specified global RIP (Routing Information Protocol) configuration
+ * to the system.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pCfg - Pointer to COSA_DML_RIP_CFG structure containing the RIP configuration
+ *                   to apply.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the RIP configuration was successfully applied.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRipSetCfg
     (
@@ -607,12 +912,40 @@ CosaDmlRipSetCfg
 /*
  *  RIP interface
  */
+
+/**
+ * @brief Retrieve the number of RIP interface entries.
+ *
+ * This function returns the total count of RIP interface configuration entries.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ *
+ * @return The number of RIP interface entries.
+ * @retval Count of RIP interfaces .
+ *
+ */
 ULONG
 CosaDmlRipGetNumberOfIfEntries
     (
         ANSC_HANDLE                 hContext
     );
 
+/**
+ * @brief Retrieve the configuration of a RIP interface entry by index.
+ *
+ * This function retrieves the RIP configuration for a specific interface by its zero-based
+ * index.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] ulIndex - Zero-based index of the RIP interface entry to retrieve.
+ * @param[out] pEntry - Pointer to COSA_DML_RIP_IF_CFG structure where the interface
+ *                      configuration will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface configuration was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if ulIndex is invalid or retrieval fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRipIfGetCfg
     (
@@ -621,13 +954,43 @@ CosaDmlRipIfGetCfg
         PCOSA_DML_RIP_IF_CFG        pEntry
     );
 
+/**
+ * @brief Set the configuration for a RIP interface entry.
+ *
+ * This function applies the specified RIP configuration to an interface identified by the
+ * instance number.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_RIP_IF_CFG structure containing the interface
+ *                     configuration to apply.
+ *                     \n Identified by InstanceNumber
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface configuration was successfully applied.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRipIfSetCfg
     (
         ANSC_HANDLE                 hContext,
-        PCOSA_DML_RIP_IF_CFG        pEntry     
+        PCOSA_DML_RIP_IF_CFG        pEntry
     );
 
+/**
+ * @brief Add a new RIP interface configuration entry.
+ *
+ * This function adds a new RIP interface configuration to the system.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_RIP_IF_CFG structure containing the new interface
+ *                     configuration to add.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface configuration was successfully added.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or interface already exists.
+ *
+ */
 ANSC_STATUS
 CosaDmlRipIfAddCfg
     (
@@ -635,6 +998,21 @@ CosaDmlRipIfAddCfg
         PCOSA_DML_RIP_IF_CFG        pEntry
     );
 
+/**
+ * @brief Delete a RIP interface configuration entry.
+ *
+ * This function removes a RIP interface configuration from the system.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_RIP_IF_CFG structure identifying the interface
+ *                     configuration to delete.
+ *                     \n Identified by InstanceNumber.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface configuration was successfully deleted.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or interface not found.
+ *
+ */
 ANSC_STATUS
 CosaDmlRipIfDelCfg
     (
@@ -643,6 +1021,18 @@ CosaDmlRipIfDelCfg
     );
 
 
+/**
+ * @brief Remove and cleanup the routing subsystem.
+ *
+ * This function performs cleanup operations for the routing subsystem.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if cleanup was successful.
+ * @retval ANSC_STATUS_FAILURE if cleanup fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRoutingRemove
     (
@@ -650,6 +1040,21 @@ CosaDmlRoutingRemove
     );
 
 #if !defined (RESOURCE_OPTIMIZATION)
+/**
+ * @brief Retrieve IPv6 route information interfaces.
+ *
+ * This function retrieves information about IPv6 route information options received from
+ * router advertisements (RA) on various interfaces.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[out] pulCount - Pointer to ULONG where the count of route information entries
+ *                        will be stored.
+ *
+ * @return Pointer to array of COSA_DML_ROUTEINFO_IF_INFO structures, allocated by callee.
+ * @retval Pointer to route information array if successful.
+ * @retval NULL if no route information available or on failure.
+ *
+ */
 PCOSA_DML_ROUTEINFO_IF_INFO
 CosaDmlRoutingGetRouteInfoIf
     (
@@ -657,12 +1062,40 @@ CosaDmlRoutingGetRouteInfoIf
         PULONG                      pulCount
     );
 
+/**
+ * @brief Set the enable status for IPv6 route information processing.
+ *
+ * This function enables or disables the processing of IPv6 route information options received
+ * in router advertisements.
+ *
+ * @param[in] value - Boolean value to set route information processing.
+ *                    \n TRUE to enable, FALSE to disable.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the enable status was successfully set.
+ * @retval ANSC_STATUS_FAILURE if the operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRouteInfoSetEnabled
     (
         BOOLEAN value
     );
 
+/**
+ * @brief Retrieve the enable status for IPv6 route information processing.
+ *
+ * This function retrieves the current enable status for processing IPv6 route information
+ * options from router advertisements.
+ *
+ * @param[out] pBool - Pointer to boolean variable where the enable status will be stored.
+ *                     \n TRUE if enabled, FALSE if disabled.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the status was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if pBool is NULL or operation fails.
+ *
+ */
 ANSC_STATUS
 CosaDmlRouteInfoGetEnabled
     (
@@ -670,35 +1103,110 @@ CosaDmlRouteInfoGetEnabled
     );
 #endif
 
-ANSC_STATUS 
+/**
+ * @brief Delete a static route entry.
+ *
+ * This function removes a static route entry from the system configuration. The route is
+ * identified by the name field in the pEntry structure.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_STATICROUTE_CFG structure identifying the static
+ *                     route to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the static route was successfully deleted.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route not found.
+ *
+ */
+ANSC_STATUS
 CosaDmlStaticRouteDelEntry
     (
         ANSC_HANDLE                 hContext,
         PCOSA_DML_STATICROUTE_CFG   pEntry
     );
 
-ANSC_STATUS 
+/**
+ * @brief Add a new static route entry.
+ *
+ * This function adds a new static route to the system configuration.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_STATICROUTE_CFG structure containing the static
+ *                     route configuration to add.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the static route was successfully added.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route already exists.
+ *
+ */
+ANSC_STATUS
 CosaDmlStaticRouteAddEntry
     (
         ANSC_HANDLE                 hContext,
         PCOSA_DML_STATICROUTE_CFG   pEntry
     );
 
-ANSC_STATUS 
+/**
+ * @brief Modify an existing static route entry.
+ *
+ * This function updates the configuration of an existing static route in the system. The
+ * route is identified by the name field.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in] pEntry - Pointer to COSA_DML_STATICROUTE_CFG structure containing the updated
+ *                     static route configuration.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the static route was successfully updated.
+ * @retval ANSC_STATUS_FAILURE if the operation fails or route not found.
+ *
+ */
+ANSC_STATUS
 CosaDmlStaticRouteSetEntry
     (
         ANSC_HANDLE                 hContext,
         PCOSA_DML_STATICROUTE_CFG   pEntry
     );
 
-ANSC_STATUS 
+/**
+ * @brief Retrieve a static route entry by name.
+ *
+ * This function retrieves the configuration of a specific static route by its name. The
+ * route information is loaded from persistent storage.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[in,out] pEntry - Pointer to COSA_DML_STATICROUTE_CFG structure.
+ *                         \n [in] Name field must be set to identify the target route.
+ *                         \n [out] Structure populated with route configuration
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the static route was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if the route name is not found or operation fails.
+ *
+
+ */
+ANSC_STATUS
 CosaDmlStaticRouteGetEntryByName
     (
         ANSC_HANDLE                 hContext,
         PCOSA_DML_STATICROUTE_CFG   pEntry
     );
 
-PCOSA_DML_STATICROUTE_CFG 
+/**
+ * @brief Retrieve all static route entries.
+ *
+ * This function retrieves all static route entries currently configured in the system.
+ *
+ * @param[in] hContext - Handle to the routing context.
+ * @param[out] pulCount - Pointer to ULONG where the count of static route entries will
+ *                        be stored.
+ *
+ * @return Pointer to array of COSA_DML_STATICROUTE_CFG structures.
+ * @retval Pointer to static routes array if successful.
+ * @retval NULL if no static routes configured or on failure.
+ *
+ */
+PCOSA_DML_STATICROUTE_CFG
 CosaDmlStaticRouteGetEntries
     (
         ANSC_HANDLE                 hContext,
