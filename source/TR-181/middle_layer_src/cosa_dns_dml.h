@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -93,6 +93,17 @@
     *  Client1_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values from Device.DNS.Client.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Client1_GetParamBoolValue
     (
@@ -101,6 +112,17 @@ Client1_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.DNS.Client.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Client1_GetParamIntValue
     (
@@ -109,6 +131,17 @@ Client1_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.DNS.Client.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Client1_GetParamUlongValue
     (
@@ -117,6 +150,19 @@ Client1_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.DNS.Client.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually the size of 1023 is used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Not supported
+ */
 ULONG
 Client1_GetParamStringValue
     (
@@ -126,6 +172,17 @@ Client1_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.DNS.Client..
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Client1_SetParamBoolValue
     (
@@ -134,6 +191,17 @@ Client1_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.DNS.Client.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] value Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Client1_SetParamIntValue
     (
@@ -142,6 +210,17 @@ Client1_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.DNS.Client.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Client1_SetParamUlongValue
     (
@@ -150,6 +229,17 @@ Client1_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets string parameter values for Device.DNS.Client.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] strValue String value to set (buffer size: 256 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Client1_SetParamStringValue
     (
@@ -158,6 +248,17 @@ Client1_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates Device.DNS.Client parameter changes before commit.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name if there's a validation(buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's a validation.
+ */
 BOOL
 Client1_Validate
     (
@@ -166,12 +267,30 @@ Client1_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.DNS.Client parameter changes to persistent storage.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed, rollback should be called.
+ */
 ULONG
 Client1_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.DNS.Client parameter changes whenever there's a validation found.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 on success.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 Client1_Rollback
     (
@@ -203,12 +322,30 @@ Client1_Rollback
     *  Server1_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Gets the number of DNS server entries in Device.DNS.Client.Server table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return Number of DNS server entries.
+ */
 ULONG
 Server1_GetEntryCount
     (
         ANSC_HANDLE
     );
 
+/**
+ * @brief Gets a DNS server entry from Device.DNS.Client.Server.{i} table by index.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] nIndex Zero-based index of the entry.
+ * @param[out] pInsNumber Pointer to store instance number of the entry.
+ *
+ * @return Handle to the entry context
+ * @retval non-NULL Handle to the entry context.
+ * @retval NULL Entry not found.
+ */
 ANSC_HANDLE
 Server1_GetEntry
     (
@@ -217,6 +354,16 @@ Server1_GetEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Adds a new DNS server entry to Device.DNS.Client.Server.{i} table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pInsNumber Pointer to store instance number of newly created entry.
+ *
+ * @return Handle to the new entry context
+ * @retval non-NULL Handle to the new entry context.
+ * @retval NULL Addition failed.
+ */
 ANSC_HANDLE
 Server1_AddEntry
     (
@@ -224,6 +371,15 @@ Server1_AddEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Deletes a DNS server entry from Device.DNS.Client.Server.{i} table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] hInstance Handle to the entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ */
 ULONG
 Server1_DelEntry
     (
@@ -231,18 +387,47 @@ Server1_DelEntry
         ANSC_HANDLE                 hInstance
     );
 
+/**
+ * @brief Checks if Device.DNS.Client.Server table has been updated.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The update status.
+ * @retval TRUE if the entry table needs to be refreshed.
+ * @retval FALSE if the entry table is still current.
+ */
 BOOL
 Server1_IsUpdated
     (
         ANSC_HANDLE                  hInsContext
     );
 
+/**
+ * @brief Synchronizes Device.DNS.Client.Server table with backend data.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if successful.
+ * @retval error code otherwise.
+ */
 ULONG
 Server1_Synchronize
     (
         ANSC_HANDLE                  hInsContext
     );
 
+/**
+ * @brief Retrieves boolean parameter values from Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Server1_GetParamBoolValue
     (
@@ -251,6 +436,17 @@ Server1_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Server1_GetParamIntValue
     (
@@ -259,6 +455,17 @@ Server1_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Server1_GetParamUlongValue
     (
@@ -267,6 +474,19 @@ Server1_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Not supported.
+ */
 ULONG
 Server1_GetParamStringValue
     (
@@ -276,6 +496,17 @@ Server1_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Server1_SetParamBoolValue
     (
@@ -284,6 +515,17 @@ Server1_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] value Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Server1_SetParamIntValue
     (
@@ -292,6 +534,17 @@ Server1_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Server1_SetParamUlongValue
     (
@@ -300,6 +553,17 @@ Server1_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets string parameter values for Device.DNS.Client.Server.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] strValue String value to set (buffer size: 256 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Server1_SetParamStringValue
     (
@@ -308,6 +572,19 @@ Server1_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates Device.DNS.Client.Server.{i} parameter changes before commit.
+ *
+ * This function validates all pending parameter changes for a DNS server entry.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name if there's a validation(buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if failed.
+ */
 BOOL
 Server1_Validate
     (
@@ -316,12 +593,30 @@ Server1_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.DNS.Client.Server.{i} parameter changes to persistent storage.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed, rollback should be called.
+ */
 ULONG
 Server1_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.DNS.Client.Server.{i} parameter changes.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 on success.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 Server1_Rollback
     (
@@ -348,6 +643,17 @@ Server1_Rollback
     *  Relay_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values from Device.DNS.Relay.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Relay_GetParamBoolValue
     (
@@ -356,6 +662,17 @@ Relay_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.DNS.Relay.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Relay_GetParamIntValue
     (
@@ -364,6 +681,17 @@ Relay_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.DNS.Relay.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Relay_GetParamUlongValue
     (
@@ -372,6 +700,19 @@ Relay_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.DNS.Relay.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Not supported.
+ */
 ULONG
 Relay_GetParamStringValue
     (
@@ -381,6 +722,17 @@ Relay_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.DNS.Relay.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Relay_SetParamBoolValue
     (
@@ -389,6 +741,19 @@ Relay_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.DNS.Relay.
+ *
+ * This function sets integer parameter values for DNS relay configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] value Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Relay_SetParamIntValue
     (
@@ -397,6 +762,17 @@ Relay_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.DNS.Relay.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Relay_SetParamUlongValue
     (
@@ -405,6 +781,17 @@ Relay_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets string parameter values for Device.DNS.Relay.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] strValue String value to set (buffer size: 256 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Relay_SetParamStringValue
     (
@@ -413,6 +800,17 @@ Relay_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates Device.DNS.Relay parameter changes before commit.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name if there's a validation(buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's a validation.
+ */
 BOOL
 Relay_Validate
     (
@@ -421,12 +819,30 @@ Relay_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.DNS.Relay parameter changes to persistent storage.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed, rollback should be called.
+ */
 ULONG
 Relay_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.DNS.Relay parameter changes.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Rollback successful.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 Relay_Rollback
     (
@@ -458,12 +874,30 @@ Relay_Rollback
     *  Forwarding_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Gets the number of DNS forwarding entries in Device.DNS.Relay.Forwarding table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return Number of DNS forwarding entries.
+ */
 ULONG
 Forwarding_GetEntryCount
     (
         ANSC_HANDLE
     );
 
+/**
+ * @brief Gets a DNS forwarding entry from Device.DNS.Relay.Forwarding.{i} table by index.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] nIndex Zero-based index of the entry.
+ * @param[out] pInsNumber Pointer to store instance number of the entry.
+ *
+ * @return Handle to the entry context
+ * @retval non-NULL Handle to the entry context.
+ * @retval NULL Entry not found.
+ */
 ANSC_HANDLE
 Forwarding_GetEntry
     (
@@ -472,6 +906,16 @@ Forwarding_GetEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Adds a new DNS forwarding entry to Device.DNS.Relay.Forwarding.{i} table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pInsNumber Pointer to store instance number of newly created entry.
+ *
+ * @return Handle to the new entry context.
+ * @retval non-NULL Handle to the new entry context.
+ * @retval NULL Addition failed.
+ */
 ANSC_HANDLE
 Forwarding_AddEntry
     (
@@ -479,6 +923,15 @@ Forwarding_AddEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Deletes a DNS forwarding entry from Device.DNS.Relay.Forwarding.{i} table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] hInstance Handle to the entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ */
 ULONG
 Forwarding_DelEntry
     (
@@ -486,18 +939,47 @@ Forwarding_DelEntry
         ANSC_HANDLE                 hInstance
     );
 
+/**
+ * @brief Checks if Device.DNS.Relay.Forwarding table has been updated.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The update status.
+ * @retval TRUE if the entry table needs to be refreshed.
+ * @retval FALSE if the entry table is still current.
+ */
 BOOL
 Forwarding_IsUpdated
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Synchronizes Device.DNS.Relay.Forwarding table with backend data.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if successful.
+ * @retval error code otherwise.
+ */
 ULONG
 Forwarding_Synchronize
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Retrieves boolean parameter values from Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Forwarding_GetParamBoolValue
     (
@@ -506,6 +988,17 @@ Forwarding_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Forwarding_GetParamIntValue
     (
@@ -514,6 +1007,17 @@ Forwarding_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Forwarding_GetParamUlongValue
     (
@@ -522,6 +1026,19 @@ Forwarding_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Not supported.
+ */
 ULONG
 Forwarding_GetParamStringValue
     (
@@ -531,6 +1048,17 @@ Forwarding_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Forwarding_SetParamBoolValue
     (
@@ -539,6 +1067,17 @@ Forwarding_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] value Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Forwarding_SetParamIntValue
     (
@@ -547,6 +1086,17 @@ Forwarding_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Forwarding_SetParamUlongValue
     (
@@ -555,6 +1105,17 @@ Forwarding_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets string parameter values for Device.DNS.Relay.Forwarding.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] strValue String value to set (buffer size: 256 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 Forwarding_SetParamStringValue
     (
@@ -563,6 +1124,17 @@ Forwarding_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates Device.DNS.Relay.Forwarding.{i} parameter changes before commit.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name if there's a validation(buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's a validation.
+ */
 BOOL
 Forwarding_Validate
     (
@@ -571,12 +1143,30 @@ Forwarding_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.DNS.Relay.Forwarding.{i} parameter changes to persistent storage.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed, rollback should be called.
+ */
 ULONG
 Forwarding_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.DNS.Relay.Forwarding.{i} parameter changes whenever there's a validation found.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Rollback successful.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 Forwarding_Rollback
     (
@@ -610,6 +1200,17 @@ Forwarding_Rollback
     *  NSLookupDiagnostics_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 NSLookupDiagnostics_GetParamBoolValue
     (
@@ -618,6 +1219,17 @@ NSLookupDiagnostics_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 NSLookupDiagnostics_GetParamIntValue
     (
@@ -626,6 +1238,17 @@ NSLookupDiagnostics_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 NSLookupDiagnostics_GetParamUlongValue
     (
@@ -634,6 +1257,19 @@ NSLookupDiagnostics_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Not supported.
+ */
 ULONG
 NSLookupDiagnostics_GetParamStringValue
     (
@@ -643,6 +1279,17 @@ NSLookupDiagnostics_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets boolean parameter values for Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 NSLookupDiagnostics_SetParamBoolValue
     (
@@ -651,6 +1298,17 @@ NSLookupDiagnostics_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets integer parameter values for Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] value Integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 NSLookupDiagnostics_SetParamIntValue
     (
@@ -659,6 +1317,17 @@ NSLookupDiagnostics_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets unsigned long parameter values for Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 NSLookupDiagnostics_SetParamUlongValue
     (
@@ -667,6 +1336,17 @@ NSLookupDiagnostics_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets string parameter values for Device.DNS.Diagnostics.NSLookupDiagnostics.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to set (buffer size: 256 bytes).
+ * @param[in] strValue String value to set (buffer size: 256 bytes).
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter set successfully.
+ * @retval FALSE Parameter not found or setting failed.
+ */
 BOOL
 NSLookupDiagnostics_SetParamStringValue
     (
@@ -675,6 +1355,18 @@ NSLookupDiagnostics_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates Device.DNS.Diagnostics.NSLookupDiagnostics parameter changes before commit.
+ *
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[out] pReturnParamName Buffer to store parameter name if there's a validation(buffer size: 128 bytes).
+ * @param[out] puLength Pointer to store length of parameter name.
+ *
+ * @return The status of the validation.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's a validation.
+ */
 BOOL
 NSLookupDiagnostics_Validate
     (
@@ -683,12 +1375,30 @@ NSLookupDiagnostics_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits Device.DNS.Diagnostics.NSLookupDiagnostics parameter changes and starts test.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Commit successful.
+ * @retval non-zero Commit failed, rollback should be called.
+ */
 ULONG
 NSLookupDiagnostics_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back Device.DNS.Diagnostics.NSLookupDiagnostics parameter changes whenever there is a validation found.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval 0 Rollback successful.
+ * @retval Non-zero error code otherwise.
+ */
 ULONG
 NSLookupDiagnostics_Rollback
     (
@@ -711,12 +1421,30 @@ NSLookupDiagnostics_Rollback
     *  Result_GetParamStringValue
 
 ***********************************************************************/
+/**
+ * @brief Gets the number of NSLookup result entries in Device.DNS.Diagnostics.NSLookupDiagnostics.Result table.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return Number of NSLookup result entries.
+ */
 ULONG
 Result_GetEntryCount
     (
         ANSC_HANDLE
     );
 
+/**
+ * @brief Gets an NSLookup result entry from Device.DNS.Diagnostics.NSLookupDiagnostics.Result.{i} table by index.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] nIndex Zero-based index of the entry.
+ * @param[out] pInsNumber Pointer to store instance number of the entry.
+ *
+ * @return Handle to the entry context
+ * @retval non-NULL Handle to the entry context.
+ * @retval NULL Entry not found.
+ */
 ANSC_HANDLE
 Result_GetEntry
     (
@@ -725,18 +1453,47 @@ Result_GetEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Checks if Device.DNS.Diagnostics.NSLookupDiagnostics.Result table has been updated.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The update status.
+ * @retval TRUE if the entry table needs to be refreshed.
+ * @retval FALSE if the entry table is still current.
+ */
 BOOL
 Result_IsUpdated
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Synchronizes Device.DNS.Diagnostics.NSLookupDiagnostics.Result table with backend data.
+ *
+ * @param[in] hInsContext Instance context handle.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if successful.
+ * @retval error code otherwise.
+ */
 ULONG
 Result_Synchronize
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Retrieves boolean parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.Result.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pBool Pointer to store boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Result_GetParamBoolValue
     (
@@ -745,6 +1502,17 @@ Result_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves integer parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.Result.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pInt Pointer to store integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Result_GetParamIntValue
     (
@@ -753,6 +1521,17 @@ Result_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves unsigned long parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.Result.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pUlong Pointer to store unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE Parameter retrieved successfully.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Result_GetParamUlongValue
     (
@@ -761,6 +1540,19 @@ Result_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves string parameter values from Device.DNS.Diagnostics.NSLookupDiagnostics.Result.{i}.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Parameter name to retrieve (buffer size: 256 bytes).
+ * @param[out] pValue Buffer to store string value (buffer size: *pUlSize bytes).
+ * @param[in,out] pUlSize Input: buffer size, Output: required/actual size in bytes. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small.
+ * @retval -1 Not supported.
+ */
 ULONG
 Result_GetParamStringValue
     (
