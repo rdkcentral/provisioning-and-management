@@ -30,8 +30,47 @@
 #include "libHotspotApi.h"
 #include <syscfg/syscfg.h>
 
+/**
+* @brief Unpack and process hotspot webconfig data.
+*
+* This function decodes the input base64 string, unpacks the msgpack data,
+* extracts GRE tunnel and WiFi VAP configurations, validates their consistency,
+* and triggers a multi-component execution request to apply the hotspot settings.
+*
+* @param[in] pString - Pointer to a null-terminated string containing the base64-encoded
+*                      hotspot configuration data in msgpack format.
+*
+* @return The status of the operation.
+* @retval TRUE if the data is successfully unpacked, validated, and queued for processing.
+* @retval FALSE if decoding fails, msgpack unpacking fails, validation fails, or if the data is corrupted.
+*
+*/
 BOOL unpackAndProcessHotspotData(char* pString);
+
+/**
+* @brief Initialize the hotspot webconfig subsystem.
+*
+* This function initializes the hotspot webconfig functionality by checking if the
+* WebConfig RFC is enabled and if a hotspot blob file exists.
+*
+* @return void
+*
+*/
 void wbInitializeHotspot();
+
+/**
+* @brief Free memory allocated for hotspot webconfig execution.
+*
+* This function frees all memory resources allocated during hotspot webconfig processing,
+* including execution data structures, policy sequence details, tunnel document data,
+* WiFi encoded data, and multi-component execution information.
+*
+* @param[in] arg - Pointer to the execData structure containing hotspot execution data
+*                  and associated resources to be freed.
+*
+* @return void
+*
+*/
 void freeMem_hotspot(void* arg);
 
 #endif
