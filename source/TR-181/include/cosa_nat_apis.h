@@ -77,6 +77,11 @@
 #define HS_PORT_FORWARD_ENABLED_KEY "port_hs_forward_enabled"
 #define NAT_FORWARD_ENABLED_KEY "nat_forward_enabled"
 
+extern volatile bool gWanStatus ; 
+#if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+extern volatile int gMaptTotalPorts ;
+extern volatile bool gMaptEnabled ;
+#endif
 
 /***********************************
     Actual definition declaration
@@ -778,6 +783,8 @@ IsPortOverlapWithSpeedboostPortRange(int ExternalPort, int ExternalPortEndRange,
  * @retval ANSC_STATUS_FAILURE if retrieval fails.
  */
 //if defined (_XB6_PRODUCT_REQ_) || defined (_XB7_PRODUCT_REQ_)
+#define SYSEVENT_MAPT_TOTAL_PORTS "mapt_total_ports"
+#define SYSEVENT_MAPT_CONFIG_FLAG "mapt_config_flag"
 
 ANSC_STATUS
 CosaDmlNatGetActiveIPv4UdpInternalPorts
@@ -819,7 +826,6 @@ CosaDmlNatGetActiveIPv4TcpInternalPorts
  * @retval -1 error code if retrieval fails.
  */
 int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize);
-
 /**
  * @brief Count unique active ports for the specified protocol.
  *
@@ -832,7 +838,7 @@ int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize);
  * @retval Non-zero Count of unique active ports for the specified protocol.
  * @retval 0 if no active ports found or on error.
  */
-int count_unique_ports(const char *proto) ;
+int count_unique_ports(const char *proto, bool neededNATSessionCount);
 
 #endif
 #endif
