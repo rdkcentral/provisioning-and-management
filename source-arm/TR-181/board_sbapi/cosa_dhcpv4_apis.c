@@ -2608,7 +2608,7 @@ CosaDmlDhcpsGetPoolInfo
         {
             /* Get DHCP Server Status */             
             sysevent_get(se_fd, se_token, "dhcp_server-status", dhcp_status, sizeof(dhcp_status));
-
+            sysevent_close(se_fd,se_token);
             AnscTraceFlow(("%s: dhcp_status = %s\n", __FUNCTION__, dhcp_status));
              
         }
