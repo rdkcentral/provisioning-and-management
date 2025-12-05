@@ -31,24 +31,69 @@ _COSA_DATAMODEL_XPC
 COSA_DATAMODEL_XPC,  *PCOSA_DATAMODEL_XPC;
 
 /*
-    Standard function declaration 
+    Standard function declaration
+*/
+/**
+* @brief Enable XPC service.
+*
+* @param[in] hThisObject  - Handle to XPC object.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if XPC is enabled successfully.
+* @retval ANSC_STATUS_FAILURE if platform HAL operation fails.
+*
 */
 ANSC_STATUS CosaXpcEnable(ANSC_HANDLE hThisObject);
 
+/**
+* @brief Disable XPC service.
+*
+* @param[in] hThisObject  - Handle to XPC object.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if XPC is disabled successfully.
+* @retval ANSC_STATUS_FAILURE if platform HAL operation fails.
+*
+*/
 ANSC_STATUS CosaXpcDisable(ANSC_HANDLE hThisObject);
 
+/**
+ * @brief Create the RDKCentral XPC backend object.
+ *
+ * @return Handle to the newly created XPC backend object.
+ * @retval Non-NULL Handle to the newly created XPC backend object.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaXpcCreate
     (
         VOID
     );
 
+/**
+ * @brief Initialize the RDKCentral XPC backend.
+ *
+ * @param[in] hThisObject Handle to the XPC backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval Error code otherwise.
+ */
 ANSC_STATUS
 CosaXpcInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Remove and cleanup the RDKCentral XPC backend.
+ *
+ * @param[in] hThisObject Handle to the XPC backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful cleanup.
+ * @retval Error code otherwise.
+ */
 ANSC_STATUS
 CosaXpcRemove
     (

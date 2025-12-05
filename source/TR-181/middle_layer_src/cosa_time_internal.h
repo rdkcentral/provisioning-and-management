@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,7 +74,7 @@
     COSA_DML_TIME_CFG                           TimeCfg;                    \
     COSA_DML_TIME_STATUS                        TimeStatus;                 \
     ANSC_UNIVERSAL_TIME                         CurrLocalTime;              \
-    
+
 
 typedef  struct
 _COSA_DATAMODEL_TIME_CLASS_CONTENT
@@ -86,18 +86,43 @@ COSA_DATAMODEL_TIME, *PCOSA_DATAMODEL_TIME;
 /*
     Standard function declaration
 */
+/**
+ * @brief Creates a new Time backend object.
+ *
+ * @return Handle to the newly created Time backend object, or NULL on failure.
+ * @retval Non-NULL handle to the newly created Time backend object.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaTimeCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the Time backend object.
+ *
+ * @param[in] hThisObject Handle to the Time backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaTimeInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the Time backend object.
+ *
+ * @param[in] hThisObject Handle to the Time backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaTimeRemove
     (

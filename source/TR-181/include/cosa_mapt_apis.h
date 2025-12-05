@@ -214,6 +214,7 @@
 /*
  * Enums and structure definition
  */
+
 typedef enum
 _RETURN_STATUS
 {
@@ -269,16 +270,19 @@ _COSA_DML_MAPT_OPTION
 /*************************************
     The actual function declaration
 **************************************/
-/*
- * Description:
- *   This routine parses the option-95 response and sets the configs required.
- * Arguments:
- *   pPdIPv6Prefix       Obtained IPv6 prefix through prefix delegation.
- *   uiPdIPv6PrefixLen   IPv6 prefix length.
- *   pOptionBuf          Buffer containing option-95 response.
- *   uiOptionBufLen      Response buffer length.
- * Return:
- *   Status of operation.
+
+/**
+ * @brief Process DHCPv6 option-95 response and configure MAPT.
+ *
+ * This function parses the DHCPv6 option-95 response received from the DHCPv6 server and configures MAP-T
+ * on the Customer Edge (CE) device.
+ *
+ * @param[in] pPdIPv6Prefix  IPv6 prefix obtained through DHCPv6 Prefix Delegation.
+ * @param[in] pOptionBuf  Buffer containing DHCPv6 option-95 response data in hexadecimal string format.
+ *
+ * @return The status of the MAPT configuration operation.
+ * @retval ANSC_STATUS_SUCCESS if MAPT is successfully configured and applied.
+ * @retval ANSC_STATUS_FAILURE if any error occurs during parsing, computation, or configuration.
  */
 ANSC_STATUS
 CosaDmlMaptProcessOpt95Response
