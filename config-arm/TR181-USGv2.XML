@@ -3903,7 +3903,7 @@
                                 </parameter>
                                 </parameters>
                         </object>
-<?ifdef _XB6_PRODUCT_REQ_ | _XB7_PRODUCT_REQ_ | _SCER11BEL_PRODUCT_REQ_?>
+<?ifdef _XB6_PRODUCT_REQ_ | _XB7_PRODUCT_REQ_ | _SCER11BEL_PRODUCT_REQ_ | _SCXF11BFL_PRODUCT_REQ_?>
                         <object>
                             <name>XHFW</name>
                             <objectType>object</objectType>

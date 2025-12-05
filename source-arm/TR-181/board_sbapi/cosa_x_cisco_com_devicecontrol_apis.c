@@ -2049,12 +2049,12 @@ void* restoreAllDBs(void* arg)
      v_secure_system("syscfg commit");
 #endif     
 
-#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SE501_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SE501_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
   /* wipe out all user data including any debug flags which could produce lot of data.  without invalidate flash memory, /nvram/secure end up corrupting if using rm -rf *. */
 //        v_secure_system("sync; find /nvram /nvram2 /data -mindepth 1 | grep -vE \"Q[[:xdigit:]]{8}$\" | xargs rm -r; sync");  /* remove all files from user directory */
 	v_secure_system("sync;find /nvram /nvram2 /data ! \\( -path '/nvram/.partner_ID' -o -regex '.*/Q[[:xdigit:]]\\{8\\}$' -o -path '/nvram/.apply_partner_defaults' \\) -mindepth 1 | xargs rm -r; sync");
 	// set lastreboot reason directly into db
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 /* run another cleanup just to make sure if above script did not clean it */
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         //voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
@@ -2065,7 +2065,7 @@ void* restoreAllDBs(void* arg)
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
        // set factory_reset flag directory into db to restore the db value in bootup case
-#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
         v_secure_system("echo \"factory_reset=y\" >> /nvram/secure/data/syscfg.db");
 #endif
 
@@ -2690,7 +2690,7 @@ CosaDmlDcSetFactoryReset
 		CcspTraceWarning(("FactoryReset:%d  case is both WIFI and Router removing DB\n",__LINE__));
 		v_secure_system("rm -f /nvram/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
 		v_secure_system("rm -f /opt/secure/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 /* clean up BRCM nvram */
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");

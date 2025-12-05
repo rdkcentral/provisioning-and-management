@@ -8586,7 +8586,7 @@ void CosaDmlDhcpv6sRebootServer()
 
     fd = open(DHCPV6S_SERVER_PID_FILE, O_RDONLY);
 /* dibbler-server process start fix for HUB4 and ADA */
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
     FILE *fp_bin = NULL;
     char binbuff[64] = {0};
     fp_bin = v_secure_popen("r","ps|grep %s|grep -v grep", SERVER_BIN);
@@ -11053,7 +11053,7 @@ dhcpv6c_dbg_thrd(void * in)
                             CcspTraceWarning(("%s,%d: setting lan-restart\n", __FUNCTION__,__LINE__));
                             commonSyseventSet("lan-restart", "1");
 
-#if defined (_SKY_HUB_COMMON_PRODUCT_REQ_) || defined(INTEL_PUMA7) || defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SKY_HUB_COMMON_PRODUCT_REQ_) || defined(INTEL_PUMA7) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
                             CcspTraceDebug(("%s,%d: Calling CosaDmlDHCPv6sTriggerRestart(FALSE)...\n", __FUNCTION__, __LINE__));
                             CosaDmlDHCPv6sTriggerRestart(FALSE);
 #endif /* _SKY_HUB_COMMON_PRODUCT_REQ_ and INTEL_PUMA7 */
