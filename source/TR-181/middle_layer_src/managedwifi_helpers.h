@@ -54,21 +54,23 @@ typedef struct mg_wifi_appenddoc_struct{
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
 /**
- *  Simple helper function that decodes the msgpack, then checks for a few
- *  sanity items (including an optional wrapper map) before calling the process
- *  argument passed in.  This also allocates the structure for the caller.
+ * @brief Helper function to decode msgpack buffer for managed WiFi webconfig.
  *
- *  @param buf          the buffer to decode
- *  @param len          the length of the buffer in bytes
- *  @param struct_size  the size of the structure to allocate and pass to process
- *  @param wrapper      the optional wrapper to look for & enforce
- *  @param expect_type  the type of object expected
- *  @param optional     if the inner wrapper layer is optional
- *  @param process      the process function to call if successful
- *  @param destroy      the destroy function to call if there was an error
+ * This function decodes a msgpack buffer, validates structure including optional wrapper map,
+ * allocates the structure and calls the process function for managed WiFi configurations.
  *
- *  @returns the object after process has done it's magic to it on success, or
- *           NULL on error
+ * @param[in] buf Buffer to decode.
+ * @param[in] len Length of buffer in bytes.
+ * @param[in] struct_size Size of structure to allocate and pass to process.
+ * @param[in] wrapper Optional wrapper name to look for and enforce.
+ * @param[in] expect_type Type of msgpack object expected.
+ * @param[in] optional Whether the inner wrapper layer is optional.
+ * @param[in] process Process function to call if successful.
+ * @param[in] destroy Destroy function to call if there was an error.
+ *
+ * @returns the object after process has done it's magic to it on success
+ * @retval Pointer to processed object on success.
+ * @retval NULL on error.
  */
 void* comp_mw_helper_convert( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
@@ -76,11 +78,64 @@ void* comp_mw_helper_convert( const void *buf, size_t len,
                       process_fn_t process,
                       destroy_fn_t destroy );
 
+/**
+ * @brief Packs managed WiFi appenddoc structure into msgpack format.
+ *
+ * This function serializes a managed WiFi appenddoc structure into msgpack binary format for webconfig transmission.
+ *
+ * @param[in] appenddocData Pointer to mg_wifi_appenddoc_t structure to pack.
+ * @param[out] data Pointer to output buffer pointer.
+ *
+ * @return Size of packed msgpack data in bytes.
+ * @retval Size in bytes if successful.
+ * @retval 0 on failure.
+ */
 size_t mg_wifi_pack_appenddoc(const mg_wifi_appenddoc_t *appenddocData,void **data);
 
+/**
+ * @brief Appends managed WiFi document with metadata to webconfig.
+ *
+ * This function creates a complete managed WiFi subdocument with version and transaction tracking for webconfig processing.
+ *
+ * @param[in] subdoc_name Subdocument name.
+ * @param[in] version Subdocument version number.
+ * @param[in] trans_id Transaction ID.
+ * @param[in] blob_data WiFi configuration blob data.
+ * @param[in] blob_size Size of blob data in bytes.
+ *
+ * @return Pointer to allocated complete document string.
+ * @retval Pointer to document string if successful (caller must free).
+ * @retval NULL on failure.
+ */
 char * mg_append_wifi_doc(char * subdoc_name, uint32_t version, uint16_t trans_id, char * blob_data, size_t blob_size);
 
+/**
+ * @brief Appends encoded managed WiFi data and metadata to buffer.
+ *
+ * This function combines encoded managed WiFi configuration data with metadata, allocating output buffer.
+ *
+ * @param[out] appendData Pointer to output buffer pointer.
+ * @param[in] encodedBuffer Encoded WiFi data buffer.
+ * @param[in] encodedSize Size of encoded data in bytes.
+ * @param[in] metadataPack Packed metadata buffer.
+ * @param[in] metadataSize Size of metadata in bytes.
+ *
+ * @return Appended total buffer size.
+ * @retval Total buffer size in bytes if successful.
+ * @retval 0 or less than 1 on failure.
+ */
 size_t mg_appendWifiEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize );
-
+/**
+* @brief Encode managed WiFi blob data to base64 format.
+*
+* This function encodes managed WiFi configuration blob data to base64 string format for transmission.
+*
+* @param[in] blob_data - Pointer to the WiFi configuration blob data to be encoded.
+* @param[in] blob_size - Size of the blob data in bytes.
+*
+* @return Pointer to base64 encoded string.
+* @retval Pointer to a null-terminated base64 encoded string on success.
+* @retval NULL on memory allocation failure.
+*/
 char * base64wifiblobencoder(char * blob_data, size_t blob_size );
 #endif

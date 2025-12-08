@@ -182,7 +182,9 @@ int fwSync = 0;
 #include "syscfg/syscfg.h"
 
 #include "platform_hal.h"
+#ifndef PON_GATEWAY
 #include "cm_hal.h"
+#endif
 
 #define HTTPD_CONF      "/var/lighttpd.conf"
 #define HTTPD_DEF_CONF  "/etc/lighttpd.conf"
@@ -864,7 +866,7 @@ CosaDmlDcGetWanStaticIPAddress
 ANSC_STATUS 
 CosaDmlDcSetReInitCmMac ()
 {
-
+#ifndef PON_GATEWAY
     if(cm_hal_ReinitMac() == 0)
     {
        return ANSC_STATUS_SUCCESS;
@@ -873,7 +875,8 @@ CosaDmlDcSetReInitCmMac ()
     {
        return ANSC_STATUS_FAILURE;
     }
-    
+#endif
+    return ANSC_STATUS_FAILURE;
 }
 ANSC_STATUS
 CosaDmlDcGetWanStaticSubnetMask
@@ -2001,11 +2004,7 @@ void* restoreAllDBs(void* arg)
             else
             {
                 // we are the child
-#ifdef ARRIS_XB3_PLATFORM_CHANGES
-                char *args[] = {"rpcclient", urlPtr, "/bin/rm -f /nvram/syscfg.db /nvram/.keys/vyinerkyo.wyr", (char *) 0 };
-#else
                 char *args[] = {"rpcclient", urlPtr, "/bin/rm -f /nvram/syscfg.db", (char *) 0 };
-#endif
                 execv(args[0], args);
                 _exit(EXIT_FAILURE);   // exec never returns
             }
@@ -2046,7 +2045,7 @@ void* restoreAllDBs(void* arg)
         v_secure_system("touch /nvram/brcm_wifi_factory_reset"); 
 #endif
 
-#if  defined (_XB10_PRODUCT_REQ_)
+#if  defined (_XB10_PRODUCT_REQ_) ||  defined(WAN_MANAGER_UNIFICATION_ENABLED) //If Wan unification is enabled. clear the ethwan flags on FR. The Wan Manager should configure this based on the scanning policy.
      v_secure_system("rm -f /nvram/ethwan_interface"); 
      v_secure_system("rm -f /nvram/ETHWAN_ENABLE"); 
      v_secure_system("syscfg set selected_wan_mode 2");
@@ -2335,10 +2334,7 @@ CosaDmlDcSetFactoryReset
 #endif
 
 #if defined(_SR213_PRODUCT_REQ_) || defined(FEATURE_RDKB_LED_MANAGER_FACTORY_RESET)
-               if( (factory_reset_mask & FR_ROUTER) ||
-                   (factory_reset_mask & FR_WIFI) ||
-                   (factory_reset_mask & FR_FW) ||
-                   (factory_reset_mask & FR_OTHER) ) {
+               if( (factory_reset_mask & FR_ROUTER) ) {
                     CcspTraceInfo(("LED Transition: GREEN LED will blink, Reason: Factory Reset\n"));
                     sysevent_led_fd = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "FactoryResetHandler", &sysevent_led_token);
                     if(sysevent_led_fd != -1)
@@ -2387,7 +2383,7 @@ CosaDmlDcSetFactoryReset
 	   	CcspTraceError(("FactoryReset:%s BAD parameter passed to factory defaults parameter ...\n",__FUNCTION__));
 		return ANSC_STATUS_BAD_PARAMETER;
 	    }
-#if (defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)) && defined (_COSA_BCM_ARM_) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined(_COSA_BCM_MIPS_) || defined(_XER5_PRODUCT_REQ_)
+#if (defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)) && defined (_COSA_BCM_ARM_) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined(_COSA_BCM_MIPS_) || defined(_XER5_PRODUCT_REQ_) || defined (_PLATFORM_BANANAPI_R4_)
                 {
                         unsigned int dbValue = 0;
                         FILE *pdbFile = NULL;
@@ -3433,14 +3429,6 @@ CosaDmlDcSetReinitMacThreshold
         ULONG                       value
     )
 {
-#ifdef ARRIS_XB3_PLATFORM_CHANGES
-    UNREFERENCED_PARAMETER(hContext);
-    if ( cm_hal_set_ReinitMacThreshold(value) != RETURN_OK )
-        return ANSC_STATUS_FAILURE;
-    else
-        return ANSC_STATUS_SUCCESS;
-
-#else
     UNREFERENCED_PARAMETER(hContext);
     char buf[12];
     errno_t safec_rc = -1;
@@ -3459,7 +3447,6 @@ CosaDmlDcSetReinitMacThreshold
     {
         return ANSC_STATUS_SUCCESS;
     }
-#endif
 }
 
 ANSC_STATUS
@@ -3469,14 +3456,6 @@ CosaDmlDcGetReinitMacThreshold
         ULONG                       *pValue
     )
 {
-#ifdef ARRIS_XB3_PLATFORM_CHANGES
-    UNREFERENCED_PARAMETER(hContext);
-    if ( cm_hal_get_ReinitMacThreshold(pValue) != RETURN_OK )
-        return ANSC_STATUS_FAILURE;
-    else
-        return ANSC_STATUS_SUCCESS;
-
-#else
     char buf[12];
 
     if( (syscfg_get( NULL, "rdkbReinitMacThreshold", buf, sizeof(buf))) == 0 )
@@ -3489,7 +3468,6 @@ CosaDmlDcGetReinitMacThreshold
     	CosaDmlDcSetReinitMacThreshold(hContext, *pValue);
     }
     return ANSC_STATUS_SUCCESS;
-#endif
 }
 
 ANSC_STATUS

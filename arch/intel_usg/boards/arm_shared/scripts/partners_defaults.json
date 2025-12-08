@@ -2,7 +2,7 @@
    "properties" : {
 
       "comments" : "MANDATORY: !!! Please increment below version value for any new parameter added in this partners_defaults.json !!!",
-      "version" : "8.31"
+      "version" : "8.32"
    },
 
    "comcast" : {
@@ -446,7 +446,8 @@
                 "Device.X_RDK_WebConfig.SupplementaryServiceUrls.Telemetry" : "https://cpe-profile-sky-uk.wp.xdp.comcast.net/api/v1/device/{mac}/config",
                 "Device.X_RDKCENTRAL-COM_Webpa.Server.URL" : "https://fabric.xmidt-eu.comcast.net:8080",
                 "Device.X_RDKCENTRAL-COM_Webpa.TokenServer.URL" : "https://issuer.xmidt-eu.comcast.net:8080/issue",
-                "Device.X_RDKCENTRAL-COM_Webpa.DNSText.URL" : "fabric.xmidt-eu.comcast.net"
+                "Device.X_RDKCENTRAL-COM_Webpa.DNSText.URL" : "fabric.xmidt-eu.comcast.net",
+                "Device.WiFi.X_RDKCENTRAL-COM_Syndication.WiFiRegion.Code" : "IE"
         }
       },
       "apply_value_to_sysevent" : {
