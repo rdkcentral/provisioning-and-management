@@ -28,7 +28,7 @@ typedef struct
     char *   lan_subnet_mask;
     char *   dhcp_start_ip_address;
     char *   dhcp_end_ip_address;
-    uint32_t leasetime;      
+    uint32_t leasetime;
 } lanparam_t;
 
 typedef struct {
@@ -38,29 +38,44 @@ typedef struct {
     uint32_t     version;
     uint16_t     transaction_id;
 } landoc_t;
+
 /**
- *  This function converts a msgpack buffer into an landoc_t structure
- *  if possible.
- *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
- *
- *  @return NULL on error, success otherwise
- */
+* @brief Convert a msgpack buffer into a landoc_t structure.
+*
+* @param[in] buf  - Pointer to the msgpack buffer to convert.
+* @param[in] len  - Length of the buffer in bytes.
+*
+* @return Pointer to the landoc_t structure.
+* @retval Pointer to a newly allocated landoc_t structure on success.
+* @retval NULL on error.
+*
+*/
 landoc_t* landoc_convert( const void *buf, size_t len );
+
 /**
- *  This function destroys an landoc_t object.
- *
- *  @param e the landoc to destroy
- */
+* @brief Destroy a landoc_t object and free all allocated memory.
+*
+* @param[in] d  - Pointer to the landoc_t structure to destroy.
+*
+* @return None.
+*
+*/
 void landoc_destroy( landoc_t *d );
+
 /**
- *  This function returns a general reason why the conversion failed.
- *
- *  @param errnum the errno value to inspect
- *
- *  @return the constant string (do not alter or free) describing the error
- */
+* @brief Get an error message string for a given error number.
+*
+* @param[in] errnum  - The error number to inspect.
+*
+* @return Pointer to a constant string describing the error.
+* @retval "No errors." if errnum is OK.
+* @retval "Out of memory." if errnum is OUT_OF_MEMORY.
+* @retval "Invalid first element." if errnum is INVALID_FIRST_ELEMENT.
+* @retval "Invalid 'version' value." if errnum is INVALID_VERSION.
+* @retval "Invalid 'value' array." if errnum is INVALID_OBJECT.
+* @retval "Unknown error." if errnum does not match any known error code.
+*
+*/
 const char* landoc_strerror( int errnum );
 #endif
 
