@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -245,6 +245,17 @@ _COSA_DML_PPP_IF_FULL
 COSA_DML_PPP_IF_FULL, *PCOSA_DML_PPP_IF_FULL;
 
 
+/**
+ * @brief Initialize the Point-to-Point Protocol (PPP) interface subsystem.
+ *
+ * This function initializes the PPP interface subsystem during component startup.
+ *
+ * @param[in] hDml - Handle to the Data Model Library context.
+ * @param[in,out] phContext - Pointer to handle for storing the initialized context.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if initialization completed successfully.
+ */
 ANSC_STATUS
 CosaDmlPppInit
     (
@@ -252,6 +263,18 @@ CosaDmlPppInit
         PANSC_HANDLE                phContext
     );
 
+/**
+ * @brief Retrieve the supported Network Control Protocols (NCPs) for PPP.
+ *
+ * This function retrieves a bitmask indicating which Network Control Protocols
+ * are supported by the PPP implementation.
+ *
+ * @param[in] hContext - Handle to the PPP context.
+ * @param[out] puLong - Pointer to ULONG where the supported NCPs bitmask will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the supported NCPs were successfully retrieved.
+ */
 ANSC_STATUS
 CosaDmlPPPGetSupportedNCPs
     (
@@ -262,12 +285,39 @@ CosaDmlPPPGetSupportedNCPs
 /*
  *  PPP Interface
  */
+
+/**
+ * @brief Retrieve the number of PPP interface entries.
+ *
+ * This function retrieves the total number of PPP interface entries currently
+ * configured in the system.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ *
+ * @return The number of PPP interface entries in the system.
+ * @retval Actual number of configured PPP interface entries.
+ */
 ULONG
 CosaDmlPppIfGetNumberOfEntries
     (
         ANSC_HANDLE                 hContext
     );
 
+/**
+ * @brief Retrieve the complete information of a PPP interface entry by index.
+ *
+ * This function retrieves the full configuration and status information for a PPP
+ * interface designated by the specified index.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] ulIndex - Zero-based index of the PPP interface entry to retrieve.
+ * @param[out] pEntry - Pointer to COSA_DML_PPP_IF_FULL structure where the interface
+ *                      information will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface entry was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if pEntry is NULL or index is out of range.
+ */
 ANSC_STATUS
 CosaDmlPppIfGetEntry
     (
@@ -276,6 +326,20 @@ CosaDmlPppIfGetEntry
         PCOSA_DML_PPP_IF_FULL       pEntry
     );
 
+/**
+ * @brief Set the instance number and alias for a PPP interface entry.
+ *
+ * This backend implementation function is used to update the instance number and alias
+ * for a PPP interface entry.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] ulIndex - Zero-based index of the interface entry to update.
+ * @param[in] ulInstanceNumber - The instance number to assign to the interface entry.
+ * @param[in] pAlias - Pointer to a null-terminated string containing the alias name.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the values were successfully set.
+ */
 ANSC_STATUS
 CosaDmlPppIfSetValues
     (
@@ -285,6 +349,19 @@ CosaDmlPppIfSetValues
         char*                       pAlias
     );
 
+/**
+ * @brief Add a new PPP interface entry to the system.
+ *
+ * This function adds a new PPP interface entry to the system's interface table.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] pEntry - Pointer to COSA_DML_PPP_IF_FULL structure containing the complete
+ *                     interface configuration and information to be added.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface entry was successfully added.
+ * @retval ANSC_STATUS_FAILURE if pEntry is NULL or maximum instances reached.
+ */
 ANSC_STATUS
 CosaDmlPppIfAddEntry
     (
@@ -292,6 +369,19 @@ CosaDmlPppIfAddEntry
         PCOSA_DML_PPP_IF_FULL       pEntry
     );
 
+/**
+ * @brief Delete a PPP interface entry from the system.
+ *
+ * This function removes a PPP interface entry from the system's interface table identified by the specified instance number.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] ulInstanceNumber - The instance number of the interface entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface entry was successfully deleted.
+ * @retval ANSC_STATUS_CANT_FIND if no entry with the specified instance number exists.
+ *
+ */
 ANSC_STATUS
 CosaDmlPppIfDelEntry
     (
@@ -299,6 +389,20 @@ CosaDmlPppIfDelEntry
         ULONG                       ulInstanceNumber
     );
 
+/**
+ * @brief Set the configuration for a PPP interface.
+ *
+ * This function updates the configuration parameters for a PPP interface identified by the instance number in pCfg.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] pCfg - Pointer to COSA_DML_PPP_IF_CFG structure containing the new
+ *                   configuration parameters.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the configuration was successfully set.
+ * @retval ANSC_STATUS_FAILURE if instance number is invalid or configuration fails.
+ * @retval ANSC_STATUS_CANT_FIND if no entry with the specified instance number exists.
+ */
 ANSC_STATUS
 CosaDmlPppIfSetCfg
     (
@@ -306,6 +410,20 @@ CosaDmlPppIfSetCfg
         PCOSA_DML_PPP_IF_CFG        pCfg        /* Identified by InstanceNumber */
     );
 
+/**
+ * @brief Retrieve the configuration for a PPP interface.
+ *
+ * This function retrieves the current configuration parameters for a PPP interface
+ * identified by the instance number in pCfg.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in,out] pCfg - Pointer to COSA_DML_PPP_IF_CFG structure.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the configuration was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if pCfg is NULL, instance number is invalid, or configuration fails.
+ * @retval ANSC_STATUS_CANT_FIND if no entry with the specified instance number exists.
+ */
 ANSC_STATUS
 CosaDmlPppIfGetCfg
     (
@@ -313,6 +431,22 @@ CosaDmlPppIfGetCfg
         PCOSA_DML_PPP_IF_CFG        pCfg        /* Identified by InstanceNumber */
     );
 
+/**
+ * @brief Retrieve the runtime information for a PPP interface.
+ *
+ * This function retrieves the runtime status and operational information for a PPP
+ * interface identified by the specified instance number.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] ulInstanceNumber - The instance number of the interface entry.
+ * @param[out] pInfo - Pointer to COSA_DML_PPP_IF_INFO structure where the runtime
+ *                     information will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the information was successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if pInfo is NULL, instance number is invalid.
+ * @retval ANSC_STATUS_CANT_FIND if no entry with the specified instance number exists.
+ */
 ANSC_STATUS
 CosaDmlPppIfGetInfo
     (
@@ -321,6 +455,17 @@ CosaDmlPppIfGetInfo
         PCOSA_DML_PPP_IF_INFO       pInfo
     );
 
+/**
+ * @brief Reset a PPP interface to reinitiate the connection.
+ *
+ * This function resets the specified PPP interface by triggering a WAN restart operation.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] ulInstanceNumber - The instance number of the interface entry to reset.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the interface was successfully reset.
+ */
 ANSC_STATUS
 CosaDmlPppIfReset
     (
@@ -331,6 +476,20 @@ CosaDmlPppIfReset
 /*
  *  PPP Interface statistics
  */
+
+/**
+ * @brief Retrieve interface statistics for a PPP interface.
+ *
+ * This function retrieves the current network traffic statistics for the specified PPP interface.
+ *
+ * @param[in] hContext - Handle to the PPP interface context.
+ * @param[in] ulPppIfInstanceNumber - The instance number of the PPP interface.
+ * @param[out] pStats - Pointer to COSA_DML_IF_STATS structure where the statistics will be stored.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the statistics were successfully retrieved.
+ * @retval ANSC_STATUS_FAILURE if pStats is NULL or interface statistics retrieval fails.
+ */
 ANSC_STATUS
 CosaDmlPppIfGetStats
     (
@@ -339,6 +498,16 @@ CosaDmlPppIfGetStats
         PCOSA_DML_IF_STATS          pStats
 );
 
+/**
+ * @brief Remove and cleanup PPP API resources.
+ *
+ * This function performs cleanup and removal of resources associated with the PPP API subsystem.
+ *
+ * @param[in] hContext - Handle to the PPP API context to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if PPP API resources were successfully removed or cleanup completed.
+ */
 ANSC_STATUS
 CosaPPPApiRemove(ANSC_HANDLE  hContext);
 

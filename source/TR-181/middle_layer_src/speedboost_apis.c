@@ -21,8 +21,15 @@ SpeedBoostType boostType;
 #define SYSCTL_PATH "/proc/sys/net/ipv4/ip_local_reserved_ports"
 #define MAX_VAL_LEN 4096
 #define MAX_PORT_RANGE_DIFF 2000
+/*Default speed boost range ports as per the expected speed boost use case*/
 #define DEFAULT_SPEEDBOOST_RANGE "40001-41000"
 
+/**
+ * @brief Reads the content of /proc/sys/net/ipv4/ip_local_reserved_ports
+ * @param pBuf Buffer to store the read value
+ * @param iBuflen Size of the buffer
+ * @return 0 on success, -1 on failure
+ */
 static int readSysctl(char *pBuf, size_t iBuflen)
 {
     FILE *pFile = fopen(SYSCTL_PATH, "r");
@@ -38,6 +45,11 @@ static int readSysctl(char *pBuf, size_t iBuflen)
     return 0;
 }
 
+/**
+ * @brief writes to the /proc/sys/net/ipv4/ip_local_reserved_ports by reading content of pBuf
+ * @param pBuf Buffer to write the value
+ * @return 0 on success, -1 on failure
+ */
 static int writeSysctl(const char *pBuf)
 {
     FILE *pFile = fopen(SYSCTL_PATH, "w");
@@ -95,13 +107,6 @@ void appendToLocalReservedPorts(int iPrevStartPort, int iPrevEndPort,
             snprintf(cRangeToRemove, sizeof(cRangeToRemove), DEFAULT_SPEEDBOOST_RANGE);
             CcspTraceInfo(("%s:%d, Previous range diff > %d, sysctl token was %s\n",
                            __FUNCTION__, __LINE__, MAX_PORT_RANGE_DIFF, cRangeToRemove));
-        }
-
-        // If prev and current are identical, no-op
-        if (strcmp(cRangeToRemove, cRangeToAppend) == 0) {
-            CcspTraceInfo(("%s:%d, Previous and current ranges are identical (%s) - no change\n",
-                           __FUNCTION__, __LINE__, cRangeToAppend));
-            return;
         }
     }
 
