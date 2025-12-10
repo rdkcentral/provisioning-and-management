@@ -23182,7 +23182,7 @@ BOOL
     return:     TRUE if succeeded.
 
 **********************************************************************/
-#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_)
+#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_) || defined(_SCXF11BFL_PRODUCT_REQ_)
 BOOL
 XHFW_GetParamBoolValue ( ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 {
