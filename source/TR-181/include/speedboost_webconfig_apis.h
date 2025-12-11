@@ -38,12 +38,85 @@
 #define BUFF_SIZE_16  16
 #define BUFF_SIZE_8   8
 
+/**
+* @brief Get the number of configured SpeedBoost clients.
+*
+* @return The number of configured SpeedBoost clients.
+*
+*/
 int getNumOfConfiguredClients(void);
-// Function to validate MAC address format
+
+/**
+* @brief Check if MAC address has valid hexadecimal characters and colon separators.
+*
+* @param[in] pMac  - MAC address string to validate.
+*
+* @return The validation result.
+* @retval true if MAC address format is valid.
+* @retval false if MAC address is NULL or has invalid characters.
+*
+*/
 bool CheckMacHasValidCharacter (char* pMac);
+
+/**
+* @brief Validate MAC address format and content.
+*
+* @param[in] pPhysAddress  - MAC address string to validate.
+*
+* @return The validation result.
+* @retval true if MAC address is valid.
+* @retval false if MAC address is NULL, invalid length, all zeros, or has invalid format.
+*
+*/
 bool ValidateMac(char* pPhysAddress);
+
+/**
+* @brief Validate Unix timestamp is within 90 days from current time.
+*
+* @param[in] unixTime  - Unix timestamp to validate.
+* @param[out] pErrMessage  - Buffer to store error message if validation fails.
+* @param[in] iSizeOfBuffer  - Size of the error message buffer.
+*
+* @return The validation result.
+* @retval true if Unix time is valid.
+* @retval false if Unix time is more than 90 days from now.
+*
+*/
 bool validateUnixTime(int64_t unixTime, char * pErrMessage, int iSizeOfBuffer);
+
+/**
+* @brief Free resources allocated for SpeedBoost document.
+*
+* @param[in] pVoidArg  - Pointer to execData structure containing SpeedBoost document.
+*
+* @return None.
+*/
 void freeResourcesSpeedBoostDoc(void *pVoidArg);
+
+/**
+* @brief Process SpeedBoost webconfig request.
+*
+* @param[in] pVoidData  - Pointer to speedBoostDoc_t structure.
+*
+* @return Pointer to error structure.
+* @retval BLOB_EXEC_SUCCESS if processing is successful.
+* @retval NULL_BLOB_EXEC_POINTER if NULL pointer is passed.
+* @retval VALIDATION_FALIED if validation fails.
+* @retval SYSCFG_FAILURE if syscfg operation fails.
+* @retval BLOB_EXEC_FAILURE if scheduler operation fails.
+*
+*/
 pErr processSpeedBoostWebConfigRequest(void *pVoidData);
+
+/**
+* @brief Unpack and process SpeedBoost data from base64 encoded string.
+*
+* @param[in] pString  - Base64 encoded msgpack string.
+*
+* @return The processing result.
+* @retval true if unpacking and processing are successful.
+* @retval false if input is NULL, decoding fails, or processing fails.
+*
+*/
 bool unpackAndProcessSpeedBoostData(char *pString);
 #endif /*__SPEEDBOOST_WEBCONFIG_APIS_H__ */

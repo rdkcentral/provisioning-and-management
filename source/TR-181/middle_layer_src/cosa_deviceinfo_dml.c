@@ -225,7 +225,6 @@ int id = 0;
 #define NUM_OF_DEVICEINFO_VALUES (sizeof(deviceinfo_set_table)/sizeof(deviceinfo_set_table[0]))
 
 #define CALC_SPACE_LEFT(x) (sizeof(x) - strlen(x) - 1)
-#define RDM_COMM_PATH "/etc/rdm/rdmBundleMgr.sh"
 enum  pString_val {
     UIACCESS,
     UISUCCESS,
@@ -1059,7 +1058,7 @@ DeviceInfo_GetParamStringValue
         return 0;
     }
 
-#if !defined(_SR213_PRODUCT_REQ_) && !defined (_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_) && !defined (_SCXF11BFL_PRODUCT_REQ_)
+#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_)
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_InActiveFirmware") == 0)
     {
         return CosaDmlDiGetInActiveFirmware(NULL, pValue, pulSize);
@@ -3940,7 +3939,7 @@ Snmpv3DHKickstart_SetParamBoolValue
         CcspTraceInfo(("Snmpv3DHKickstart_SetParamBoolValue: successfully set %s = %s\n", ParamName, bValue == TRUE ? "TRUE" : "FALSE"));
         if( pKickstart->TableUpdated == TRUE && pKickstart->Enabled == TRUE )
         {
-#if !defined(_XER5_PRODUCT_REQ_) && !defined(_SR213_PRODUCT_REQ_)
+#if !defined(_XER5_PRODUCT_REQ_) && !defined(_SR213_PRODUCT_REQ_) && !defined(PON_GATEWAY) && !defined(_PLATFORM_IPQ_)
 	    i = cm_hal_snmpv3_kickstart_initialize( &Snmpv3_Kickstart_Table );
             CcspTraceError(("cm_hal_snmpv3_kickstart_initialize: return value = %d\n", i));
             pKickstart->TableUpdated = FALSE;
@@ -14068,7 +14067,6 @@ RDKDownloadManager_SetParamStringValue
     if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
-    const char *rdm_comm = RDM_COMM_PATH;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
@@ -14076,9 +14074,9 @@ RDKDownloadManager_SetParamStringValue
         return FALSE;
     }
 
-    CcspTraceWarning(("[%s] Executing command - sh %s & \n", __FUNCTION__ , rdm_comm));
+    CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
 
-    ret = v_secure_system("sh %s %s &", rdm_comm, pString);
+    ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
@@ -23184,7 +23182,7 @@ BOOL
     return:     TRUE if succeeded.
 
 **********************************************************************/
-#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_)
+#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_) || defined(_SCXF11BFL_PRODUCT_REQ_)
 BOOL
 XHFW_GetParamBoolValue ( ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 {
@@ -23261,6 +23259,124 @@ XHFW_SetParamBoolValue (ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
         else
         {
             v_secure_system("systemctl stop zilker");
+        }
+    }
+    return result;
+}
+
+/**
+ *  RFC Feature NIM
+*/
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        device.nim_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+
+BOOL
+NIM_GetParamBoolValue ( ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char value[8] = {'\0'};
+        if( syscfg_get(NULL, "NIM_Enable", value, sizeof(value)) == 0 )
+        {
+            /* CID: 155008 Array name value  compared against 0*/
+            *pBool = (strcmp(value, "true") == 0) ? TRUE : FALSE;
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("syscfg_get failed for NIM_Enable\n"));
+        }
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        NIM_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+
+BOOL
+NIM_SetParamBoolValue (ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    BOOL result = FALSE;
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if (syscfg_set_commit(NULL, "NIM_Enable", bValue ? "true" : "false") != 0)
+        {
+            CcspTraceError(("syscfg_set failed for NIM_Enable\n"));
+        }
+        else
+        {
+            result = TRUE;
+        }
+
+        if (bValue)
+        {
+            v_secure_system("systemctl restart zilker");
+            v_secure_system("systemctl reset-failed otbr-agent.path otbr-agent");
+            v_secure_system("systemctl restart otbr-agent");
+        }
+        else
+        {
+            v_secure_system("systemctl stop otbr-agent");
+            v_secure_system("systemctl restart zilker");
         }
     }
     return result;

@@ -23,9 +23,58 @@
 #include "ansc_platform.h"
 #include "ansc_string_util.h"
 
+/**
+ * @brief Get an unsigned long value from system configuration.
+ *
+ * @param[in] setting - Pointer to the system configuration setting name.
+ * @param[out] value  - Pointer to store the retrieved unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if fails.
+ *
+ */
 ANSC_STATUS CosaGetSysCfgUlong(char* setting, ULONG *value);
+
+/**
+ * @brief Set an unsigned long value in system configuration.
+ *
+ * @param[in] setting - Pointer to the system configuration setting name.
+ * @param[in] value   - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if fails.
+ *
+ */
 ANSC_STATUS CosaSetSysCfgUlong(char* setting, ULONG value);
+
+/**
+ * @brief Get a string value from system configuration.
+ *
+ * @param[in] setting  - Pointer to the system configuration setting name.
+ * @param[out] value   - Pointer to a buffer where the string value will be stored.
+ *                       \n The buffer should be allocated with sufficient size (at least 1024 bytes).
+ * @param[out] pulSize - Pointer to store the size of the retrieved string.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if fails.
+ *
+ */
 ANSC_STATUS CosaGetSysCfgString(char* setting, char *value, PULONG pulSize);
+
+/**
+ * @brief Set a string value in system configuration.
+ *
+ * @param[in] setting - Pointer to the system configuration setting name.
+ * @param[in] pValue  - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS if the operation is successful.
+ * @retval ANSC_STATUS_FAILURE if fails.
+ *
+ */
 ANSC_STATUS CosaSetSysCfgString(char* setting, char *pValue);
 
 #endif //_COSA_ADVSEC_UTILS_H

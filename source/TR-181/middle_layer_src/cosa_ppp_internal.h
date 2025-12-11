@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -96,32 +96,76 @@ _COSA_DATAMODEL_PPP
 COSA_DATAMODEL_PPP,  *PCOSA_DATAMODEL_PPP;
 
 /**********************************
-    Standard function declaration 
+    Standard function declaration
 ***********************************/
+/**
+ * @brief Create the PPP backend object.
+ *
+ * @return Handle to the PPP backend object
+ * @retval Handle to the newly created PPP backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaPPPCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the PPP backend object.
+ *
+ * @param[in] hThisObject Handle to the PPP backend object.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful initialization
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaPPPInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the PPP backend object.
+ *
+ * @param[in] hThisObject Handle to the PPP backend object to be removed.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful removal
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaPPPRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Retrieves PPP interface configuration from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the PPP backend object.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful retrieval
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaPPPIfRegGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Adds a PPP interface entry to persistent registry.
+ *
+ * @param[in] hThisObject Handle to the PPP backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the interface entry.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful addition
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaPPPIfRegAddInfo
     (
@@ -129,6 +173,16 @@ CosaPPPIfRegAddInfo
         ANSC_HANDLE                 hCosaContext
     );
 
+/**
+ * @brief Deletes a PPP interface entry from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the PPP backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the interface entry to delete.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful deletion
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaPPPIfRegDelInfo
     (
