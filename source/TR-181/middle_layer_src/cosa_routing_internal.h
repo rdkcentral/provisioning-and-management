@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,40 +107,88 @@
     ULONG                           ulNextRipIFInsNum;                      \
 
 typedef  struct
-_COSA_DATAMODEL_ROUTING                                              
+_COSA_DATAMODEL_ROUTING
 {
     COSA_DATAMODEL_ROUTING_CLASS_CONTENT
 }
 COSA_DATAMODEL_ROUTING,  *PCOSA_DATAMODEL_ROUTING;
 
 /**********************************
-    Standard function declaration 
+    Standard function declaration
 ***********************************/
+/**
+ * @brief Create the Routing backend object.
+ *
+ * @return Handle to the Routing backend object
+ * @retval Handle to the newly created Routing backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaRoutingCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the Routing backend object.
+ *
+ * @param[in] hThisObject Handle to the Routing backend object.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful initialization
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaRoutingInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the Routing backend object.
+ *
+ * @param[in] hThisObject Handle to the Routing backend object to be removed.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful removal
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaRoutingRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Loads Routing configuration from persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the Routing backend object.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful configuration load
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaRoutingRegGetInfo
-
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Adds a Routing entry to persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the Routing backend object.
+ * @param[in] pNextInsNumName Name of the next instance number parameter.
+ * @param[in] ulNextInsNum Next instance number to use for new entries.
+ * @param[in] pPreffix Registry key prefix for the entry type.
+ * @param[in] ulUpperInsNum Upper-level instance number for hierarchical objects.
+ * @param[in] pAlias User-assigned alias name for the entry.
+ * @param[in] hCosaContext Handle to the COSA context object for the entry.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful entry addition
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaRoutingRegAddInfo
     (
@@ -153,6 +201,16 @@ CosaRoutingRegAddInfo
         ANSC_HANDLE                 hCosaContext
     );
 
+/**
+ * @brief Deletes a Routing entry from persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the Routing backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the entry to delete.
+ *
+ * @return status of operation
+ * @retval ANSC_STATUS_SUCCESS on successful entry deletion
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaRoutingRegDelInfo
     (
@@ -160,8 +218,17 @@ CosaRoutingRegDelInfo
         ANSC_HANDLE                 hCosaContext
     );
 
-char* 
-CosaTimeGetRipdConfStaticPart 
+/**
+ * @brief Retrieves the static configuration part for RIP daemon (ripd.conf).
+ *
+ * @param[in] hContext Handle to the routing context object.
+ *
+ * @return Pointer to a string containing the static ripd configuration
+ * @retval Pointer to static ripd configuration.
+ * @retval NULL on error.
+ */
+char*
+CosaTimeGetRipdConfStaticPart
     (
         ANSC_HANDLE   hContext
     );

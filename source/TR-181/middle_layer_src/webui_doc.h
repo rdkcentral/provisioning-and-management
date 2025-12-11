@@ -45,27 +45,32 @@ typedef struct {
     uint16_t       transaction_id;
 } webui_doc_t;
 /**
- *  This function converts a msgpack buffer into a webui_doc_t structure
- *  if possible.
+ * @brief Converts a msgpack buffer into a webui_doc_t structure.
  *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
+ *  @param[in] buf the buffer to convert
+ *  @param[in] len the length of the buffer in bytes
  *
- *  @return a pointer to the converted webui_doc_t structure on success, NULL on error
+ * @return Pointer to the converted webui_doc_t structure.
+ * @retval Pointer to webui_doc_t on success.
+ * @retval NULL if an error occurred.
  */
 webui_doc_t* webui_doc_convert( const void *buf, size_t len );
 /**
- *  This function destroys a webui_doc_t object.
+ * @brief Destroys a webui_doc_t object.
  *
- *  @param d the webui_doc_t object to destroy
+ *  @param[in] d the webui_doc_t object to destroy.
+ *
+ * @return None.
  */
 void webui_doc_destroy( webui_doc_t *d );
 /**
- *  This function returns a general reason why the conversion failed.
+ * @brief Returns a general reason why the conversion failed.
  *
- *  @param errnum the errno value to inspect
+ *  @param[in] errnum the errno value to inspect.
  *
- *  @return the constant string (do not alter or free) describing the error
+ * @return Constant string describing the error.
+ * @retval Error description string (do not alter or free)
+ * @retval unknown error
  */
 const char* webui_doc_strerror( int errnum );
 #endif

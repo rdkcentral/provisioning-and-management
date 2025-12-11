@@ -24,16 +24,16 @@
 #include <msgpack.h>
 typedef struct
 {
-    char      *internal_client; 
-    char      *enable;       
-    char  *external_port_end_range;    
+    char      *internal_client;
+    char      *enable;
+    char  *external_port_end_range;
     char      *protocol;
     char      *description;
     char *external_port;
 } portdoc_t;
 
 typedef struct {
-    portdoc_t *entries;       
+    portdoc_t *entries;
     size_t      entries_count;
     char * subdoc_name;
     uint32_t  version;
@@ -41,29 +41,34 @@ typedef struct {
 } portmappingdoc_t;
 
 /**
- *  This function converts a msgpack buffer into an portmappingdoc_t structure
- *  if possible.
+ * @brief Converts a msgpack buffer into a portmappingdoc_t structure.
  *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
+ *  @param[in] buf the buffer to convert
+ *  @param[in] len the length of the buffer in bytes
  *
- *  @return NULL on error, success otherwise
+ * @return Pointer to the converted portmappingdoc_t structure.
+ * @retval Valid pointer to portmappingdoc_t on success.
+ * @retval NULL if an error occurred.
  */
 portmappingdoc_t* portmappingdoc_convert( const void *buf, size_t len );
 
 /**
- *  This function destroys an portmappingdoc_t object.
+ * @brief Destroys an portmappingdoc_t object.
  *
- *  @param e the portmappingdoc to destroy
+ * @param[in] d the portmappingdoc to destroy
+ *
+ * @return None
  */
 void portmappingdoc_destroy( portmappingdoc_t *d );
 
 /**
- *  This function returns a general reason why the conversion failed.
+ * @brief Returns a general reason why the conversion failed.
  *
- *  @param errnum the errno value to inspect
+ * @param[in] errnum the errno value to inspect
  *
- *  @return the constant string (do not alter or free) describing the error
+ * @return Constant string describing the error.
+ * @retval Error description string (do not alter or free).
+ * @retval Unknown error otherwise
  */
 const char* portmappingdoc_strerror( int errnum );
 

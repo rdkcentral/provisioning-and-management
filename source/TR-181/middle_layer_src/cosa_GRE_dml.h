@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -78,6 +78,21 @@
     *  Gre_SetParamStringValue
 
 ***********************************************************************/
+/**
+ * @brief Retrieves string parameter values for GRE (Generic Routing Encapsulation) tunnel configuration.
+ *
+ * @param[in] hInsContext Instance context handle (not used, can be NULL).
+ * @param[in] ParamName Name of the parameter to retrieve.
+ * @param[out] pValue Buffer to store the retrieved string value.
+ * @param[in,out] pUlSize As input, size of the pValue buffer in bytes.
+ *                        As output, length of the string value written (including null terminator) if successful,
+ *                        or required buffer size if return value indicates buffer too small. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 if successful.
+ * @retval 1 if short of buffer size.
+ * @retval -1 if not supported.
+ */
 ULONG
 Gre_GetParamStringValue
     (
@@ -86,6 +101,19 @@ Gre_GetParamStringValue
         char*                       pValue,
         ULONG*                      pUlSize
     );
+
+/**
+ * @brief Sets string parameter values for GRE tunnel configuration.
+ *
+ * @param[in] hInsContext Instance context handle.
+ * @param[in] ParamName Name of the parameter to set.
+ * @param[in] strValue New string value to set for the parameter.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if parameter was set successfully.
+ * @retval FALSE otherwise (parameter not found or validation failed).
+ *
+ */
 
 BOOL
 Gre_SetParamStringValue
