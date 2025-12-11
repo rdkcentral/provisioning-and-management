@@ -2820,6 +2820,18 @@ CosaDmlDcSetEnableStaticNameServer
     UtopiaContext ctx;
     boolean_t bEnabled = bFlag;
 
+	
+    if (bEnabled) {
+        char xdns_enable[16] = {0};
+        if (syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", xdns_enable, sizeof(xdns_enable)) == 0) {
+            if (strcmp(xdns_enable, "1") == 0 || strcasecmp(xdns_enable, "true") == 0) {
+                CcspTraceWarning(("Static DNS enable blocked: XDNS is enabled via syscfg\n"));
+                return ANSC_STATUS_SUCCESS; /* do not enable static DNS */
+            }
+        }
+    }
+
+
     if (!Utopia_Init(&ctx))
     {
         CcspTraceWarning(("X_CISCO_COM_DeviceControl: Error in initializing context!!! \n" ));
