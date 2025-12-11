@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -91,33 +91,77 @@ COSA_DATAMODEL_DDNS,  *PCOSA_DATAMODEL_DDNS;
 
 
 /*
- *  Standard function declaration 
+ *  Standard function declaration
  */
 
+/**
+ * @brief Creates a new Cisco DDNS backend object.
+ *
+ * @return Handle to the Cisco DDNS backend object,
+ * @retval Handle to the newly created CosaDdns backend object.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaDdnsCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the Cisco DDNS backend object.
+ *
+ * @param[in] hThisObject Handle to the Cisco DDNS backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDdnsInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the Cisco DDNS backend object.
+ *
+ * @param[in] hThisObject Handle to the Cisco DDNS backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDdnsRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Loads Cisco DDNS configuration from persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the Cisco DDNS backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful configuration load.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDdnsRegGetDdnsInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Adds a Cisco DDNS service entry to persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the Cisco DDNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the DDNS service entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful entry addition.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDdnsRegAddDdnsInfo
     (
@@ -125,6 +169,16 @@ CosaDdnsRegAddDdnsInfo
         ANSC_HANDLE                 hCosaContext
     );
 
+/**
+ * @brief Deletes a Cisco DDNS service entry from persistent registry storage.
+ *
+ * @param[in] hThisObject Handle to the Cisco DDNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the DDNS service entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful entry deletion.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDdnsRegDelDdnsInfo
     (

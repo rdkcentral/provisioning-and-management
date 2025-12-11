@@ -218,11 +218,6 @@ void callbackWCConfirmVap(tunnelSet_t *tunnelSet){
    pGreMyObject->GreTu[0].GreTunnelIf[3].ChangeFlag |= GRETUIF_CF_VLANID;
 #endif
    pMyObject->bxfinitywifiEnable = tunnelSet->set_gre_enable;
-   
-   if(NULL != tunnelSet){
-       free(tunnelSet);
-       tunnelSet = NULL;
-   }
 
    if(0 != pthread_create(&circuitid_thread, NULL, update_circuitID_thread, NULL))
    {

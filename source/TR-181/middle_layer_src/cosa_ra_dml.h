@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -84,6 +84,17 @@
     *  RouterAdvertisement_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Retrieves a boolean parameter value from the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the boolean parameter .
+ * @param[out] pBool Pointer to store the retrieved boolean value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found.
+ * @retval FALSE Parameter not found or error occurred.
+ */
 BOOL
 RouterAdvertisement_GetParamBoolValue
     (
@@ -92,6 +103,17 @@ RouterAdvertisement_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves an integer parameter value from the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[out] pInt Pointer to store the retrieved signed integer value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found or error occurred.
+ */
 BOOL
 RouterAdvertisement_GetParamIntValue
     (
@@ -100,6 +122,17 @@ RouterAdvertisement_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves an unsigned long parameter value from the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[out] pUlong Pointer to store the retrieved unsigned long value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found.
+ * @retval FALSE Parameter not found or error occurred.
+ */
 BOOL
 RouterAdvertisement_GetParamUlongValue
     (
@@ -108,6 +141,19 @@ RouterAdvertisement_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves a string parameter value from the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the string parameter.
+ * @param[out] pValue Buffer to store the retrieved string value, size determined by pUlSize.
+ * @param[in,out] pUlSize On input: size of pValue buffer; on output: actual string length. Usually size of 1023 will be used.
+ *
+ * @return status of operation
+ * @retval 0 Parameter retrieved and stored in pValue.
+ * @retval 1 Buffer insufficient, pUlSize contains required size.
+ * @retval -1 if not supported.
+ */
 ULONG
 RouterAdvertisement_GetParamStringValue
     (
@@ -117,6 +163,17 @@ RouterAdvertisement_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets a boolean parameter value in the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the boolean parameter.
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 RouterAdvertisement_SetParamBoolValue
     (
@@ -125,6 +182,17 @@ RouterAdvertisement_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets an integer parameter value in the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[in] value Signed integer value to set.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 RouterAdvertisement_SetParamIntValue
     (
@@ -133,6 +201,17 @@ RouterAdvertisement_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets an unsigned long parameter value in the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 RouterAdvertisement_SetParamUlongValue
     (
@@ -141,6 +220,17 @@ RouterAdvertisement_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets a string parameter value in the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[in] ParamName Name of the string parameter.
+ * @param[in] strValue Null-terminated string value to set.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 RouterAdvertisement_SetParamStringValue
     (
@@ -149,6 +239,17 @@ RouterAdvertisement_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates staged changes to the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ * @param[out] pReturnParamName Buffer(128 bytes) to store the name of the parameter if there's a validation, size determined by puLength.
+ * @param[in,out] puLength On input: buffer size; on output: actual parameter name length if validation fails.
+ *
+ * @return status of operation.
+ * @retval TRUE if there's no validation
+ * @retval FALSE if there's validation
+ */
 BOOL
 RouterAdvertisement_Validate
     (
@@ -157,12 +258,30 @@ RouterAdvertisement_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits staged changes to the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Changes committed and RA daemon updated.
+ * @retval ANSC_STATUS_FAILURE Commit failed
+ */
 ULONG
 RouterAdvertisement_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back uncommitted changes to the Device.RouterAdvertisement object.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement object context.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Changes rolled back successfully.
+ * @retval ANSC_STATUS_FAILURE Rollback operation failed.
+ */
 ULONG
 RouterAdvertisement_Rollback
     (
@@ -193,12 +312,31 @@ RouterAdvertisement_Rollback
     *  InterfaceSetting1_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Gets the number of Device.RouterAdvertisement.InterfaceSetting.{i} table entries.
+ *
+ * @param[in] hInsContext Instance handle
+ *
+ * @return Number of InterfaceSetting table entries.
+ * @retval Count of configured interface settings.
+ */
 ULONG
 InterfaceSetting1_GetEntryCount
     (
         ANSC_HANDLE
     );
 
+/**
+ * @brief Retrieves a specific Device.RouterAdvertisement.InterfaceSetting.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement context.
+ * @param[in] nIndex Zero-based index of the InterfaceSetting entry to retrieve.
+ * @param[out] pInsNumber Pointer to store the instance number of the retrieved entry.
+ *
+ * @return Instance handle of the InterfaceSetting entry.
+ * @retval Non-NULL Handle to the InterfaceSetting entry context.
+ * @retval NULL Entry not found at specified index.
+ */
 ANSC_HANDLE
 InterfaceSetting1_GetEntry
     (
@@ -207,6 +345,16 @@ InterfaceSetting1_GetEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Adds a new Device.RouterAdvertisement.InterfaceSetting.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement context.
+ * @param[out] pInsNumber Pointer to store the allocated instance number for the new entry.
+ *
+ * @return Instance handle of the newly created InterfaceSetting entry.
+ * @retval Non-NULL Handle to the new InterfaceSetting entry.
+ * @retval NULL Failed to create entry.
+ */
 ANSC_HANDLE
 InterfaceSetting1_AddEntry
     (
@@ -214,6 +362,16 @@ InterfaceSetting1_AddEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Deletes a Device.RouterAdvertisement.InterfaceSetting.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the RouterAdvertisement context.
+ * @param[in] hInstance Instance handle of the InterfaceSetting entry to delete.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Entry deleted successfully.
+ * @retval ANSC_STATUS_FAILURE Failed to delete entry.
+ */
 ULONG
 InterfaceSetting1_DelEntry
     (
@@ -221,6 +379,17 @@ InterfaceSetting1_DelEntry
         ANSC_HANDLE                 hInstance
     );
 
+/**
+ * @brief Retrieves a boolean parameter from a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the boolean parameter
+ * @param[out] pBool Pointer to store the retrieved boolean value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 InterfaceSetting1_GetParamBoolValue
     (
@@ -229,6 +398,17 @@ InterfaceSetting1_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves an integer parameter from a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[out] pInt Pointer to store the retrieved signed integer value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 InterfaceSetting1_GetParamIntValue
     (
@@ -237,14 +417,38 @@ InterfaceSetting1_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves an unsigned long parameter from a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[out] pUlong Pointer to store the retrieved unsigned long value.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter found.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
-InterfaceSetting1_GetParamUlongValue
+InterfacSetting1_GetParamUlongValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves a string parameter from a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the string parameter .
+ * @param[out] pValue Buffer to store the retrieved string, size determined by pUlSize.
+ * @param[in,out] pUlSize On input: buffer size; on output: actual string length. Usually size of 1023 will be used.
+ *
+ * @return status of operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small, pUlSize contains required size.
+ * @retval -1 if not supported.
+ */
 ULONG
 InterfaceSetting1_GetParamStringValue
     (
@@ -254,6 +458,17 @@ InterfaceSetting1_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets a boolean parameter in a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the boolean parameter.
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 InterfaceSetting1_SetParamBoolValue
     (
@@ -262,6 +477,17 @@ InterfaceSetting1_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets an integer parameter in a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[in] value Signed integer value to set.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 InterfaceSetting1_SetParamIntValue
     (
@@ -270,6 +496,17 @@ InterfaceSetting1_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets an unsigned long parameter in a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return status of operation.
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 InterfaceSetting1_SetParamUlongValue
     (
@@ -278,6 +515,17 @@ InterfaceSetting1_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets a string parameter in a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[in] ParamName Name of the string parameter.
+ * @param[in] strValue Null-terminated string value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 InterfaceSetting1_SetParamStringValue
     (
@@ -286,6 +534,17 @@ InterfaceSetting1_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates staged changes to a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ * @param[out] pReturnParamName Buffer to store the name of the parameter if there's a validation, size determined by puLength.
+ * @param[in,out] puLength On input: buffer size; on output: actual parameter name length if validation fails.
+ *
+ * @return status of operation.
+ * @retval TRUE if there's no validation
+ * @retval FALSE if there's validation
+ */
 BOOL
 InterfaceSetting1_Validate
     (
@@ -294,12 +553,29 @@ InterfaceSetting1_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits staged changes to a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ *
+ * @return Status of operation.
+ * @retval ANSC_STATUS_SUCCESS Changes committed and RA configured on interface.
+ * @retval ANSC_STATUS_FAILURE Commit failed
+ */
 ULONG
 InterfaceSetting1_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back uncommitted changes to a Device.RouterAdvertisement.InterfaceSetting.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting entry.
+ *
+ * @return Status of operation
+ * @retval 0 Changes rolled back successfully.
+ */
 ULONG
 InterfaceSetting1_Rollback
     (
@@ -330,12 +606,31 @@ InterfaceSetting1_Rollback
     *  Option5_Rollback
 
 ***********************************************************************/
+/**
+ * @brief Gets the number of Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} table entries.
+ *
+ * @param[in] hInsContext Instance handle .
+ *
+ * @return Number of Option table entries.
+ * @retval Count of configured RA options.
+ */
 ULONG
 Option5_GetEntryCount
     (
         ANSC_HANDLE
     );
 
+/**
+ * @brief Retrieves a specific Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting context.
+ * @param[in] nIndex Zero-based index of the Option entry to retrieve.
+ * @param[out] pInsNumber Pointer to store the instance number of the retrieved entry.
+ *
+ * @return Instance handle of the Option entry
+ * @retval Non-NULL Handle to the Option entry context.
+ * @retval NULL Entry not found at specified index.
+ */
 ANSC_HANDLE
 Option5_GetEntry
     (
@@ -344,6 +639,16 @@ Option5_GetEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Adds a new Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting context.
+ * @param[out] pInsNumber Pointer to store the allocated instance number for the new entry.
+ *
+ * @return Instance handle of the newly created Option entry.
+ * @retval Non-NULL Handle to the new Option entry.
+ * @retval NULL Failed to create entry .
+ */
 ANSC_HANDLE
 Option5_AddEntry
     (
@@ -351,6 +656,16 @@ Option5_AddEntry
         ULONG*                      pInsNumber
     );
 
+/**
+ * @brief Deletes a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} table entry.
+ *
+ * @param[in] hInsContext Instance handle for the InterfaceSetting context.
+ * @param[in] hInstance Instance handle of the Option entry to delete.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Entry deleted successfully.
+ * @retval ANSC_STATUS_FAILURE Failed to delete entry.
+ */
 ULONG
 Option5_DelEntry
     (
@@ -358,6 +673,17 @@ Option5_DelEntry
         ANSC_HANDLE                 hInstance
     );
 
+/**
+ * @brief Retrieves a boolean parameter from a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the boolean parameter.
+ * @param[out] pBool Pointer to store the retrieved boolean value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Option5_GetParamBoolValue
     (
@@ -366,6 +692,17 @@ Option5_GetParamBoolValue
         BOOL*                       pBool
     );
 
+/**
+ * @brief Retrieves an integer parameter from a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[out] pInt Pointer to store the retrieved signed integer value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found.
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Option5_GetParamIntValue
     (
@@ -374,6 +711,18 @@ Option5_GetParamIntValue
         int*                        pInt
     );
 
+/**
+ * @brief Retrieves an unsigned long parameter from a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the ulong parameter
+ * @param[out] pUlong Pointer to store the retrieved unsigned long value.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter found
+ * @retval FALSE Parameter not found.
+ */
 BOOL
 Option5_GetParamUlongValue
     (
@@ -382,6 +731,19 @@ Option5_GetParamUlongValue
         ULONG*                      pUlong
     );
 
+/**
+ * @brief Retrieves a string parameter from a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the string parameter .
+ * @param[out] pValue Buffer to store the retrieved string, size determined by pUlSize.
+ * @param[in,out] pUlSize On input: buffer size; on output: actual string length. Usually size of 1023 will be used.
+ *
+ * @return status of operation.
+ * @retval 0 Parameter retrieved successfully.
+ * @retval 1 Buffer too small, pUlSize contains required size.
+ * @retval -1 if not supported.
+ */
 ULONG
 Option5_GetParamStringValue
     (
@@ -391,6 +753,17 @@ Option5_GetParamStringValue
         ULONG*                      pUlSize
     );
 
+/**
+ * @brief Sets a boolean parameter in a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the boolean parameter .
+ * @param[in] bValue Boolean value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Option5_SetParamBoolValue
     (
@@ -399,6 +772,17 @@ Option5_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Sets an integer parameter in a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the integer parameter.
+ * @param[in] value Signed integer value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Option5_SetParamIntValue
     (
@@ -407,6 +791,17 @@ Option5_SetParamIntValue
         int                         value
     );
 
+/**
+ * @brief Sets an unsigned long parameter in a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the ulong parameter.
+ * @param[in] uValuepUlong Unsigned long value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Option5_SetParamUlongValue
     (
@@ -415,6 +810,17 @@ Option5_SetParamUlongValue
         ULONG                       uValuepUlong
     );
 
+/**
+ * @brief Sets a string parameter in a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[in] ParamName Name of the string parameter .
+ * @param[in] strValue Null-terminated string value to set.
+ *
+ * @return status of operation
+ * @retval TRUE Parameter sets successfully.
+ * @retval FALSE Parameter not recognized or invalid value.
+ */
 BOOL
 Option5_SetParamStringValue
     (
@@ -423,6 +829,17 @@ Option5_SetParamStringValue
         char*                       strValue
     );
 
+/**
+ * @brief Validates staged changes to a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ * @param[out] pReturnParamName Buffer to store the name of the parameter if there's a validation, size determined by puLength.
+ * @param[in,out] puLength On input: buffer size; on output: actual parameter name length if validation fails.
+ *
+ * @return status of operation.
+ * @retval TRUE if there's no validation
+ * @retval FALSE if there's validation
+ */
 BOOL
 Option5_Validate
     (
@@ -431,12 +848,30 @@ Option5_Validate
         ULONG*                      puLength
     );
 
+/**
+ * @brief Commits staged changes to a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry.
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Changes committed and option configured.
+ * @retval ANSC_STATUS_FAILURE Commit failed.
+ */
 ULONG
 Option5_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
+/**
+ * @brief Rolls back uncommitted changes to a Device.RouterAdvertisement.InterfaceSetting.{i}.Option.{i} entry whenever there is a validation .
+ *
+ * @param[in] hInsContext Instance handle for the Option entry.
+ *
+ * @return Status of operation
+ * @retval ANSC_STATUS_SUCCESS Changes rolled back successfully.
+ * @retval ANSC_STATUS_FAILURE Rollback operation failed.
+ */
 ULONG
 Option5_Rollback
     (

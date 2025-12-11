@@ -68,6 +68,7 @@
 #include "utapi/utapi.h"
 #include "utapi/utapi_util.h"
 #include "dmsb_tr181_psm_definitions.h"
+#include <stdbool.h>
 
 #define MAX_EVENT_NAME_LENGTH   32
 #define WEBPA_NOTIFY_QUEUE "/sync_notify_queue"
