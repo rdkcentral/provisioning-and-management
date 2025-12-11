@@ -2487,6 +2487,33 @@ RDKDownloadManager_SetParamStringValue
 
  APIs for Object:
 
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.xMemInsight.Enable
+
+    *  xMemInsight_SetParamBoolValue
+    *  xMemInsight_GetParamBoolValue
+***********************************************************************/
+
+BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool);
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.xMemInsight.Args
+
+    *  xMemInsight_SetParamStringValue
+    *  xMemInsight_GetParamStringValue
+***********************************************************************/
+
+ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
+BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString);
+
+/***********************************************************************
+
+ APIs for Object:
+
     DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.AccountInfo.AccountID
 
     *  AccountInfo_GetParamStringValue
