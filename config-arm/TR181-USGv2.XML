@@ -3410,32 +3410,7 @@
                                 </parameter>
                         </parameters>
                 </object>
-                <object>
-                    <name>xMemInsight</name>
-                    <objectType>object</objectType>
 
-                    <functions>
-                        <func_GetParamBoolValue>xMemInsight_GetParamBoolValue</func_GetParamBoolValue>
-                        <func_SetParamBoolValue>xMemInsight_SetParamBoolValue</func_SetParamBoolValue>
-                        <func_GetParamStringValue>xMemInsight_GetParamStringValue</func_GetParamStringValue>
-                        <func_SetParamStringValue>xMemInsight_SetParamStringValue</func_SetParamStringValue>
-                    </functions>
-
-                    <parameters>
-                        <parameter>
-                            <name>Enable</name>
-                            <type>boolean</type>
-                            <syntax>bool</syntax>
-                            <writable>true</writable>
-                        </parameter>
-                        <parameter>
-                            <name>Args</name>
-                            <type>string(512)</type>
-                            <syntax>string</syntax>
-                            <writable>true</writable>
-                        </parameter>
-                    </parameters>
-                </object>
 <?ifdef FEATURE_SUPPORT_INTERWORKING?>
 		<object>
 			<name>WiFi-Interworking</name>
