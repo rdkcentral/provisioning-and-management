@@ -24,13 +24,13 @@
 #include <msgpack.h>
 typedef struct
 {
-    char      *yiaddr; 
-    char      *chaddr;     
+    char      *yiaddr;
+    char      *chaddr;
 } macdoc_t;
 
 typedef struct
 {
-    macdoc_t     *entries;       
+    macdoc_t     *entries;
     size_t       entries_count;
     char *       subdoc_name;
     uint32_t     version;
@@ -38,30 +38,42 @@ typedef struct
 } macbindingdoc_t;
 
 /**
- *  This function converts a msgpack buffer into an macbindingdoc_t structure
- *  if possible.
- *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
- *
- *  @return NULL on error, success otherwise
- */
+* @brief Convert a msgpack buffer into a macbindingdoc_t structure.
+*
+* @param[in] buf  - Pointer to the msgpack buffer to convert.
+* @param[in] len  - Length of the buffer in bytes.
+*
+* @return Pointer to the macbindingdoc_t structure.
+* @retval Pointer to a newly allocated macbindingdoc_t structure on success.
+* @retval NULL on error.
+*
+*/
 macbindingdoc_t* macbindingdoc_convert( const void *buf, size_t len );
 
 /**
- *  This function destroys an macbindingdoc_t object.
- *
- *  @param e the macbindingdoc to destroy
- */
+* @brief Destroy a macbindingdoc_t object and free all allocated memory.
+*
+* @param[in] d  - Pointer to the macbindingdoc_t structure to destroy.
+*
+* @return None.
+*
+*/
 void macbindingdoc_destroy( macbindingdoc_t *d );
 
 /**
- *  This function returns a general reason why the conversion failed.
- *
- *  @param errnum the errno value to inspect
- *
- *  @return the constant string (do not alter or free) describing the error
- */
+* @brief Get an error message string for a given error number.
+*
+* @param[in] errnum  - The error number to inspect.
+*
+* @return Pointer to a constant string describing the error.
+* @retval "No errors." if errnum is OK.
+* @retval "Out of memory." if errnum is OUT_OF_MEMORY.
+* @retval "Invalid first element." if errnum is INVALID_FIRST_ELEMENT.
+* @retval "Invalid 'version' value." if errnum is INVALID_VERSION.
+* @retval "Invalid 'value' array." if errnum is INVALID_OBJECT.
+* @retval "Unknown error." if errnum does not match any known error code.
+*
+*/
 const char* macbindingdoc_strerror( int errnum );
 
 #endif
