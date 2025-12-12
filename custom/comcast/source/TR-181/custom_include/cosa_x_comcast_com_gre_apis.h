@@ -152,8 +152,7 @@ CosaDml_GreIfGetNumberOfEntries(void);
 ANSC_STATUS
 CosaDml_GreIfGetEntryByIndex(ULONG idx, COSA_DML_GRE_IF *greIf);
 
-ANSC_STATUS
-CosaDml_GreIfSetIns(ULONG idx, ULONG ins);
+/* CID 163448 fix - remove useless call since CosaDml_GreIfSetIns(i, nextIns) is having no action */
 
 ANSC_STATUS
 CosaDml_GreIfGetEnable(ULONG ins, BOOL *enable);

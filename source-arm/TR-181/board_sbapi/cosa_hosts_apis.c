@@ -884,6 +884,12 @@ CosaDmlHostsGetHosts
 
     if(LM_RET_SUCCESS == lm_get_all_hosts(hosts))
     {
+        /* CID 135512: Untrusted loop bound - Validate host count matches actual array capacity */
+        if (hosts->count > 256) { /* Array capacity limit - hosts->hosts has 256 elements max */
+            CcspTraceWarning(("Host count %d exceeds array capacity, truncating to 256\n", hosts->count));
+            hosts->count = 256;
+        }
+        
         *pulCount = hosts->count;
         _init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
 #if !defined (NO_MOCA_FEATURE_SUPPORT)
@@ -903,7 +909,7 @@ CosaDmlHostsGetHosts
             pHost = Hosts_AddHostByPhysAddress(str);
             if(pHost == NULL)
                 continue;
-            /* CID 340106 String not null terminated : fix */
+            /* CID 340106 fix - String not null terminated */
             plmHost->AssociatedDevice[LM_GEN_STR_SIZE - 1] = '\0';
             _get_host_info(plmHost, pHost);
         }

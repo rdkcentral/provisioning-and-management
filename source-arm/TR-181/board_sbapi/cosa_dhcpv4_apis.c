@@ -3581,8 +3581,8 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
 			Utopia_Free(&utctx, 0);
 		}
 		// This check is to prevent P&M crash
-		if(pVClass != NULL)
-                {
+        if(pVClass != NULL)
+		{
 			snprintf((char*)pEntry->ClassId, sizeof(pEntry->ClassId), "%s", pVClass);
 		}
 
@@ -3747,17 +3747,25 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
 ErrRet:
     if (fp)
         fclose(fp);
+
     if(pEntry2)
         AnscFreeMemory(pEntry2);
-    for(i=0;i<sizeClientContent;i++){
+
+    /* CID 163447 fix - Nesting level mismatch - Proper indentation for null check */
+    for(i=0;i<sizeClientContent;i++)
+    {
         if(pContentEntry2[i].pIPAddress)
             AnscFreeMemory(pContentEntry2[i].pIPAddress);
-	if(pContentEntry2[i].pOption)
-	    AnscFreeMemory(pContentEntry2[i].pOption);
+
+        if(pContentEntry2[i].pOption)
+            AnscFreeMemory(pContentEntry2[i].pOption);
 	}
-    if(pContentEntry2) {
+
+    if(pContentEntry2)
+    {
         AnscFreeMemory(pContentEntry2);
     }
+
     g_dhcpv4_server_client_count = 0;
     AnscTraceFlow(("Exiting from %s with error\n", __FUNCTION__));
     return(-1);

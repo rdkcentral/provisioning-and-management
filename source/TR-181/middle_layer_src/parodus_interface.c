@@ -129,9 +129,16 @@ static int check_ethernet_wan_status()
 static void getDeviceMac()
 {
     int retryCount = 0;
-    while(!strlen(deviceMAC))
+    char local_deviceMAC[64] = {0};
+    
+    /* CID 135562 fix - Waiting while holding a lock
+     * Check deviceMAC length outside the loop to avoid repeated locking */
+    pthread_mutex_lock(&device_mac_mutex);
+    int deviceMAC_len = strlen(deviceMAC);
+    pthread_mutex_unlock(&device_mac_mutex);
+    
+    while(!deviceMAC_len)
     {
-	pthread_mutex_lock(&device_mac_mutex);
         int ret = -1, size =0, val_size =0,cnt =0;
         char compName[MAX_PARAMETERNAME_LEN/2] = { '\0' };
         char dbusPath[MAX_PARAMETERNAME_LEN/2] = { '\0' };
@@ -144,15 +151,21 @@ static void getDeviceMac()
         char deviceMACValue[32] = { '\0' };
         errno_t  rc  = -1;
 
+        /* Check again with lock in case another thread set it */
+	pthread_mutex_lock(&device_mac_mutex);
 	if (strlen(deviceMAC))
 	{
 	        pthread_mutex_unlock(&device_mac_mutex);
 	        break;
 	}
+        pthread_mutex_unlock(&device_mac_mutex);
 
 	if(CCSP_SUCCESS == check_ethernet_wan_status() && sysevent_get(fd, token, "eth_wan_mac", deviceMACValue, sizeof(deviceMACValue)) == 0 && deviceMACValue[0] != '\0')
 	{
-                AnscMacToLower(deviceMAC, deviceMACValue, sizeof(deviceMAC));
+                AnscMacToLower(local_deviceMAC, deviceMACValue, sizeof(local_deviceMAC));
+                pthread_mutex_lock(&device_mac_mutex);
+                strcpy(deviceMAC, local_deviceMAC);
+                pthread_mutex_unlock(&device_mac_mutex);
 	        retryCount = 0;
 	}
 	else
@@ -190,7 +203,10 @@ static void getDeviceMac()
 		                CcspTraceDebug(("parameterval[%d]->parameterValue : %s\n",cnt,parameterval[cnt]->parameterValue));
 		                CcspTraceDebug(("parameterval[%d]->type :%d\n",cnt,parameterval[cnt]->type));
 	                    }
-                            AnscMacToLower(deviceMAC, parameterval[0]->parameterValue, sizeof(deviceMAC));
+                            AnscMacToLower(local_deviceMAC, parameterval[0]->parameterValue, sizeof(local_deviceMAC));
+                            pthread_mutex_lock(&device_mac_mutex);
+                            strcpy(deviceMAC, local_deviceMAC);
+                            pthread_mutex_unlock(&device_mac_mutex);
                             retryCount = 0;
                         }
 	                else
@@ -204,8 +220,9 @@ static void getDeviceMac()
 
         if(retryCount == 0)
         {
+                pthread_mutex_lock(&device_mac_mutex);
                 CcspTraceInfo(("deviceMAC is %s\n",deviceMAC));
-          	pthread_mutex_unlock(&device_mac_mutex);
+                pthread_mutex_unlock(&device_mac_mutex);
                 break;
         }
         else
@@ -213,16 +230,19 @@ static void getDeviceMac()
                 if(retryCount > 5 )
 		{
 			CcspTraceError(("Unable to get CM Mac after %d retry attempts..\n", retryCount));
-                  	pthread_mutex_unlock(&device_mac_mutex);
 			break;
 		}
 		else
 		{
 			CcspTraceError(("Failed to GetValue for MAC. Retrying...retryCount %d\n", retryCount));
-                  	pthread_mutex_unlock(&device_mac_mutex);
                         sleep(10);
 		}
         }
+        
+        /* Update deviceMAC_len for next iteration */
+        pthread_mutex_lock(&device_mac_mutex);
+        deviceMAC_len = strlen(deviceMAC);
+        pthread_mutex_unlock(&device_mac_mutex);
     }
 }
 

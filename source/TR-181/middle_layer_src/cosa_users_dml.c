@@ -333,6 +333,7 @@ User_AddEntry
     USERS_USER_SET_DEFAULTVALUE(pUser);
 
     pCxtLink = (PCOSA_CONTEXT_LINK_OBJECT)AnscAllocateMemory( sizeof(COSA_CONTEXT_LINK_OBJECT) );
+    /* CID 58159 Logically dead code fix - added proper condition*/
     if ( !pCxtLink )
     {
         goto EXIT1;

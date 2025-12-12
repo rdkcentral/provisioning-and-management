@@ -3516,10 +3516,11 @@ VLAN_AddEntry
     PCOSA_DML_BRG_VLAN_FULL         pVLAN           = (PCOSA_DML_BRG_VLAN_FULL  )NULL;
     errno_t                         rc              = -1;
 
-	// not support
-	return NULL;
+    /* CID 175417 fix - Structurally dead code - VLAN functionality not supported, early return */
+    return NULL;
 
-    pVLAN = (PCOSA_DML_BRG_VLAN_FULL)AnscAllocateMemory(sizeof(COSA_DML_BRG_VLAN_FULL));
+    /* The following code is unreachable due to the return above - keeping for potential future use */
+    /*pVLAN = (PCOSA_DML_BRG_VLAN_FULL)AnscAllocateMemory(sizeof(COSA_DML_BRG_VLAN_FULL));
 
     if ( !pVLAN )
     {
@@ -3540,8 +3541,9 @@ VLAN_AddEntry
        AnscFreeMemory(pVLAN);
        return NULL;
     }
-
+    */
     /* Update the middle layer cache */
+    /*
     if ( TRUE )
     {
         pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)AnscAllocateMemory(sizeof(COSA_CONTEXT_LINK_OBJECT));
@@ -3583,7 +3585,7 @@ VLAN_AddEntry
 
     *pInsNumber = pCosaContext->InstanceNumber;
 
-    return (ANSC_HANDLE)pCosaContext; /* return the handle */
+    return (ANSC_HANDLE)pCosaContext; *//* return the handle */
 }
 
 /**********************************************************************  

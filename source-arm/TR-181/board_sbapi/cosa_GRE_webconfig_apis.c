@@ -190,9 +190,14 @@ BOOL unpackAndProcessHotspotData(char* pString)
             sequenceDetails->multiCompExecData--;
 
 
-            execDataHotspot->txid = hd->transaction_id; 
-            execDataHotspot->version = (uint32_t)hd->version; 
-            execDataHotspot->numOfEntries = td->entries_count; 
+            execDataHotspot->txid = hd->transaction_id;
+            execDataHotspot->version = (uint32_t)hd->version;
+
+            /* CID 172807 fix - Dereferencing after NULL check - added a NULL check */
+            if(NULL != td)
+            {
+                execDataHotspot->numOfEntries = td->entries_count;
+            }
 
             strncpy(execDataHotspot->subdoc_name,"hotspot",sizeof(execDataHotspot->subdoc_name)-1);
             execDataHotspot->executeBlobRequest = setHotspot;
@@ -362,10 +367,11 @@ void* initialize_hotspot_webconfig(void *arg)
         if (blob != NULL)
         {
             /* CID: 172835 fix*/
-            if (fscanf(fp,"%s",blob) == 1)
-            {
+            /* CID 173223 fix - Use safer fread instead of fscanf to avoid tainted blob */
+            size_t bytes_read = fread(blob, 1, sz, fp);
+            if (bytes_read > 0) {
                 gDisableNotification = 1;
-                unpackAndProcessHotspotData(blob); 
+                unpackAndProcessHotspotData(blob);
             }
             free(blob);
             blob = NULL ;  

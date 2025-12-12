@@ -356,7 +356,7 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
         circuitSave = snprintf(circuitid, sizeof(circuitid), "%s;", varStruct.parameterValue);
 #endif
 		memset(outdata,0,sizeof(outdata));
-
+        
         snprintf(paramname, sizeof(paramname),"%s.%s", curInt, "SSID");
         size = sizeof(outdata);
         retval = COSAGetParamValueByPathName(bus_handle, &varStruct, &size);
@@ -387,6 +387,7 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
             pthread_mutex_unlock(&circuitid_lock);
             return -1;
         }
+
         if((strcmp("None", varStruct.parameterValue) == 0) || (strcmp("Enhanced-Open", varStruct.parameterValue) == 0)) {
             snprintf(circuitid + circuitSave, sizeof(circuitid) - circuitSave, "o");
         } else {
@@ -608,15 +609,7 @@ CosaDml_GreIfGetEntryByIndex(ULONG idx, COSA_DML_GRE_IF *greIf)
     return ANSC_STATUS_SUCCESS;
 }
 
-ANSC_STATUS
-CosaDml_GreIfSetIns(ULONG idx, ULONG ins)
-{
-   UNREFERENCED_PARAMETER(ins);
-    if (idx != 0)
-        return ANSC_STATUS_FAILURE;
-
-    return ANSC_STATUS_SUCCESS;
-}
+/* CID 163448 fix - remove useless call since CosaDml_GreIfSetIns(i, nextIns) is having no action */
 
 ANSC_STATUS
 CosaDml_GreIfGetEnable(ULONG ins, BOOL *enable)

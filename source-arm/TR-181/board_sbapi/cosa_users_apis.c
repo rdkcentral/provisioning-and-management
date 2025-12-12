@@ -689,8 +689,15 @@ user_hashandsavepwd
       rc = strcpy_s(pEntry->HashedPassword,sizeof(pEntry->HashedPassword),setHash);
       ERR_CHK(rc);
       CcspTraceWarning(("%s, Hash value is saved to syscfg\n",__FUNCTION__));
-	  syscfg_unset(NULL, "user_password_3");
-	  syscfg_commit();
+      /* CID 349776 Unchecked return value fix - Check syscfg function return values */
+      if (syscfg_unset(NULL, "user_password_3") != 0) {
+          AnscTraceWarning(("syscfg_unset failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
+      if (syscfg_commit() != 0) {
+          AnscTraceWarning(("syscfg_commit failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
       return ANSC_STATUS_SUCCESS;
    }
 
@@ -706,8 +713,15 @@ user_hashandsavepwd
       rc = strcpy_s(pEntry->HashedPassword,sizeof(pEntry->HashedPassword),setHash);
       ERR_CHK(rc);
       CcspTraceWarning(("%s, Hash value is saved to syscfg\n",__FUNCTION__));
-      syscfg_unset(NULL, "user_password_2");
-      syscfg_commit();
+      /* CID 349776 Unchecked return value fix - Check syscfg function return values for cusadmin */
+      if (syscfg_unset(NULL, "user_password_2") != 0) {
+          AnscTraceWarning(("syscfg_unset failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
+      if (syscfg_commit() != 0) {
+          AnscTraceWarning(("syscfg_commit failed\n"));
+          return ANSC_STATUS_FAILURE;
+      }
       return ANSC_STATUS_SUCCESS;
    }
 #endif
@@ -729,6 +743,7 @@ CosaDmlUserResetPassword
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_)  || defined(_PLATFORM_BANANAPI_R4_) || defined(LIBRDKCONFIG_BUILD) || (defined(_COSA_FOR_BCI_) &&  defined(LIBRDKCONFIG_BUILD))
    errno_t safec_rc = -1;
 #endif
+   int ret = ANSC_STATUS_FAILURE;
    if(!strcmp(pEntry->Username,"admin"))
    {
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_)  || defined(_PLATFORM_BANANAPI_R4_) || defined(_PLATFORM_IPQ_)
@@ -789,8 +804,8 @@ CosaDmlUserResetPassword
    if(!strcmp(pEntry->Username,"admin"))
    {
      user_hashandsavepwd(NULL,defPassword,pEntry);
-     /* CID 349776 Unchecked return value : fix */
-     int ret = memset_s(defPassword, sizeof(defPassword), 0, sizeof(defPassword));
+     /* CID 349776 fix - Unchecked return value */
+     ret = memset_s(defPassword, sizeof(defPassword), 0, sizeof(defPassword));
      if( ret != 0) {
         return ANSC_STATUS_FAILURE;
      }
@@ -800,7 +815,11 @@ CosaDmlUserResetPassword
    if(!strcmp(pEntry->Username,"cusadmin"))
    {
      user_hashandsavepwd(NULL,defPassword,pEntry);
-     memset_s(defPassword, sizeof(defPassword), 0, sizeof(defPassword));
+     /* CID 349776 fix - Unchecked return value */
+     ret = memset_s(defPassword, sizeof(defPassword), 0, sizeof(defPassword));
+     if( ret != 0) {
+        return ANSC_STATUS_FAILURE;
+     }
      CcspTraceWarning(("%s, Returning Success\n",__FUNCTION__));
      return ANSC_STATUS_SUCCESS;
    }
