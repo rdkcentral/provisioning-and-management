@@ -17521,14 +17521,9 @@
                         <syntax>bool</syntax>
                         <writable>true</writable>
                     </parameter>
-                    <!--
-                    <parameter>
-                        <name>TunnelStatus</name>
-                        <type>string(256)</type>
-                        <syntax>string</syntax>
-                        <writable>true</writable>
-                    </parameter>
-                    -->
+                    
+                    /* TunnelStatus handling moved to Hotspot component (RDKB-60325) */
+
                     <parameter>
                         <name>Status</name>
                         <type>string: Enabled(1), Disabled(2), Error(3)</type>
