@@ -2826,7 +2826,7 @@ CosaDmlDcSetEnableStaticNameServer
         if (syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", xdns_enable, sizeof(xdns_enable)) == 0) {
             if (strcmp(xdns_enable, "1") == 0 || strcasecmp(xdns_enable, "true") == 0) {
                 CcspTraceWarning(("Static DNS enable blocked: XDNS is enabled via syscfg\n"));
-                return ANSC_STATUS_SUCCESS; /* do not enable static DNS */
+                return ANSC_STATUS_FAILURE; /* do not enable static DNS */
             }
         }
     }
