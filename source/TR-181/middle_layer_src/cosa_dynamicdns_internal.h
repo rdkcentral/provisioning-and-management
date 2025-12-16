@@ -15,7 +15,7 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/ 
+*/
 
 #if defined(DDNS_BROADBANDFORUM)
 
@@ -67,18 +67,43 @@ COSA_DATAMODEL_TR181_DDNS,  *PCOSA_DATAMODEL_TR181_DDNS;
     Standard function declaration
 ***********************************/
 
+/**
+ * @brief Create the Dynamic DNS backend object.
+ *
+ * @return Handle to the DS-Lite backend object.
+ * @retval Handle to the newly created DS-Lite backend object
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaDynamicDnsCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the Dynamic DNS backend object.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDnsInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the Dynamic DNS backend object.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDnsRemove
     (
@@ -86,17 +111,46 @@ CosaDynamicDnsRemove
     );
 
 //Dynamic DNS Client
+/**
+ * @brief Retrieves Dynamic DNS client information from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful retrieval.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_ClientGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
+/**
+ * @brief Adds Dynamic DNS client entry to persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the client entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful addition.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_ClientAddInfo
     (
         ANSC_HANDLE                 hThisObject,
         ANSC_HANDLE                 hCosaContext
     );
+/**
+ * @brief Deletes Dynamic DNS client entry from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the client entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful deletion.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_ClientDelInfo
     (
@@ -105,17 +159,46 @@ CosaDynamicDns_ClientDelInfo
     );
 
 //Dynamic DNS Host
+/**
+ * @brief Retrieves Dynamic DNS host information from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful retrieval.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_HostGetInfo
     (
        ANSC_HANDLE                 hThisObject
     );
+/**
+ * @brief Adds Dynamic DNS host entry to persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the host entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful addition.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_HostAddInfo
     (
         ANSC_HANDLE                 hThisObject,
         ANSC_HANDLE                 hCosaContext
     );
+/**
+ * @brief Deletes Dynamic DNS host entry from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the host entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful deletion.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_HostDelInfo
     (
@@ -124,17 +207,46 @@ CosaDynamicDns_HostDelInfo
     );
 
 //Dynamic DNS Server
+/**
+ * @brief Retrieves Dynamic DNS server information from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful retrieval.
+ * @retval  error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_ServerGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
+/**
+ * @brief Adds Dynamic DNS server entry to persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the server entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful addition.
+ * @retval  error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_ServerAddInfo
     (
         ANSC_HANDLE                 hThisObject,
         ANSC_HANDLE                 hCosaContext
     );
+/**
+ * @brief Deletes Dynamic DNS server entry from persistent registry.
+ *
+ * @param[in] hThisObject Handle to the Dynamic DNS backend object.
+ * @param[in] hCosaContext Handle to the COSA context object for the server entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful deletion.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDynamicDns_ServerDelInfo
     (

@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -320,6 +320,21 @@ COSA_DML_IA_LOG_ENTRY,  *PCOSA_DML_IA_LOG_ENTRY;
                 FUNCTION PROTOTYPES
 **********************************************************************/
 
+/**
+* @brief Initialize the Internet Access (IA) module.
+*
+* This function initializes the Internet Access backend module, which handles security policies,
+* email notifications, and firewall logging.
+*
+* @param[in] hDml - Opaque handle from DM adapter.
+* @param[out] phContext - Opaque handle passed back from backend, needed by CosaDmlIaXyz() routines.
+*                         \n The buffer pointed by phContext should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or email file generation fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaInit
     (
@@ -327,6 +342,20 @@ CosaDmlIaInit
         PANSC_HANDLE                phContext
     );
 
+/**
+* @brief Get the security configuration settings.
+*
+* This function retrieves security-related configuration including email notification settings.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[out] pCfg - Pointer to a COSA_DML_SECURITY_CFG structure where the security configuration
+*                    will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or configuration retrieval fails.
+*
+*/
 ANSC_STATUS
 CosaDmlSecurityGetConfig
     (
@@ -334,6 +363,20 @@ CosaDmlSecurityGetConfig
         PCOSA_DML_SECURITY_CFG      pCfg
     );
 
+/**
+* @brief Set the security configuration settings.
+*
+* This function applies security-related configuration including email notification settings.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] pCfg - Pointer to a COSA_DML_SECURITY_CFG structure containing the security configuration
+*                   to be set.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization, configuration set, or file generation fails.
+*
+*/
 ANSC_STATUS
 CosaDmlSecuritySetConfig
     (
@@ -341,6 +384,21 @@ CosaDmlSecuritySetConfig
         PCOSA_DML_SECURITY_CFG      pCfg
     );
 
+/**
+* @brief Get the firewall extended configuration settings.
+*
+* This function retrieves firewall configuration including firewall level, web traffic filtering,
+* VPN passthrough settings, and traffic filtering options.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[out] pCfg - Pointer to a COSA_DML_FIREWALL_CFG2 structure where the firewall configuration
+*                    will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE otherwise.
+*
+*/
 ANSC_STATUS
 CosaDmlFirewallGetConfig2
     (
@@ -348,6 +406,21 @@ CosaDmlFirewallGetConfig2
         PCOSA_DML_FIREWALL_CFG2     pCfg
     );
 
+/**
+* @brief Set the firewall extended configuration settings.
+*
+* This function applies firewall configuration including firewall level, web traffic filtering,
+* VPN passthrough settings, and traffic filtering options.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] pCfg - Pointer to a COSA_DML_FIREWALL_CFG2 structure containing the firewall configuration
+*                   to be set.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE otherwise.
+*
+*/
 ANSC_STATUS
 CosaDmlFirewallSetConfig2
     (
@@ -357,13 +430,37 @@ CosaDmlFirewallSetConfig2
 
 #if !defined (RESOURCE_OPTIMIZATION)
 
+/**
+* @brief Get the number of Internet Access policies configured.
+*
+* This function returns the count of Internet Access (IA) policies currently configured in the system.
+*
+* @param[in] hContext - Reserved for future use.
+*
+* @return The number of Internet Access policies.
+*
+*/
 ULONG
 CosaDmlIaGetNumberOfPolicies
     (
         ANSC_HANDLE                 hContext
     );
 
-
+/**
+* @brief Get an Internet Access policy by index.
+*
+* This function retrieves an Internet Access policy configuration by its index position.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulIndex - Index of the policy to retrieve (0-based).
+* @param[out] pEntry - Pointer to a COSA_DML_IA_POLICY structure where the policy will be returned.
+*                      \n The buffer pointed by pEntry should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy at the specified index does not exist.
+*
+*/
 ANSC_STATUS
 CosaDmlIaGetPolicy
     (
@@ -372,6 +469,23 @@ CosaDmlIaGetPolicy
         PCOSA_DML_IA_POLICY         pEntry
     );
 
+/**
+* @brief Set instance number and alias for an Internet Access policy.
+*
+* This function updates the instance number and alias (policy name) for an existing policy
+* identified by its index.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulIndex - Index of the policy to update (0-based).
+* @param[in] ulInstanceNumber - Instance number to assign to the policy.
+* @param[in] pAlias - Alias (policy name) to assign.
+*                     \n The buffer should contain a null-terminated string with maximum length of 64 bytes.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE otherwise.
+*
+*/
 ANSC_STATUS
 CosaDmlIaSetPolicyValues
     (
@@ -381,6 +495,20 @@ CosaDmlIaSetPolicyValues
         char*                       pAlias
     );
 
+/**
+* @brief Get an Internet Access policy by instance number.
+*
+* This function retrieves an Internet Access policy configuration by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulInsNum - Instance number of the policy to retrieve.
+* @param[out] pEntry - Pointer to a COSA_DML_IA_POLICY structure where the policy will be returned.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if no policy with the specified instance number exists.
+*
+*/
 ANSC_STATUS
 CosaDmlIaGetPolicyByInsNum
     (
@@ -389,6 +517,19 @@ CosaDmlIaGetPolicyByInsNum
         PCOSA_DML_IA_POLICY         pEntry
     );
 
+/**
+* @brief Add a new Internet Access policy.
+*
+* This function creates a new Internet Access policy with the provided configuration.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] pEntry - Pointer to a COSA_DML_IA_POLICY structure containing the policy to add.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy addition fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaAddPolicy
     (
@@ -396,6 +537,20 @@ CosaDmlIaAddPolicy
         PCOSA_DML_IA_POLICY         pEntry
     );
 
+/**
+* @brief Delete an Internet Access policy.
+*
+* This function removes an Internet Access policy identified by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulInstanceNumber - Instance number of the policy to delete.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if no policy with the specified instance number exists.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy deletion fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaDelPolicy
     (
@@ -403,6 +558,21 @@ CosaDmlIaDelPolicy
         ULONG                       ulInstanceNumber
     );
 
+/**
+* @brief Update an Internet Access policy configuration.
+*
+* This function updates an existing Internet Access policy identified by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulInstanceNumber - Instance number of the policy to update.
+* @param[in] pEntry - Pointer to a COSA_DML_IA_POLICY structure containing the new policy configuration.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if no policy with the specified instance number exists.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaSetPolicy
     (
@@ -411,6 +581,21 @@ CosaDmlIaSetPolicy
         PCOSA_DML_IA_POLICY         pEntry
     );
 
+/**
+* @brief Get the schedule settings for an Internet Access policy.
+*
+* This function retrieves the time-of-day schedule configuration for a specified policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulInstanceNumber - Instance number of the policy.
+* @param[out] pEntry - Pointer to a COSA_DML_IA_POLICY_SCH structure where the schedule will be returned.
+*                      \n The buffer pointed by pEntry should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if no policy with the specified instance number exists.
+*
+*/
 ANSC_STATUS
 CosaDmlIaGetPolicySchedule
     (
@@ -419,6 +604,21 @@ CosaDmlIaGetPolicySchedule
         PCOSA_DML_IA_POLICY_SCH     pEntry
     );
 
+/**
+* @brief Set the schedule settings for an Internet Access policy.
+*
+* This function updates the time-of-day schedule configuration for a specified policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulInstanceNumber - Instance number of the policy.
+* @param[in] pEntry - Pointer to a COSA_DML_IA_POLICY_SCH structure containing the schedule to set.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if no policy with the specified instance number exists.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaSetPolicySchedule
     (
@@ -427,6 +627,17 @@ CosaDmlIaSetPolicySchedule
         PCOSA_DML_IA_POLICY_SCH     pEntry
     );
 
+/**
+* @brief Get the number of blocked URLs for a policy.
+*
+* This function returns the count of blocked URL entries configured for a specific Internet Access policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+*
+* @return The number of blocked URL entries in the policy.
+*
+*/
 ULONG
 CosaDmlIaPolicyGetNumberOfUrls
     (
@@ -434,6 +645,22 @@ CosaDmlIaPolicyGetNumberOfUrls
         ULONG                       ulPolicyInstanceNumber
     );
 
+/**
+* @brief Get a blocked URL entry by index.
+*
+* This function retrieves a blocked URL entry from a policy by its index position.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulIndex - Index of the URL entry to retrieve (0-based).
+* @param[out] pUrl - Pointer to a COSA_DML_IA_POLICY_URL structure where the URL entry will be returned.
+*                    \n The buffer pointed by pUrl should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or URL entry does not exist.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyGetUrl
     (
@@ -443,6 +670,22 @@ CosaDmlIaPolicyGetUrl
         PCOSA_DML_IA_POLICY_URL     pUrl
     );
 
+/**
+* @brief Get a blocked URL entry by instance number.
+*
+* This function retrieves a blocked URL entry from a policy by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulURLInstanceNumber - Instance number of the URL entry to retrieve.
+* @param[out] pUrl - Pointer to a COSA_DML_IA_POLICY_URL structure where the URL entry will be returned.
+*                    \n The buffer pointed by pUrl should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or URL entry with the specified instance number does not exist.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyGetUrlByInsNum
     (
@@ -452,6 +695,25 @@ CosaDmlIaPolicyGetUrlByInsNum
         PCOSA_DML_IA_POLICY_URL     pUrl
     );
 
+/**
+* @brief Set instance number and alias for a blocked URL entry.
+*
+* This function updates the instance number and alias for an existing URL entry identified by its index.
+
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulIndex - Index of the URL entry to update (0-based).
+* @param[in] ulInstanceNumber - Instance number to assign to the URL entry.
+* @param[in] pAlias - Alias to assign to the URL entry.
+*                     \n The buffer should contain a null-terminated string with maximum length of 64 bytes.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicySetUrlValues
     (
@@ -462,6 +724,21 @@ CosaDmlIaPolicySetUrlValues
         char*                       pAlias
     );
 
+/**
+* @brief Add a blocked URL entry to a policy.
+*
+* This function adds a new blocked URL entry to a specified Internet Access policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pUrl - Pointer to a COSA_DML_IA_POLICY_URL structure containing the URL entry to add.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyAddUrl
     (
@@ -470,6 +747,22 @@ CosaDmlIaPolicyAddUrl
         PCOSA_DML_IA_POLICY_URL     pUrl
     );
 
+/**
+* @brief Delete a blocked URL entry from a policy.
+*
+* This function removes a blocked URL entry identified by its instance number from a policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pUrl - Pointer to a COSA_DML_IA_POLICY_URL structure containing the URL entry to delete.
+*                   \n The entry is identified by InstanceNumber field only.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or URL entry does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyDelUrl
     (
@@ -478,6 +771,22 @@ CosaDmlIaPolicyDelUrl
         PCOSA_DML_IA_POLICY_URL     pUrl        /* Identified by InstanceNumber */
     );
 
+/**
+* @brief Update a blocked URL entry in a policy.
+*
+* This function updates an existing blocked URL entry identified by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pUrl - Pointer to a COSA_DML_IA_POLICY_URL structure containing the URL entry to update.
+*                   \n The entry is identified by InstanceNumber field.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or URL entry does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicySetUrl
     (
@@ -486,6 +795,17 @@ CosaDmlIaPolicySetUrl
         PCOSA_DML_IA_POLICY_URL     pUrl        /* Identified by InstanceNumber */
     );
 
+/**
+* @brief Get the number of blocked keywords for a policy.
+*
+* This function returns the count of blocked keyword entries configured for a specific Internet Access policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+*
+* @return The number of blocked keyword entries in the policy.
+*
+*/
 ULONG
 CosaDmlIaPolicyGetNumberOfKeywords
     (
@@ -493,6 +813,22 @@ CosaDmlIaPolicyGetNumberOfKeywords
         ULONG                       ulPolicyInstanceNumber
     );
 
+/**
+* @brief Get a blocked keyword entry by index.
+*
+* This function retrieves a blocked keyword entry from a policy by its index position.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulIndex - Index of the keyword entry to retrieve (0-based).
+* @param[out] pKeyword - Pointer to a COSA_DML_IA_POLICY_KEYWORD structure where the keyword entry will be returned.
+*                        \n The buffer pointed by pKeyword should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or keyword entry does not exist.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyGetKeyword
     (
@@ -502,6 +838,22 @@ CosaDmlIaPolicyGetKeyword
         PCOSA_DML_IA_POLICY_KEYWORD pKeyword
     );
 
+/**
+* @brief Get a blocked keyword entry by instance number.
+*
+* This function retrieves a blocked keyword entry from a policy by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulKeywordInstanceNumber - Instance number of the keyword entry to retrieve.
+* @param[out] pKeyword - Pointer to a COSA_DML_IA_POLICY_KEYWORD structure where the keyword entry will be returned.
+*                        \n The buffer pointed by pKeyword should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or keyword entry with the specified instance number does not exist.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyGetKeywordByInsNum
     (
@@ -511,6 +863,24 @@ CosaDmlIaPolicyGetKeywordByInsNum
         PCOSA_DML_IA_POLICY_KEYWORD pKeyword
     );
 
+/**
+* @brief Set instance number and alias for a blocked keyword entry.
+*
+* This function updates the instance number and alias for an existing keyword entry identified by its index.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulIndex - Index of the keyword entry to update (0-based).
+* @param[in] ulInstanceNumber - Instance number to assign to the keyword entry.
+* @param[in] pAlias - Alias to assign to the keyword entry.
+*                     \n The buffer should contain a null-terminated string with maximum length of 64 bytes.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicySetKeywordValues
     (
@@ -521,6 +891,21 @@ CosaDmlIaPolicySetKeywordValues
         char*                       pAlias
     );
 
+/**
+* @brief Add a blocked keyword entry to a policy.
+*
+* This function adds a new blocked keyword entry to a specified Internet Access policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pKeyword - Pointer to a COSA_DML_IA_POLICY_KEYWORD structure containing the keyword entry to add.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyAddKeyword
     (
@@ -529,6 +914,22 @@ CosaDmlIaPolicyAddKeyword
         PCOSA_DML_IA_POLICY_KEYWORD pKeyword
     );
 
+/**
+* @brief Delete a blocked keyword entry from a policy.
+*
+* This function removes a blocked keyword entry identified by its instance number from a policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pKeyword - Pointer to a COSA_DML_IA_POLICY_KEYWORD structure containing the keyword entry to delete.
+*                       \n The entry is identified by InstanceNumber field only.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or keyword entry does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyDelKeyword
     (
@@ -537,6 +938,22 @@ CosaDmlIaPolicyDelKeyword
         PCOSA_DML_IA_POLICY_KEYWORD pKeyword    /* Identified by InstanceNumber */
     );
 
+/**
+* @brief Update a blocked keyword entry in a policy.
+*
+* This function updates an existing blocked keyword entry identified by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pKeyword - Pointer to a COSA_DML_IA_POLICY_KEYWORD structure containing the keyword entry to update.
+*                       \n The entry is identified by InstanceNumber field. Fields to update: Alias, Keyword.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or keyword entry does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicySetKeyword
     (
@@ -545,6 +962,17 @@ CosaDmlIaPolicySetKeyword
         PCOSA_DML_IA_POLICY_KEYWORD pKeyword    /* Identified by InstanceNumber */
     );
 
+/**
+* @brief Get the number of blocked applications for a policy.
+*
+* This function returns the count of blocked application entries configured for a specific Internet Access policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+*
+* @return The number of blocked application entries in the policy.
+*
+*/
 ULONG
 CosaDmlIaPolicyGetNumberOfApps
     (
@@ -552,6 +980,22 @@ CosaDmlIaPolicyGetNumberOfApps
         ULONG                       ulPolicyInstanceNumber
     );
 
+/**
+* @brief Get a blocked application entry by index.
+*
+* This function retrieves a blocked application entry from a policy by its index position.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulIndex - Index of the application entry to retrieve (0-based).
+* @param[out] pApp - Pointer to a COSA_DML_IA_POLICY_APP structure where the application entry will be returned.
+*                    \n The buffer pointed by pApp should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or application entry does not exist.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyGetApp
     (
@@ -561,6 +1005,22 @@ CosaDmlIaPolicyGetApp
         PCOSA_DML_IA_POLICY_APP     pApp
     );
 
+/**
+* @brief Get a blocked application entry by instance number.
+*
+* This function retrieves a blocked application entry from a policy by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulAppInstanceNumber - Instance number of the application entry to retrieve.
+* @param[out] pApp - Pointer to a COSA_DML_IA_POLICY_APP structure where the application entry will be returned.
+*                    \n The buffer pointed by pApp should be allocated by the caller.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or application entry with the specified instance number does not exist.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyGetAppByInsNum
     (
@@ -570,6 +1030,25 @@ CosaDmlIaPolicyGetAppByInsNum
         PCOSA_DML_IA_POLICY_APP     pApp
     );
 
+/**
+* @brief Set instance number and alias for a blocked application entry.
+*
+* This function updates the instance number and alias (application name) for an existing application
+* entry identified by its index.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] ulIndex - Index of the application entry to update (0-based).
+* @param[in] ulInstanceNumber - Instance number to assign to the application entry.
+* @param[in] pAlias - Alias (application name) to assign to the application entry.
+*                     \n The buffer should contain a null-terminated string with maximum length of 64 bytes.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicySetAppValues
     (
@@ -580,6 +1059,21 @@ CosaDmlIaPolicySetAppValues
         char*                       pAlias
     );
 
+/**
+* @brief Add a blocked application entry to a policy.
+*
+* This function adds a new blocked application entry to a specified Internet Access policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pApp - Pointer to a COSA_DML_IA_POLICY_APP structure containing the application entry to add.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyAddApp
     (
@@ -588,6 +1082,22 @@ CosaDmlIaPolicyAddApp
         PCOSA_DML_IA_POLICY_APP     pApp
     );
 
+/**
+* @brief Delete a blocked application entry from a policy.
+*
+* This function removes a blocked application entry identified by its instance number from a policy.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pApp - Pointer to a COSA_DML_IA_POLICY_APP structure containing the application entry to delete.
+*                   \n The entry is identified by InstanceNumber field only.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or application entry does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicyDelBlockedApp
     (
@@ -596,6 +1106,22 @@ CosaDmlIaPolicyDelBlockedApp
         PCOSA_DML_IA_POLICY_APP     pApp        /* Identified by InstanceNumber */
     );
 
+/**
+* @brief Update a blocked application entry in a policy.
+*
+* This function updates an existing blocked application entry identified by its instance number.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[in] ulPolicyInstanceNumber - Instance number of the policy.
+* @param[in] pApp - Pointer to a COSA_DML_IA_POLICY_APP structure containing the application entry to update.
+*                   \n The entry is identified by InstanceNumber field.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if the operation is successful.
+* @retval ANSC_STATUS_CANT_FIND if the policy or application entry does not exist.
+* @retval ANSC_STATUS_FAILURE if Utopia initialization or policy update fails.
+*
+*/
 ANSC_STATUS
 CosaDmlIaPolicySetBlockedApp
     (
@@ -606,6 +1132,20 @@ CosaDmlIaPolicySetBlockedApp
 
 #endif
 
+/**
+* @brief Get firewall log entries for Internet Access policies.
+*
+* This function retrieves firewall log entries related to Internet Access policy violations.
+*
+* @param[in] hContext - Reserved for future use.
+* @param[out] pulCount - Pointer to a ULONG variable where the count of log entries will be returned.
+*                        \n The buffer pointed by pulCount should be allocated by the caller.
+*
+* @return Pointer to firewall log entries.
+* @retval Pointer to an array of COSA_DML_IA_LOG_ENTRY structures.
+* @retval NULL if no logs are available or on first call.
+*
+*/
 PCOSA_DML_IA_LOG_ENTRY
 CosaDmlIaGetLogEntries
     (
@@ -613,12 +1153,40 @@ CosaDmlIaGetLogEntries
         PULONG                      pulCount
     );
 
+/**
+* @brief Check if firewall logs have been updated.
+*
+* This function checks if the firewall log cache should be refreshed based on a 30-second
+* interval (REFRESH_INTERVAL).
+*
+* @param[in] hContext - Reserved for future use.
+*
+* @return The update status.
+* @retval TRUE if logs should be refreshed.
+* @retval FALSE otherwise.
+*
+*/
 BOOL
 CosaDmlIaLogIsUpdated
     (
         ANSC_HANDLE                 hContext
     );
 
+/**
+* @brief Get all firewall log entries as formatted string.
+*
+* This function retrieves all firewall log entries and formats them as a newline-separated string.
+*
+* @param[out] pValue - Pointer to a character buffer where the formatted log entries will be returned.
+*                      \n The buffer should be allocated by the caller with size specified in pUlSize.
+* @param[in,out] pUlSize - Pointer to a ULONG variable containing the size of pValue buffer.
+*                          \n On input: available buffer size. On output: required size.
+*
+* @return The status of the operation.
+* @retval ANSC_STATUS_SUCCESS if logs were successfully retrieved and formatted.
+* @retval ANSC_STATUS_FAILURE if buffer size is insufficient.
+*
+*/
 ANSC_STATUS
 CosaDmlIaGetALLLogEntries
     (
@@ -626,7 +1194,26 @@ CosaDmlIaGetALLLogEntries
         ULONG*                         pUlSize
     );
 
+/**
+* @brief Check if an application name is a well-known network service.
+*
+* This function determines if a given application name matches one of the predefined well-known
+* network services.
+*
+* @param[in] name - Null-terminated string containing the application/service name to check.
+*
+* @return The status of operation.
+* @retval TRUE if the name matches a well-known service (case-insensitive)
+* @retval FALSE otherwise.
+*
+*/
 BOOL isWellKnownService (const char *name);
 
+/**
+* @brief Clean up Internet Access module resources.
+*
+* This function releases all resources allocated by the Internet Access module.
+*
+*/
 void CosaDmlIaRemove();
 #endif
