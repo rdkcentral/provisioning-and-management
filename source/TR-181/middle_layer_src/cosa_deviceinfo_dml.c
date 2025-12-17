@@ -131,6 +131,9 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 
 #define MAX_ALLOWABLE_STRING_LEN  256
 
+#define MEMINSIGHT_ENABLE_FILE "/nvram/.enable_meminsight"
+#define MEMINSIGHT_SERVICE "meminsight-runner.service"
+
 #define BOOTSTRAP_INFO_FILE_BACKUP "/nvram/bootstrap.json"
 #define CLEAR_TRACK_FILE "/nvram/ClearUnencryptedData_flags"
 #define NVRAM_BOOTSTRAP_CLEARED (1 << 0)
@@ -222,7 +225,6 @@ int id = 0;
 #define NUM_OF_DEVICEINFO_VALUES (sizeof(deviceinfo_set_table)/sizeof(deviceinfo_set_table[0]))
 
 #define CALC_SPACE_LEFT(x) (sizeof(x) - strlen(x) - 1)
-#define RDM_COMM_PATH "/etc/rdm/rdmBundleMgr.sh"
 enum  pString_val {
     UIACCESS,
     UISUCCESS,
@@ -1056,7 +1058,7 @@ DeviceInfo_GetParamStringValue
         return 0;
     }
 
-#if !defined(_SR213_PRODUCT_REQ_) && !defined (_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_) && !defined (_SCXF11BFL_PRODUCT_REQ_)
+#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_)
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_InActiveFirmware") == 0)
     {
         return CosaDmlDiGetInActiveFirmware(NULL, pValue, pulSize);
@@ -1647,6 +1649,267 @@ BOOL
     }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
+    return FALSE;
+}
+
+/**
+ * RFC Features for xMemInsight
+ */
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+
+    description:
+        This function is called to set BOOL parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        BOOL bValue - The updated BOOL value;
+
+    return:
+        TRUE if succeeded.
+        FALSE if not.
+
+**********************************************************************/
+
+BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    char buf[8];
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char *value = (bValue == TRUE) ? "true" : "false";
+        syscfg_get(NULL, "xMemEnable", buf, sizeof(buf));
+        if (!strncmp(buf, value, strlen(value)))
+        {
+            return TRUE;
+        }
+        if (syscfg_set_commit(NULL, "xMemEnable", value) != 0)
+        {
+            CcspTraceError(("syscfg_set failed on xMemEnable\n"));
+            return FALSE;
+        }
+
+        if (bValue == TRUE)
+        {
+            CcspTraceInfo(("Enabling MemInsight feature\n"));
+            FILE *enableFile = fopen(MEMINSIGHT_ENABLE_FILE, "w");
+            if (enableFile != NULL)
+            {
+                fclose(enableFile);
+                CcspTraceInfo(("Successfully enabled MemInsight. File created: %s\n", MEMINSIGHT_ENABLE_FILE));
+            }
+            else
+            {
+                CcspTraceError(("Failed to create MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
+                return FALSE;
+            }
+        }
+        else
+        {
+            CcspTraceInfo(("Disabling MemInsight feature\n"));
+            FILE *checkFile = fopen(MEMINSIGHT_ENABLE_FILE, "r");
+            if (checkFile != NULL)
+            {
+                fclose(checkFile);
+                if (remove(MEMINSIGHT_ENABLE_FILE) == 0)
+                {
+                    CcspTraceInfo(("Successfully disabled MemInsight. File removed: %s\n", MEMINSIGHT_ENABLE_FILE));
+
+                    int sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
+
+                    if (sysRet == 0)
+                    {
+                        CcspTraceInfo(("%s is currently active\n", MEMINSIGHT_SERVICE));
+                        sysRet = v_secure_system("systemctl stop %s", MEMINSIGHT_SERVICE);
+
+                        if (sysRet == 0)
+                        {
+                            CcspTraceInfo(("%s stopped successfully\n", MEMINSIGHT_SERVICE));
+                        }
+                        else
+                        {
+                            CcspTraceError(("Failed to stop %s. Return code: %d\n", MEMINSIGHT_SERVICE, sysRet));
+                        }
+                        sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
+
+                        if (sysRet != 0)
+                        {
+                            CcspTraceInfo(("Confirmed: %s is now inactive\n", MEMINSIGHT_SERVICE));
+                        }
+                        else
+                        {
+                            CcspTraceWarning(("Warning: %s appears to still be active after stop command\n", MEMINSIGHT_SERVICE));
+                        }
+                    }
+                    else
+                    {
+                        CcspTraceInfo(("MemInsight service %s is already inactive\n", MEMINSIGHT_SERVICE));
+                    }
+                }
+                else
+                {
+                    CcspTraceError(("Failed to remove MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
+                }
+            }
+            else
+            {
+                CcspTraceInfo(("MemInsight is already disabled. File not found: %s\n", MEMINSIGHT_ENABLE_FILE));
+            }
+        }
+        return TRUE;
+    }
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+
+    description:
+        This function is called to retrieve BOOL parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        BOOL* bValue - The buffer of returned boolean value;
+
+    return:
+        TRUE if succeeded.
+        FALSE if not.
+
+**********************************************************************/
+
+BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0) {
+        char value[8] = {'\0'};
+        if( syscfg_get(NULL, "xMemEnable", value, sizeof(value)) == 0 )
+        {
+            if (strcmp(value, "true") == 0)
+            {
+                *pBool = TRUE;
+            }
+            else
+            {
+                *pBool = FALSE;
+            }
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("syscfg_get failed for xMemEnable\n"));
+        }
+    }
+    else
+    {
+        CcspTraceError(("%s: Unknown parameter %s\n", __FUNCTION__, ParamName));
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
+
+    description:
+        This function is called to retrieve string parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        char* pValue - The string value buffer;
+        ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
+
+    return:
+        TRUE if succeeded;
+        FALSE if not supported
+
+**********************************************************************/
+
+ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(pUlSize);
+
+    errno_t rc  = -1;
+
+    if(strcmp(ParamName, "Args") == 0) {
+        /* collect value */
+        char buf[128] = {'\0'};
+        if(!syscfg_get(NULL, "xMemArgs", buf, sizeof(buf)))
+        {
+            rc = strcpy_s(pValue, *pUlSize, buf);
+            if(rc != EOK)
+            {
+               ERR_CHK(rc);
+               return -1;
+            }
+            return 0;
+        }
+        return -1;
+    }
+    CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
+    return -1;
+}
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+
+    description:
+        This function is called to set string parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        char* pValue - The string value buffer;
+        ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
+
+    return:
+        TRUE if succeeded;
+        FALSE if not supported
+
+**********************************************************************/
+
+BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString)
+{
+    if (IsStringSame(hInsContext, ParamName, pString, xMemInsight_GetParamStringValue))
+    {
+        return TRUE;
+    }
+    if (strcmp(ParamName, "Args") == 0)
+    {
+        if (syscfg_set_commit(NULL, "xMemArgs", pString) != 0)
+        {
+            CcspTraceError(("syscfg_set failed for xMemArgs\n"));
+        }
+        else
+        {
+            return TRUE;
+        }
+    }
+    CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
     return FALSE;
 }
 
@@ -3676,7 +3939,7 @@ Snmpv3DHKickstart_SetParamBoolValue
         CcspTraceInfo(("Snmpv3DHKickstart_SetParamBoolValue: successfully set %s = %s\n", ParamName, bValue == TRUE ? "TRUE" : "FALSE"));
         if( pKickstart->TableUpdated == TRUE && pKickstart->Enabled == TRUE )
         {
-#if !defined(_XER5_PRODUCT_REQ_) && !defined(_SR213_PRODUCT_REQ_) && !defined(PON_GATEWAY)
+#if !defined(_XER5_PRODUCT_REQ_) && !defined(_SR213_PRODUCT_REQ_) && !defined(PON_GATEWAY) && !defined(_PLATFORM_IPQ_)
 	    i = cm_hal_snmpv3_kickstart_initialize( &Snmpv3_Kickstart_Table );
             CcspTraceError(("cm_hal_snmpv3_kickstart_initialize: return value = %d\n", i));
             pKickstart->TableUpdated = FALSE;
@@ -13804,7 +14067,6 @@ RDKDownloadManager_SetParamStringValue
     if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
-    const char *rdm_comm = RDM_COMM_PATH;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
@@ -13812,9 +14074,9 @@ RDKDownloadManager_SetParamStringValue
         return FALSE;
     }
 
-    CcspTraceWarning(("[%s] Executing command - sh %s & \n", __FUNCTION__ , rdm_comm));
+    CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
 
-    ret = v_secure_system("sh %s %s &", rdm_comm, pString);
+    ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
@@ -22920,7 +23182,7 @@ BOOL
     return:     TRUE if succeeded.
 
 **********************************************************************/
-#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_)
+#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_) || defined(_SCXF11BFL_PRODUCT_REQ_)
 BOOL
 XHFW_GetParamBoolValue ( ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 {

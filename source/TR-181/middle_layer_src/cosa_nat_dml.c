@@ -306,15 +306,17 @@ NAT_GetParamUlongValue
     }
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+
+/* These TR181 will read the complete conntrack entries not just the natted entries */
     if (strcmp(ParamName, "X_RDK_NumberActiveIPv4TcpInternalPorts") == 0)
     {
-        *puLong = count_unique_ports("tcp");
+        *puLong = count_unique_ports("tcp",false);
        return TRUE; 
     }
        
     if (strcmp(ParamName, "X_RDK_NumberActiveIPv4UdpInternalPorts") == 0)
     {
-       *puLong = count_unique_ports("udp");
+       *puLong = count_unique_ports("udp",false);
        return TRUE;        
     }
 #endif
@@ -376,6 +378,7 @@ NAT_GetParamStringValue
     UNREFERENCED_PARAMETER(pUlSize);
     #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
+    /* These 2 tr181 applicable only for MAP-T , in non MAP-T it returns empty value */
     /* check the parameter name and return the corresponding value */
     int ret;
     if (strcmp(ParamName, "X_RDK_ActiveIPv4Tcp_TotalPorts_UsagePerc") == 0)
@@ -2971,11 +2974,7 @@ X_RDK_PortMapping_SetParamStringValue
 		{
 
 
-#if !defined(_64BIT_ARCH_SUPPORT_)
-			CcspTraceWarning(("rpm->entries_count is %u\n", rpm->entries_count));
-#else
 			CcspTraceWarning(("rpm->entries_count is %zu\n", rpm->entries_count));
-#endif
 			CcspTraceWarning(("rpm->subdoc_name is %s\n", rpm->subdoc_name));
 			CcspTraceWarning(("rpm->version is %lu\n", (unsigned long)rpm->version));
 			CcspTraceWarning(("rpm->transaction_id is %d\n", rpm->transaction_id));

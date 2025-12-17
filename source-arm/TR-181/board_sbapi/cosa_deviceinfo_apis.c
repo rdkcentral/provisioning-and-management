@@ -493,7 +493,7 @@ CosaDmlDiGetManufacturerOUI
 
 }
 
-#if !defined(_SR213_PRODUCT_REQ_) && !defined (_WNXL11BWL_PRODUCT_REQ_) && !defined(_SCER11BEL_PRODUCT_REQ_) && !defined(_SCXF11BFL_PRODUCT_REQ_)
+#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined(_SCER11BEL_PRODUCT_REQ_)
 ANSC_STATUS
 CosaDmlDiGetInActiveFirmware
     (
@@ -4064,7 +4064,7 @@ void FillPartnerIDValues(cJSON *json , char *partnerID , PCOSA_DATAMODEL_RDKB_UI
 					v_secure_system("sh /lib/rdk/wan_ssh.sh disable &");
 				}
 
-#if defined(_COSA_BCM_ARM_) && !defined(_CBR_PRODUCT_REQ_) && !defined(_PLATFORM_RASPBERRYPI_) && !defined(_ENABLE_DSL_SUPPORT_) && !defined(_PLATFORM_BANANAPI_R4_)
+#if defined(_COSA_BCM_ARM_) && !defined(_CBR_PRODUCT_REQ_) && !defined(_PLATFORM_RASPBERRYPI_) && !defined(_ENABLE_DSL_SUPPORT_) && !defined(_PLATFORM_BANANAPI_R4_) && !defined(_PLATFORM_IPQ_)
                                 paramObjVal = cJSON_GetObjectItem(cJSON_GetObjectItem( partnerObj, "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.CMVoiceImageSelect"), "ActiveValue");
                                 if ( paramObjVal != NULL )
                                 {

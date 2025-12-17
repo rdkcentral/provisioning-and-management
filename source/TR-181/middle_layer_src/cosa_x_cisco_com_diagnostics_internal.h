@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -72,7 +72,7 @@
     Actual definition declaration
 ************************************/
 
-#define   DIAG_MAXINSTANCE                      16    
+#define   DIAG_MAXINSTANCE                      16
 
 #define  COSA_DATAMODEL_DIAGNOSTICS_CLASS_CONTENT                                           \
     /* duplication of the base object class content */                                                \
@@ -93,20 +93,45 @@ COSA_DATAMODEL_DIAGNOSTICS,  *PCOSA_DATAMODEL_DIAGNOSTICS;
 
 
 /**********************************
-    Standard function declaration 
+    Standard function declaration
 ***********************************/
+/**
+ * @brief Creates a new Cisco Diagnostics backend object.
+ *
+ * @return Handle to the Cisco Diagnostics backend object
+ * @return Non-NULL handle to the newly created Cisco Diagnostics backend object.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaDiagnosticsCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the Cisco Diagnostics backend object.
+ *
+ * @param[in] hThisObject Handle to the Cisco Diagnostics backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDiagnosticsInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the Cisco Diagnostics backend object.
+ *
+ * @param[in] hThisObject Handle to the Cisco Diagnostics backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful removal.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaDiagnosticsRemove
     (

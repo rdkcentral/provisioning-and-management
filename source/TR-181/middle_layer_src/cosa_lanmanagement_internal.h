@@ -55,7 +55,7 @@
     COSA_BASE_CONTENT                                             \
     /* start of LANMANAGEMENT object class content */             \
     COSA_DML_LANMANAGEMENT_CFG   LanMngmCfg;                      \
-    
+
 typedef  struct
 _COSA_DATAMODEL_LANMANAGEMENT_CLASS_CONTENT
 {
@@ -66,18 +66,43 @@ COSA_DATAMODEL_LANMANAGEMENT, *PCOSA_DATAMODEL_LANMANAGEMENT;
 /*
     Standard function declaration
 */
+/**
+ * @brief Create the LAN Management backend object.
+ *
+ * @return Handle to the newly created LAN Management backend object.
+ * @retval A non-NULL ANSC_HANDLE if successful.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaLanManagementCreate
     (
         VOID
     );
 
+/**
+ * @brief Initializes the LAN Management backend object.
+ *
+ * @param[in] hThisObject Handle to the LAN Management backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval Error code otherwise
+ */
 ANSC_STATUS
 CosaLanManagementInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Removes and deallocates the LAN Management backend object.
+ *
+ * @param[in] hThisObject Handle to the LAN Management backend object to be removed.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization.
+ * @retval Error code otherwise
+ */
 ANSC_STATUS
 CosaLanManagementRemove
     (

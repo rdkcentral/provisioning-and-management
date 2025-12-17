@@ -55,17 +55,18 @@ typedef struct wifi_appenddoc_struct{
  *  sanity items (including an optional wrapper map) before calling the process
  *  argument passed in.  This also allocates the structure for the caller.
  *
- *  @param buf          the buffer to decode
- *  @param len          the length of the buffer in bytes
- *  @param struct_size  the size of the structure to allocate and pass to process
- *  @param wrapper      the optional wrapper to look for & enforce
- *  @param expect_type  the type of object expected
- *  @param optional     if the inner wrapper layer is optional
- *  @param process      the process function to call if successful
- *  @param destroy      the destroy function to call if there was an error
+ *  @param[in] buf          the buffer to decode
+ *  @param[in] len          the length of the buffer in bytes
+ *  @param[in] struct_size  the size of the structure to allocate and pass to process
+ *  @param[in] wrapper      the optional wrapper to look for & enforce
+ *  @param[in] expect_type  the type of object expected
+ *  @param[in] optional     if the inner wrapper layer is optional
+ *  @param[in] process      the process function to call if successful
+ *  @param[in] destroy      the destroy function to call if there was an error
  *
- *  @returns the object after process has done it's magic to it on success, or
- *           NULL on error
+ *  @returns the object after process has done it's magic to it on success.
+ *  @retval The object after process on success
+ *  @retval NULL on error.
  */
 void* comp_helper_convert( const void *buf, size_t len,
                       size_t struct_size, const char *wrapper,
@@ -73,13 +74,76 @@ void* comp_helper_convert( const void *buf, size_t len,
                       process1_fn_t process,
                       destroy1_fn_t destroy );
 
+/**
+ * @brief Packs WiFi appenddoc structure into msgpack format.
+ *
+ * This function serializes a WiFi appenddoc structure into msgpack binary format for webconfig transmission.
+ *
+ * @param[in] appenddocData Pointer to wifi_appenddoc_t structure to pack.
+ * @param[out] data Pointer to output buffer pointer.
+ *
+ * @return Size of packed msgpack data in bytes.
+ * @retval 0 on failure.
+ */
 size_t wifi_pack_appenddoc(const wifi_appenddoc_t *appenddocData,void **data);
 
+/**
+ * @brief Base64 encodes WiFi blob data.
+ *
+ * This function encodes WiFi configuration blob data into base64 format for webconfig storage and transmission.
+ *
+ * @param[in] blob_data Buffer containing msgpack data to encode.
+ * @param[in] blob_size Size of msgpack data to encode in bytes.
+ *
+ * @return Pointer to allocated base64 encoded string.
+ * @return Pointer to allocated base64 encoded blob data.
+ * @retval NULL on failure.
+ */
 char * base64wifiblobencoder(char * blob_data, size_t blob_size );
 
+/**
+ * @brief Appends encoded WiFi data and metadata to buffer.
+ *
+ * This function combines encoded WiFi configuration data with metadata, allocating output buffer.
+ *
+ * @param[out] appendData Pointer to output buffer pointer.
+ * @param[in] encodedBuffer Encoded WiFi data buffer.
+ * @param[in] encodedSize Size of encoded data in bytes.
+ * @param[in] metadataPack Packed metadata buffer.
+ * @param[in] metadataSize Size of metadata in bytes.
+ *
+ * @return Total size of combined data in bytes.
+ * @retval The total size of combined data in bytes.
+ * @retval 0 on failure.
+ */
 size_t appendWifiEncodedData( void **appendData, void *encodedBuffer, size_t encodedSize, void *metadataPack, size_t metadataSize );
 
+/**
+ * @brief Appends WiFi document with metadata to webconfig.
+ *
+ * This function creates a complete WiFi subdocument with version and transaction tracking for webconfig processing.
+ *
+ * @param[in] subdoc_name Subdocument name.
+ * @param[in] version Subdocument version number.
+ * @param[in] trans_id Transaction ID.
+ * @param[in] blob_data WiFi configuration blob data.
+ * @param[in] blob_size Size of blob data in bytes.
+ *
+ * @return Pointer to allocated complete document string.
+ * @retval Pointer to allocated WiFi document
+ * @retval NULL on failure.
+ */
 char * append_wifi_doc(char * subdoc_name, uint32_t version, uint16_t trans_id, char * blob_data, size_t blob_size);
 
+/**
+ * @brief Prints msgpack data in human-readable format for debugging.
+ *
+ * This function unpacks and displays msgpack binary data in a readable format for troubleshooting.
+ *
+ * @param[in] data Buffer containing msgpack data.
+ * @param[in] len Length of msgpack data in bytes.
+ *
+ * @return void
+ */
 void msgpack_print(const void *data, size_t len);
 #endif
