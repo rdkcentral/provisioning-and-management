@@ -886,14 +886,12 @@ rbusError_t getStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusG
     if (0 == strcmp(name,MANAGE_WIFI_LAN_BRIDGE))
     {
         sManageWifiDetails.aBridgeName[sizeof(sManageWifiDetails.aBridgeName) - 1] = '\0'; /* CID 347175 fix - String not null terminated */
-        snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aBridgeName);
-        aParamVal[BUFF_LEN_64 - 1] = '\0';  /* CID 347175 fix - String not null terminated */
+        snprintf(aParamVal, BUFF_LEN_64, "%s%s", sManageWifiDetails.aKey, sManageWifiDetails.aBridgeName);
     }
     else if (0 == strcmp(name, MANAGE_WIFI_INTERFACES))
     {
         sManageWifiDetails.aWiFiInterfaces[sizeof(sManageWifiDetails.aWiFiInterfaces) - 1] = '\0'; /* CID 347175 fix - String not null terminated */
-        snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aWiFiInterfaces);
-        aParamVal[BUFF_LEN_64 - 1] = '\0';  /* CID 347175 fix - String not null terminated */
+        snprintf(aParamVal, BUFF_LEN_64, "%s%s", sManageWifiDetails.aKey, sManageWifiDetails.aWiFiInterfaces);
     }
     else
     {

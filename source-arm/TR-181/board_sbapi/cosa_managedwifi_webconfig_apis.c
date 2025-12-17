@@ -755,9 +755,7 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
             if (iErr == ETIMEDOUT)
             {
                 CcspTraceInfo(("%s:%d, Timedout Cancelling the Amenity multinet thread\n",__FUNCTION__,__LINE__));
-                /* CID 565506 fix - Indefinite wait prevention */
                 pthread_cancel(amenityMultinetThreadId);
-                pthread_join(amenityMultinetThreadId, NULL);  /* Ensure thread cleanup */
             }
             else if (0 == iErr)
             {
@@ -1364,9 +1362,7 @@ BOOL bringDownManagedWifiBridge(pErr pErrRetVal)
             if (err == ETIMEDOUT)
             {
                 CcspTraceInfo(("%s:%d, Timedout Cancelling the ManageWiFiThread\n",__FUNCTION__,__LINE__));
-                /* CID 565425 fix - Indefinite wait prevention */
                 pthread_cancel(manageWifiBridgeThreadId);
-                pthread_join(manageWifiBridgeThreadId, NULL);  /* Ensure thread cleanup */
             }
             else if (0 == err)
             {
@@ -1625,7 +1621,7 @@ BOOL unpackAndProcessManagedWifiData(char* pString)
             else
             {
                 CcspTraceWarning(("execData memory allocation failed\n"));
-                /* CID 3468029 fix - Resource leak prevention */
+                /* CID 346829 fix - Resource leak prevention */
                 free(sequenceDetails);
                 #if defined (AMENITIES_NETWORK_ENABLED)
                 tunnelLanConfigDocdestroy(ld);
@@ -2258,7 +2254,6 @@ void processManageWifiData(backupLanconfig_t * pLanConfig, char cFlag, pErr pErr
                 {
                     CcspTraceInfo(("%s:%d, Error cleanup Cancelling the ManageWiFiThread\n",__FUNCTION__,__LINE__));
                     pthread_cancel(manageWifiBridgeThreadId);
-                    pthread_join(manageWifiBridgeThreadId, NULL);  /* Ensure thread cleanup */
                 }
                 return ;
             }
@@ -2294,9 +2289,7 @@ void processManageWifiData(backupLanconfig_t * pLanConfig, char cFlag, pErr pErr
                 if (err == ETIMEDOUT)
                 {
                     CcspTraceInfo(("%s:%d, Timedout Cancelling the ManageWiFiThread\n",__FUNCTION__,__LINE__));
-                    /* CID 560368 fix - Indefinite wait prevention */
                     pthread_cancel(manageWifiBridgeThreadId);
-                    pthread_join(manageWifiBridgeThreadId, NULL);  /* Ensure thread cleanup */
                 }
                 else if (0 == err)
                 {
