@@ -1292,24 +1292,31 @@ CosaDmlNatGetLanIP
 
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
-
-
-#define SYSEVENT_MAPT_TOTAL_PORTS "mapt_total_ports"
-#define SYSEVENT_MAPT_CONFIG_FLAG "mapt_config_flag"
 #define MAX_PORTS 65536    // max port number
 
 // Count unique dports from conntrack output
-int count_unique_ports(const char *proto) {
+int count_unique_ports(const char *proto, bool neededNATSessionCount) {
     char line[512];
     CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
-
-  //  snprintf(cmd, sizeof(cmd), "conntrack -L -p %s 2>/dev/null", proto);
-    FILE * fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null", proto);
+    int unique_count = 0;
+    FILE * fp = NULL;
+    if (!gWanStatus)
+    {
+        CcspTraceWarning(("WAN not started, Port usage not available\n"));
+        return unique_count;
+    }
+    if (neededNATSessionCount || gMaptEnabled)
+    {
+        fp = v_secure_popen("r", "conntrack -L --src-nat -p %s 2>/dev/null", proto);
+    }
+    else
+    {
+       fp = v_secure_popen("r", "conntrack -L -p %s 2>/dev/null", proto);
+    }
 
     if (!fp) return 0;
 
     int ports[MAX_PORTS] = {0};
-    int unique_count = 0;
 
     while (fgets(line, sizeof(line), fp)) {
         char *tok = strtok(line, " ");
@@ -1338,27 +1345,24 @@ int count_unique_ports(const char *proto) {
 int GetTotalPortsUsagePerc(char *protocol, char *pValue, ULONG *pUlSize)
 {
     CcspTraceDebug(("Entering %s...\n", __FUNCTION__));
-    char buf[64] = {0};
-    size_t size = sizeof(buf);
-    memset(buf, 0, sizeof(buf));
-    commonSyseventGet(SYSEVENT_MAPT_CONFIG_FLAG, buf, size);
-    CcspTraceDebug(("MAP-T config flag: %s\n", buf));
-    if ( strcmp(buf, "set") == 0 )
+    int active_ports=0;
+    bool neededNATSessionCount = true;
+    CcspTraceDebug(("MAP-T config flag: %d , Mapt Total Ports %d\n", gMaptEnabled,gMaptTotalPorts));
+    if (gMaptEnabled)
     {
-        memset(buf, 0, sizeof(buf));
-        commonSyseventGet(SYSEVENT_MAPT_TOTAL_PORTS, buf, size);
-        int total_ports = atoi(buf);
-        if (total_ports == 0) 
+        if (gMaptTotalPorts == 0) 
         {
             CcspTraceWarning(("MAP-T total ports not set\n"));
             return -1;
         }
-        int active_ports = count_unique_ports(protocol);
-        int pct = total_ports ? active_ports * 100 / total_ports : 0;
-        snprintf(pValue, *pUlSize, "%d|%d|%d",active_ports,total_ports,pct);
+
+        active_ports = count_unique_ports(protocol,neededNATSessionCount);
+
+        int pct = gMaptTotalPorts ? active_ports * 100 / gMaptTotalPorts : 0;
+        snprintf(pValue, *pUlSize, "%d|%d|%d",active_ports,gMaptTotalPorts,pct);
 
         CcspTraceInfo(("MAP-T Port Usage | Protocol: %s | Total Ports: %d | Active Ports: %d | Utilization: %d%%\n",
-            protocol, total_ports, active_ports, pct));
+            protocol, gMaptTotalPorts, active_ports, pct));
 
         if ( pct >= 100 )
         {
