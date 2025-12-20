@@ -230,13 +230,15 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
             //Setting Device Mode
             if (syscfg_set(NULL, "Device_Mode", buf) != 0)
             {
-                CcspTraceInfo(("\n Device_Mode set syscfg failed\n"));       
+                CcspTraceError(("\n Device_Mode set syscfg failed\n"));
+		return RBUS_ERROR_BUS_ERROR;       
             }
             else
             {
                 if (syscfg_commit() != 0)
                 {
-                    CcspTraceInfo(("\nDevice_Mode syscfg_commit failed\n"));
+                    CcspTraceError(("\nDevice_Mode syscfg_commit failed\n"));
+		    return RBUS_ERROR_BUS_ERROR;       
                 }
                 else
                 {
@@ -246,7 +248,6 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
                         return RBUS_ERROR_BUS_ERROR;
                     }
                     CcspTraceInfo(("sysevent_set execution success.\n"));
-                    deviceControl_Net_Mode.DevCtrlNetMode = rVal;
                     ret = publishDevCtrlNetMode(rVal, oldDevCtrlNetMode);
                     if (ret != RBUS_ERROR_SUCCESS)
                     {
@@ -254,6 +255,7 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
                         return ret;
                     }
                     configureIpv6Route(rVal);
+                    deviceControl_Net_Mode.DevCtrlNetMode = rVal;
                 }
             }
         }
