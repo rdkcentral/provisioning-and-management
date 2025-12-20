@@ -204,6 +204,7 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
         rVal = rbusValue_GetUInt32(value);
         if (rVal > 1) {
             CcspTraceError(("Invalid set value for the parameter '%s'\n", DEVCTRL_NET_MODE_TR181));
+            pthread_mutex_unlock(&mutex);
             return RBUS_ERROR_INVALID_INPUT;
         }
 
@@ -217,6 +218,7 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
         if (0 > sysevent_fd)
         {
             CcspTraceError(("Failed to execute sysevent_set. sysevent_fd have no value:'%d'\n", sysevent_fd));
+            pthread_mutex_unlock(&mutex);
             return RBUS_ERROR_BUS_ERROR;
         }
 		
@@ -230,21 +232,24 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
             //Setting Device Mode
             if (syscfg_set(NULL, "Device_Mode", buf) != 0)
             {
-		CcspTraceError(("\n Device_Mode set syscfg failed\n"));
-		return RBUS_ERROR_BUS_ERROR;       
+		        CcspTraceError(("\n Device_Mode set syscfg failed\n"));
+                pthread_mutex_unlock(&mutex);
+		        return RBUS_ERROR_BUS_ERROR;       
             }
             else
             {
                 if (syscfg_commit() != 0)
                 {
-			CcspTraceError(("\nDevice_Mode syscfg_commit failed\n"));
-		    	return RBUS_ERROR_BUS_ERROR;       
+			        CcspTraceError(("\nDevice_Mode syscfg_commit failed\n"));
+                    pthread_mutex_unlock(&mutex);
+		    	    return RBUS_ERROR_BUS_ERROR;       
                 }
                 else
                 {
                     	if(sysevent_set(sysevent_fd, sysevent_token, "DeviceMode", strValue, 0) != 0)
                     	{
                         	CcspTraceError(("Failed to execute sysevent_set from %s:%d\n", __FUNCTION__, __LINE__));
+                            pthread_mutex_unlock(&mutex);
                         	return RBUS_ERROR_BUS_ERROR;
                     	}
                     	CcspTraceInfo(("sysevent_set execution success.\n"));
@@ -252,6 +257,7 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
                     	if (ret != RBUS_ERROR_SUCCESS)
                     	{
                         	CcspTraceError(("%s-%d: Failed to update and publish device mode value\n", __FUNCTION__, __LINE__));
+                            pthread_mutex_unlock(&mutex);
                         	return ret;
                     	}
                     	configureIpv6Route(rVal);
