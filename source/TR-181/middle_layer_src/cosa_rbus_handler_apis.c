@@ -230,32 +230,32 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
             //Setting Device Mode
             if (syscfg_set(NULL, "Device_Mode", buf) != 0)
             {
-                CcspTraceError(("\n Device_Mode set syscfg failed\n"));
+		CcspTraceError(("\n Device_Mode set syscfg failed\n"));
 		return RBUS_ERROR_BUS_ERROR;       
             }
             else
             {
                 if (syscfg_commit() != 0)
                 {
-                    CcspTraceError(("\nDevice_Mode syscfg_commit failed\n"));
-		    return RBUS_ERROR_BUS_ERROR;       
+			CcspTraceError(("\nDevice_Mode syscfg_commit failed\n"));
+		    	return RBUS_ERROR_BUS_ERROR;       
                 }
                 else
                 {
-                    if(sysevent_set(sysevent_fd, sysevent_token, "DeviceMode", strValue, 0) != 0)
-                    {
-                        CcspTraceError(("Failed to execute sysevent_set from %s:%d\n", __FUNCTION__, __LINE__));
-                        return RBUS_ERROR_BUS_ERROR;
-                    }
-                    CcspTraceInfo(("sysevent_set execution success.\n"));
-                    ret = publishDevCtrlNetMode(rVal, oldDevCtrlNetMode);
-                    if (ret != RBUS_ERROR_SUCCESS)
-                    {
-                        CcspTraceError(("%s-%d: Failed to update and publish device mode value\n", __FUNCTION__, __LINE__));
-                        return ret;
-                    }
-                    configureIpv6Route(rVal);
-                    deviceControl_Net_Mode.DevCtrlNetMode = rVal;
+                    	if(sysevent_set(sysevent_fd, sysevent_token, "DeviceMode", strValue, 0) != 0)
+                    	{
+                        	CcspTraceError(("Failed to execute sysevent_set from %s:%d\n", __FUNCTION__, __LINE__));
+                        	return RBUS_ERROR_BUS_ERROR;
+                    	}
+                    	CcspTraceInfo(("sysevent_set execution success.\n"));
+                    	ret = publishDevCtrlNetMode(rVal, oldDevCtrlNetMode);
+                    	if (ret != RBUS_ERROR_SUCCESS)
+                    	{
+                        	CcspTraceError(("%s-%d: Failed to update and publish device mode value\n", __FUNCTION__, __LINE__));
+                        	return ret;
+                    	}
+                    	configureIpv6Route(rVal);
+                    	deviceControl_Net_Mode.DevCtrlNetMode = rVal;
                 }
             }
         }
