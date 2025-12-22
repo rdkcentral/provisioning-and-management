@@ -260,6 +260,15 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
                         pthread_mutex_unlock(&mutex);
                         return ret;
                     }
+                    // Simulate a crash if /tmp/sim_pam_crash exists
+                    FILE *crashFile = fopen("/tmp/sim_pam_crash", "r");
+                    if (crashFile != NULL)
+                    {
+                        fclose(crashFile);
+                        CcspTraceError(("%s-%d: Simulating a crash as /tmp/sim_pam_crash exists\n", __FUNCTION__, __LINE__));
+                        int *nullPointer = NULL;
+                        *nullPointer = 42; // Deliberate crash
+                    }
                     configureIpv6Route(rVal);
                     deviceControl_Net_Mode.DevCtrlNetMode = rVal;
                 }
