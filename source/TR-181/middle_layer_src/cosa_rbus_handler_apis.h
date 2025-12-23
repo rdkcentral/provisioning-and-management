@@ -135,7 +135,7 @@ rbusError_t publishDevCtrlNetMode(uint32_t new_val, uint32_t old_val);
  * @retval RBUS error code on failure.
  */
 
-int publishInitialDevCtrlVal()
+int publishInitialDevCtrlVal();
 
 /**
  * @brief Publishes DevCtrlNetMode during PandM initialization
