@@ -378,6 +378,26 @@ rbusError_t publishDevCtrlNetMode(uint32_t new_val, uint32_t old_val)
 	return ret;
 }
 
+rbusError_t InitAndPublishDevCtrlValue()
+{
+    CcspTraceInfo(("Initializing and publishing Device Networking Mode value from syscfg\n"));
+    char buf[ 8 ] = { 0 };
+    rbusError_t ret = RBUS_ERROR_SUCCESS;
+    if( 0 == syscfg_get( NULL, "Device_Mode", buf, sizeof( buf ) ) )
+    {
+        uint32_t CurrentDevCtrlNetMode = atoi(buf);
+        uint32_t oldDevCtrlNetMode = (CurrentDevCtrlNetMode== 1) ? 0 : 1;
+        ret = publishDevCtrlNetMode(CurrentDevCtrlNetMode, oldDevCtrlNetMode);
+        if (ret != RBUS_ERROR_SUCCESS)
+        {
+            CcspTraceError(("%s-%d: Failed to update and publish device mode value\n", __FUNCTION__, __LINE__));
+            return ret;
+        }
+    }
+    return ret;
+}
+
+
 bool PAM_Rbus_SyseventInit()
 {		
 	if (0 > sysevent_fd)
@@ -1485,6 +1505,10 @@ rbusError_t devCtrlRbusInit()
 	//initialize sysevent
 	PAM_Rbus_SyseventInit();
 #endif
+
+#if defined (RDKB_EXTENDER_ENABLED)
+    publishInitialDevCtrlVal();
+#endif /*RDKB_EXTENDER_ENABLED*/
 
 #if defined(RBUS_BUILD_FLAG_ENABLE) && !defined(_HUB4_PRODUCT_REQ_) && !defined(RDKB_EXTENDER_ENABLED)
         //Subscribe WAN Status Event
