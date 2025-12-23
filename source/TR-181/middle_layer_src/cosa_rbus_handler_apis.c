@@ -378,11 +378,18 @@ rbusError_t publishDevCtrlNetMode(uint32_t new_val, uint32_t old_val)
 	return ret;
 }
 
-rbusError_t InitAndPublishDevCtrlValue()
+/*******************************************************************************
+
+  publishInitialDevCtrlVal(): publish DevCtrlNetMode during PandM initialization
+
+ ********************************************************************************/
+
+int publishInitialDevCtrlVal()
 {
     CcspTraceInfo(("Initializing and publishing Device Networking Mode value from syscfg\n"));
     char buf[ 8 ] = { 0 };
     rbusError_t ret = RBUS_ERROR_SUCCESS;
+    int rc = 0;
     if( 0 == syscfg_get( NULL, "Device_Mode", buf, sizeof( buf ) ) )
     {
         uint32_t CurrentDevCtrlNetMode = atoi(buf);
@@ -391,12 +398,17 @@ rbusError_t InitAndPublishDevCtrlValue()
         if (ret != RBUS_ERROR_SUCCESS)
         {
             CcspTraceError(("%s-%d: Failed to update and publish device mode value\n", __FUNCTION__, __LINE__));
-            return ret;
+            rc = -1;
+            return rc;
         }
     }
-    return ret;
+    else
+    {
+        CcspTraceError(("syscfg_get failed to retrieve  device networking mode\n")); 
+        rc = -1;
+    }
+    return rc;
 }
-
 
 bool PAM_Rbus_SyseventInit()
 {		
