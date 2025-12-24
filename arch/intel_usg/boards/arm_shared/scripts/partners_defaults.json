@@ -2,7 +2,7 @@
    "properties" : {
 
       "comments" : "MANDATORY: !!! Please increment below version value for any new parameter added in this partners_defaults.json !!!",
-      "version" : "8.32"
+      "version" : "8.33"
    },
 
    "comcast" : {
@@ -62,9 +62,9 @@
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.IPv4SecondaryDhcpServerOptions" : "FFFFFFFF",
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.IPv6PrimaryDhcpServerOptions" : "FFFFFFFF",
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.IPv6SecondaryDhcpServerOptions" : "FFFFFFFF",   
-      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceMtaIface.Enabled" : "true",
-      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceMtaIface.DhcpV4Enabled" : "true",
-      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceMtaIface.DhcpV6Enabled" : "false",
+      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceSupport.Enabled" : "true",
+      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceSupport.InterfaceName" : "mta0",
+      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceSupport.Mode" : "IPv4_Only",
       "Device.Time.NTPServer1" : "time1.xfinity.com",
       "Device.Time.NTPServer2" : "time2.xfinity.com",
       "Device.Time.NTPServer3" : "time3.xfinity.com",
