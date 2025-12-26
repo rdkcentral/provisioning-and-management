@@ -60,7 +60,33 @@ rbusError_t sendUpdateEvent(char* event_name , void* eventNewData, void* eventOl
 
 rbusError_t publishDevCtrlNetMode(uint32_t new_val, uint32_t old_val);
 
+/**
+ * @brief publish DevCtrlNetMode during PandM initialization
+ *
+ * @return status of operation
+ * @retval RBUS_ERROR_SUCCESS on success
+ * @retval RBUS error code on failure.
+ */
+
+int publishInitialDevCtrlVal();
+
+/**
+ * @brief Publishes DevCtrlNetMode during PandM initialization
+ *
+ * @return status of operation
+ * @retval 0 on success
+ * @retval -1 on failure.
+ */
+
 bool PAM_Rbus_SyseventInit();
+
+/**
+ * @brief Initializes RBUS sysevent integration for PAM component.
+ *
+ * @return status of operation
+ * @retval true on success
+ * @retval false on failure.
+ */
 
 #endif
 #if defined (WIFI_MANAGE_SUPPORTED)
