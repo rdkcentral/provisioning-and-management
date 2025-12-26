@@ -147,6 +147,14 @@ int publishInitialDevCtrlVal();
 
 bool PAM_Rbus_SyseventInit();
 
+/**
+ * @brief Initializes RBUS sysevent integration for PAM component.
+ *
+ * @return status of operation
+ * @retval true on success
+ * @retval false on failure.
+ */
+
 #endif
 #if defined (WIFI_MANAGE_SUPPORTED)
 /**
