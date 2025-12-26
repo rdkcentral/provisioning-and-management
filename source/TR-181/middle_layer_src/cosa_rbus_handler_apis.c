@@ -384,7 +384,7 @@ int publishInitialDevCtrlVal()
     if( 0 == syscfg_get( NULL, "Device_Mode", buf, sizeof( buf ) ) )
     {
         uint32_t CurrentDevCtrlNetMode = atoi(buf);
-        uint32_t oldDevCtrlNetMode = (CurrentDevCtrlNetMode== 1) ? 0 : 1;
+        uint32_t oldDevCtrlNetMode = (CurrentDevCtrlNetMode == 1) ? 0 : 1;
         ret = publishDevCtrlNetMode(CurrentDevCtrlNetMode, oldDevCtrlNetMode);
         if (ret != RBUS_ERROR_SUCCESS)
         {
