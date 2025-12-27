@@ -1728,6 +1728,10 @@ X_CISCO_COM_DeviceControl_Commit
         if (CosaDmlDcSetWebServer(pMyObject->HTTPEnable, pMyObject->HTTPSEnable,
                 pMyObject->HTTPPort, pMyObject->HTTPSPort) != ANSC_STATUS_SUCCESS)
             return FALSE;
+	#if defined (_COSA_QCA_ARM_)
+	    if (ANSC_STATUS_SUCCESS != CosaDmlUISetRemotePorts())
+                return FALSE;
+	#endif
     }
 
     CosaDevCtrlReg_SetUserChangedParamsControl((ANSC_HANDLE)pMyObject);
