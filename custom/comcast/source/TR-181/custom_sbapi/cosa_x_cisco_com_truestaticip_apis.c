@@ -2785,7 +2785,8 @@ CosaDmlTSIPRuleGetEntry
     
     snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_alias", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->Alias, utVal, sizeof(pEntry->Alias));
+    strncpy(pEntry->Alias, utVal, sizeof(pEntry->Alias) - 1);
+    pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';  /* CID 334459 fix - Buffer not null terminated */
 
     snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_enabled", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
@@ -2793,7 +2794,8 @@ CosaDmlTSIPRuleGetEntry
 
     snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_name", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->Name, utVal, sizeof(pEntry->Name));
+    strncpy(pEntry->Name, utVal, sizeof(pEntry->Name) - 1);
+    pEntry->Name[sizeof(pEntry->Name) - 1] = '\0';  /* CID 334459 fix - Buffer not null terminated */
 
     snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_protocol", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
@@ -2807,11 +2809,13 @@ CosaDmlTSIPRuleGetEntry
 
     snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_startIP", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->IPRangeMin, utVal, sizeof(pEntry->IPRangeMin));
+    strncpy(pEntry->IPRangeMin, utVal, sizeof(pEntry->IPRangeMin) - 1);
+    pEntry->IPRangeMin[sizeof(pEntry->IPRangeMin) - 1] = '\0';  /* CID 334459 fix - Buffer not null terminated */
     
     snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_endIP", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->IPRangeMax, utVal, sizeof(pEntry->IPRangeMax));
+    strncpy(pEntry->IPRangeMax, utVal, sizeof(pEntry->IPRangeMax) - 1);
+    pEntry->IPRangeMax[sizeof(pEntry->IPRangeMax) - 1] = '\0';  /* CID 334459 fix - Buffer not null terminated */
     
     snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_startPort", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
