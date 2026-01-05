@@ -239,6 +239,7 @@ static int decodeScheduleTable(msgpack_object *pMsgPackObjKey, msgpack_object *p
                 if( NULL != pScheduleInputTemp )
                 {
                     free(pScheduleInputTemp);
+                    pScheduleInputTemp = NULL;  /* CID 418970 fix - Double free */
                 }
                 pMsgPackObj++;
             }
