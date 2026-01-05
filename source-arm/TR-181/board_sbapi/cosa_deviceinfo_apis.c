@@ -4258,6 +4258,7 @@ ANSC_STATUS UpdateJsonParam
 	 int len ;
 	 int configUpdateStatus = -1;
 	 fileRead = fopen( BOOTSTRAP_INFO_FILE, "r" );
+	 CcspTraceWarning( "jothi %s \n",__FUNCTION__);
 	 if( fileRead == NULL ) 
 	 {
 		 CcspTraceWarning(("%s-%d : Error in opening JSON file\n" , __FUNCTION__, __LINE__ ));
@@ -4343,7 +4344,7 @@ ANSC_STATUS UpdateJsonParam
                                          free(cJsonOut);
 					 if ( !configUpdateStatus)
 					 {
-                                         	 CcspTraceWarning(( "Bootstrap config update: %s, %s, %s, %s \n", pKey, pValue, PartnerId, pSource));
+                                         	 CcspTraceWarning(( "jothi Bootstrap config update: %s, %s, %s, %s \n", pKey, pValue, PartnerId, pSource));
 					 }
 					 else
 				 	{
