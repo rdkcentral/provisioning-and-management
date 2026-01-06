@@ -1437,11 +1437,6 @@ rbusError_t devCtrlRbusInit()
     publishInitialDevCtrlVal();
 #endif /*RDKB_EXTENDER_ENABLED*/
 
-#if defined(RBUS_BUILD_FLAG_ENABLE) && !defined(_HUB4_PRODUCT_REQ_) && !defined(RDKB_EXTENDER_ENABLED)
-        //Subscribe WAN Status Event
-	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
-#endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
-
 	return rc;
 }
 #endif
