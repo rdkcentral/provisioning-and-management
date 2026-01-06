@@ -4723,8 +4723,8 @@ int can_proceed_fw_download(void)
     {
         char cmd[1500];
         snprintf(cmd, sizeof(cmd),
-                 "curl -sI '%s' | grep -i Content-Length | awk '{print $2}'",
-                 url);
+                 "curl -sI '%s%s%s' | grep -i Content-Length | awk '{print $2}'",
+                 url, (url[strlen(url)-1] == '/') ? "" : "/", fname);
 
         FILE *fp = popen(cmd, "r");
         if (!fp) {
