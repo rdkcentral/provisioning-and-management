@@ -49,7 +49,7 @@
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.CMVoiceImageSelect" : "pc20",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.AllowEthernetWAN" : "false" ,
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.brandname" : "Xfinity" ,
-      "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.productname" : "xFi" ,
+      "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.productname" : "xFi_1" ,
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.link" : "xfinity.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.HomeSec.SSIDprefix" : "XHS",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.TR104.Enable" : "false",

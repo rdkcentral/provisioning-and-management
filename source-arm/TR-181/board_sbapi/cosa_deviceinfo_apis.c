@@ -3509,7 +3509,8 @@ void FillPartnerIDValues(cJSON *json , char *partnerID , PCOSA_DATAMODEL_RDKB_UI
 				FillParamString(partnerObj, "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.link", &PUiBrand->CloudUI.link);
 
                                 paramObj = cJSON_GetObjectItem( partnerObj, "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.AllowEthernetWAN");
-                                if ( paramObj != NULL )
+                                CcspTraceError(( "jothi productname value %s\n",PUiBrand->CloudUI.productname.ActiveValue));
+				if ( paramObj != NULL )
                                 {
 					char *AllowEthernetWAN = NULL;
                                         paramObjVal = cJSON_GetObjectItem(paramObj, "ActiveValue");
@@ -4258,13 +4259,12 @@ ANSC_STATUS UpdateJsonParam
 	 int len ;
 	 int configUpdateStatus = -1;
 	 fileRead = fopen( BOOTSTRAP_INFO_FILE, "r" );
-	 CcspTraceWarning( "jothi %s \n",__FUNCTION__);
 	 if( fileRead == NULL ) 
 	 {
 		 CcspTraceWarning(("%s-%d : Error in opening JSON file\n" , __FUNCTION__, __LINE__ ));
 		 return ANSC_STATUS_FAILURE;
 	 }
-	 
+	  CcspTraceWarning(( "jothi %s \n",__FUNCTION__));
 	 fseek( fileRead, 0, SEEK_END );
 	 len = ftell( fileRead );
          /* CID: 56120 Argument cannot be negative*/

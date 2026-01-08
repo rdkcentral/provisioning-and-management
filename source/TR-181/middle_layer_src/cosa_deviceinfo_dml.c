@@ -20124,6 +20124,7 @@ CloudUI_SetParamStringValue
 
             if(strlen(pString) < sizeof(pBindObj->CloudUI.productname.ActiveValue))
             {
+		    CcspTraceError(( "jothi %s %d productname update%s pString=%s\n",__FUNCTION__, __LINE__,ParamName,pString));
                 if ( ANSC_STATUS_SUCCESS == UpdateJsonParam("Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.productname",PartnerID, pString, requestorStr, currentTime))
                 {
                     rc = STRCPY_S_NOCLOBBER(pBindObj->CloudUI.productname.ActiveValue, sizeof(pBindObj->CloudUI.productname.ActiveValue), pString);
