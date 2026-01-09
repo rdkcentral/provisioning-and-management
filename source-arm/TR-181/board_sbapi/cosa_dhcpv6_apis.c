@@ -1880,8 +1880,11 @@ static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger);
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)
 
 #else
-
-static ANSC_STATUS CosaDmlDhcpv6SMsgHandler (ANSC_HANDLE hContext)
+ANSC_STATUS
+CosaDmlDhcpv6SMsgHandler
+    (
+        ANSC_HANDLE                 hContext
+    )
 {
     UNREFERENCED_PARAMETER(hContext);
     char ret[16] = {0};
@@ -1924,7 +1927,7 @@ static ANSC_STATUS CosaDmlDhcpv6SMsgHandler (ANSC_HANDLE hContext)
     return 0;
 }
 
-static int CosaDmlDhcpv6sRestartOnLanStarted(void *arg)
+int CosaDmlDhcpv6sRestartOnLanStarted(void * arg)
 {
     UNREFERENCED_PARAMETER(arg);
     CcspTraceWarning(("%s -- lan status is started. \n", __FUNCTION__));
@@ -3679,8 +3682,7 @@ iface "eth0" {
     2018CAFE00000000020C29FFFE97FCCC ==> 
     2018:CAFE:0000:0000:020C:29FF:FE97:FCCC
 */
-static char * CosaDmlDhcpv6sGetAddressFromString(char *address)
-{
+char * CosaDmlDhcpv6sGetAddressFromString(char * address){
     static char     ipv6Address[256] = {0};
     ULONG   i =0;
     ULONG   j =0;
@@ -3702,8 +3704,7 @@ static char * CosaDmlDhcpv6sGetAddressFromString(char *address)
     return ipv6Address;
 }
 
-static char * CosaDmlDhcpv6sGetStringFromHex(char *hexString)
-{
+char * CosaDmlDhcpv6sGetStringFromHex(char * hexString){
     static char     newString[256];
     char    buff[8] = {0};
     ULONG   i =0;
@@ -3754,7 +3755,7 @@ void _cosa_dhcpsv6_refresh_config()
     Fail when return 1
     Succeed when return 0
 */
-int CosaDmlDHCPv6sGetDNS(char *Dns, char *output, int outputLen)
+int CosaDmlDHCPv6sGetDNS(char* Dns, char* output, int outputLen)
 {
     char oneDns[64]  = {0};
     int  len         = _ansc_strlen(Dns);
@@ -3816,6 +3817,8 @@ int remove_single_quote (char *buf)
   return 0;
 }
 
+
+
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)
 // adding new logics to handle pd-class
 static int get_ipv6_tpmode (int *tpmod)
@@ -3852,7 +3855,6 @@ static int get_ipv6_tpmode (int *tpmod)
 
   return 0;
 }
-
 static int get_prefix_info(const char *prefix,  char *value, unsigned int val_len, unsigned int *prefix_len)
 {
     int i;
@@ -3880,7 +3882,6 @@ static int get_prefix_info(const char *prefix,  char *value, unsigned int val_le
 
     return 0;
 }
-
 /* get the interfaces which need to assign /64 interface-prefix
  * suppose we currently use syscfg "lan_pd_interfaces" to represent the interfaces need to prefix delegation
  */
