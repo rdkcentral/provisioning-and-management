@@ -87,17 +87,11 @@ checkForWanFailOver()
 	echo_t "currentWanIf: $currentWanIf  defaultWanIf: $defaultWanIf"
 	if [ "x$currentWanIf" = "x" ] || [ "$currentWanIf" == "$defaultWanIf" ];then
 		AllowRemoteInterfaces=`dmcli eRT getv Device.X_RDK_WanManager.AllowRemoteInterfaces | grep value | cut -f3 -d : | cut -f2 -d" "`
-		Interface_Available_Status=`dmcli eRT getv Device.X_RDK_WanManager.InterfaceAvailableStatus | grep -i "REMOTE_LTE,1"`
-		HS_Interface_Available_Status=`dmcli eRT getv Device.X_RDK_WanManager.InterfaceAvailableStatus | grep -i "HOTSPOT,1"`
-		echo_t "AllowRemoteInterfaces: $AllowRemoteInterfaces  Interface_Available_Status: $Interface_Available_Status  HS_Interface_Available_Status: $HS_Interface_Available_Status"
+ 		Interface_Available_Status=`dmcli eRT getv Device.X_RDK_WanManager.InterfaceAvailableStatus | grep -i "REMOTE_LTE,1"`
+		echo_t "AllowRemoteInterfaces: $AllowRemoteInterfaces  Interface_Available_Status: $Interface_Available_Status"
 		if [[ "x$Interface_Available_Status" != "x" ]] && [ "$AllowRemoteInterfaces" = "true" ]
 		then
 			#LTE wan interface is available
-			echo_t "Network Response: checkForWanFailOver : enabled"
-			return 1
-		elif [[ "x$HS_Interface_Available_Status" != "x" ]]
-		then
-			#Hotspot wan interface is available
 			echo_t "Network Response: checkForWanFailOver : enabled"
 			return 1
 		else

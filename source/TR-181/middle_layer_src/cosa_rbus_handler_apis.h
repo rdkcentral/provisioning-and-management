@@ -39,7 +39,6 @@
 #define PRIMARY_WAN_IPv6_ADDRESS "Device.DeviceInfo.X_COMCAST-COM_WAN_IPv6"
 #endif /*RBUS_WAN_IP*/
 
-#define WANMGR_CURRENT_STATUS_TR181	"Device.X_RDK_WanManager.CurrentStatus"
 
 #define  ARRAY_SZ(x) (sizeof(x) / sizeof((x)[0]))
 #if defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED)
@@ -377,22 +376,6 @@ rbusError_t RRD_SetBoolHandler(rbusHandle_t handle, rbusProperty_t property, rbu
  */
 rbusError_t devCtrlRbusInit();
 #endif
-
-#if defined(RBUS_BUILD_FLAG_ENABLE) && !defined(_HUB4_PRODUCT_REQ_) && !defined(RDKB_EXTENDER_ENABLED)
-/**
- * @brief Subscribes to WAN status change events via RBUS.
- *
- * This function subscribes to the WAN Manager current status event
- * through RBUS. When a WAN status change occurs, the registered event
- * handler will be invoked to process the event. The subscription uses
- * a timeout of 60 seconds to balance responsiveness and resource usage
- * under typical network conditions.
- *
- * @return None
- *
- */
-void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void );
-#endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
 
 #if defined (RBUS_WAN_IP)
 typedef struct {
