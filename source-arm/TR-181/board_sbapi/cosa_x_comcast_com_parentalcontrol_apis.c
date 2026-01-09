@@ -1533,17 +1533,12 @@ CosaDmlBlkURL_GetEntryByIndex(ULONG index, COSA_DML_BLOCKEDURL *pEntry)
     else
         pEntry->BlockMethod = 0;
 
-    _ansc_strncpy(pEntry->Alias, blkurl.alias, sizeof(pEntry->Alias) - 1);
-    pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';  /* CID 334478 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->Site, blkurl.site, sizeof(pEntry->Site) - 1);
-    pEntry->Site[sizeof(pEntry->Site) - 1] = '\0';  /* CID 334478 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->Alias, blkurl.alias, sizeof(pEntry->Alias));
+    _ansc_strncpy(pEntry->Site, blkurl.site, sizeof(pEntry->Site));
 
-    _ansc_strncpy(pEntry->StartTime, blkurl.start_time, sizeof(pEntry->StartTime) - 1);
-    pEntry->StartTime[sizeof(pEntry->StartTime) - 1] = '\0';  /* CID 334478 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->EndTime, blkurl.end_time, sizeof(pEntry->EndTime) - 1);
-    pEntry->EndTime[sizeof(pEntry->EndTime) - 1] = '\0';  /* CID 334478 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->BlockDays, blkurl.block_days, sizeof(pEntry->BlockDays) - 1);
-    pEntry->BlockDays[sizeof(pEntry->BlockDays) - 1] = '\0';  /* CID 334478 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->StartTime, blkurl.start_time, sizeof(pEntry->StartTime));
+    _ansc_strncpy(pEntry->EndTime, blkurl.end_time, sizeof(pEntry->EndTime));
+    _ansc_strncpy(pEntry->BlockDays, blkurl.block_days, sizeof(pEntry->BlockDays));
     AnscTraceWarning(("%s-%d RDKB_PCONTROL[URL]:%lu,%s\n", __FUNCTION__, __LINE__, pEntry->InstanceNumber,pEntry->Site));
     /* CID: 71902 Array compared against 0*/
         pEntry->StartTimeFlg = TRUE;
@@ -1772,37 +1767,21 @@ CosaDmlBlkURL_SetConf(ULONG ins, COSA_DML_BLOCKEDURL *pEntry)
     blkurl.always_block = pEntry->AlwaysBlock;
 
     if(pEntry->BlockMethod == BLOCK_METHOD_URL)
-    {
-        _ansc_strncpy(blkurl.block_method, "URL", sizeof(blkurl.block_method) - 1);
-        blkurl.block_method[sizeof(blkurl.block_method) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
-    }
+        _ansc_strncpy(blkurl.block_method, "URL", sizeof(blkurl.block_method));
     else if(pEntry->BlockMethod == BLOCK_METHOD_KEYWORD)
-    {
-        _ansc_strncpy(blkurl.block_method, "KEYWD", sizeof(blkurl.block_method) - 1);
-        blkurl.block_method[sizeof(blkurl.block_method) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
-    }
+        _ansc_strncpy(blkurl.block_method, "KEYWD", sizeof(blkurl.block_method));
     else
-    {
-        _ansc_strncpy(blkurl.block_method, "", sizeof(blkurl.block_method) - 1);
-        blkurl.block_method[sizeof(blkurl.block_method) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
-    }
+        _ansc_strncpy(blkurl.block_method, "", sizeof(blkurl.block_method));
 
-    _ansc_strncpy(blkurl.alias, pEntry->Alias, sizeof(blkurl.alias) - 1);
-    blkurl.alias[sizeof(blkurl.alias) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
-    _ansc_strncpy(blkurl.site, pEntry->Site, sizeof(blkurl.site) - 1);
-    blkurl.site[sizeof(blkurl.site) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
+    _ansc_strncpy(blkurl.alias, pEntry->Alias, sizeof(blkurl.alias));
+    _ansc_strncpy(blkurl.site, pEntry->Site, sizeof(blkurl.site));
 
-    _ansc_strncpy(blkurl.start_time, pEntry->StartTime, sizeof(blkurl.start_time) - 1);
-    blkurl.start_time[sizeof(blkurl.start_time) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
-    _ansc_strncpy(blkurl.end_time, pEntry->EndTime, sizeof(blkurl.end_time) - 1);
-    blkurl.end_time[sizeof(blkurl.end_time) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
-    _ansc_strncpy(blkurl.block_days, pEntry->BlockDays, sizeof(blkurl.block_days) - 1);
-    blkurl.block_days[sizeof(blkurl.block_days) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
+    _ansc_strncpy(blkurl.start_time, pEntry->StartTime, sizeof(blkurl.start_time));
+    _ansc_strncpy(blkurl.end_time, pEntry->EndTime, sizeof(blkurl.end_time));
+    _ansc_strncpy(blkurl.block_days, pEntry->BlockDays, sizeof(blkurl.block_days));
 #ifdef CONFIG_CISCO_FEATURE_CISCOCONNECT
-    _ansc_strncpy(blkurl.mac, pEntry->MAC, sizeof(blkurl.mac) - 1);
-    blkurl.mac[sizeof(blkurl.mac) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
-    _ansc_strncpy(blkurl.device_name, pEntry->DeviceName, sizeof(blkurl.device_name) - 1);
-    blkurl.device_name[sizeof(blkurl.device_name) - 1] = '\0';  /* CID 334464 fix - Buffer not null terminated */
+    _ansc_strncpy(blkurl.mac, pEntry->MAC, sizeof(blkurl.mac));
+    _ansc_strncpy(blkurl.device_name, pEntry->DeviceName, sizeof(blkurl.device_name));
 #endif
 
     rc = Utopia_SetBlkURLByIndex(&ctx, index, &blkurl);
@@ -1889,12 +1868,9 @@ CosaDmlTrustedUser_GetEntryByIndex(ULONG index, COSA_DML_TRUSTEDUSER *pEntry)
     pEntry->InstanceNumber = trusted_user.ins_num;
     pEntry->Trusted = trusted_user.trusted;
     pEntry->IPAddressType = trusted_user.ipaddrtype == 6 ? IPADDR_IPV6 : IPADDR_IPV4;
-    _ansc_strncpy(pEntry->Alias, trusted_user.alias, sizeof(pEntry->Alias) - 1);
-    pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';  /* CID 334472 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->HostDescription, trusted_user.host_descp, sizeof(pEntry->HostDescription) - 1);
-    pEntry->HostDescription[sizeof(pEntry->HostDescription) - 1] = '\0';  /* CID 334472 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->IPAddress, trusted_user.ipaddr, sizeof(pEntry->IPAddress) - 1);
-    pEntry->IPAddress[sizeof(pEntry->IPAddress) - 1] = '\0';  /* CID 334472 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->Alias, trusted_user.alias, sizeof(pEntry->Alias));
+    _ansc_strncpy(pEntry->HostDescription, trusted_user.host_descp, sizeof(pEntry->HostDescription));
+    _ansc_strncpy(pEntry->IPAddress, trusted_user.ipaddr, sizeof(pEntry->IPAddress));
 
     AnscTraceWarning(("%s-%d RDKB_PCONTROL[TUSER]:%lu,%s\n", __FUNCTION__, __LINE__, pEntry->InstanceNumber, pEntry->IPAddress));
     Utopia_Free(&ctx, 0);
@@ -1935,13 +1911,10 @@ CosaDmlTrustedUser_AddEntry(COSA_DML_TRUSTEDUSER *pEntry)
     
     trusted_user.trusted = pEntry->Trusted;
     trusted_user.ipaddrtype = pEntry->IPAddressType == IPADDR_IPV4 ? 4 : 6;
-    _ansc_strncpy(trusted_user.alias, pEntry->Alias, sizeof(trusted_user.alias) - 1);
-    trusted_user.alias[sizeof(trusted_user.alias) - 1] = '\0';  /* CID 185687 fix - Buffer not null terminated */
-    /* CID 185687 fix - Buffer not null terminated */
+    _ansc_strncpy(trusted_user.alias, pEntry->Alias, sizeof(trusted_user.alias));
+    /* CID 185687 fix  */
     _ansc_strncpy(trusted_user.host_descp, pEntry->HostDescription, (sizeof(trusted_user.host_descp)-1));
-    trusted_user.host_descp[sizeof(trusted_user.host_descp) - 1] = '\0';  /* CID 185687 fix - Buffer not null terminated */
-    _ansc_strncpy(trusted_user.ipaddr, pEntry->IPAddress, sizeof(trusted_user.ipaddr) - 1);
-    trusted_user.ipaddr[sizeof(trusted_user.ipaddr) - 1] = '\0';  /* CID 185687 fix - Buffer not null terminated */
+    _ansc_strncpy(trusted_user.ipaddr, pEntry->IPAddress, sizeof(trusted_user.ipaddr));
 
     rc = Utopia_AddTrustedUser(&ctx, &trusted_user);
     Utopia_GetNumberOfTrustedUser(&ctx, &g_NrTrustedUser);
@@ -2010,12 +1983,9 @@ CosaDmlTrustedUser_SetConf(ULONG ins, COSA_DML_TRUSTEDUSER *pEntry)
 
     trusted_user.ins_num = pEntry->InstanceNumber;
     trusted_user.ipaddrtype = pEntry->IPAddressType == IPADDR_IPV4 ? 4 : 6;
-    _ansc_strncpy(trusted_user.alias, pEntry->Alias, sizeof(trusted_user.alias) - 1);
-    trusted_user.alias[sizeof(trusted_user.alias) - 1] = '\0';  /* CID 334461 fix - Buffer not null terminated */
-    _ansc_strncpy(trusted_user.host_descp, pEntry->HostDescription, sizeof(trusted_user.host_descp) - 1);
-    trusted_user.host_descp[sizeof(trusted_user.host_descp) - 1] = '\0';  /* CID 334461 fix - Buffer not null terminated */
-    _ansc_strncpy(trusted_user.ipaddr, pEntry->IPAddress, sizeof(trusted_user.ipaddr) - 1);
-    trusted_user.ipaddr[sizeof(trusted_user.ipaddr) - 1] = '\0';  /* CID 334461 fix - Buffer not null terminated */
+    _ansc_strncpy(trusted_user.alias, pEntry->Alias, sizeof(trusted_user.alias));
+    _ansc_strncpy(trusted_user.host_descp, pEntry->HostDescription, sizeof(trusted_user.host_descp));
+    _ansc_strncpy(trusted_user.ipaddr, pEntry->IPAddress, sizeof(trusted_user.ipaddr));
     trusted_user.trusted = pEntry->Trusted;
 
     rc = Utopia_SetTrustedUserByIndex(&ctx, index, &trusted_user);
@@ -2399,18 +2369,13 @@ CosaDmlMSServ_GetEntryByIndex(ULONG index, COSA_DML_MS_SERV *pEntry)
     pEntry->StartPort = ms_serv.start_port;
     pEntry->EndPort = ms_serv.end_port;
     
-    _ansc_strncpy(pEntry->Alias, ms_serv.alias, sizeof(pEntry->Alias) - 1);
-    pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';  /* CID 334475 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->Description, ms_serv.descp, sizeof(pEntry->Description) - 1);
-    pEntry->Description[sizeof(pEntry->Description) - 1] = '\0';  /* CID 334475 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->Alias, ms_serv.alias, sizeof(pEntry->Alias));
+    _ansc_strncpy(pEntry->Description, ms_serv.descp, sizeof(pEntry->Description));
 
-    _ansc_strncpy(pEntry->StartTime, ms_serv.start_time, sizeof(pEntry->StartTime) - 1);
-    pEntry->StartTime[sizeof(pEntry->StartTime) - 1] = '\0';  /* CID 334475 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->EndTime, ms_serv.end_time, sizeof(pEntry->EndTime) - 1);
-    pEntry->EndTime[sizeof(pEntry->EndTime) - 1] = '\0';  /* CID 334475 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->StartTime, ms_serv.start_time, sizeof(pEntry->StartTime));
+    _ansc_strncpy(pEntry->EndTime, ms_serv.end_time, sizeof(pEntry->EndTime));
     
-    _ansc_strncpy(pEntry->BlockDays, ms_serv.block_days, sizeof(pEntry->BlockDays) - 1);
-    pEntry->BlockDays[sizeof(pEntry->BlockDays) - 1] = '\0';  /* CID 334475 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->BlockDays, ms_serv.block_days, sizeof(pEntry->BlockDays));
     
     if(!_ansc_strcmp(ms_serv.protocol, "TCP"))
         pEntry->Protocol = PROTO_TCP;
@@ -2461,19 +2426,14 @@ CosaDmlMSServ_AddEntry(COSA_DML_MS_SERV *pEntry)
     ms_serv.start_port = pEntry->StartPort;
     ms_serv.end_port = pEntry->EndPort;
     
-    /* CID 185686 fix - Buffer not null terminated (enhanced existing partial fix) */
+    /* CID 185687 Fix - Buffer not null terminated */
     strncpy(ms_serv.alias, pEntry->Alias, sizeof(ms_serv.alias)-1);
-    ms_serv.alias[sizeof(ms_serv.alias) - 1] = '\0';  /* CID 185686 fix - Buffer not null terminated */
     strncpy(ms_serv.descp, pEntry->Description, sizeof(ms_serv.descp)-1);
-    ms_serv.descp[sizeof(ms_serv.descp) - 1] = '\0';  /* CID 378699 fix - String not null terminated */
 
     strncpy(ms_serv.start_time, pEntry->StartTime, sizeof(ms_serv.start_time)-1);
-    ms_serv.start_time[sizeof(ms_serv.start_time) - 1] = '\0';  /* CID 185686 fix - Buffer not null terminated */
     strncpy(ms_serv.end_time, pEntry->EndTime, sizeof(ms_serv.end_time)-1);
-    ms_serv.end_time[sizeof(ms_serv.end_time) - 1] = '\0';  /* CID 185686 fix - Buffer not null terminated */
-    /* CID 185686 fix - Buffer not null terminated (enhanced existing partial fix) */
+    /* CID 185686 fix */
     strncpy(ms_serv.block_days, pEntry->BlockDays, (sizeof(ms_serv.block_days)-1));
-    ms_serv.block_days[sizeof(ms_serv.block_days) - 1] = '\0';  /* CID 185686 fix - Buffer not null terminated */
 
     switch(pEntry->Protocol)
     {
@@ -2569,17 +2529,12 @@ CosaDmlMSServ_SetConf(ULONG ins, COSA_DML_MS_SERV *pEntry)
     ms_serv.start_port = pEntry->StartPort;
     ms_serv.end_port = pEntry->EndPort;
     
-    _ansc_strncpy(ms_serv.alias, pEntry->Alias, sizeof(ms_serv.alias) - 1);
-    ms_serv.alias[sizeof(ms_serv.alias) - 1] = '\0';  /* CID 334467 fix - Buffer not null terminated */
-    _ansc_strncpy(ms_serv.descp, pEntry->Description, sizeof(ms_serv.descp) - 1);
-    ms_serv.descp[sizeof(ms_serv.descp) - 1] = '\0';  /* CID 334467 fix - Buffer not null terminated */
+    _ansc_strncpy(ms_serv.alias, pEntry->Alias, sizeof(ms_serv.alias));
+    _ansc_strncpy(ms_serv.descp, pEntry->Description, sizeof(ms_serv.descp));
 
-    _ansc_strncpy(ms_serv.start_time, pEntry->StartTime, sizeof(ms_serv.start_time) - 1);
-    ms_serv.start_time[sizeof(ms_serv.start_time) - 1] = '\0';  /* CID 334467 fix - Buffer not null terminated */
-    _ansc_strncpy(ms_serv.end_time, pEntry->EndTime, sizeof(ms_serv.end_time) - 1);
-    ms_serv.end_time[sizeof(ms_serv.end_time) - 1] = '\0';  /* CID 334467 fix - Buffer not null terminated */
-    _ansc_strncpy(ms_serv.block_days, pEntry->BlockDays, sizeof(ms_serv.block_days) - 1);
-    ms_serv.block_days[sizeof(ms_serv.block_days) - 1] = '\0';  /* CID 334467 fix - Buffer not null terminated */
+    _ansc_strncpy(ms_serv.start_time, pEntry->StartTime, sizeof(ms_serv.start_time));
+    _ansc_strncpy(ms_serv.end_time, pEntry->EndTime, sizeof(ms_serv.end_time));
+    _ansc_strncpy(ms_serv.block_days, pEntry->BlockDays, sizeof(ms_serv.block_days));
 
     switch(pEntry->Protocol)
     {
@@ -2678,12 +2633,9 @@ CosaDmlMSTrustedUser_GetEntryByIndex(ULONG index, COSA_DML_MS_TRUSTEDUSER *pEntr
     pEntry->InstanceNumber = ms_trusteduser.ins_num;
     pEntry->Trusted = ms_trusteduser.trusted;
     pEntry->IPAddressType = ms_trusteduser.ipaddrtype == 4 ? IPADDR_IPV4 : IPADDR_IPV6;
-    _ansc_strncpy(pEntry->Alias, ms_trusteduser.alias, sizeof(pEntry->Alias) - 1);
-    pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';  /* CID 334466 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->HostDescription, ms_trusteduser.host_descp, sizeof(pEntry->HostDescription) - 1);
-    pEntry->HostDescription[sizeof(pEntry->HostDescription) - 1] = '\0';  /* CID 334466 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->IPAddress, ms_trusteduser.ipaddr, sizeof(pEntry->IPAddress) - 1);
-    pEntry->IPAddress[sizeof(pEntry->IPAddress) - 1] = '\0';  /* CID 334466 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->Alias, ms_trusteduser.alias, sizeof(pEntry->Alias));
+    _ansc_strncpy(pEntry->HostDescription, ms_trusteduser.host_descp, sizeof(pEntry->HostDescription));
+    _ansc_strncpy(pEntry->IPAddress, ms_trusteduser.ipaddr, sizeof(pEntry->IPAddress));
     AnscTraceWarning(("%s-%d RDKB_PCONTROL[MSTUSER]:%lu,%s\n", __FUNCTION__, __LINE__,pEntry->InstanceNumber,pEntry->IPAddress));
 
     Utopia_Free(&ctx, 0);
@@ -2723,13 +2675,10 @@ CosaDmlMSTrustedUser_AddEntry(COSA_DML_MS_TRUSTEDUSER *pEntry)
     ms_trusteduser.ins_num = pEntry->InstanceNumber;
     ms_trusteduser.trusted = pEntry->Trusted;
     ms_trusteduser.ipaddrtype = pEntry->IPAddressType == IPADDR_IPV4 ? 4 : 6;
-    /* CID 185691, 377578 fix - Buffer/String not null terminated */
+    /* CID 185691 fix  */
     _ansc_strncpy(ms_trusteduser.alias, pEntry->Alias, (sizeof(ms_trusteduser.alias)-1));
-    ms_trusteduser.alias[sizeof(ms_trusteduser.alias) - 1] = '\0';  /* CID 185691, 377578 fix - Buffer/String not null terminated */
     _ansc_strncpy(ms_trusteduser.host_descp, pEntry->HostDescription, sizeof(ms_trusteduser.host_descp)-1);
-    ms_trusteduser.host_descp[sizeof(ms_trusteduser.host_descp) - 1] = '\0';  /* CID 185691, 377578 fix - Buffer/String not null terminated */
     _ansc_strncpy(ms_trusteduser.ipaddr, pEntry->IPAddress, sizeof(ms_trusteduser.ipaddr)-1);
-    ms_trusteduser.ipaddr[sizeof(ms_trusteduser.ipaddr) - 1] = '\0';  /* CID 185691, 377578 fix - Buffer/String not null terminated */
 
     rc = Utopia_AddMSTrustedUser(&ctx, &ms_trusteduser);
     Utopia_GetNumberOfMSTrustedUser(&ctx, &g_NrMSTrustedUsers);
@@ -2797,12 +2746,9 @@ CosaDmlMSTrustedUser_SetConf(ULONG ins, COSA_DML_MS_TRUSTEDUSER *pEntry)
     ms_trusteduser.ins_num = pEntry->InstanceNumber;
     ms_trusteduser.trusted = pEntry->Trusted;
     ms_trusteduser.ipaddrtype = pEntry->IPAddressType == IPADDR_IPV4 ? 4 : 6;
-    _ansc_strncpy(ms_trusteduser.alias, pEntry->Alias, sizeof(ms_trusteduser.alias) - 1);
-    ms_trusteduser.alias[sizeof(ms_trusteduser.alias) - 1] = '\0';  /* CID 334468 fix - Buffer not null terminated */
-    _ansc_strncpy(ms_trusteduser.host_descp, pEntry->HostDescription, sizeof(ms_trusteduser.host_descp) - 1);
-    ms_trusteduser.host_descp[sizeof(ms_trusteduser.host_descp) - 1] = '\0';  /* CID 334468 fix - Buffer not null terminated */
-    _ansc_strncpy(ms_trusteduser.ipaddr, pEntry->IPAddress, sizeof(ms_trusteduser.ipaddr) - 1);
-    ms_trusteduser.ipaddr[sizeof(ms_trusteduser.ipaddr) - 1] = '\0';  /* CID 334468 fix - Buffer not null terminated */
+    _ansc_strncpy(ms_trusteduser.alias, pEntry->Alias, sizeof(ms_trusteduser.alias));
+    _ansc_strncpy(ms_trusteduser.host_descp, pEntry->HostDescription, sizeof(ms_trusteduser.host_descp));
+    _ansc_strncpy(ms_trusteduser.ipaddr, pEntry->IPAddress, sizeof(ms_trusteduser.ipaddr));
 
     rc = Utopia_SetMSTrustedUserByIndex(&ctx, index, &ms_trusteduser);
 
@@ -3183,20 +3129,14 @@ CosaDmlMDDev_GetEntryByIndex(ULONG index, COSA_DML_MD_DEV *pEntry)
     pEntry->InstanceNumber = md_dev.ins_num;
     pEntry->Type = md_dev.is_block ? MD_TYPE_BLOCK : MD_TYPE_ALLOW;
     pEntry->AlwaysBlock = md_dev.always; 
-    _ansc_strncpy(pEntry->Alias, md_dev.alias, sizeof(pEntry->Alias) - 1);
-    pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';  /* CID 334477 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->Description, md_dev.descp, sizeof(pEntry->Description) - 1);
-    pEntry->Description[sizeof(pEntry->Description) - 1] = '\0';  /* CID 334477 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->Alias, md_dev.alias, sizeof(pEntry->Alias));
+    _ansc_strncpy(pEntry->Description, md_dev.descp, sizeof(pEntry->Description));
 
-    _ansc_strncpy(pEntry->StartTime, md_dev.start_time, sizeof(pEntry->StartTime) - 1);
-    pEntry->StartTime[sizeof(pEntry->StartTime) - 1] = '\0';  /* CID 334477 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->EndTime, md_dev.end_time, sizeof(pEntry->EndTime) - 1);
-    pEntry->EndTime[sizeof(pEntry->EndTime) - 1] = '\0';  /* CID 334477 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->StartTime, md_dev.start_time, sizeof(pEntry->StartTime));
+    _ansc_strncpy(pEntry->EndTime, md_dev.end_time, sizeof(pEntry->EndTime));
     
-    _ansc_strncpy(pEntry->BlockDays, md_dev.block_days, sizeof(pEntry->BlockDays) - 1);
-    pEntry->BlockDays[sizeof(pEntry->BlockDays) - 1] = '\0';  /* CID 334477 fix - Buffer not null terminated */
-    _ansc_strncpy(pEntry->MACAddress, md_dev.macaddr, sizeof(pEntry->MACAddress) - 1);
-    pEntry->MACAddress[sizeof(pEntry->MACAddress) - 1] = '\0';  /* CID 334477 fix - Buffer not null terminated */
+    _ansc_strncpy(pEntry->BlockDays, md_dev.block_days, sizeof(pEntry->BlockDays));
+    _ansc_strncpy(pEntry->MACAddress, md_dev.macaddr, sizeof(pEntry->MACAddress));
     j = 0;
     size = strlen(pEntry->MACAddress);
     for (i = 0; i < size; i++) {
@@ -3247,20 +3187,14 @@ CosaDmlMDDev_AddEntry(COSA_DML_MD_DEV *pEntry)
     md_dev.ins_num  = pEntry->InstanceNumber;
     md_dev.is_block = pEntry->Type == MD_TYPE_BLOCK ? 1 : 0;
     md_dev.always = pEntry->AlwaysBlock;
-    _ansc_strncpy(md_dev.alias, pEntry->Alias, sizeof(md_dev.alias) - 1);
-    md_dev.alias[sizeof(md_dev.alias) - 1] = '\0';  /* CID 185690 fix - Buffer not null terminated */
-    _ansc_strncpy(md_dev.descp, pEntry->Description, sizeof(md_dev.descp) - 1);
-    md_dev.descp[sizeof(md_dev.descp) - 1] = '\0';  /* CID 340764 fix - String not null terminated */
+    _ansc_strncpy(md_dev.alias, pEntry->Alias, sizeof(md_dev.alias));
+    _ansc_strncpy(md_dev.descp, pEntry->Description, sizeof(md_dev.descp));
 
-    _ansc_strncpy(md_dev.start_time, pEntry->StartTime, sizeof(md_dev.start_time) - 1);
-    md_dev.start_time[sizeof(md_dev.start_time) - 1] = '\0';  /* CID 185690 fix - Buffer not null terminated */
-    _ansc_strncpy(md_dev.end_time, pEntry->EndTime, sizeof(md_dev.end_time) - 1);
-    md_dev.end_time[sizeof(md_dev.end_time) - 1] = '\0';  /* CID 185690 fix - Buffer not null terminated */
-    _ansc_strncpy(md_dev.block_days, pEntry->BlockDays, sizeof(md_dev.block_days) - 1);
-    md_dev.block_days[sizeof(md_dev.block_days) - 1] = '\0';  /* CID 185690 fix - Buffer not null terminated */
-    /* CID 185690 fix - Buffer not null terminated (enhanced existing partial fix) */
+    _ansc_strncpy(md_dev.start_time, pEntry->StartTime, sizeof(md_dev.start_time));
+    _ansc_strncpy(md_dev.end_time, pEntry->EndTime, sizeof(md_dev.end_time));
+    _ansc_strncpy(md_dev.block_days, pEntry->BlockDays, sizeof(md_dev.block_days));
+    /* CID 185690 fix  */
     _ansc_strncpy(md_dev.macaddr, pEntry->MACAddress, (sizeof(md_dev.macaddr)-1));
-    md_dev.macaddr[sizeof(md_dev.macaddr) - 1] = '\0';  /* CID 185690 fix - Buffer not null terminated */
 
     rc = Utopia_AddMDDev(&ctx, &md_dev);
     Utopia_GetNumberOfMDDev(&ctx, &g_NrMDDevs);
@@ -3337,19 +3271,13 @@ CosaDmlMDDev_SetConf(ULONG ins, COSA_DML_MD_DEV *pEntry)
     md_dev.ins_num  = pEntry->InstanceNumber;
     md_dev.is_block = pEntry->Type == MD_TYPE_BLOCK ? 1 : 0;
     md_dev.always = pEntry->AlwaysBlock;
-    _ansc_strncpy(md_dev.alias, pEntry->Alias, sizeof(md_dev.alias) - 1);
-    md_dev.alias[sizeof(md_dev.alias) - 1] = '\0';  /* CID 334460 fix - Buffer not null terminated */
-    _ansc_strncpy(md_dev.descp, pEntry->Description, sizeof(md_dev.descp) - 1);
-    md_dev.descp[sizeof(md_dev.descp) - 1] = '\0';  /* CID 334460 fix - Buffer not null terminated */
+    _ansc_strncpy(md_dev.alias, pEntry->Alias, sizeof(md_dev.alias));
+    _ansc_strncpy(md_dev.descp, pEntry->Description, sizeof(md_dev.descp));
 
-    _ansc_strncpy(md_dev.start_time, pEntry->StartTime, sizeof(md_dev.start_time) - 1);
-    md_dev.start_time[sizeof(md_dev.start_time) - 1] = '\0';  /* CID 334460 fix - Buffer not null terminated */
-    _ansc_strncpy(md_dev.end_time, pEntry->EndTime, sizeof(md_dev.end_time) - 1);
-    md_dev.end_time[sizeof(md_dev.end_time) - 1] = '\0';  /* CID 334460 fix - Buffer not null terminated */
-    _ansc_strncpy(md_dev.block_days, pEntry->BlockDays, sizeof(md_dev.block_days) - 1);
-    md_dev.block_days[sizeof(md_dev.block_days) - 1] = '\0';  /* CID 334460 fix - Buffer not null terminated */
-    _ansc_strncpy(md_dev.macaddr, pEntry->MACAddress, sizeof(md_dev.macaddr) - 1);
-    md_dev.macaddr[sizeof(md_dev.macaddr) - 1] = '\0';  /* CID 334460 fix - Buffer not null terminated */
+    _ansc_strncpy(md_dev.start_time, pEntry->StartTime, sizeof(md_dev.start_time));
+    _ansc_strncpy(md_dev.end_time, pEntry->EndTime, sizeof(md_dev.end_time));
+    _ansc_strncpy(md_dev.block_days, pEntry->BlockDays, sizeof(md_dev.block_days));
+    _ansc_strncpy(md_dev.macaddr, pEntry->MACAddress, sizeof(md_dev.macaddr));
     
     rc = Utopia_SetMDDevByIndex(&ctx, index, &md_dev);
 
