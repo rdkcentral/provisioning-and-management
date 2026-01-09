@@ -3671,30 +3671,6 @@
                          </parameter>
                          </parameters>
                 </object>
-                        <object>
-                                <name>NonRootSupport</name>
-                                <objectType>object</objectType>
-                                <functions>
-                                        <func_GetParamBoolValue>NonRootSupport_GetParamBoolValue</func_GetParamBoolValue>
-                                        <func_SetParamBoolValue>NonRootSupport_SetParamBoolValue</func_SetParamBoolValue>
-                                        <func_SetParamStringValue>NonRootSupport_SetParamStringValue</func_SetParamStringValue>
-                                        <func_GetParamStringValue>NonRootSupport_GetParamStringValue</func_GetParamStringValue>
-                                </functions>
-                                <parameters>
-                                <parameter>
-                                        <name>ApparmorBlocklist</name>
-                                        <type>string</type>
-                                        <syntax>string</syntax>
-                                        <writable>true</writable>
-                                </parameter>
-                                <parameter>
-                                        <name>Blocklist</name>
-                                        <type>string(1024)</type>
-                                        <syntax>string</syntax>
-                                        <writable>true</writable>
-                                </parameter>
-                                </parameters>
-                        </object>
                        <object>
                                 <name>AutoReboot</name>
                                 <objectType>object</objectType>
