@@ -9499,9 +9499,8 @@ void addRemoteWanIpv6Route()
                 char mesh_wan_ifname[32] = {0};
                 char ipv6_address[128] = {0};
                 getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
-
 		CcspTraceInfo(("%s : mesh_wan_ifname: %s current_wan_ifname :%s\n", __FUNCTION__, mesh_wan_ifname, wan_interface));
-		if ((mesh_wan_ifname[0] != '\0') && (strcmp(mesh_wan_ifname, wan_interface) == 0))
+                if (mesh_wan_ifname[0] != '\0') 
                 {
                     memset(ipv6_address,0,sizeof(ipv6_address));
 
