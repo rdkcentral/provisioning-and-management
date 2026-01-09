@@ -556,7 +556,7 @@ void *XfinityWifiThread
         } else {
             fprintf(stderr, "%s: set WiFi.SSID.16 Disable OK\n", __FUNCTION__);
         }
-#if (defined (_XB8_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_))  && defined(RDK_ONEWIFI)
+#if defined (_XB8_PRODUCT_REQ_) && defined(RDK_ONEWIFI)
         if (DmSetBool("Device.WiFi.SSID.19.Enable", value) != ANSC_STATUS_SUCCESS) {
             fprintf(stderr, "%s: set WiFi.SSID.19 Disable error\n", __FUNCTION__);
         } else {
