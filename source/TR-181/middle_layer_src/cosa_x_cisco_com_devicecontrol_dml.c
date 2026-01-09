@@ -2142,7 +2142,7 @@ LanMngm_SetParamUlongValue
 
 	#if !defined(_PLATFORM_RASPBERRYPI_) && !defined(_PLATFORM_BANANAPI_R4_)
 	//RDKB-27656 : Bridge Mode must not set to true using WEBPA & dmcli in ETHWAN mode
-	#if defined(BRIDGE_MODE_NOT_SUPPORTED)
+	#if 0
         char buf[16] = {0};
         if (syscfg_get(NULL, "eth_wan_enabled", buf, sizeof(buf)) == 0)
         {
