@@ -3682,12 +3682,6 @@
                                 </functions>
                                 <parameters>
                                 <parameter>
-                                        <name>ApparmorBlocklist</name>
-                                        <type>string</type>
-                                        <syntax>string</syntax>
-                                        <writable>true</writable>
-                                </parameter>
-                                <parameter>
                                         <name>Blocklist</name>
                                         <type>string(1024)</type>
                                         <syntax>string</syntax>
