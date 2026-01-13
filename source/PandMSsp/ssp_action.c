@@ -213,7 +213,7 @@ ssp_engage_pnm
             (
                 (ANSC_HANDLE)pDslhCpeController,
                 CrName,                             /* CCSP CR ID */
-                NULL,           /* Comcast generated code to create XML. */
+                DMPackCreateDataModelXML,           /* Comcast generated code to create XML. */
                 pStartCfg->ComponentName,           /* Component Name    */
                 pStartCfg->Version,                 /* Component Version */
                 pStartCfg->DbusPath,                /* Component Path    */
