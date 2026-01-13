@@ -1108,15 +1108,15 @@ BOOL tagPermitted(int tag)
 #endif
 #define DHCPV6S_NAME                   "dhcpv6s"
 
-static struct {
-    pthread_t          dbgthrdc;
-    pthread_t          dbgthrds;
-}g_be_ctx;
+/* static struct { */
+/*     pthread_t          dbgthrdc; */
+/*     pthread_t          dbgthrds; */
+/* }g_be_ctx; */
 
 #if !defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE) 
 static void * dhcpv6c_dbg_thrd(void * in);
 #endif
-static void * dhcpv6s_dbg_thrd(void * in);
+/* static void * dhcpv6s_dbg_thrd(void * in); */
 
 extern COSARepopulateTableProc            g_COSARepopulateTable;
 
@@ -1997,7 +1997,7 @@ CosaDmlDhcpv6Init
     UtopiaContext utctx = {0};
     ULONG         Index = 0;
     ULONG         Index2 = 0;
-    DSLHDMAGNT_CALLBACK *  pEntry = NULL;
+    /* DSLHDMAGNT_CALLBACK *  pEntry = NULL; */
     char         value[32] = {0};
     BOOLEAN		 bIsChangesHappened = FALSE;
     errno_t     rc = -1;
@@ -8842,9 +8842,9 @@ int Get_Device_Mode()
 This thread can be generic to handle the operations depending on the interfaces. Other interface and their events can be register here later based on requirement */
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)
 #else
-static pthread_t InfEvtHandle_tid;
-static int sysevent_fd_1;
-static token_t sysevent_token_1;
+/* static pthread_t InfEvtHandle_tid; */
+/* static int sysevent_fd_1; */
+/* static token_t sysevent_token_1; */
 
 #ifdef RDKB_EXTENDER_ENABLED
 #include <sys/stat.h>
@@ -9111,250 +9111,250 @@ int handle_MocaIpv6(char *status)
 }
 
 
-static void *InterfaceEventHandler_thrd(void *data)
-{
-    UNREFERENCED_PARAMETER(data);
-    async_id_t interface_asyncid;
-    async_id_t interface_XHS_asyncid;
-    async_id_t interface_POD_asyncid;
-    async_id_t interface_MoCA_asyncid;
-#if defined (WIFI_MANAGE_SUPPORTED)
-    async_id_t interface_WiFi_asyncid;
-    char aMultiNetStatus[BUFF_LEN_64] = {0};
-    char index[BUFF_LEN_8] = {0};
-#endif /*WIFI_MANAGE_SUPPORTED*/
-    CcspTraceWarning(("%s started\n",__FUNCTION__));
-    sysevent_fd_1 = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "Interface_evt_handler", &sysevent_token_1);
+/* static void *InterfaceEventHandler_thrd(void *data) */
+/* { */
+/*     UNREFERENCED_PARAMETER(data); */
+/*     async_id_t interface_asyncid; */
+/*     async_id_t interface_XHS_asyncid; */
+/*     async_id_t interface_POD_asyncid; */
+/*     async_id_t interface_MoCA_asyncid; */
+/* #if defined (WIFI_MANAGE_SUPPORTED) */
+/*     async_id_t interface_WiFi_asyncid; */
+/*     char aMultiNetStatus[BUFF_LEN_64] = {0}; */
+/*     char index[BUFF_LEN_8] = {0}; */
+/* #endif /\*WIFI_MANAGE_SUPPORTED*\/ */
+/*     CcspTraceWarning(("%s started\n",__FUNCTION__)); */
+/*     sysevent_fd_1 = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "Interface_evt_handler", &sysevent_token_1); */
 
-    sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_6-status", TUPLE_FLAG_EVENT);
-    sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_6-status",  &interface_asyncid);
-    sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_2-status", TUPLE_FLAG_EVENT);
-    sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_2-status",  &interface_XHS_asyncid);
-	sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_10-status", TUPLE_FLAG_EVENT);
-    sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_10-status",  &interface_POD_asyncid);
-    sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_9-status", TUPLE_FLAG_EVENT);
-    sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_9-status",  &interface_MoCA_asyncid);
+/*     sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_6-status", TUPLE_FLAG_EVENT); */
+/*     sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_6-status",  &interface_asyncid); */
+/*     sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_2-status", TUPLE_FLAG_EVENT); */
+/*     sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_2-status",  &interface_XHS_asyncid); */
+/* 	sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_10-status", TUPLE_FLAG_EVENT); */
+/*     sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_10-status",  &interface_POD_asyncid); */
+/*     sysevent_set_options(sysevent_fd_1, sysevent_token_1, "multinet_9-status", TUPLE_FLAG_EVENT); */
+/*     sysevent_setnotification(sysevent_fd_1, sysevent_token_1, "multinet_9-status",  &interface_MoCA_asyncid); */
 
-#if defined (WIFI_MANAGE_SUPPORTED)
-    psmGet(MANAGE_WIFI_BRIDGE_INDEX, index, BUFF_LEN_8);
-    if ('\0' != index[0])
-    {
-        snprintf (aMultiNetStatus,BUFF_LEN_64,"multinet_%s-status",index);
-        CcspTraceInfo(("%s:%d,aMultiNetStatus:%s\n",__FUNCTION__,__LINE__, aMultiNetStatus));
-        sysevent_set_options(sysevent_fd_1, sysevent_token_1, aMultiNetStatus, TUPLE_FLAG_EVENT);
-        sysevent_setnotification(sysevent_fd_1, sysevent_token_1,aMultiNetStatus,  &interface_WiFi_asyncid);
-    }
-#endif /*WIFI_MANAGE_SUPPORTED*/
+/* #if defined (WIFI_MANAGE_SUPPORTED) */
+/*     psmGet(MANAGE_WIFI_BRIDGE_INDEX, index, BUFF_LEN_8); */
+/*     if ('\0' != index[0]) */
+/*     { */
+/*         snprintf (aMultiNetStatus,BUFF_LEN_64,"multinet_%s-status",index); */
+/*         CcspTraceInfo(("%s:%d,aMultiNetStatus:%s\n",__FUNCTION__,__LINE__, aMultiNetStatus)); */
+/*         sysevent_set_options(sysevent_fd_1, sysevent_token_1, aMultiNetStatus, TUPLE_FLAG_EVENT); */
+/*         sysevent_setnotification(sysevent_fd_1, sysevent_token_1,aMultiNetStatus,  &interface_WiFi_asyncid); */
+/*     } */
+/* #endif /\*WIFI_MANAGE_SUPPORTED*\/ */
 
-    FILE *fp = NULL;
-    char *Inf_name = NULL;
-    int retPsmGet = CCSP_SUCCESS;
-    char tbuff[100];
-    int err;
-    char name[25] = {0}, val[42] = {0}, buf[128], cmd[128];
-    errno_t rc = -1;
+/*     FILE *fp = NULL; */
+/*     char *Inf_name = NULL; */
+/*     int retPsmGet = CCSP_SUCCESS; */
+/*     char tbuff[100]; */
+/*     int err; */
+/*     char name[25] = {0}, val[42] = {0}, buf[128], cmd[128]; */
+/*     errno_t rc = -1; */
 	
-    rc = strcpy_s(cmd, sizeof(cmd), "multinet_9-status");
-    ERR_CHK(rc);
+/*     rc = strcpy_s(cmd, sizeof(cmd), "multinet_9-status"); */
+/*     ERR_CHK(rc); */
 
-    buf[0] = 0;
-    commonSyseventGet(cmd, buf, sizeof(buf));
+/*     buf[0] = 0; */
+/*     commonSyseventGet(cmd, buf, sizeof(buf)); */
             
-    CcspTraceWarning(("%s multinet_9-status is %s\n",__FUNCTION__,buf));
+/*     CcspTraceWarning(("%s multinet_9-status is %s\n",__FUNCTION__,buf)); */
 
-    handle_MocaIpv6(buf);
+/*     handle_MocaIpv6(buf); */
 
-    rc = strcpy_s(cmd, sizeof(cmd), "multinet_10-status");
-    ERR_CHK(rc);
+/*     rc = strcpy_s(cmd, sizeof(cmd), "multinet_10-status"); */
+/*     ERR_CHK(rc); */
 
-    buf[0] = 0;
-    commonSyseventGet(cmd, buf, sizeof(buf));
+/*     buf[0] = 0; */
+/*     commonSyseventGet(cmd, buf, sizeof(buf)); */
             
-    CcspTraceWarning(("%s multinet_10-status is %s\n",__FUNCTION__,buf));
+/*     CcspTraceWarning(("%s multinet_10-status is %s\n",__FUNCTION__,buf)); */
 
-    if(strcmp((const char*)buf, "ready") == 0)
-    {
-            retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.10.Name", NULL, &Inf_name);
-			if(!retPsmGet)
-			{
-				retPsmGet = CCSP_SUCCESS;
-				Inf_name = "br403";		
-			}
-            if (retPsmGet == CCSP_SUCCESS)
-            {                      
-                memset(tbuff,0,sizeof(tbuff));
-                fp = v_secure_popen("r","sysctl net.ipv6.conf.%s.autoconf",Inf_name);
-		_get_shell_output(fp, tbuff, sizeof(tbuff));
-                if(tbuff[strlen(tbuff)-1] == '0')
-                {
-                    enable_IPv6(Inf_name);
-                }
+/*     if(strcmp((const char*)buf, "ready") == 0) */
+/*     { */
+/*             retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.10.Name", NULL, &Inf_name); */
+/* 			if(!retPsmGet) */
+/* 			{ */
+/* 				retPsmGet = CCSP_SUCCESS; */
+/* 				Inf_name = "br403";		 */
+/* 			} */
+/*             if (retPsmGet == CCSP_SUCCESS) */
+/*             {                       */
+/*                 memset(tbuff,0,sizeof(tbuff)); */
+/*                 fp = v_secure_popen("r","sysctl net.ipv6.conf.%s.autoconf",Inf_name); */
+/* 		_get_shell_output(fp, tbuff, sizeof(tbuff)); */
+/*                 if(tbuff[strlen(tbuff)-1] == '0') */
+/*                 { */
+/*                     enable_IPv6(Inf_name); */
+/*                 } */
 
-                ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
-                Inf_name = NULL;
-            }
+/*                 ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name); */
+/*                 Inf_name = NULL; */
+/*             } */
     
-    }
+/*     } */
 
-    rc = strcpy_s(cmd, sizeof(cmd), "multinet_2-status");
-    ERR_CHK(rc);
+/*     rc = strcpy_s(cmd, sizeof(cmd), "multinet_2-status"); */
+/*     ERR_CHK(rc); */
 
-    buf[0] = 0;
-    commonSyseventGet(cmd, buf, sizeof(buf));
+/*     buf[0] = 0; */
+/*     commonSyseventGet(cmd, buf, sizeof(buf)); */
 
-    CcspTraceWarning(("%s multinet_2-status is %s\n",__FUNCTION__,buf));
+/*     CcspTraceWarning(("%s multinet_2-status is %s\n",__FUNCTION__,buf)); */
 
-    if(strcmp((const char*)buf, "ready") == 0)
-    {
-        retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name);
-        if (retPsmGet == CCSP_SUCCESS)
-        {
-            fp = v_secure_popen("r","sysctl net.ipv6.conf.%s.autoconf",Inf_name);
-            _get_shell_output(fp, tbuff, sizeof(tbuff));
-            if(tbuff[strlen(tbuff)-1] == '0')
-            {
-                enable_IPv6(Inf_name);
-            }
-            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
-            Inf_name = NULL;
-        }
+/*     if(strcmp((const char*)buf, "ready") == 0) */
+/*     { */
+/*         retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name); */
+/*         if (retPsmGet == CCSP_SUCCESS) */
+/*         { */
+/*             fp = v_secure_popen("r","sysctl net.ipv6.conf.%s.autoconf",Inf_name); */
+/*             _get_shell_output(fp, tbuff, sizeof(tbuff)); */
+/*             if(tbuff[strlen(tbuff)-1] == '0') */
+/*             { */
+/*                 enable_IPv6(Inf_name); */
+/*             } */
+/*             ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name); */
+/*             Inf_name = NULL; */
+/*         } */
 
-    }
+/*     } */
 
-    rc = strcpy_s(cmd, sizeof(cmd), "multinet_6-status");
-    ERR_CHK(rc);
+/*     rc = strcpy_s(cmd, sizeof(cmd), "multinet_6-status"); */
+/*     ERR_CHK(rc); */
 
-    buf[0] = 0;
-    commonSyseventGet(cmd, buf, sizeof(buf));
+/*     buf[0] = 0; */
+/*     commonSyseventGet(cmd, buf, sizeof(buf)); */
 
-    CcspTraceWarning(("%s multinet_6-status is %s\n",__FUNCTION__,buf));
+/*     CcspTraceWarning(("%s multinet_6-status is %s\n",__FUNCTION__,buf)); */
 
-    if(strcmp((const char*)buf, "ready") == 0)
-    {
-        fp = v_secure_popen("r","sysctl net.ipv6.conf.br106.autoconf");
-        _get_shell_output(fp, tbuff, sizeof(tbuff));
-        if(tbuff[strlen(tbuff)-1] == '0')
-        {
-            enable_IPv6("br106");
-        }
+/*     if(strcmp((const char*)buf, "ready") == 0) */
+/*     { */
+/*         fp = v_secure_popen("r","sysctl net.ipv6.conf.br106.autoconf"); */
+/*         _get_shell_output(fp, tbuff, sizeof(tbuff)); */
+/*         if(tbuff[strlen(tbuff)-1] == '0') */
+/*         { */
+/*             enable_IPv6("br106"); */
+/*         } */
 
-    }
+/*     } */
 
-    while(1)
-    {
-        async_id_t getnotification_asyncid;
-        memset(name,0,sizeof(name));
-        memset(val,0,sizeof(val));
-        memset(cmd,0,sizeof(cmd));
-        memset(buf,0,sizeof(buf));
+/*     while(1) */
+/*     { */
+/*         async_id_t getnotification_asyncid; */
+/*         memset(name,0,sizeof(name)); */
+/*         memset(val,0,sizeof(val)); */
+/*         memset(cmd,0,sizeof(cmd)); */
+/*         memset(buf,0,sizeof(buf)); */
 
-        int namelen = sizeof(name);
-        int vallen  = sizeof(val);
-        err = sysevent_getnotification(sysevent_fd_1, sysevent_token_1, name, &namelen,  val, &vallen, &getnotification_asyncid);
+/*         int namelen = sizeof(name); */
+/*         int vallen  = sizeof(val); */
+/*         err = sysevent_getnotification(sysevent_fd_1, sysevent_token_1, name, &namelen,  val, &vallen, &getnotification_asyncid); */
 
-        if (err)
-        {
-            CcspTraceWarning(("sysevent_getnotification failed with error: %d %s\n", err,__FUNCTION__));
-            CcspTraceWarning(("sysevent_getnotification failed name: %s val : %s\n", name,val));
-            if ( 0 != v_secure_system("pidof syseventd")) {
+/*         if (err) */
+/*         { */
+/*             CcspTraceWarning(("sysevent_getnotification failed with error: %d %s\n", err,__FUNCTION__)); */
+/*             CcspTraceWarning(("sysevent_getnotification failed name: %s val : %s\n", name,val)); */
+/*             if ( 0 != v_secure_system("pidof syseventd")) { */
 
-                CcspTraceWarning(("%s syseventd not running ,breaking the receive notification loop \n",__FUNCTION__));
-                break;
-            }	
-        }
-        else
-        {
+/*                 CcspTraceWarning(("%s syseventd not running ,breaking the receive notification loop \n",__FUNCTION__)); */
+/*                 break; */
+/*             }	 */
+/*         } */
+/*         else */
+/*         { */
 
-            CcspTraceWarning(("%s Recieved notification event  %s\n",__FUNCTION__,name));
-            if(strcmp((const char*)name,"multinet_6-status") == 0)
-            {
-                if(strcmp((const char*)val, "ready") == 0)
-                {
-                    enable_IPv6("br106");
-                }
-            }
+/*             CcspTraceWarning(("%s Recieved notification event  %s\n",__FUNCTION__,name)); */
+/*             if(strcmp((const char*)name,"multinet_6-status") == 0) */
+/*             { */
+/*                 if(strcmp((const char*)val, "ready") == 0) */
+/*                 { */
+/*                     enable_IPv6("br106"); */
+/*                 } */
+/*             } */
 
-            if(strcmp((const char*)name,"multinet_2-status") == 0)
-            {
-                if(strcmp((const char*)val, "ready") == 0)
-                {
-                    Inf_name = NULL ;
-                    retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name);
-                    if (retPsmGet == CCSP_SUCCESS)
-                    {               
-                        enable_IPv6(Inf_name);
-                        ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
-                    }
-                    else
-                    {
-                        CcspTraceWarning(("%s PSM get failed for interface name\n", __FUNCTION__));
-                    }
-                }
-            }
+/*             if(strcmp((const char*)name,"multinet_2-status") == 0) */
+/*             { */
+/*                 if(strcmp((const char*)val, "ready") == 0) */
+/*                 { */
+/*                     Inf_name = NULL ; */
+/*                     retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.2.Port.1.Name", NULL, &Inf_name); */
+/*                     if (retPsmGet == CCSP_SUCCESS) */
+/*                     {                */
+/*                         enable_IPv6(Inf_name); */
+/*                         ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name); */
+/*                     } */
+/*                     else */
+/*                     { */
+/*                         CcspTraceWarning(("%s PSM get failed for interface name\n", __FUNCTION__)); */
+/*                     } */
+/*                 } */
+/*             } */
 			
-			if(strcmp((const char*)name,"multinet_10-status") == 0)
-			{
-				if(strcmp((const char*)val, "ready") == 0)
-				{
-                    Inf_name = NULL ;
-					retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.10.Name", NULL, &Inf_name);
-					if(!retPsmGet)
-					{
-						retPsmGet = CCSP_SUCCESS;
-						Inf_name = "br403";		
-					}
-            		if (retPsmGet == CCSP_SUCCESS)
-					{               
-                        enable_IPv6(Inf_name);
-						((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name);
-					}
-					else
-					{
-						CcspTraceWarning(("%s PSM get failed for interface name\n", __FUNCTION__));
-					}
-				}
+/* 			if(strcmp((const char*)name,"multinet_10-status") == 0) */
+/* 			{ */
+/* 				if(strcmp((const char*)val, "ready") == 0) */
+/* 				{ */
+/*                     Inf_name = NULL ; */
+/* 					retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l2net.10.Name", NULL, &Inf_name); */
+/* 					if(!retPsmGet) */
+/* 					{ */
+/* 						retPsmGet = CCSP_SUCCESS; */
+/* 						Inf_name = "br403";		 */
+/* 					} */
+/*             		if (retPsmGet == CCSP_SUCCESS) */
+/* 					{                */
+/*                         enable_IPv6(Inf_name); */
+/* 						((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(Inf_name); */
+/* 					} */
+/* 					else */
+/* 					{ */
+/* 						CcspTraceWarning(("%s PSM get failed for interface name\n", __FUNCTION__)); */
+/* 					} */
+/* 				} */
 
-			}	
+/* 			}	 */
 
-            if(strcmp((const char*)name,"multinet_9-status") == 0)
-            {
-                handle_MocaIpv6(val);
+/*             if(strcmp((const char*)name,"multinet_9-status") == 0) */
+/*             { */
+/*                 handle_MocaIpv6(val); */
 
-            }
-#if defined (WIFI_MANAGE_SUPPORTED)
-            if((0 == strcmp((const char*)name, aMultiNetStatus)) && (0 == strcmp((const char*)val, "ready")))
-            {
-                char aParamName[BUFF_LEN_64] = {0};
-                char aParamVal[BUFF_LEN_64] = {0};
-                char aBridgeName[BUFF_LEN_64] = {0};
-                snprintf(aParamName, BUFF_LEN_64, "dmsb.l2net.%s.Name", index);
-                psmGet(aParamName, aParamVal, BUFF_LEN_64);
-                CcspTraceInfo(("BridgeName:%s\n", aParamVal));
-                if ('\0' != aParamVal[0])
-                {   
-                    /*CID 66870*/
-                    strncpy(aBridgeName,aParamVal,sizeof(aBridgeName)-1);
-                }
-                else
-                {
-			/* CID 66870 - Calling risky Function Fix */
-                    strncpy(aBridgeName,"brlan15",sizeof(aBridgeName) - 1);
-                }
-                snprintf(aParamName, BUFF_LEN_64, "dmsb.l3net.%s.IPv6Enable", index);
-                psmGet(aParamName, aParamVal, BUFF_LEN_64);
-                if (('\0' != aParamVal[0]) && (!strncmp(aParamVal, "true", 4)))
-                {
-                    if (!GenAndUpdateIpv6PrefixIntoSysevent(aBridgeName))
-                    {
-                        enable_IPv6(aBridgeName);
-                    }
-                }
-            }
-#endif /*WIFI_MANAGE_SUPPORTED*/
-        }
-    }
-    return NULL;
-}
+/*             } */
+/* #if defined (WIFI_MANAGE_SUPPORTED) */
+/*             if((0 == strcmp((const char*)name, aMultiNetStatus)) && (0 == strcmp((const char*)val, "ready"))) */
+/*             { */
+/*                 char aParamName[BUFF_LEN_64] = {0}; */
+/*                 char aParamVal[BUFF_LEN_64] = {0}; */
+/*                 char aBridgeName[BUFF_LEN_64] = {0}; */
+/*                 snprintf(aParamName, BUFF_LEN_64, "dmsb.l2net.%s.Name", index); */
+/*                 psmGet(aParamName, aParamVal, BUFF_LEN_64); */
+/*                 CcspTraceInfo(("BridgeName:%s\n", aParamVal)); */
+/*                 if ('\0' != aParamVal[0]) */
+/*                 {    */
+/*                     /\*CID 66870*\/ */
+/*                     strncpy(aBridgeName,aParamVal,sizeof(aBridgeName)-1); */
+/*                 } */
+/*                 else */
+/*                 { */
+/* 			/\* CID 66870 - Calling risky Function Fix *\/ */
+/*                     strncpy(aBridgeName,"brlan15",sizeof(aBridgeName) - 1); */
+/*                 } */
+/*                 snprintf(aParamName, BUFF_LEN_64, "dmsb.l3net.%s.IPv6Enable", index); */
+/*                 psmGet(aParamName, aParamVal, BUFF_LEN_64); */
+/*                 if (('\0' != aParamVal[0]) && (!strncmp(aParamVal, "true", 4))) */
+/*                 { */
+/*                     if (!GenAndUpdateIpv6PrefixIntoSysevent(aBridgeName)) */
+/*                     { */
+/*                         enable_IPv6(aBridgeName); */
+/*                     } */
+/*                 } */
+/*             } */
+/* #endif /\*WIFI_MANAGE_SUPPORTED*\/ */
+/*         } */
+/*     } */
+/*     return NULL; */
+/* } */
 #endif
 
 #if defined (RDKB_EXTENDER_ENABLED) || defined (WAN_FAILOVER_SUPPORTED)
@@ -9669,142 +9669,142 @@ void configureLTEIpv6(char* v6addr)
 }
 #endif
 
-static void * 
-dhcpv6s_dbg_thrd(void * in)
-{
-    UNREFERENCED_PARAMETER(in);
-    int v6_srvr_fifo_file_dscrptr=0;
-    char msg[1024] = {0};
-    fd_set rfds;
-    struct timeval tm;
+/* static void *  */
+/* dhcpv6s_dbg_thrd(void * in) */
+/* { */
+/*     UNREFERENCED_PARAMETER(in); */
+/*     int v6_srvr_fifo_file_dscrptr=0; */
+/*     char msg[1024] = {0}; */
+/*     fd_set rfds; */
+/*     struct timeval tm; */
 
-    v6_srvr_fifo_file_dscrptr = open(DHCPS6V_SERVER_RESTART_FIFO, O_RDWR);
+/*     v6_srvr_fifo_file_dscrptr = open(DHCPS6V_SERVER_RESTART_FIFO, O_RDWR); */
 
-    if (v6_srvr_fifo_file_dscrptr< 0)
-    {
-        fprintf(stderr, "open dhcpv6 server restart fifo!!!!!\n");
-        goto EXIT;
-    }
+/*     if (v6_srvr_fifo_file_dscrptr< 0) */
+/*     { */
+/*         fprintf(stderr, "open dhcpv6 server restart fifo!!!!!\n"); */
+/*         goto EXIT; */
+/*     } */
 
-    while (1)
-    {
-        int retCode = 0;
-        tm.tv_sec  = 60;
-        tm.tv_usec = 0;
+/*     while (1) */
+/*     { */
+/*         int retCode = 0; */
+/*         tm.tv_sec  = 60; */
+/*         tm.tv_usec = 0; */
 
-        FD_ZERO(&rfds);
-        FD_SET(v6_srvr_fifo_file_dscrptr, &rfds);
+/*         FD_ZERO(&rfds); */
+/*         FD_SET(v6_srvr_fifo_file_dscrptr, &rfds); */
 
-        retCode = select(v6_srvr_fifo_file_dscrptr+1, &rfds, NULL, NULL, &tm);
-        /* When return -1, it's error.
-           When return 0, it's timeout
-           When return >0, it's the number of valid fds */
-        if (retCode < 0) {
-            fprintf(stderr, "dbg_thrd : select returns error \n" );
+/*         retCode = select(v6_srvr_fifo_file_dscrptr+1, &rfds, NULL, NULL, &tm); */
+/*         /\* When return -1, it's error. */
+/*            When return 0, it's timeout */
+/*            When return >0, it's the number of valid fds *\/ */
+/*         if (retCode < 0) { */
+/*             fprintf(stderr, "dbg_thrd : select returns error \n" ); */
 
-            if (errno == EINTR)
-                continue;
+/*             if (errno == EINTR) */
+/*                 continue; */
 
-            DHCPVS_DEBUG_PRINT
-            CcspTraceWarning(("%s -- select(): %s", __FUNCTION__, strerror(errno)));
-            goto EXIT;
-        }
-        else if(retCode == 0 )
-            continue;
+/*             DHCPVS_DEBUG_PRINT */
+/*             CcspTraceWarning(("%s -- select(): %s", __FUNCTION__, strerror(errno))); */
+/*             goto EXIT; */
+/*         } */
+/*         else if(retCode == 0 ) */
+/*             continue; */
 
-        /* We need consume the data.
-	 * It's possible more than one triggering events are consumed in one time, which is expected.*/
-        if (FD_ISSET(v6_srvr_fifo_file_dscrptr, &rfds)) {
-            /* This sleep help do two things:
-             * When GUI operate too fast, it gurantees more operations combine into one;
-             * Not frequent dibbler start/stop. When do two start fast, dibbler will in bad status.
-             */
-            sleep(3);
-            memset(msg, 0, sizeof(msg));
-            read(v6_srvr_fifo_file_dscrptr, msg, sizeof(msg));
-#if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
-#if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_))
-            CcspTraceInfo(("%s %d check IPv6subPrefix  \n", __FUNCTION__, __LINE__));
-            char IPv6pref[256] = {0};
-            char InterfaceList[128] = {0};
-            char interface_name[32] = {0};
-            char sysEventOut[64] = {0};
-            char *token = NULL ,*pt = NULL;
-            FILE *fp = NULL;
-            int pref_len = 0;
-            static bool InterfaceEventHandleStarted = false;
-            errno_t rc = -1;
+/*         /\* We need consume the data. */
+/* 	 * It's possible more than one triggering events are consumed in one time, which is expected.*\/ */
+/*         if (FD_ISSET(v6_srvr_fifo_file_dscrptr, &rfds)) { */
+/*             /\* This sleep help do two things: */
+/*              * When GUI operate too fast, it gurantees more operations combine into one; */
+/*              * Not frequent dibbler start/stop. When do two start fast, dibbler will in bad status. */
+/*              *\/ */
+/*             sleep(3); */
+/*             memset(msg, 0, sizeof(msg)); */
+/*             read(v6_srvr_fifo_file_dscrptr, msg, sizeof(msg)); */
+/* #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE) */
+/* #if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) */
+/*             CcspTraceInfo(("%s %d check IPv6subPrefix  \n", __FUNCTION__, __LINE__)); */
+/*             char IPv6pref[256] = {0}; */
+/*             char InterfaceList[128] = {0}; */
+/*             char interface_name[32] = {0}; */
+/*             char sysEventOut[64] = {0}; */
+/*             char *token = NULL ,*pt = NULL; */
+/*             FILE *fp = NULL; */
+/*             int pref_len = 0; */
+/*             static bool InterfaceEventHandleStarted = false; */
+/*             errno_t rc = -1; */
 
-            commonSyseventGet("ipv6_prefix", IPv6pref, sizeof(IPv6pref));
-            /* Remove Prefix length from IPv6pref */
-            char *ptr = strchr(IPv6pref, '/');
-            if (ptr != NULL) {
-                *ptr = '\0';
-            }
+/*             commonSyseventGet("ipv6_prefix", IPv6pref, sizeof(IPv6pref)); */
+/*             /\* Remove Prefix length from IPv6pref *\/ */
+/*             char *ptr = strchr(IPv6pref, '/'); */
+/*             if (ptr != NULL) { */
+/*                 *ptr = '\0'; */
+/*             } */
 
-            commonSyseventGet("lan_prefix_v6", sysEventOut, sizeof(sysEventOut));
-            pref_len = atoi(sysEventOut);
+/*             commonSyseventGet("lan_prefix_v6", sysEventOut, sizeof(sysEventOut)); */
+/*             pref_len = atoi(sysEventOut); */
 
-            if(pref_len < 64)
-            {
-                fp = v_secure_popen("r","syscfg get IPv6subPrefix");
-                _get_shell_output(fp, sysEventOut, sizeof(sysEventOut));
-                if(!strcmp(sysEventOut,"true"))
-                {
-                    fp = v_secure_popen("r","syscfg get IPv6_Interface");
-                    _get_shell_output(fp, InterfaceList, sizeof(InterfaceList));
-                    pt = InterfaceList;
+/*             if(pref_len < 64) */
+/*             { */
+/*                 fp = v_secure_popen("r","syscfg get IPv6subPrefix"); */
+/*                 _get_shell_output(fp, sysEventOut, sizeof(sysEventOut)); */
+/*                 if(!strcmp(sysEventOut,"true")) */
+/*                 { */
+/*                     fp = v_secure_popen("r","syscfg get IPv6_Interface"); */
+/*                     _get_shell_output(fp, InterfaceList, sizeof(InterfaceList)); */
+/*                     pt = InterfaceList; */
 
-                    while((token = strtok_r(pt, ",", &pt)))
-                    {
-                        char InterfacePrefix[256] ={0};
-                        if(GenIPv6Prefix(token,IPv6pref,InterfacePrefix,sizeof(InterfacePrefix)))
-                        {
-                            memset(interface_name,0,sizeof(interface_name));
-                            strncpy(interface_name,token,sizeof(interface_name)-1);
-#ifdef _COSA_INTEL_XB3_ARM_
-                            char LnFIfName[32] = {0} , LnFBrName[32] = {0} ;
-                            syscfg_get( NULL, "iot_ifname", LnFIfName, sizeof(LnFIfName));
-                            syscfg_get( NULL, "iot_brname", LnFBrName, sizeof(LnFBrName));
-                            if (strcmp((const char*)token,LnFIfName) == 0 && (LnFBrName[0] != '\0' ) && ( strlen(LnFBrName) != 0 ))
-                            {
-                                memset(interface_name,0,sizeof(interface_name));
-                                strncpy(interface_name,LnFBrName,sizeof(interface_name)-1);
-                            }
-#endif
-                            memset(sysEventOut,0,sizeof(sysEventOut));
-                            rc = sprintf_s(sysEventOut, sizeof(sysEventOut), "%s_ipaddr_v6", interface_name);
-                            if(rc < EOK)
-                            {
-                                ERR_CHK(rc);
-                            }
-                            commonSyseventSet(sysEventOut, InterfacePrefix);
-                            enable_IPv6(interface_name);
-                            commonSyseventSet("zebra-restart","");
-                        }
-                    }
-                    if(!InterfaceEventHandleStarted)
-                    {
-                        InterfaceEventHandleStarted = true;
-                        pthread_create(&InfEvtHandle_tid, NULL, InterfaceEventHandler_thrd, NULL);
-                    }
-                }
-            }
-#endif
-#endif /* FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE */
+/*                     while((token = strtok_r(pt, ",", &pt))) */
+/*                     { */
+/*                         char InterfacePrefix[256] ={0}; */
+/*                         if(GenIPv6Prefix(token,IPv6pref,InterfacePrefix,sizeof(InterfacePrefix))) */
+/*                         { */
+/*                             memset(interface_name,0,sizeof(interface_name)); */
+/*                             strncpy(interface_name,token,sizeof(interface_name)-1); */
+/* #ifdef _COSA_INTEL_XB3_ARM_ */
+/*                             char LnFIfName[32] = {0} , LnFBrName[32] = {0} ; */
+/*                             syscfg_get( NULL, "iot_ifname", LnFIfName, sizeof(LnFIfName)); */
+/*                             syscfg_get( NULL, "iot_brname", LnFBrName, sizeof(LnFBrName)); */
+/*                             if (strcmp((const char*)token,LnFIfName) == 0 && (LnFBrName[0] != '\0' ) && ( strlen(LnFBrName) != 0 )) */
+/*                             { */
+/*                                 memset(interface_name,0,sizeof(interface_name)); */
+/*                                 strncpy(interface_name,LnFBrName,sizeof(interface_name)-1); */
+/*                             } */
+/* #endif */
+/*                             memset(sysEventOut,0,sizeof(sysEventOut)); */
+/*                             rc = sprintf_s(sysEventOut, sizeof(sysEventOut), "%s_ipaddr_v6", interface_name); */
+/*                             if(rc < EOK) */
+/*                             { */
+/*                                 ERR_CHK(rc); */
+/*                             } */
+/*                             commonSyseventSet(sysEventOut, InterfacePrefix); */
+/*                             enable_IPv6(interface_name); */
+/*                             commonSyseventSet("zebra-restart",""); */
+/*                         } */
+/*                     } */
+/*                     if(!InterfaceEventHandleStarted) */
+/*                     { */
+/*                         InterfaceEventHandleStarted = true; */
+/*                         pthread_create(&InfEvtHandle_tid, NULL, InterfaceEventHandler_thrd, NULL); */
+/*                     } */
+/*                 } */
+/*             } */
+/* #endif */
+/* #endif /\* FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE *\/ */
 
-            CosaDmlDhcpv6sRebootServer();
-            continue;
-        }
-    }
+/*             CosaDmlDhcpv6sRebootServer(); */
+/*             continue; */
+/*         } */
+/*     } */
 
-EXIT:
-    if(v6_srvr_fifo_file_dscrptr>=0) {
-        close(v6_srvr_fifo_file_dscrptr);
-    }
+/* EXIT: */
+/*     if(v6_srvr_fifo_file_dscrptr>=0) { */
+/*         close(v6_srvr_fifo_file_dscrptr); */
+/*     } */
 
-    return NULL;
-}
+/*     return NULL; */
+/* } */
 
 #if !defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE) 
 
