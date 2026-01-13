@@ -33,5 +33,12 @@ CcspPandMSsp_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_sbapi \
                         -I$(top_srcdir)/source-arm/TR-181/board_include \
                         -I$(top_srcdir)/source-arm/TR-181/board_sbapi 
 
-CcspPandMSsp_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c dm_pack_datamodel.c
+CcspPandMSsp_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c
 CcspPandMSsp_LDFLAGS = -lccsp_common -ldl -rdynamic -lwebconfig_framework -ltelemetry_msgsender -lsecure_wrapper $(SYSTEMD_LDFLAGS) -lsyscfg -lpthread
+
+# Build plugin from the generated file
+pkglib_LTLIBRARIES = libdm_pack_datamodel.la
+libdm_pack_datamodel_la_SOURCES  = dm_pack_datamodel.c
+libdm_pack_datamodel_la_CPPFLAGS = $(CcspPandMSsp_CPPFLAGS)
+libdm_pack_datamodel_la_LDFLAGS  = -module -avoid-version -shared -fPIC
+libdm_pack_datamodel_la_LIBADD   = -lccsp_common -lsyscfg -lpthread

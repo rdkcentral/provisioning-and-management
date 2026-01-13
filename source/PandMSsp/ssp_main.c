@@ -72,6 +72,11 @@
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
+#include <dlfcn.h>
+
+#define DM_PACK_LIB_PATH "/usr/lib/tr181/libdm_pack_datamodel.so"
+static void *g_dmLibHandle = NULL;
+typedef int (*dm_pack_init_t)(void);
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
@@ -679,6 +684,37 @@ if(id != 0)
     // ICC_init();
     // DocsisIf_StartDocsisManager();
 
+    g_dmLibHandle = dlopen(DM_PACK_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
+    if (!g_dmLibHandle)
+    {
+        CcspTraceError(("DLOPEN failed for %s : %s\n",
+                        DM_PACK_LIB_PATH, dlerror()));
+        exit(1);
+    }
+
+    dlerror(); /* clear */
+
+    dm_pack_init_t dm_pack_init =
+        (dm_pack_init_t)dlsym(g_dmLibHandle, "dm_pack_init");
+
+    if (!dm_pack_init)
+    {
+        CcspTraceError(("DLSYM failed: %s\n", dlerror()));
+        dlclose(g_dmLibHandle);
+        g_dmLibHandle = NULL;
+        exit(1);
+    }
+
+    CcspTraceInfo(("PAM_DBG: dm_pack_datamodel loaded successfully\n"));
+
+    if (dm_pack_init() != 0)
+    {
+        CcspTraceError(("dm_pack_init failed\n"));
+        dlclose(g_dmLibHandle);
+        g_dmLibHandle = NULL;
+        exit(1);
+    }
+
 #ifdef _COSA_SIM_
     subSys = "";        /* PC simu use empty string as subsystem */
 #else
@@ -826,7 +862,11 @@ if(id != 0)
         g_bActive = FALSE;
     }
 	
-
+    if (g_dmLibHandle)
+    {
+        dlclose(g_dmLibHandle);
+        g_dmLibHandle = NULL;
+    }
 
     return 0;
 }
