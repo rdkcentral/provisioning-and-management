@@ -76,21 +76,7 @@
 
 #define DM_PACK_LIB_PATH "/usr/lib/tr181/libdm_pack_datamodel.so"
 static void *g_dmLibHandle = NULL;
-typedef int (*dm_pack_init_t)(void);
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int dm_pack_init(void)
-{
-    /* Call the real dm-pack init logic */
-    return DMPackCreateDataModelXML();
-}
-
-#ifdef __cplusplus
-}
-#endif
+typedef int (*dm_pack_create_dm_t)(void);
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
@@ -709,10 +695,10 @@ if(id != 0)
 
     dlerror(); /* clear */
 
-    dm_pack_init_t dm_pack_init =
-        (dm_pack_init_t)dlsym(g_dmLibHandle, "dm_pack_init");
+    dm_pack_create_dm_t create_dm =
+        (dm_pack_create_dm_t)dlsym(g_dmLibHandle, "DMPackCreateDataModelXML");
 
-    if (!dm_pack_init)
+    if (!create_dm)
     {
         CcspTraceError(("DLSYM failed: %s\n", dlerror()));
         dlclose(g_dmLibHandle);
@@ -722,9 +708,9 @@ if(id != 0)
 
     CcspTraceInfo(("PAM_DBG: dm_pack_datamodel loaded successfully\n"));
 
-    if (dm_pack_init() != 0)
+    if (create_dm() != 0)
     {
-        CcspTraceError(("dm_pack_init failed\n"));
+        CcspTraceError(("DMPackCreateDataModelXML failed\n"));
         dlclose(g_dmLibHandle);
         g_dmLibHandle = NULL;
         exit(1);
