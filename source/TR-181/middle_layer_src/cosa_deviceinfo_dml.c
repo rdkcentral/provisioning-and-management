@@ -24309,7 +24309,7 @@ EnableOCSPStapling_SetParamBoolValue
     }
     return FALSE;
 }
-
+/*
 static void copy_command_output (char *cmd, char *out, int len)
 {
     FILE *fp;
@@ -24321,7 +24321,7 @@ static void copy_command_output (char *cmd, char *out, int len)
     {
         if (fgets (out, len, fp) != NULL)
         {
-          /* CID 252175 fix - Parse warning (PW.PARAMETER_HIDDEN) */
+          CID 252175 fix - Parse warning (PW.PARAMETER_HIDDEN)
             size_t len_out = strlen (out);
             if ((len_out > 0) && (out[len_out - 1] == '\n'))
                 out[len_out - 1] = 0;
@@ -24330,7 +24330,7 @@ static void copy_command_output (char *cmd, char *out, int len)
         pclose (fp);
     }
 }
-
+*/
 
 /**********************************************************************
 
@@ -24454,12 +24454,13 @@ SelfHeal_SetParamUlongValue
             AnscTraceWarning(("%s syscfg_set failed!\n", ParamName));
             return FALSE;
         }
-
+/* Move to cron
         copy_command_output("pidof selfheal_aggressive.sh", buf, sizeof(buf));
         if (buf[0] != 0) {
           v_secure_system("kill -9 %s", buf);
         }
         v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
+*/
     }
     else
     {
