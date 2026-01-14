@@ -684,6 +684,23 @@ if(id != 0)
     // ICC_init();
     // DocsisIf_StartDocsisManager();
 
+#ifdef _COSA_SIM_
+    subSys = "";        /* PC simu use empty string as subsystem */
+#else
+    subSys = NULL;      /* use default sub-system */
+#endif
+    err = Cdm_Init(bus_handle, subSys, NULL, NULL, pComponentName);
+    if (err != CCSP_SUCCESS)
+    {
+        fprintf(stderr, "Cdm_Init: %s\n", Cdm_StrError(err));
+        exit(1);
+    }
+
+    check_component_crash(PAM_INIT_FILE_BOOTUP);
+
+    CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
+    v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
+
     g_dmLibHandle = dlopen(DM_PACK_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
     if (!g_dmLibHandle)
     {
@@ -715,23 +732,6 @@ if(id != 0)
         g_dmLibHandle = NULL;
         exit(1);
     }
-
-#ifdef _COSA_SIM_
-    subSys = "";        /* PC simu use empty string as subsystem */
-#else
-    subSys = NULL;      /* use default sub-system */
-#endif
-    err = Cdm_Init(bus_handle, subSys, NULL, NULL, pComponentName);
-    if (err != CCSP_SUCCESS)
-    {
-        fprintf(stderr, "Cdm_Init: %s\n", Cdm_StrError(err));
-        exit(1);
-    }
-
-    check_component_crash(PAM_INIT_FILE_BOOTUP);
-
-    CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
-    v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
