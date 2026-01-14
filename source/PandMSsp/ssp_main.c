@@ -78,6 +78,20 @@
 static void *g_dmLibHandle = NULL;
 typedef int (*dm_pack_init_t)(void);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int dm_pack_init(void)
+{
+    /* Call the real dm-pack init logic */
+    return DMPackCreateDataModelXML();
+}
+
+#ifdef __cplusplus
+}
+#endif
+
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
 // Since there is no evidence of P&M APIs being hung, increasing the timeout period to one more minute.
@@ -691,6 +705,7 @@ if(id != 0)
                         DM_PACK_LIB_PATH, dlerror()));
         exit(1);
     }
+    CcspTraceInfo(("Loaded library at %p\n", g_dmLibHandle));
 
     dlerror(); /* clear */
 
