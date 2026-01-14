@@ -671,6 +671,17 @@ if(id != 0)
 #endif
 #endif
 
+    g_dmLibHandle = dlopen(DM_PACK_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
+    if (!g_dmLibHandle)
+    {
+        CcspTraceError(("DLOPEN failed for %s : %s\n",
+                        DM_PACK_LIB_PATH, dlerror()));
+        exit(1);
+    }
+    CcspTraceInfo(("Loaded library at %p\n", g_dmLibHandle));
+
+    dlerror(); /* clear */
+
    t2_init("CcspPandM");
    ret = cmd_dispatch('e');
    if(ret != 0)
@@ -700,38 +711,6 @@ if(id != 0)
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
-
-    g_dmLibHandle = dlopen(DM_PACK_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
-    if (!g_dmLibHandle)
-    {
-        CcspTraceError(("DLOPEN failed for %s : %s\n",
-                        DM_PACK_LIB_PATH, dlerror()));
-        exit(1);
-    }
-    CcspTraceInfo(("Loaded library at %p\n", g_dmLibHandle));
-
-    dlerror(); /* clear */
-
-    dm_pack_create_dm_t create_dm =
-        (dm_pack_create_dm_t)dlsym(g_dmLibHandle, "DMPackCreateDataModelXML");
-
-    if (!create_dm)
-    {
-        CcspTraceError(("DLSYM failed: %s\n", dlerror()));
-        dlclose(g_dmLibHandle);
-        g_dmLibHandle = NULL;
-        exit(1);
-    }
-
-    CcspTraceInfo(("PAM_DBG: dm_pack_datamodel loaded successfully\n"));
-
-    if (create_dm() != 0)
-    {
-        CcspTraceError(("DMPackCreateDataModelXML failed\n"));
-        dlclose(g_dmLibHandle);
-        g_dmLibHandle = NULL;
-        exit(1);
-    }
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
