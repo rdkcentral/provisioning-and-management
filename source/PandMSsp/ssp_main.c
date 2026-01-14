@@ -72,11 +72,6 @@
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
-#include <dlfcn.h>
-
-#define DM_PACK_LIB_PATH "/usr/lib/tr181/libdm_pack_datamodel.so"
-static void *g_dmLibHandle = NULL;
-typedef int (*dm_pack_create_dm_t)(void);
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
@@ -671,17 +666,6 @@ if(id != 0)
 #endif
 #endif
 
-    g_dmLibHandle = dlopen(DM_PACK_LIB_PATH, RTLD_NOW | RTLD_LOCAL);
-    if (!g_dmLibHandle)
-    {
-        CcspTraceError(("DLOPEN failed for %s : %s\n",
-                        DM_PACK_LIB_PATH, dlerror()));
-        exit(1);
-    }
-    CcspTraceInfo(("Loaded library at %p\n", g_dmLibHandle));
-
-    dlerror(); /* clear */
-
    t2_init("CcspPandM");
    ret = cmd_dispatch('e');
    if(ret != 0)
@@ -840,12 +824,6 @@ if(id != 0)
         ssp_cancel_pnm(gpPnmStartCfg);
 
         g_bActive = FALSE;
-    }
-	
-    if (g_dmLibHandle)
-    {
-        dlclose(g_dmLibHandle);
-        g_dmLibHandle = NULL;
     }
 
     return 0;
