@@ -1880,11 +1880,8 @@ static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger);
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)
 
 #else
-ANSC_STATUS
-CosaDmlDhcpv6SMsgHandler
-    (
-        ANSC_HANDLE                 hContext
-    )
+
+static ANSC_STATUS CosaDmlDhcpv6SMsgHandler (ANSC_HANDLE hContext)
 {
     UNREFERENCED_PARAMETER(hContext);
     char ret[16] = {0};
@@ -1927,7 +1924,7 @@ CosaDmlDhcpv6SMsgHandler
     return 0;
 }
 
-int CosaDmlDhcpv6sRestartOnLanStarted(void * arg)
+static int CosaDmlDhcpv6sRestartOnLanStarted(void *arg)
 {
     UNREFERENCED_PARAMETER(arg);
     CcspTraceWarning(("%s -- lan status is started. \n", __FUNCTION__));
@@ -3682,7 +3679,8 @@ iface "eth0" {
     2018CAFE00000000020C29FFFE97FCCC ==> 
     2018:CAFE:0000:0000:020C:29FF:FE97:FCCC
 */
-char * CosaDmlDhcpv6sGetAddressFromString(char * address){
+static char * CosaDmlDhcpv6sGetAddressFromString(char *address)
+{
     static char     ipv6Address[256] = {0};
     ULONG   i =0;
     ULONG   j =0;
@@ -3704,28 +3702,39 @@ char * CosaDmlDhcpv6sGetAddressFromString(char * address){
     return ipv6Address;
 }
 
-char * CosaDmlDhcpv6sGetStringFromHex(char * hexString){
+static char * CosaDmlDhcpv6sGetStringFromHex(char *hexString)
+{
     static char     newString[256];
     char    buff[8] = {0};
     ULONG   i =0;
     ULONG   j =0;
     ULONG   k =0;
 
+    if (!hexString) {
+        newString[0] = '\0';
+        return newString;
+    }
+
     memset(newString,0, sizeof(newString));
-    while( hexString[i] && (i< sizeof(newString)-1) )
+    while( hexString[i] && (i < strlen(hexString)) && (j < sizeof(newString)-2) )  /* CID 350121 fix - Out-of-bounds write */
     {
         buff[k++]        = hexString[i++];
         if ( k%2 == 0 ) {
              char c =  (char)strtol(buff, (char **)NULL, 16);
-             if( !iscntrl(c) )
+             if( !iscntrl(c) && j < sizeof(newString)-1 )
                  newString[j++] = c;
-             else if (j != 0)
+             else if (j > 0 && j < sizeof(newString)-1)
                  newString[j++] = '.';
              memset(buff, 0, sizeof(buff));
              k = 0;
         }
     }
-    newString[j - 1] = '\0';
+    /* CID 350121 fix - Out-of-bounds write - safe termination */
+    if (j > 0)
+        newString[j] = '\0';
+    else
+        newString[0] = '\0';
+    
     CcspTraceWarning(("New normal string is %s from %s .\n", newString, hexString));
 
     return newString;
@@ -3755,7 +3764,7 @@ void _cosa_dhcpsv6_refresh_config()
     Fail when return 1
     Succeed when return 0
 */
-int CosaDmlDHCPv6sGetDNS(char* Dns, char* output, int outputLen)
+int CosaDmlDHCPv6sGetDNS(char *Dns, char *output, int outputLen)
 {
     char oneDns[64]  = {0};
     int  len         = _ansc_strlen(Dns);
@@ -3817,8 +3826,6 @@ int remove_single_quote (char *buf)
   return 0;
 }
 
-
-
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)
 // adding new logics to handle pd-class
 static int get_ipv6_tpmode (int *tpmod)
@@ -3855,6 +3862,7 @@ static int get_ipv6_tpmode (int *tpmod)
 
   return 0;
 }
+
 static int get_prefix_info(const char *prefix,  char *value, unsigned int val_len, unsigned int *prefix_len)
 {
     int i;
@@ -3882,6 +3890,7 @@ static int get_prefix_info(const char *prefix,  char *value, unsigned int val_le
 
     return 0;
 }
+
 /* get the interfaces which need to assign /64 interface-prefix
  * suppose we currently use syscfg "lan_pd_interfaces" to represent the interfaces need to prefix delegation
  */
@@ -5529,6 +5538,7 @@ void __cosa_dhcpsv6_refresh_config()
                     CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
                 }
 
+                fprintf(fp, "   subnet %s\n", prefixValue);
                 fprintf(fp, "   class {\n");
 
 #ifdef CONFIG_CISCO_DHCP6S_REQUIREMENT_FROM_DPC3825
@@ -6986,9 +6996,12 @@ CosaDmlDhcpv6sGetPool
     if ( ulIndex+1 > uDhcpv6ServerPoolNum )
         return ANSC_STATUS_FAILURE;
 
-    /* CID 72229 fix */
-    if (ulIndex < DHCPV6S_POOL_NUM) {
+    /* CID 72229 fix - Out-of-bounds access (enhanced existing partial fix) */
+    if (ulIndex < DHCPV6S_POOL_NUM && ulIndex < uDhcpv6ServerPoolNum && pEntry != NULL) {
         AnscCopyMemory(pEntry, &sDhcpv6ServerPool[ulIndex], sizeof(COSA_DML_DHCPSV6_POOL_FULL));
+    } else {
+        CcspTraceError(("%s: Invalid index %lu or NULL entry\n", __FUNCTION__, ulIndex));
+        return ANSC_STATUS_FAILURE;
     }
     
     return ANSC_STATUS_SUCCESS;

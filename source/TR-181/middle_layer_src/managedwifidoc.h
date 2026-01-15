@@ -71,64 +71,76 @@ typedef struct {
 } managedwifidoc_t;
 
 /**
- *  This function converts a msgpack buffer into an managedwifiparam_t structure
- *  if possible.
+ * @brief Converts a msgpack buffer into a managedwifidoc_t structure.
  *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
+ *  @param[in] buf the buffer to convert
+ *  @param[in] len the length of the buffer in bytes
  *
- *  @return NULL on error, success otherwise
+ *  @return Pointer to the converted managedwifidoc_t structure.
+ *  @retval Valid pointer to managedwifidoc_t on success
+ *  @retval NULL on error.
+ *
  */
 managedwifidoc_t* managedwifidoc_convert( const void *buf, size_t len );
 /**
- *  This function returns a general reason why the conversion failed.
+ *  @brief Returns a general reason why the conversion failed.
  *
- *  @param errnum the errno value to inspect
+ *  @param[in] errnum the errno value to inspect
  *
- *  @return the constant string (do not alter or free) describing the error
+ *  @return Constant string describing the error
+ *  @retval Error description string (do not alter or free).
+ *  @retval Unknown error otherwise
  */
 const char* managedwifidoc_strerror( int errnum );
 
 #if defined (AMENITIES_NETWORK_ENABLED)
 /**
-*  This function converts a msgpack buffer into an lanconfigTunnelInfo_t structure
-*  if possible.
+* @brief Converts a msgpack buffer into a lanconfigTunnelInfo_t structure.
 *
-*  @param buf the buffer to convert
-*  @param len the length of the buffer in bytes
+*  @param[in] buf the buffer to convert
+*  @param[in] len the length of the buffer in bytes
 *
-*  @return NULL on error, success otherwise
- */
+* @return Pointer to the converted lanconfigTunnelInfo_t structure.
+* @retval Valid pointer to lanconfigTunnelInfo_t on success.
+* @retval NULL on error.
+*/
 lanconfigTunnelInfo_t* lanconfigdoc_convert( const void *buf, size_t len);
 /**
- *  This function destroys an lanconfigTunnelInfo_t object.
+ * @brief Destroys a lanconfigTunnelInfo_t object and frees allocated memory.
  *
- *  @param e the lanconfigTunnelInfo_t to destroy
+ * @param[in] lwd Pointer to the lanconfigTunnelInfo_t structure to destroy.
+ *
+ * @return None.
  */
 void tunnelLanConfigDocdestroy( lanconfigTunnelInfo_t *lwd );
 #else
 /**
- *  This function destroys an lanconfigdoc_t object.
+ * @brief Destroys a lanconfigdoc_t object and frees allocated memory.
  *
- *  @param e the lanconfig to destroy
+ * @param[in] lwd Pointer to the lanconfigdoc_t structure to destroy.
+ *
+ * @return None.
  */
 void lanConfigDoc_destroy( lanconfigdoc_t *lwd );
 
 /**
- *  This function converts a msgpack buffer into an lanconfig structure
- *  if possible.
+ * @brief Converts a msgpack buffer into a lanconfigdoc_t structure.
  *
- *  @param buf the buffer to convert
- *  @param len the length of the buffer in bytes
+ * @param[in] buf the buffer to convert
+ * @param[in] len the length of the buffer in bytes
  *
- *  @return NULL on error, success otherwise
+ * @return Pointer to the converted lanconfigdoc_t structure.
+ * @retval Valid pointer to lanconfigdoc_t on success.
+ * @retval NULL on error.
  */
 lanconfigdoc_t* lanconfigdoc_convert( const void *buf, size_t len );
 #endif
 /**
- *  This function destroys an managedwifidoc_t object.
+ * @brief Destroys a managedwifidoc_t object and frees allocated memory.
  *
- *  @param e the managedwifidoc to destroy
+ * @param[in] mwd Pointer to the managedwifidoc_t structure to destroy.
+ *
+ * @return None.
  */
 void connectedbuilding_destroy(managedwifidoc_t *mwd);
 
