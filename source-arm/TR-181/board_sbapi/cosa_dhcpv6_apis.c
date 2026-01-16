@@ -9527,7 +9527,7 @@ void addRemoteWanIpv6Route()
 #else
                         v_secure_system("ip -6 route del default");
 #endif /* CORE_NET_LIB */
-                        SetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),1025);
+                        SetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),0);
                         commonSyseventSet("remotewan_routeset", "true");
                     }
                 }
@@ -9549,7 +9549,7 @@ bool delRemoteWanIpv6Route()
             commonSyseventGet(MESH_WAN_WAN_IPV6ADDR, ipv6_address, sizeof(ipv6_address));
             if( '\0' != ipv6_address[0] )
             {
-                UnSetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),1025);
+                UnSetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),0);
                 commonSyseventSet("remotewan_routeset", "false");
                 return true;
             }
