@@ -8663,8 +8663,10 @@ void CosaDmlDhcpv6sRebootServer()
         getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
         commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
 	CcspTraceWarning((" %s :CURRENT :%s MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__, wan_interface, mesh_wan_ifname, hotspot_wan_ifname));
-        if((strncmp(wan_interface, mesh_wan_ifname,length ) == 0) || (strncmp(wan_interface, hotspot_wan_ifname,length ) == 0))
+	if((strncmp(wan_interface, mesh_wan_ifname, strlen(mesh_wan_ifname)) == 0) ||
+			(strncmp(wan_interface, hotspot_wan_ifname, strlen(hotspot_wan_ifname)) == 0))
             return;
+
 #endif
         //make sure it's not in a bad status
         fp = v_secure_popen("r","busybox ps|grep %s|grep -v grep", SERVER_BIN);
