@@ -108,6 +108,8 @@ int send_dhcp_data_to_wanmanager (ipc_dhcpv6_data_t *dhcpv6_data, int msgtype); 
 #ifdef WAN_FAILOVER_SUPPORTED
 pthread_t Ipv6Handle_tid;
 void *Ipv6ModeHandler_thrd(void *data);
+void getHotSpotWanIfName(char *wanmgr_ifname,int size);
+void getMeshWanIfName(char *mesh_wan_ifname,int size);
 #endif
 #endif//FEATURE_RDKB_WAN_MANAGER
 #if defined(_HUB4_PRODUCT_REQ_) || defined(FEATURE_RDKB_WAN_MANAGER)
