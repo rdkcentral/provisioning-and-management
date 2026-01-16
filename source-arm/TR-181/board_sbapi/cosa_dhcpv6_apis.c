@@ -8658,7 +8658,6 @@ void CosaDmlDhcpv6sRebootServer()
         char wan_interface[32] = {0};
         char mesh_wan_ifname[32] = {0};
         char hotspot_wan_ifname[32] = {0};
-	int length =0;
         getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
         getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
         commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
