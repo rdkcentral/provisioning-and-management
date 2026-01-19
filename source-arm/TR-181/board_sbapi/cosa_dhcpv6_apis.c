@@ -8664,7 +8664,10 @@ void CosaDmlDhcpv6sRebootServer()
 	CcspTraceWarning((" %s :CURRENT :%s MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__, wan_interface, mesh_wan_ifname, hotspot_wan_ifname));
 	if((strncmp(wan_interface, mesh_wan_ifname, strlen(mesh_wan_ifname)) == 0) ||
 			(strncmp(wan_interface, hotspot_wan_ifname, strlen(hotspot_wan_ifname)) == 0))
+	{
+	    CcspTraceWarning((" %s : Skipping _dibbler_server_operation start for %s\n", __FUNCTION__, wan_interface));
             return;
+	}
 
 #endif
         //make sure it's not in a bad status
