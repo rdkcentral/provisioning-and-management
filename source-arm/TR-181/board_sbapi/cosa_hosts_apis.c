@@ -903,7 +903,7 @@ CosaDmlHostsGetHosts
             pHost = Hosts_AddHostByPhysAddress(str);
             if(pHost == NULL)
                 continue;
-            /* CID 340106 String not null terminated : fix */
+            /* CID 340106 fix - String not null terminated */
             plmHost->AssociatedDevice[LM_GEN_STR_SIZE - 1] = '\0';
             _get_host_info(plmHost, pHost);
         }
