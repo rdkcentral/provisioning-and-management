@@ -8661,9 +8661,11 @@ void CosaDmlDhcpv6sRebootServer()
         getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
         getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
         commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
-	CcspTraceWarning((" %s :CURRENT :%s MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__, wan_interface, mesh_wan_ifname, hotspot_wan_ifname));
-	if((strncmp(wan_interface, mesh_wan_ifname, strlen(mesh_wan_ifname)) == 0) ||
-			(strncmp(wan_interface, hotspot_wan_ifname, strlen(hotspot_wan_ifname)) == 0))
+	CcspTraceWarning((" %s :CURRENT :%s MESH WAN IFNAME is (%s), HOTSPOT WAN IFNAME is (%s)\n", __FUNCTION__, wan_interface, mesh_wan_ifname, hotspot_wan_ifname));
+	if ( (mesh_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, mesh_wan_ifname, strlen(mesh_wan_ifname)) == 0) ||
+	     (hotspot_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, hotspot_wan_ifname, strlen(hotspot_wan_ifname)) == 0) )
 	{
 	    CcspTraceWarning((" %s : Skipping _dibbler_server_operation start for %s\n", __FUNCTION__, wan_interface));
             return;
