@@ -918,19 +918,13 @@ rbusError_t getStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusG
     char aParamVal[BUFF_LEN_64] = {0};
     
     getManageWiFiDetails(&sManageWifiDetails);
-
-    /* CID 347175 fix - String not null terminated */
-    sManageWifiDetails.aKey[sizeof(sManageWifiDetails.aKey) - 1] = '\0';
-
     if (0 == strcmp(name,MANAGE_WIFI_LAN_BRIDGE))
     {
-        sManageWifiDetails.aBridgeName[sizeof(sManageWifiDetails.aBridgeName) - 1] = '\0'; /* CID 347175 fix - String not null terminated */
-        snprintf(aParamVal, BUFF_LEN_64, "%s%s", sManageWifiDetails.aKey, sManageWifiDetails.aBridgeName);
+        snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aBridgeName);
     }
     else if (0 == strcmp(name, MANAGE_WIFI_INTERFACES))
     {
-        sManageWifiDetails.aWiFiInterfaces[sizeof(sManageWifiDetails.aWiFiInterfaces) - 1] = '\0'; /* CID 347175 fix - String not null terminated */
-        snprintf(aParamVal, BUFF_LEN_64, "%s%s", sManageWifiDetails.aKey, sManageWifiDetails.aWiFiInterfaces);
+        snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aWiFiInterfaces);
     }
     else
     {
@@ -980,9 +974,8 @@ rbusError_t setStringHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHa
     {
         CcspTraceInfo(("%s:%d, pKeyVal:%s\n",__FUNCTION__,__LINE__,pKeyVal));
 
-        /* CID 346807 & 347175 fix - Calling risky function fix and ensure null termination */
+        /* CID 346807 : Calling risky function fix */
         strncpy(sManageWifiDetails.aKey, pKeyVal, sizeof(sManageWifiDetails.aKey) - 1);
-        sManageWifiDetails.aKey[sizeof(sManageWifiDetails.aKey) - 1] = '\0';  /* CID 347175 fix - String not null terminated */
         
         CcspTraceInfo(("%s:%d, sManageWifiDetails.aKey:%s\n",__FUNCTION__,__LINE__,sManageWifiDetails.aKey));
     }
@@ -998,9 +991,7 @@ rbusError_t setStringHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHa
     {
 	sManageWifiDetails.eUpdateType = BRIDGE_NAME;
         CcspTraceInfo(("%s:%d, pKeyVal:%s\n",__FUNCTION__,__LINE__,pKeyVal));
-        /* CID 347175 fix - Use safe string copy and ensure null termination */
-        strncpy(sManageWifiDetails.aBridgeName, pKeyVal, sizeof(sManageWifiDetails.aBridgeName) - 1);
-        sManageWifiDetails.aBridgeName[sizeof(sManageWifiDetails.aBridgeName) - 1] = '\0';
+        strcpy(sManageWifiDetails.aBridgeName,pKeyVal);
         CcspTraceInfo(("%s:%d, sManageWifiDetails.aBridgeName:%s\n",__FUNCTION__,__LINE__,sManageWifiDetails.aBridgeName));
         setManageWiFiDetails (&sManageWifiDetails);
     }
@@ -1008,9 +999,7 @@ rbusError_t setStringHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHa
     {
 	sManageWifiDetails.eUpdateType = WIFI_INTERFACES;
         CcspTraceInfo(("%s:%d, pKeyVal:%s\n",__FUNCTION__,__LINE__,pKeyVal));
-        /* CID 347175 fix - Use safe string copy and ensure null termination */
-        strncpy(sManageWifiDetails.aWiFiInterfaces, pKeyVal, sizeof(sManageWifiDetails.aWiFiInterfaces) - 1);
-        sManageWifiDetails.aWiFiInterfaces[sizeof(sManageWifiDetails.aWiFiInterfaces) - 1] = '\0';
+        strcpy(sManageWifiDetails.aWiFiInterfaces,pKeyVal);
         CcspTraceInfo(("%s:%d, sManageWifiDetails.aWiFiInterfaces:%s\n",__FUNCTION__,__LINE__,sManageWifiDetails.aWiFiInterfaces));
         setManageWiFiDetails (&sManageWifiDetails);
     }

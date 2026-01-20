@@ -3711,31 +3711,21 @@ char * CosaDmlDhcpv6sGetStringFromHex(char * hexString){
     ULONG   j =0;
     ULONG   k =0;
 
-    if (!hexString) {
-        newString[0] = '\0';
-        return newString;
-    }
-
     memset(newString,0, sizeof(newString));
-    while( hexString[i] && (i < strlen(hexString)) && (j < sizeof(newString)-2) )  /* CID 350121 fix - Out-of-bounds write */
+    while( hexString[i] && (i< sizeof(newString)-1) )
     {
         buff[k++]        = hexString[i++];
         if ( k%2 == 0 ) {
              char c =  (char)strtol(buff, (char **)NULL, 16);
-             if( !iscntrl(c) && j < sizeof(newString)-1 )
+             if( !iscntrl(c) )
                  newString[j++] = c;
-             else if (j > 0 && j < sizeof(newString)-1)
+             else if (j != 0)
                  newString[j++] = '.';
              memset(buff, 0, sizeof(buff));
              k = 0;
         }
     }
-    /* CID 350121 fix - Out-of-bounds write - safe termination */
-    if (j > 0)
-        newString[j] = '\0';
-    else
-        newString[0] = '\0';
-    
+    newString[j - 1] = '\0';
     CcspTraceWarning(("New normal string is %s from %s .\n", newString, hexString));
 
     return newString;
@@ -6996,12 +6986,9 @@ CosaDmlDhcpv6sGetPool
     if ( ulIndex+1 > uDhcpv6ServerPoolNum )
         return ANSC_STATUS_FAILURE;
 
-    /* CID 72229 fix - Out-of-bounds access (enhanced existing partial fix) */
-    if (ulIndex < DHCPV6S_POOL_NUM && ulIndex < uDhcpv6ServerPoolNum && pEntry != NULL) {
+    /* CID 72229 fix */
+    if (ulIndex < DHCPV6S_POOL_NUM) {
         AnscCopyMemory(pEntry, &sDhcpv6ServerPool[ulIndex], sizeof(COSA_DML_DHCPSV6_POOL_FULL));
-    } else {
-        CcspTraceError(("%s: Invalid index %lu or NULL entry\n", __FUNCTION__, ulIndex));
-        return ANSC_STATUS_FAILURE;
     }
     
     return ANSC_STATUS_SUCCESS;

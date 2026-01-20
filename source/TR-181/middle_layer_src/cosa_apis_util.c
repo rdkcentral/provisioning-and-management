@@ -1404,18 +1404,14 @@ CosaUtilGetFullPathNameByKeyword
                 break;
             }
 
-        if(NULL != pTableStringToken)
-        {
-            AnscFreeMemory(pTableStringToken);
-            pTableStringToken = NULL;  /* CID 348164 fix - Double free prevention */
-        }
+        AnscFreeMemory(pTableStringToken);
     }
 
     // Free remaining tokens in the token chain
-    while ((pTableStringToken = AnscTcUnlinkToken(pTableListTokenChain)) != NULL)
+    while (pTableStringToken)
     {
         AnscFreeMemory(pTableStringToken);
-        pTableStringToken = NULL;  /* CID 348164 fix - Double free prevention */
+        pTableStringToken = AnscTcUnlinkToken(pTableListTokenChain);
     }
 
     if ( pTableListTokenChain )

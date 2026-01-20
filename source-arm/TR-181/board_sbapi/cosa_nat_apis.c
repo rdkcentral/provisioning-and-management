@@ -1786,10 +1786,8 @@ ANSC_STATUS _AddPortMapping(
         singleInfo.protocol = SB_2_U_PF_PPOTOCOL(pEntry->Protocol);
         singleInfo.rule_id = pEntry->InstanceNumber;
         //AnscCopyString(singleInfo.name, pEntry->Description);
-        strncpy(singleInfo.name, pEntry->Description, sizeof(singleInfo.name) - 1);
-        singleInfo.name[sizeof(singleInfo.name) - 1] = '\0';  /* CID 163037 fix - Buffer not null terminated */
-        strncpy(singleInfo.dest_ipv6, pEntry->X_CISCO_COM_InternalClientV6, sizeof(singleInfo.dest_ipv6) - 1);
-        singleInfo.dest_ipv6[sizeof(singleInfo.dest_ipv6) - 1] = '\0';  /* CID 163037 fix - Buffer not null terminated */
+        strncpy(singleInfo.name, pEntry->Description, sizeof(singleInfo.name));
+        strncpy(singleInfo.dest_ipv6, pEntry->X_CISCO_COM_InternalClientV6, sizeof(singleInfo.dest_ipv6));
         
         rc = Utopia_AddPortForwarding(pCtx, &singleInfo);
         if ( rc != SUCCESS )
@@ -1827,11 +1825,9 @@ ANSC_STATUS _AddPortMapping(
         rangeInfo.rule_id = pEntry->InstanceNumber;
         rangeInfo.internal_port_range_size = 0;
         //AnscCopyString(rangeInfo.name, pEntry->Description);
-        strncpy(rangeInfo.name, pEntry->Description, sizeof(rangeInfo.name) - 1);
-        rangeInfo.name[sizeof(rangeInfo.name) - 1] = '\0';  /* CID 163037 fix - Buffer not null terminated */
-        /* CID 163037 fix - Buffer not null terminated (original partial fix) */
+        strncpy(rangeInfo.name, pEntry->Description, sizeof(rangeInfo.name));
+        /* CID 163037 fix */
 	strncpy(rangeInfo.dest_ipv6, pEntry->X_CISCO_COM_InternalClientV6, (sizeof(rangeInfo.dest_ipv6)-1));
-        rangeInfo.dest_ipv6[sizeof(rangeInfo.dest_ipv6) - 1] = '\0';  /* CID 163037 fix - Buffer not null terminated */
 
         rc = Utopia_AddPortForwardingRange(pCtx, &rangeInfo);
         if ( rc != SUCCESS )
@@ -4193,10 +4189,8 @@ CosaDmlNatGetPortTrigger
     pNatPTrigger->InstanceNumber    = porttrigger.rule_id;
 //        AnscCopyString(pNatPTrigger->Alias, porttrigger.name);
 //        AnscCopyString(pNatPTrigger->Description, porttrigger.name);
-    strncpy(pNatPTrigger->Alias, porttrigger.name, sizeof(pNatPTrigger->Alias) - 1);
-    pNatPTrigger->Alias[sizeof(pNatPTrigger->Alias) - 1] = '\0';  /* CID 334474 fix - Buffer not null terminated */
-    strncpy(pNatPTrigger->Description, porttrigger.name, sizeof(pNatPTrigger->Description) - 1);
-    pNatPTrigger->Description[sizeof(pNatPTrigger->Description) - 1] = '\0';  /* CID 334474 fix - Buffer not null terminated */
+    strncpy(pNatPTrigger->Alias, porttrigger.name, sizeof(pNatPTrigger->Alias));
+    strncpy(pNatPTrigger->Description, porttrigger.name,sizeof(pNatPTrigger->Description));
 
     Utopia_Free(&Ctx, 0);
     return ANSC_STATUS_SUCCESS;

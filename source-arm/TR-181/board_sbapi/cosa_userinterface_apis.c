@@ -493,23 +493,19 @@ CosaDmlUIIPRangeGetEntry
     
     snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_alias", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->Alias, utVal, sizeof(pEntry->Alias) - 1);
-    pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';  /* CID 334463 fix - Buffer not null terminated */
+    strncpy(pEntry->Alias, utVal, sizeof(pEntry->Alias));
 
     snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_startIP", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->StartIP, utVal, sizeof(pEntry->StartIP) - 1);
-    pEntry->StartIP[sizeof(pEntry->StartIP) - 1] = '\0';  /* CID 334463 fix - Buffer not null terminated */
+    strncpy(pEntry->StartIP, utVal, sizeof(pEntry->StartIP));
     
     snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_endIP", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->EndIP, utVal, sizeof(pEntry->EndIP) - 1);
-    pEntry->EndIP[sizeof(pEntry->EndIP) - 1] = '\0';  /* CID 334463 fix - Buffer not null terminated */
+    strncpy(pEntry->EndIP, utVal, sizeof(pEntry->EndIP));
     
     snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_desp", ulIndex);
     Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-    strncpy(pEntry->Desp, utVal, sizeof(pEntry->Desp) - 1);
-    pEntry->Desp[sizeof(pEntry->Desp) - 1] = '\0';  /* CID 334463 fix - Buffer not null terminated */
+    strncpy(pEntry->Desp, utVal, sizeof(pEntry->Desp));
 
     Utopia_Free(&ctx, 0);
 
