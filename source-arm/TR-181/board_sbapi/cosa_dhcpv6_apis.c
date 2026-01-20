@@ -108,6 +108,8 @@ int send_dhcp_data_to_wanmanager (ipc_dhcpv6_data_t *dhcpv6_data, int msgtype); 
 #ifdef WAN_FAILOVER_SUPPORTED
 pthread_t Ipv6Handle_tid;
 void *Ipv6ModeHandler_thrd(void *data);
+void getHotSpotWanIfName(char *wanmgr_ifname,int size);
+void getMeshWanIfName(char *mesh_wan_ifname,int size);
 #endif
 #endif//FEATURE_RDKB_WAN_MANAGER
 #if defined(_HUB4_PRODUCT_REQ_) || defined(FEATURE_RDKB_WAN_MANAGER)
@@ -8652,7 +8654,24 @@ void CosaDmlDhcpv6sRebootServer()
         if((ANSC_STATUS_SUCCESS == is_usg_in_bridge_mode(&isBridgeMode)) &&
            ( TRUE == isBridgeMode ))
             return;
+#ifdef WAN_FAILOVER_SUPPORTED
+        char wan_interface[32] = {0};
+        char mesh_wan_ifname[32] = {0};
+        char hotspot_wan_ifname[32] = {0};
+        getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
+        getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
+        commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+	CcspTraceWarning((" %s :CURRENT :%s MESH WAN IFNAME is (%s), HOTSPOT WAN IFNAME is (%s)\n", __FUNCTION__, wan_interface, mesh_wan_ifname, hotspot_wan_ifname));
+	if ( (mesh_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, mesh_wan_ifname, strlen(mesh_wan_ifname)) == 0) ||
+	     (hotspot_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, hotspot_wan_ifname, strlen(hotspot_wan_ifname)) == 0) )
+	{
+	    CcspTraceWarning((" %s : Skipping _dibbler_server_operation start for %s\n", __FUNCTION__, wan_interface));
+            return;
+	}
 
+#endif
         //make sure it's not in a bad status
         fp = v_secure_popen("r","busybox ps|grep %s|grep -v grep", SERVER_BIN);
         _get_shell_output(fp, out, sizeof(out));
