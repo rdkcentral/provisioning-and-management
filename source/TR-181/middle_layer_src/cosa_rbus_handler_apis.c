@@ -204,6 +204,7 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
         rVal = rbusValue_GetUInt32(value);
         if (rVal > 1) {
             CcspTraceError(("Invalid set value for the parameter '%s'\n", DEVCTRL_NET_MODE_TR181));
+            pthread_mutex_unlock(&mutex);
             return RBUS_ERROR_INVALID_INPUT;
         }
 
@@ -217,6 +218,7 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
         if (0 > sysevent_fd)
         {
             CcspTraceError(("Failed to execute sysevent_set. sysevent_fd have no value:'%d'\n", sysevent_fd));
+            pthread_mutex_unlock(&mutex);
             return RBUS_ERROR_BUS_ERROR;
         }
 		
@@ -230,30 +232,36 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
             //Setting Device Mode
             if (syscfg_set(NULL, "Device_Mode", buf) != 0)
             {
-                CcspTraceInfo(("\n Device_Mode set syscfg failed\n"));       
+		        CcspTraceError(("\n Device_Mode set syscfg failed\n"));
+                pthread_mutex_unlock(&mutex);
+		        return RBUS_ERROR_BUS_ERROR;       
             }
             else
             {
                 if (syscfg_commit() != 0)
                 {
-                    CcspTraceInfo(("\nDevice_Mode syscfg_commit failed\n"));
+			        CcspTraceError(("\nDevice_Mode syscfg_commit failed\n"));
+                    pthread_mutex_unlock(&mutex);
+		    	    return RBUS_ERROR_BUS_ERROR;       
                 }
                 else
                 {
                     if(sysevent_set(sysevent_fd, sysevent_token, "DeviceMode", strValue, 0) != 0)
                     {
                         CcspTraceError(("Failed to execute sysevent_set from %s:%d\n", __FUNCTION__, __LINE__));
+                        pthread_mutex_unlock(&mutex);
                         return RBUS_ERROR_BUS_ERROR;
                     }
                     CcspTraceInfo(("sysevent_set execution success.\n"));
-                    deviceControl_Net_Mode.DevCtrlNetMode = rVal;
                     ret = publishDevCtrlNetMode(rVal, oldDevCtrlNetMode);
                     if (ret != RBUS_ERROR_SUCCESS)
                     {
                         CcspTraceError(("%s-%d: Failed to update and publish device mode value\n", __FUNCTION__, __LINE__));
+                        pthread_mutex_unlock(&mutex);
                         return ret;
                     }
                     configureIpv6Route(rVal);
+                    deviceControl_Net_Mode.DevCtrlNetMode = rVal;
                 }
             }
         }
@@ -359,6 +367,38 @@ rbusError_t publishDevCtrlNetMode(uint32_t new_val, uint32_t old_val)
 		}
 	}
 	return ret;
+}
+
+/*******************************************************************************
+
+  publishInitialDevCtrlVal(): publish DevCtrlNetMode during PandM initialization
+
+ ********************************************************************************/
+
+int publishInitialDevCtrlVal()
+{
+    CcspTraceInfo(("Initializing and publishing Device Networking Mode value from syscfg\n"));
+    char buf[ 8 ] = { 0 };
+    rbusError_t ret = RBUS_ERROR_SUCCESS;
+    int rc = 0;
+    if( 0 == syscfg_get( NULL, "Device_Mode", buf, sizeof( buf ) ) )
+    {
+        uint32_t CurrentDevCtrlNetMode = atoi(buf);
+        uint32_t oldDevCtrlNetMode = (CurrentDevCtrlNetMode == 1) ? 0 : 1;
+        ret = publishDevCtrlNetMode(CurrentDevCtrlNetMode, oldDevCtrlNetMode);
+        if (ret != RBUS_ERROR_SUCCESS)
+        {
+            CcspTraceError(("%s-%d: Failed to update and publish device mode value\n", __FUNCTION__, __LINE__));
+            rc = -1;
+            return rc;
+        }
+    }
+    else
+    {
+        CcspTraceError(("syscfg_get failed to retrieve  device networking mode\n")); 
+        rc = -1;
+    }
+    return rc;
 }
 
 bool PAM_Rbus_SyseventInit()
@@ -879,13 +919,19 @@ rbusError_t getStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusG
     char aParamVal[BUFF_LEN_64] = {0};
     
     getManageWiFiDetails(&sManageWifiDetails);
+
+    /* CID 347175 fix - String not null terminated */
+    sManageWifiDetails.aKey[sizeof(sManageWifiDetails.aKey) - 1] = '\0';
+
     if (0 == strcmp(name,MANAGE_WIFI_LAN_BRIDGE))
     {
-        snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aBridgeName);
+        sManageWifiDetails.aBridgeName[sizeof(sManageWifiDetails.aBridgeName) - 1] = '\0'; /* CID 347175 fix - String not null terminated */
+        snprintf(aParamVal, BUFF_LEN_64, "%s%s", sManageWifiDetails.aKey, sManageWifiDetails.aBridgeName);
     }
     else if (0 == strcmp(name, MANAGE_WIFI_INTERFACES))
     {
-        snprintf(aParamVal, BUFF_LEN_64-1, "%s%s",sManageWifiDetails.aKey,sManageWifiDetails.aWiFiInterfaces);
+        sManageWifiDetails.aWiFiInterfaces[sizeof(sManageWifiDetails.aWiFiInterfaces) - 1] = '\0'; /* CID 347175 fix - String not null terminated */
+        snprintf(aParamVal, BUFF_LEN_64, "%s%s", sManageWifiDetails.aKey, sManageWifiDetails.aWiFiInterfaces);
     }
     else
     {
@@ -935,8 +981,9 @@ rbusError_t setStringHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHa
     {
         CcspTraceInfo(("%s:%d, pKeyVal:%s\n",__FUNCTION__,__LINE__,pKeyVal));
 
-        /* CID 346807 : Calling risky function fix */
+        /* CID 346807 & 347175 fix - Calling risky function fix and ensure null termination */
         strncpy(sManageWifiDetails.aKey, pKeyVal, sizeof(sManageWifiDetails.aKey) - 1);
+        sManageWifiDetails.aKey[sizeof(sManageWifiDetails.aKey) - 1] = '\0';  /* CID 347175 fix - String not null terminated */
         
         CcspTraceInfo(("%s:%d, sManageWifiDetails.aKey:%s\n",__FUNCTION__,__LINE__,sManageWifiDetails.aKey));
     }
@@ -952,7 +999,9 @@ rbusError_t setStringHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHa
     {
 	sManageWifiDetails.eUpdateType = BRIDGE_NAME;
         CcspTraceInfo(("%s:%d, pKeyVal:%s\n",__FUNCTION__,__LINE__,pKeyVal));
-        strcpy(sManageWifiDetails.aBridgeName,pKeyVal);
+        /* CID 347175 fix - Use safe string copy and ensure null termination */
+        strncpy(sManageWifiDetails.aBridgeName, pKeyVal, sizeof(sManageWifiDetails.aBridgeName) - 1);
+        sManageWifiDetails.aBridgeName[sizeof(sManageWifiDetails.aBridgeName) - 1] = '\0';
         CcspTraceInfo(("%s:%d, sManageWifiDetails.aBridgeName:%s\n",__FUNCTION__,__LINE__,sManageWifiDetails.aBridgeName));
         setManageWiFiDetails (&sManageWifiDetails);
     }
@@ -960,7 +1009,9 @@ rbusError_t setStringHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHa
     {
 	sManageWifiDetails.eUpdateType = WIFI_INTERFACES;
         CcspTraceInfo(("%s:%d, pKeyVal:%s\n",__FUNCTION__,__LINE__,pKeyVal));
-        strcpy(sManageWifiDetails.aWiFiInterfaces,pKeyVal);
+        /* CID 347175 fix - Use safe string copy and ensure null termination */
+        strncpy(sManageWifiDetails.aWiFiInterfaces, pKeyVal, sizeof(sManageWifiDetails.aWiFiInterfaces) - 1);
+        sManageWifiDetails.aWiFiInterfaces[sizeof(sManageWifiDetails.aWiFiInterfaces) - 1] = '\0';
         CcspTraceInfo(("%s:%d, sManageWifiDetails.aWiFiInterfaces:%s\n",__FUNCTION__,__LINE__,sManageWifiDetails.aWiFiInterfaces));
         setManageWiFiDetails (&sManageWifiDetails);
     }
@@ -1468,6 +1519,10 @@ rbusError_t devCtrlRbusInit()
 	//initialize sysevent
 	PAM_Rbus_SyseventInit();
 #endif
+
+#if defined (RDKB_EXTENDER_ENABLED)
+    publishInitialDevCtrlVal();
+#endif /*RDKB_EXTENDER_ENABLED*/
 
 #if defined(RBUS_BUILD_FLAG_ENABLE) && !defined(_HUB4_PRODUCT_REQ_) && !defined(RDKB_EXTENDER_ENABLED)
         //Subscribe WAN Status Event
