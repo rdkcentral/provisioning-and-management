@@ -23406,52 +23406,11 @@ NonRootSupport_GetParamStringValue
 )
 {
   UNREFERENCED_PARAMETER(hInsContext);
-  #define APPARMOR_BLOCKLIST_FILE "/opt/secure/Apparmor_blocklist"
-  #define APPARMOR_PROFILE_DIR "/etc/apparmor.d"
   #define SIZE_LEN 32
   char *buf = NULL;
   FILE *fp = NULL;
   size_t len = 0;
   ssize_t read = 0;
-  DIR *dir=NULL;
-  struct dirent *entry=NULL;
-  char tmp[64]={0};
-  char files_name[MAX_SIZE]={0};
-  char *sptr=NULL;
-  /* check the parameter name and return the corresponding value */
-  if (strcmp(ParamName, "ApparmorBlocklist") == 0)
-  {
-      dir = opendir(APPARMOR_PROFILE_DIR);
-      if( (dir == NULL) ) {
-            CcspTraceError(("Failed to open the %s directory: profiles does not exist\n", APPARMOR_PROFILE_DIR));
-            return FALSE;
-      }
-      memset(files_name,'\0',sizeof(files_name));
-      while((entry = readdir(dir)) != NULL) {
-             strncat(files_name,entry->d_name,strlen(entry->d_name));
-      }
-      closedir(dir);
-      fp=fopen(APPARMOR_BLOCKLIST_FILE,"r");
-      if(fp != NULL) {
-         while((read = getline(&buf, &len, fp)) != -1) {
-	     // CID 279876 : Buffer not null terminated (BUFFER_SIZE)
-             strncpy(tmp,buf,sizeof(tmp)-1);
-             tmp[sizeof(tmp)-1] = '\0';
-             strtok_r(buf,":",&sptr);
-             if(buf != NULL) {
-                 strncat(pValue,tmp,strlen(tmp));
-             }
-         }
-         fclose(fp);
-         Replace_AllOccurrence( pValue, AnscSizeOfString(pValue), '\n', ',');
-         CcspTraceWarning(("Apparmor profile configuration:%s\n", pValue));
-         return 0;
-      }
-      else {
-         CcspTraceWarning(("%s does not exist\n", APPARMOR_BLOCKLIST_FILE));
-         strncpy(pValue,"Apparmorblocklist is empty",SIZE_LEN);
-      }
-  }
   //Blocklist RFC
   if (strcmp(ParamName, "Blocklist") == 0)
   {
@@ -23476,77 +23435,6 @@ NonRootSupport_GetParamStringValue
   return -1;
 }
 
-static BOOL ValidateInput_Arguments(char *input, FILE *tmp_fptr)
-{
-  #define APPARMOR_PROFILE_DIR "/etc/apparmor.d"
-  #define BUF_SIZE 64
-  struct dirent *entry=NULL;
-  DIR *dir=NULL;
-  char files_name[1024]={0};
-  char *token=NULL;
-  char *subtoken=NULL;
-  char *sub_string=NULL;
-  char *service_profile = NULL;
-  char *sp=NULL;
-  char *sptr=NULL;
-  char tmp[BUF_SIZE]={0};
-  char *arg=NULL;
-  dir=opendir(APPARMOR_PROFILE_DIR);
-  // CID 180947 : Resource leak (RESOURCE_LEAK)
-  if( (dir == NULL) || (tmp_fptr == NULL) ) {
-     if(tmp_fptr)
-         fclose(tmp_fptr);
-     if(dir)
-	 closedir(dir);
-     CcspTraceError(("Failed to open the %s directory\n", APPARMOR_PROFILE_DIR));
-     return FALSE;
-  }
-  memset(files_name,'\0',sizeof(files_name));
-  /* storing Apparmor profile (file) names into files_name which can be used to check with input arguments using strstr() */
-  while((entry = readdir(dir)) != NULL) {
-        strncat(files_name,entry->d_name,strlen(entry->d_name));
-  }
-  if (closedir(dir) != 0) {
-      CcspTraceError(("Failed to close %s directory\n", APPARMOR_PROFILE_DIR));
-      fclose(tmp_fptr);
-      return FALSE;
-  }
-  /* Read the input arguments and ensure the corresponding profiles exist or not by searching in
-     Apparmor profile directory (/etc/apparmor.d/). Returns false if input does not have the
-     apparmor profile, Returns true if apparmor profile finds for the input */
-  token=strtok_r( input,",", &sp);
-  while(token != NULL) {
-        arg=strchr(token,':');
-        if(!arg)
-        {
-            CcspTraceWarning(("argument is  null in the parser:%s\n", token));
-            return FALSE;
-        }
-        if ( (arg[0] != ':') || ((strcmp(arg+1,"disable") != 0) && (strcmp(arg+1,"complain") != 0) && (strcmp(arg+1,"enforce") != 0) ) ) {
-              CcspTraceWarning(("Invalid input arguments in the parser:%s\n", token));
-              return FALSE;
-        }
-	// CID 180948 : Buffer not null terminated (BUFFER_SIZE)
-        strncpy(tmp,token,sizeof(tmp)-1);
-        tmp[sizeof(tmp) - 1] = '\0';
-        subtoken=strtok_r(tmp,":",&sptr);
-        if (subtoken != NULL) {
-           sub_string = strstr(files_name, subtoken);
-           if (sub_string == NULL) {
-                service_profile = strstr(subtoken, "service.sp");
-           }
-           if (sub_string != NULL || service_profile != NULL) {
-              fprintf(tmp_fptr, "%s\n", token);
-           } else {
-              CcspTraceWarning(("Invalid arguments %s error found in the parser\n", subtoken));
-              return FALSE;
-           }
-        }
-  token=strtok_r(NULL,",",&sp);
-  }
-  return TRUE;
-}
-
 BOOL
 NonRootSupport_SetParamStringValue
 (
@@ -23556,42 +23444,9 @@ NonRootSupport_SetParamStringValue
  )
 {
   UNREFERENCED_PARAMETER(hInsContext);
-  #define APPARMOR_BLOCKLIST_FILE "/opt/secure/Apparmor_blocklist"
-  #define TMP_FILE "/opt/secure/Apparmor_blocklist_bck.txt"
-  #define SIZE 128
   #define MAX_SIZE 1024
   FILE *fptr = NULL;
-  FILE *tmp_fptr = NULL;
   char *boxType = NULL, *atomIp = NULL;
-  if (strcmp(ParamName, "ApparmorBlocklist") == 0)
-  {
-     fptr = fopen(APPARMOR_BLOCKLIST_FILE,"r");
-     tmp_fptr = fopen(TMP_FILE,"w+");
-     if( (!pValue) || (strstr(pValue,":") == NULL) || (tmp_fptr == NULL) ) {
-         CcspTraceError(("Failed to open the file or invalid argument\n"));
-         if(fptr)
-            fclose(fptr);
-         if(tmp_fptr)
-            fclose(tmp_fptr);
-         return FALSE;
-     }
-     /* To ensure input arguments are valid or not */
-     if (ValidateInput_Arguments(pValue, tmp_fptr) != TRUE) {
-	 // CID 180949 : Resource leak (RESOURCE_LEAK)
-	 if(fptr)
-            fclose(fptr);
-         return FALSE;
-     }
-     /* Copying tmp file contents into main file by using rename() */
-     if(fptr != NULL)
-        fclose(fptr);
-     fclose(tmp_fptr);
-     if(rename( TMP_FILE, APPARMOR_BLOCKLIST_FILE) != 0) {
-        CcspTraceError(("Error in renaming  file\n"));
-        return FALSE;
-     }
-     return TRUE;
-  }
 
   //Blocklist RFC
   if (strcmp(ParamName, "Blocklist") == 0)
