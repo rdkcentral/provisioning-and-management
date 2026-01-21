@@ -108,6 +108,8 @@ int send_dhcp_data_to_wanmanager (ipc_dhcpv6_data_t *dhcpv6_data, int msgtype); 
 #ifdef WAN_FAILOVER_SUPPORTED
 pthread_t Ipv6Handle_tid;
 void *Ipv6ModeHandler_thrd(void *data);
+void getHotSpotWanIfName(char *wanmgr_ifname,int size);
+void getMeshWanIfName(char *mesh_wan_ifname,int size);
 #endif
 #endif//FEATURE_RDKB_WAN_MANAGER
 #if defined(_HUB4_PRODUCT_REQ_) || defined(FEATURE_RDKB_WAN_MANAGER)
@@ -3710,21 +3712,31 @@ static char * CosaDmlDhcpv6sGetStringFromHex(char *hexString)
     ULONG   j =0;
     ULONG   k =0;
 
+    if (!hexString) {
+        newString[0] = '\0';
+        return newString;
+    }
+
     memset(newString,0, sizeof(newString));
-    while( hexString[i] && (i< sizeof(newString)-1) )
+    while( hexString[i] && (i < strlen(hexString)) && (j < sizeof(newString)-2) )  /* CID 350121 fix - Out-of-bounds write */
     {
         buff[k++]        = hexString[i++];
         if ( k%2 == 0 ) {
              char c =  (char)strtol(buff, (char **)NULL, 16);
-             if( !iscntrl(c) )
+             if( !iscntrl(c) && j < sizeof(newString)-1 )
                  newString[j++] = c;
-             else if (j != 0)
+             else if (j > 0 && j < sizeof(newString)-1)
                  newString[j++] = '.';
              memset(buff, 0, sizeof(buff));
              k = 0;
         }
     }
-    newString[j - 1] = '\0';
+    /* CID 350121 fix - Out-of-bounds write - safe termination */
+    if (j > 0)
+        newString[j] = '\0';
+    else
+        newString[0] = '\0';
+    
     CcspTraceWarning(("New normal string is %s from %s .\n", newString, hexString));
 
     return newString;
@@ -5528,6 +5540,7 @@ void __cosa_dhcpsv6_refresh_config()
                     CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
                 }
 
+                fprintf(fp, "   subnet %s\n", prefixValue);
                 fprintf(fp, "   class {\n");
 
 #ifdef CONFIG_CISCO_DHCP6S_REQUIREMENT_FROM_DPC3825
@@ -6985,9 +6998,12 @@ CosaDmlDhcpv6sGetPool
     if ( ulIndex+1 > uDhcpv6ServerPoolNum )
         return ANSC_STATUS_FAILURE;
 
-    /* CID 72229 fix */
-    if (ulIndex < DHCPV6S_POOL_NUM) {
+    /* CID 72229 fix - Out-of-bounds access (enhanced existing partial fix) */
+    if (ulIndex < DHCPV6S_POOL_NUM && ulIndex < uDhcpv6ServerPoolNum && pEntry != NULL) {
         AnscCopyMemory(pEntry, &sDhcpv6ServerPool[ulIndex], sizeof(COSA_DML_DHCPSV6_POOL_FULL));
+    } else {
+        CcspTraceError(("%s: Invalid index %lu or NULL entry\n", __FUNCTION__, ulIndex));
+        return ANSC_STATUS_FAILURE;
     }
     
     return ANSC_STATUS_SUCCESS;
@@ -8638,7 +8654,24 @@ void CosaDmlDhcpv6sRebootServer()
         if((ANSC_STATUS_SUCCESS == is_usg_in_bridge_mode(&isBridgeMode)) &&
            ( TRUE == isBridgeMode ))
             return;
+#ifdef WAN_FAILOVER_SUPPORTED
+        char wan_interface[32] = {0};
+        char mesh_wan_ifname[32] = {0};
+        char hotspot_wan_ifname[32] = {0};
+        getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
+        getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
+        commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+	CcspTraceWarning((" %s :CURRENT :%s MESH WAN IFNAME is (%s), HOTSPOT WAN IFNAME is (%s)\n", __FUNCTION__, wan_interface, mesh_wan_ifname, hotspot_wan_ifname));
+	if ( (mesh_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, mesh_wan_ifname, strlen(mesh_wan_ifname)) == 0) ||
+	     (hotspot_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, hotspot_wan_ifname, strlen(hotspot_wan_ifname)) == 0) )
+	{
+	    CcspTraceWarning((" %s : Skipping _dibbler_server_operation start for %s\n", __FUNCTION__, wan_interface));
+            return;
+	}
 
+#endif
         //make sure it's not in a bad status
         fp = v_secure_popen("r","busybox ps|grep %s|grep -v grep", SERVER_BIN);
         _get_shell_output(fp, out, sizeof(out));
@@ -9513,7 +9546,7 @@ void addRemoteWanIpv6Route()
 #else
                         v_secure_system("ip -6 route del default");
 #endif /* CORE_NET_LIB */
-                        SetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),1025);
+                        SetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),0);
                         commonSyseventSet("remotewan_routeset", "true");
                     }
                 }
@@ -9535,7 +9568,7 @@ bool delRemoteWanIpv6Route()
             commonSyseventGet(MESH_WAN_WAN_IPV6ADDR, ipv6_address, sizeof(ipv6_address));
             if( '\0' != ipv6_address[0] )
             {
-                UnSetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),1025);
+                UnSetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),0);
                 commonSyseventSet("remotewan_routeset", "false");
                 return true;
             }
