@@ -108,6 +108,8 @@ int send_dhcp_data_to_wanmanager (ipc_dhcpv6_data_t *dhcpv6_data, int msgtype); 
 #ifdef WAN_FAILOVER_SUPPORTED
 pthread_t Ipv6Handle_tid;
 void *Ipv6ModeHandler_thrd(void *data);
+void getHotSpotWanIfName(char *wanmgr_ifname,int size);
+void getMeshWanIfName(char *mesh_wan_ifname,int size);
 #endif
 #endif//FEATURE_RDKB_WAN_MANAGER
 #if defined(_HUB4_PRODUCT_REQ_) || defined(FEATURE_RDKB_WAN_MANAGER)
@@ -1880,11 +1882,8 @@ static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger);
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)
 
 #else
-ANSC_STATUS
-CosaDmlDhcpv6SMsgHandler
-    (
-        ANSC_HANDLE                 hContext
-    )
+
+static ANSC_STATUS CosaDmlDhcpv6SMsgHandler (ANSC_HANDLE hContext)
 {
     UNREFERENCED_PARAMETER(hContext);
     char ret[16] = {0};
@@ -1927,7 +1926,7 @@ CosaDmlDhcpv6SMsgHandler
     return 0;
 }
 
-int CosaDmlDhcpv6sRestartOnLanStarted(void * arg)
+static int CosaDmlDhcpv6sRestartOnLanStarted(void *arg)
 {
     UNREFERENCED_PARAMETER(arg);
     CcspTraceWarning(("%s -- lan status is started. \n", __FUNCTION__));
@@ -3682,7 +3681,8 @@ iface "eth0" {
     2018CAFE00000000020C29FFFE97FCCC ==> 
     2018:CAFE:0000:0000:020C:29FF:FE97:FCCC
 */
-char * CosaDmlDhcpv6sGetAddressFromString(char * address){
+static char * CosaDmlDhcpv6sGetAddressFromString(char *address)
+{
     static char     ipv6Address[256] = {0};
     ULONG   i =0;
     ULONG   j =0;
@@ -3704,28 +3704,39 @@ char * CosaDmlDhcpv6sGetAddressFromString(char * address){
     return ipv6Address;
 }
 
-char * CosaDmlDhcpv6sGetStringFromHex(char * hexString){
+static char * CosaDmlDhcpv6sGetStringFromHex(char *hexString)
+{
     static char     newString[256];
     char    buff[8] = {0};
     ULONG   i =0;
     ULONG   j =0;
     ULONG   k =0;
 
+    if (!hexString) {
+        newString[0] = '\0';
+        return newString;
+    }
+
     memset(newString,0, sizeof(newString));
-    while( hexString[i] && (i< sizeof(newString)-1) )
+    while( hexString[i] && (i < strlen(hexString)) && (j < sizeof(newString)-2) )  /* CID 350121 fix - Out-of-bounds write */
     {
         buff[k++]        = hexString[i++];
         if ( k%2 == 0 ) {
              char c =  (char)strtol(buff, (char **)NULL, 16);
-             if( !iscntrl(c) )
+             if( !iscntrl(c) && j < sizeof(newString)-1 )
                  newString[j++] = c;
-             else if (j != 0)
+             else if (j > 0 && j < sizeof(newString)-1)
                  newString[j++] = '.';
              memset(buff, 0, sizeof(buff));
              k = 0;
         }
     }
-    newString[j - 1] = '\0';
+    /* CID 350121 fix - Out-of-bounds write - safe termination */
+    if (j > 0)
+        newString[j] = '\0';
+    else
+        newString[0] = '\0';
+    
     CcspTraceWarning(("New normal string is %s from %s .\n", newString, hexString));
 
     return newString;
@@ -3755,7 +3766,7 @@ void _cosa_dhcpsv6_refresh_config()
     Fail when return 1
     Succeed when return 0
 */
-int CosaDmlDHCPv6sGetDNS(char* Dns, char* output, int outputLen)
+int CosaDmlDHCPv6sGetDNS(char *Dns, char *output, int outputLen)
 {
     char oneDns[64]  = {0};
     int  len         = _ansc_strlen(Dns);
@@ -3817,8 +3828,6 @@ int remove_single_quote (char *buf)
   return 0;
 }
 
-
-
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)
 // adding new logics to handle pd-class
 static int get_ipv6_tpmode (int *tpmod)
@@ -3855,6 +3864,7 @@ static int get_ipv6_tpmode (int *tpmod)
 
   return 0;
 }
+
 static int get_prefix_info(const char *prefix,  char *value, unsigned int val_len, unsigned int *prefix_len)
 {
     int i;
@@ -3882,6 +3892,7 @@ static int get_prefix_info(const char *prefix,  char *value, unsigned int val_le
 
     return 0;
 }
+
 /* get the interfaces which need to assign /64 interface-prefix
  * suppose we currently use syscfg "lan_pd_interfaces" to represent the interfaces need to prefix delegation
  */
@@ -5529,6 +5540,7 @@ void __cosa_dhcpsv6_refresh_config()
                     CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
                 }
 
+                fprintf(fp, "   subnet %s\n", prefixValue);
                 fprintf(fp, "   class {\n");
 
 #ifdef CONFIG_CISCO_DHCP6S_REQUIREMENT_FROM_DPC3825
@@ -6986,9 +6998,12 @@ CosaDmlDhcpv6sGetPool
     if ( ulIndex+1 > uDhcpv6ServerPoolNum )
         return ANSC_STATUS_FAILURE;
 
-    /* CID 72229 fix */
-    if (ulIndex < DHCPV6S_POOL_NUM) {
+    /* CID 72229 fix - Out-of-bounds access (enhanced existing partial fix) */
+    if (ulIndex < DHCPV6S_POOL_NUM && ulIndex < uDhcpv6ServerPoolNum && pEntry != NULL) {
         AnscCopyMemory(pEntry, &sDhcpv6ServerPool[ulIndex], sizeof(COSA_DML_DHCPSV6_POOL_FULL));
+    } else {
+        CcspTraceError(("%s: Invalid index %lu or NULL entry\n", __FUNCTION__, ulIndex));
+        return ANSC_STATUS_FAILURE;
     }
     
     return ANSC_STATUS_SUCCESS;
@@ -8639,7 +8654,24 @@ void CosaDmlDhcpv6sRebootServer()
         if((ANSC_STATUS_SUCCESS == is_usg_in_bridge_mode(&isBridgeMode)) &&
            ( TRUE == isBridgeMode ))
             return;
+#ifdef WAN_FAILOVER_SUPPORTED
+        char wan_interface[32] = {0};
+        char mesh_wan_ifname[32] = {0};
+        char hotspot_wan_ifname[32] = {0};
+        getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
+        getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
+        commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+	CcspTraceWarning((" %s :CURRENT :%s MESH WAN IFNAME is (%s), HOTSPOT WAN IFNAME is (%s)\n", __FUNCTION__, wan_interface, mesh_wan_ifname, hotspot_wan_ifname));
+	if ( (mesh_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, mesh_wan_ifname, strlen(mesh_wan_ifname)) == 0) ||
+	     (hotspot_wan_ifname[0] != '\0' &&
+	      strncmp(wan_interface, hotspot_wan_ifname, strlen(hotspot_wan_ifname)) == 0) )
+	{
+	    CcspTraceWarning((" %s : Skipping _dibbler_server_operation start for %s\n", __FUNCTION__, wan_interface));
+            return;
+	}
 
+#endif
         //make sure it's not in a bad status
         fp = v_secure_popen("r","busybox ps|grep %s|grep -v grep", SERVER_BIN);
         _get_shell_output(fp, out, sizeof(out));
@@ -9514,7 +9546,7 @@ void addRemoteWanIpv6Route()
 #else
                         v_secure_system("ip -6 route del default");
 #endif /* CORE_NET_LIB */
-                        SetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),1025);
+                        SetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),0);
                         commonSyseventSet("remotewan_routeset", "true");
                     }
                 }
@@ -9536,7 +9568,7 @@ bool delRemoteWanIpv6Route()
             commonSyseventGet(MESH_WAN_WAN_IPV6ADDR, ipv6_address, sizeof(ipv6_address));
             if( '\0' != ipv6_address[0] )
             {
-                UnSetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),1025);
+                UnSetV6Route(mesh_wan_ifname,strtok(ipv6_address,"/"),0);
                 commonSyseventSet("remotewan_routeset", "false");
                 return true;
             }

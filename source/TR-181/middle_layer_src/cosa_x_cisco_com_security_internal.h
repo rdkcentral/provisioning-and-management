@@ -19,13 +19,13 @@
 
 /**********************************************************************
    Copyright [2014] [Cisco Systems, Inc.]
- 
+
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
- 
+
        http://www.apache.org/licenses/LICENSE-2.0
- 
+
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,30 +107,79 @@ _COSA_DATAMODEL_SECURITY
 COSA_DATAMODEL_SECURITY,  *PCOSA_DATAMODEL_SECURITY;
 
 
+/**
+ * @brief Create the Cisco Security backend object.
+ *
+ * @return Handle to the newly created Security backend object
+ * @retval Non-NULL handle to the newly created Security backend object.
+ * @retval NULL on failure.
+ */
 ANSC_HANDLE
 CosaSecurityCreate
     (
         VOID
     );
 
+/**
+ * @brief Initialize the Cisco Security backend.
+ *
+ * @param[in] hThisObject Handle to the Security backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful initialization
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaSecurityInitialize
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Remove and cleanup the Cisco Security backend.
+ *
+ * @param[in] hThisObject Handle to the Security backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful cleanup.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaSecurityRemove
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Load Cisco Internet Access policies from IREP registry.
+ *
+ * @param[in] hThisObject Handle to the Security backend object.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful registry load.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaSecurityIARegGetInfo
     (
         ANSC_HANDLE                 hThisObject
     );
 
+/**
+ * @brief Add Cisco Internet Access policy entry to IREP registry.
+ *
+ * @param[in] hThisObject Handle to the Security backend object.
+ * @param[in] pNextInsNumName Name of the registry parameter storing next instance number.
+ * @param[in] ulNextInsNum Next available instance number for new entries.
+ * @param[in] pPreffix Registry path prefix for the Internet Access policy entry.
+ * @param[in] ulUpperInsNum Parent object instance number in data model hierarchy.
+ * @param[in] pAlias User-defined alias name for the Internet Access policy entry (max 64 chars).
+ * @param[in] hCosaContext Handle to the COSA context structure for the policy entry.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful registry add.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaSecurityIARegAddInfo
     (
@@ -151,6 +200,16 @@ CosaSecurityIARegSetInfo
     );
 */
 
+/**
+ * @brief Delete Cisco Internet Access policy entry from IREP registry.
+ *
+ * @param[in] hThisObject Handle to the Security backend object.
+ * @param[in] hCosaContext Handle to the COSA context structure for the policy entry to delete.
+ *
+ * @return The status of the operation.
+ * @retval ANSC_STATUS_SUCCESS on successful registry deletion.
+ * @retval error code otherwise.
+ */
 ANSC_STATUS
 CosaSecurityIARegDelInfo
     (

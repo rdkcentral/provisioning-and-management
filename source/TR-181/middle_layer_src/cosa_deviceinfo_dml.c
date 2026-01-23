@@ -131,6 +131,9 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 
 #define MAX_ALLOWABLE_STRING_LEN  256
 
+#define MEMINSIGHT_ENABLE_FILE "/nvram/.enable_meminsight"
+#define MEMINSIGHT_SERVICE "meminsight-runner.service"
+
 #define BOOTSTRAP_INFO_FILE_BACKUP "/nvram/bootstrap.json"
 #define CLEAR_TRACK_FILE "/nvram/ClearUnencryptedData_flags"
 #define NVRAM_BOOTSTRAP_CLEARED (1 << 0)
@@ -1055,7 +1058,7 @@ DeviceInfo_GetParamStringValue
         return 0;
     }
 
-#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_) && !defined (_SCXF11BFL_PRODUCT_REQ_)
+#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_)
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_InActiveFirmware") == 0)
     {
         return CosaDmlDiGetInActiveFirmware(NULL, pValue, pulSize);
@@ -1646,6 +1649,267 @@ BOOL
     }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
+    return FALSE;
+}
+
+/**
+ * RFC Features for xMemInsight
+ */
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+
+    description:
+        This function is called to set BOOL parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        BOOL bValue - The updated BOOL value;
+
+    return:
+        TRUE if succeeded.
+        FALSE if not.
+
+**********************************************************************/
+
+BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    char buf[8];
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char *value = (bValue == TRUE) ? "true" : "false";
+        syscfg_get(NULL, "xMemEnable", buf, sizeof(buf));
+        if (!strncmp(buf, value, strlen(value)))
+        {
+            return TRUE;
+        }
+        if (syscfg_set_commit(NULL, "xMemEnable", value) != 0)
+        {
+            CcspTraceError(("syscfg_set failed on xMemEnable\n"));
+            return FALSE;
+        }
+
+        if (bValue == TRUE)
+        {
+            CcspTraceInfo(("Enabling MemInsight feature\n"));
+            FILE *enableFile = fopen(MEMINSIGHT_ENABLE_FILE, "w");
+            if (enableFile != NULL)
+            {
+                fclose(enableFile);
+                CcspTraceInfo(("Successfully enabled MemInsight. File created: %s\n", MEMINSIGHT_ENABLE_FILE));
+            }
+            else
+            {
+                CcspTraceError(("Failed to create MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
+                return FALSE;
+            }
+        }
+        else
+        {
+            CcspTraceInfo(("Disabling MemInsight feature\n"));
+            FILE *checkFile = fopen(MEMINSIGHT_ENABLE_FILE, "r");
+            if (checkFile != NULL)
+            {
+                fclose(checkFile);
+                if (remove(MEMINSIGHT_ENABLE_FILE) == 0)
+                {
+                    CcspTraceInfo(("Successfully disabled MemInsight. File removed: %s\n", MEMINSIGHT_ENABLE_FILE));
+
+                    int sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
+
+                    if (sysRet == 0)
+                    {
+                        CcspTraceInfo(("%s is currently active\n", MEMINSIGHT_SERVICE));
+                        sysRet = v_secure_system("systemctl stop %s", MEMINSIGHT_SERVICE);
+
+                        if (sysRet == 0)
+                        {
+                            CcspTraceInfo(("%s stopped successfully\n", MEMINSIGHT_SERVICE));
+                        }
+                        else
+                        {
+                            CcspTraceError(("Failed to stop %s. Return code: %d\n", MEMINSIGHT_SERVICE, sysRet));
+                        }
+                        sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
+
+                        if (sysRet != 0)
+                        {
+                            CcspTraceInfo(("Confirmed: %s is now inactive\n", MEMINSIGHT_SERVICE));
+                        }
+                        else
+                        {
+                            CcspTraceWarning(("Warning: %s appears to still be active after stop command\n", MEMINSIGHT_SERVICE));
+                        }
+                    }
+                    else
+                    {
+                        CcspTraceInfo(("MemInsight service %s is already inactive\n", MEMINSIGHT_SERVICE));
+                    }
+                }
+                else
+                {
+                    CcspTraceError(("Failed to remove MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
+                }
+            }
+            else
+            {
+                CcspTraceInfo(("MemInsight is already disabled. File not found: %s\n", MEMINSIGHT_ENABLE_FILE));
+            }
+        }
+        return TRUE;
+    }
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+
+    description:
+        This function is called to retrieve BOOL parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        BOOL* bValue - The buffer of returned boolean value;
+
+    return:
+        TRUE if succeeded.
+        FALSE if not.
+
+**********************************************************************/
+
+BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0) {
+        char value[8] = {'\0'};
+        if( syscfg_get(NULL, "xMemEnable", value, sizeof(value)) == 0 )
+        {
+            if (strcmp(value, "true") == 0)
+            {
+                *pBool = TRUE;
+            }
+            else
+            {
+                *pBool = FALSE;
+            }
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("syscfg_get failed for xMemEnable\n"));
+        }
+    }
+    else
+    {
+        CcspTraceError(("%s: Unknown parameter %s\n", __FUNCTION__, ParamName));
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
+
+    description:
+        This function is called to retrieve string parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        char* pValue - The string value buffer;
+        ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
+
+    return:
+        TRUE if succeeded;
+        FALSE if not supported
+
+**********************************************************************/
+
+ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(pUlSize);
+
+    errno_t rc  = -1;
+
+    if(strcmp(ParamName, "Args") == 0) {
+        /* collect value */
+        char buf[128] = {'\0'};
+        if(!syscfg_get(NULL, "xMemArgs", buf, sizeof(buf)))
+        {
+            rc = strcpy_s(pValue, *pUlSize, buf);
+            if(rc != EOK)
+            {
+               ERR_CHK(rc);
+               return -1;
+            }
+            return 0;
+        }
+        return -1;
+    }
+    CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
+    return -1;
+}
+
+/**********************************************************************
+
+    caller:
+        owner of this object
+
+    prototype:
+        BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+
+    description:
+        This function is called to set string parameter value;
+
+    argument:
+        ANSC_HANDLE hInsContext - The instance handle;
+        char* ParamName - The parameter name;
+        char* pValue - The string value buffer;
+        ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
+
+    return:
+        TRUE if succeeded;
+        FALSE if not supported
+
+**********************************************************************/
+
+BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString)
+{
+    if (IsStringSame(hInsContext, ParamName, pString, xMemInsight_GetParamStringValue))
+    {
+        return TRUE;
+    }
+    if (strcmp(ParamName, "Args") == 0)
+    {
+        if (syscfg_set_commit(NULL, "xMemArgs", pString) != 0)
+        {
+            CcspTraceError(("syscfg_set failed for xMemArgs\n"));
+        }
+        else
+        {
+            return TRUE;
+        }
+    }
+    CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
     return FALSE;
 }
 
@@ -22918,7 +23182,7 @@ BOOL
     return:     TRUE if succeeded.
 
 **********************************************************************/
-#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_)
+#if defined(_XB6_PRODUCT_REQ_) || defined(_XB7_PRODUCT_REQ_) || defined(_SCXF11BFL_PRODUCT_REQ_)
 BOOL
 XHFW_GetParamBoolValue ( ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 {
@@ -23142,52 +23406,11 @@ NonRootSupport_GetParamStringValue
 )
 {
   UNREFERENCED_PARAMETER(hInsContext);
-  #define APPARMOR_BLOCKLIST_FILE "/opt/secure/Apparmor_blocklist"
-  #define APPARMOR_PROFILE_DIR "/etc/apparmor.d"
   #define SIZE_LEN 32
   char *buf = NULL;
   FILE *fp = NULL;
   size_t len = 0;
   ssize_t read = 0;
-  DIR *dir=NULL;
-  struct dirent *entry=NULL;
-  char tmp[64]={0};
-  char files_name[MAX_SIZE]={0};
-  char *sptr=NULL;
-  /* check the parameter name and return the corresponding value */
-  if (strcmp(ParamName, "ApparmorBlocklist") == 0)
-  {
-      dir = opendir(APPARMOR_PROFILE_DIR);
-      if( (dir == NULL) ) {
-            CcspTraceError(("Failed to open the %s directory: profiles does not exist\n", APPARMOR_PROFILE_DIR));
-            return FALSE;
-      }
-      memset(files_name,'\0',sizeof(files_name));
-      while((entry = readdir(dir)) != NULL) {
-             strncat(files_name,entry->d_name,strlen(entry->d_name));
-      }
-      closedir(dir);
-      fp=fopen(APPARMOR_BLOCKLIST_FILE,"r");
-      if(fp != NULL) {
-         while((read = getline(&buf, &len, fp)) != -1) {
-	     // CID 279876 : Buffer not null terminated (BUFFER_SIZE)
-             strncpy(tmp,buf,sizeof(tmp)-1);
-             tmp[sizeof(tmp)-1] = '\0';
-             strtok_r(buf,":",&sptr);
-             if(buf != NULL) {
-                 strncat(pValue,tmp,strlen(tmp));
-             }
-         }
-         fclose(fp);
-         Replace_AllOccurrence( pValue, AnscSizeOfString(pValue), '\n', ',');
-         CcspTraceWarning(("Apparmor profile configuration:%s\n", pValue));
-         return 0;
-      }
-      else {
-         CcspTraceWarning(("%s does not exist\n", APPARMOR_BLOCKLIST_FILE));
-         strncpy(pValue,"Apparmorblocklist is empty",SIZE_LEN);
-      }
-  }
   //Blocklist RFC
   if (strcmp(ParamName, "Blocklist") == 0)
   {
@@ -23212,77 +23435,6 @@ NonRootSupport_GetParamStringValue
   return -1;
 }
 
-static BOOL ValidateInput_Arguments(char *input, FILE *tmp_fptr)
-{
-  #define APPARMOR_PROFILE_DIR "/etc/apparmor.d"
-  #define BUF_SIZE 64
-  struct dirent *entry=NULL;
-  DIR *dir=NULL;
-  char files_name[1024]={0};
-  char *token=NULL;
-  char *subtoken=NULL;
-  char *sub_string=NULL;
-  char *service_profile = NULL;
-  char *sp=NULL;
-  char *sptr=NULL;
-  char tmp[BUF_SIZE]={0};
-  char *arg=NULL;
-  dir=opendir(APPARMOR_PROFILE_DIR);
-  // CID 180947 : Resource leak (RESOURCE_LEAK)
-  if( (dir == NULL) || (tmp_fptr == NULL) ) {
-     if(tmp_fptr)
-         fclose(tmp_fptr);
-     if(dir)
-	 closedir(dir);
-     CcspTraceError(("Failed to open the %s directory\n", APPARMOR_PROFILE_DIR));
-     return FALSE;
-  }
-  memset(files_name,'\0',sizeof(files_name));
-  /* storing Apparmor profile (file) names into files_name which can be used to check with input arguments using strstr() */
-  while((entry = readdir(dir)) != NULL) {
-        strncat(files_name,entry->d_name,strlen(entry->d_name));
-  }
-  if (closedir(dir) != 0) {
-      CcspTraceError(("Failed to close %s directory\n", APPARMOR_PROFILE_DIR));
-      fclose(tmp_fptr);
-      return FALSE;
-  }
-  /* Read the input arguments and ensure the corresponding profiles exist or not by searching in
-     Apparmor profile directory (/etc/apparmor.d/). Returns false if input does not have the
-     apparmor profile, Returns true if apparmor profile finds for the input */
-  token=strtok_r( input,",", &sp);
-  while(token != NULL) {
-        arg=strchr(token,':');
-        if(!arg)
-        {
-            CcspTraceWarning(("argument is  null in the parser:%s\n", token));
-            return FALSE;
-        }
-        if ( (arg[0] != ':') || ((strcmp(arg+1,"disable") != 0) && (strcmp(arg+1,"complain") != 0) && (strcmp(arg+1,"enforce") != 0) ) ) {
-              CcspTraceWarning(("Invalid input arguments in the parser:%s\n", token));
-              return FALSE;
-        }
-	// CID 180948 : Buffer not null terminated (BUFFER_SIZE)
-        strncpy(tmp,token,sizeof(tmp)-1);
-        tmp[sizeof(tmp) - 1] = '\0';
-        subtoken=strtok_r(tmp,":",&sptr);
-        if (subtoken != NULL) {
-           sub_string = strstr(files_name, subtoken);
-           if (sub_string == NULL) {
-                service_profile = strstr(subtoken, "service.sp");
-           }
-           if (sub_string != NULL || service_profile != NULL) {
-              fprintf(tmp_fptr, "%s\n", token);
-           } else {
-              CcspTraceWarning(("Invalid arguments %s error found in the parser\n", subtoken));
-              return FALSE;
-           }
-        }
-  token=strtok_r(NULL,",",&sp);
-  }
-  return TRUE;
-}
-
 BOOL
 NonRootSupport_SetParamStringValue
 (
@@ -23292,42 +23444,9 @@ NonRootSupport_SetParamStringValue
  )
 {
   UNREFERENCED_PARAMETER(hInsContext);
-  #define APPARMOR_BLOCKLIST_FILE "/opt/secure/Apparmor_blocklist"
-  #define TMP_FILE "/opt/secure/Apparmor_blocklist_bck.txt"
-  #define SIZE 128
   #define MAX_SIZE 1024
   FILE *fptr = NULL;
-  FILE *tmp_fptr = NULL;
   char *boxType = NULL, *atomIp = NULL;
-  if (strcmp(ParamName, "ApparmorBlocklist") == 0)
-  {
-     fptr = fopen(APPARMOR_BLOCKLIST_FILE,"r");
-     tmp_fptr = fopen(TMP_FILE,"w+");
-     if( (!pValue) || (strstr(pValue,":") == NULL) || (tmp_fptr == NULL) ) {
-         CcspTraceError(("Failed to open the file or invalid argument\n"));
-         if(fptr)
-            fclose(fptr);
-         if(tmp_fptr)
-            fclose(tmp_fptr);
-         return FALSE;
-     }
-     /* To ensure input arguments are valid or not */
-     if (ValidateInput_Arguments(pValue, tmp_fptr) != TRUE) {
-	 // CID 180949 : Resource leak (RESOURCE_LEAK)
-	 if(fptr)
-            fclose(fptr);
-         return FALSE;
-     }
-     /* Copying tmp file contents into main file by using rename() */
-     if(fptr != NULL)
-        fclose(fptr);
-     fclose(tmp_fptr);
-     if(rename( TMP_FILE, APPARMOR_BLOCKLIST_FILE) != 0) {
-        CcspTraceError(("Error in renaming  file\n"));
-        return FALSE;
-     }
-     return TRUE;
-  }
 
   //Blocklist RFC
   if (strcmp(ParamName, "Blocklist") == 0)

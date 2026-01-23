@@ -128,13 +128,32 @@ rbusError_t sendUpdateEvent(char* event_name , void* eventNewData, void* eventOl
 rbusError_t publishDevCtrlNetMode(uint32_t new_val, uint32_t old_val);
 
 /**
+ * @brief publish DevCtrlNetMode during PandM initialization
+ *
+ * @return status of operation
+ * @retval RBUS_ERROR_SUCCESS on success
+ * @retval RBUS error code on failure.
+ */
+
+int publishInitialDevCtrlVal();
+
+/**
+ * @brief Publishes DevCtrlNetMode during PandM initialization
+ *
+ * @return status of operation
+ * @retval 0 on success
+ * @retval -1 on failure.
+ */
+
+bool PAM_Rbus_SyseventInit();
+
+/**
  * @brief Initializes RBUS sysevent integration for PAM component.
  *
  * @return status of operation
  * @retval true on success
  * @retval false on failure.
  */
-bool PAM_Rbus_SyseventInit();
 
 #endif
 #if defined (WIFI_MANAGE_SUPPORTED)
@@ -360,6 +379,18 @@ rbusError_t devCtrlRbusInit();
 #endif
 
 #if defined(RBUS_BUILD_FLAG_ENABLE) && !defined(_HUB4_PRODUCT_REQ_) && !defined(RDKB_EXTENDER_ENABLED)
+/**
+ * @brief Subscribes to WAN status change events via RBUS.
+ *
+ * This function subscribes to the WAN Manager current status event
+ * through RBUS. When a WAN status change occurs, the registered event
+ * handler will be invoked to process the event. The subscription uses
+ * a timeout of 60 seconds to balance responsiveness and resource usage
+ * under typical network conditions.
+ *
+ * @return None
+ *
+ */
 void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void );
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
 
