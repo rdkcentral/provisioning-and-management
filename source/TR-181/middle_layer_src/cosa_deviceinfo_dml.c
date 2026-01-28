@@ -113,6 +113,10 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <sys/stat.h>
+#endif
+
 extern ULONG g_currentBsUpdate;
 extern char g_currentParamFullName[512];
 extern ANSC_HANDLE bus_handle;
@@ -21613,6 +21617,59 @@ UPnPRefactor_SetParamBoolValue
 }
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+
+// TODO: Temporary stub
+static BOOL isFeatureSupportedInCurrentMode(int feature_id)
+{
+    struct stat st;
+    (void)feature_id;
+
+    return (stat("/nvram2/mapt.support", &st) == 0) ? TRUE : FALSE;
+}
+
+static BOOL IsSyscfgBoolEnabled(const char *key)
+{
+    char buf[8] = {0};
+
+    if (!key)
+        return FALSE;
+
+    if (syscfg_get(NULL, key, buf, sizeof(buf)) == 0)
+    {
+        if (!strcasecmp(buf, "true") || !strcmp(buf, "1"))
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static BOOL IsMAPTConflictingFeaturesEnabled(void)
+{
+    struct {
+        const char *feature_syscfg;
+        const char *log;
+    } conflicts[] = {
+#if defined(_COSA_FOR_BCI_)
+        { "one_to_one_nat",        "1-to-1 NAT" },
+#endif
+    };
+    int range = (int)(sizeof(conflicts)/sizeof(conflicts[0]));
+
+    for (int i = 0; i < range; i++)
+    {
+        if (IsSyscfgBoolEnabled(conflicts[i].syscfg))
+        {
+            CcspTraceError(("MAP-T blocked: feature %s is already enabled\n", conflicts[i].log));
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     owner of this object
@@ -21718,6 +21775,21 @@ MAPT_DeviceInfo_SetParamBoolValue
 
   if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+	if (bValue)
+	{
+            if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
+            {
+                CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
+                return FALSE;
+            }
+            else if (IsMAPTConflictingFeaturesEnabled())
+            {
+                CcspTraceError(("MAP-T enable rejected due to conflicting features\n"));
+                return FALSE;
+            }
+	}
+#endif
         if (syscfg_set_commit(NULL, "MAPT_Enable", bValue ? "true" : "false") != 0 )
         {
             CcspTraceError(("syscfg_set failed for MAPT_Enable \n"));
