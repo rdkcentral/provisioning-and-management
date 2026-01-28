@@ -21618,6 +21618,7 @@ UPnPRefactor_SetParamBoolValue
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 #if defined(_ONESTACK_PRODUCT_REQ_)
+#define FEATURE_MAPT 1
 
 // TODO: Temporary stub
 static BOOL isFeatureSupportedInCurrentMode(int feature_id)
@@ -21628,21 +21629,21 @@ static BOOL isFeatureSupportedInCurrentMode(int feature_id)
     return (stat("/nvram2/mapt.support", &st) == 0) ? TRUE : FALSE;
 }
 
-static BOOL IsSyscfgBoolEnabled(const char *key)
+static int IsValuePresentinSyscfgDB (char *param)
 {
-    char buf[8] = {0};
+    char buf[ 512 ];
+    int  ret;
 
-    if (!key)
-        return FALSE;
+    //check whether passed param with value is already existing or not
+    memset( buf, 0, sizeof( buf ));
+    ret = syscfg_get( NULL, param, buf, sizeof(buf));
 
-    if (syscfg_get(NULL, key, buf, sizeof(buf)) == 0)
+    if( ( ret != 0 ) || ( buf[ 0 ] == '\0' ) )
     {
-        if (!strcasecmp(buf, "true") || !strcmp(buf, "1"))
-        {
-            return TRUE;
-        }
+        return 0;
     }
-    return FALSE;
+
+    return 1;
 }
 
 static BOOL IsMAPTConflictingFeaturesEnabled(void)
@@ -21659,7 +21660,7 @@ static BOOL IsMAPTConflictingFeaturesEnabled(void)
 
     for (int i = 0; i < range; i++)
     {
-        if (IsSyscfgBoolEnabled(conflicts[i].syscfg))
+        if ( 0 == IsValuePresentinSyscfgDB(conflicts[i].feature_syscfg) )
         {
             CcspTraceError(("MAP-T blocked: feature %s is already enabled\n", conflicts[i].log));
             return TRUE;
