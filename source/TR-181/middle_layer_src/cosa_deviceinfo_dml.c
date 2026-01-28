@@ -21618,7 +21618,6 @@ UPnPRefactor_SetParamBoolValue
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 #if defined(_ONESTACK_PRODUCT_REQ_)
-#define FEATURE_MAPT 1
 
 // TODO: Temporary stub
 static BOOL isFeatureSupportedInCurrentMode(int feature_id)
@@ -21660,7 +21659,7 @@ static BOOL IsMAPTConflictingFeaturesEnabled(void)
 
     for (int i = 0; i < range; i++)
     {
-        if ( 0 == IsValuePresentinSyscfgDB(conflicts[i].feature_syscfg) )
+        if ( 0 == IsValuePresentinSyscfgDB((char *)conflicts[i].feature_syscfg) )
         {
             CcspTraceError(("MAP-T blocked: feature %s is already enabled\n", conflicts[i].log));
             return TRUE;
