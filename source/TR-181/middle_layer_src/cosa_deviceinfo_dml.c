@@ -21628,6 +21628,8 @@ static BOOL isFeatureSupportedInCurrentMode(int feature_id)
     return (stat("/nvram2/mapt.support", &st) == 0) ? TRUE : FALSE;
 }
 
+#if 0 
+// uncomment later when actual check is finalized
 static int IsValuePresentinSyscfgDB (char *param)
 {
     char buf[ 512 ];
@@ -21651,9 +21653,7 @@ static BOOL IsMAPTConflictingFeaturesEnabled(void)
         const char *feature_syscfg;
         const char *log;
     } conflicts[] = {
-#if defined(_COSA_FOR_BCI_)
         { "one_to_one_nat",        "1-to-1 NAT" },
-#endif
     };
     int range = (int)(sizeof(conflicts)/sizeof(conflicts[0]));
 
@@ -21666,6 +21666,12 @@ static BOOL IsMAPTConflictingFeaturesEnabled(void)
         }
     }
 
+    return FALSE;
+}
+#endif
+
+static BOOL IsMAPTConflictingFeaturesEnabled(void)
+{
     return FALSE;
 }
 #endif
