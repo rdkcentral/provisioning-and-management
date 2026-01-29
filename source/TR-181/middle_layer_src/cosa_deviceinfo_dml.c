@@ -21784,7 +21784,7 @@ MAPT_DeviceInfo_SetParamBoolValue
 #if defined(_ONESTACK_PRODUCT_REQ_)
 	if (bValue)
 	{
-            if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
+            if (!isFeatureSupportedInCurrentMode(0 /* FEATURE_MAPT id */))
             {
                 CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
                 return FALSE;
