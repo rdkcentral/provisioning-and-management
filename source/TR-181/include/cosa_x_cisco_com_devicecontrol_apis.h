@@ -156,6 +156,33 @@ _COSA_DML_LAN_MANAGEMENT
 }
 COSA_DML_LAN_MANAGEMENT, *PCOSA_DML_LAN_MANAGEMENT;
 
+#if defined (_COSA_QCA_ARM_)
+typedef struct
+_COSA_DML_MCPROXY
+{
+ BOOLEAN bEnabled;
+ char Name[COSA_DML_IF_NAME_LENGTH];
+ char Upstream[COSA_DML_IF_NAME_LENGTH];
+ char Downstream[COSA_DML_IF_NAME_LENGTH];
+ char bProtocol[COSA_DML_IF_NAME_LENGTH];
+ char Ipv6_erouterIP[COSA_DML_IF_NAME_LENGTH];
+ BOOLEAN ApplySetting;
+}
+COSA_DML_MCPROXY, *PCOSA_DML_MCPROXY;
+
+typedef struct
+_COSA_DML_APPLYSETTING
+{
+ BOOLEAN apply_bEnabled;
+ char apply_Name[COSA_DML_IF_NAME_LENGTH];
+ char apply_Upstream[COSA_DML_IF_NAME_LENGTH];
+ char apply_Downstream[COSA_DML_IF_NAME_LENGTH];
+ char apply_bProtocol[COSA_DML_IF_NAME_LENGTH];
+ char apply_Ipv6_erouterIP[COSA_DML_IF_NAME_LENGTH];
+ BOOLEAN apply_ApplySetting;
+}
+COSA_DML_APPLYSETTING, *PCOSA_DML_APPLYSETTING;
+#endif
 typedef struct
 _COSA_NOTIFY_WIFI
 {
@@ -2425,5 +2452,19 @@ CosaDmlDcSetWebUITimeout
         ANSC_HANDLE                 hContext,
         ULONG                       value
     );
+#if defined (_COSA_QCA_ARM_)
+ANSC_STATUS
+Cosa_Set_McProxy
+ (
+ANSC_HANDLE                 hContext,
+ PCOSA_DML_MCPROXY          pEntry
+ );
 
+ANSC_STATUS
+CosaGetMcProxyValues
+ (
+ ANSC_HANDLE                 hContext,
+ PCOSA_DML_MCPROXY          pEntry
+ );
+#endif
 #endif
