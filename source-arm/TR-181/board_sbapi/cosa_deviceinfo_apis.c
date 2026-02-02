@@ -4733,7 +4733,7 @@ FirmwareDownloadAndFactoryReset(void* arg)
         }
 
         CcspTraceWarning(("%s: ImageName %s, url %s\n", __FUNCTION__, Imagename, URL));
-        if(can_proceed_fw_download() == 0)
+        if(can_proceed_fw_download() == FW_DWNLD_MEMCHK_NOT_ENOUGH_MEM)
         {
             CcspTraceError(("FirmwareDownloadAndFactoryReset : Not enough memory to proceed firmware download\n"));
             commonSyseventSet("fw_update_inprogress", "false");
