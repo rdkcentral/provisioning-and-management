@@ -1,0 +1,393 @@
+{
+  "_comment": "Component Build Configuration for Coverity/Native Builds",
+  "_version": "2.0",
+  "_description": "Defines dependencies and build settings for the native component",
+  
+"dependencies": {
+    "_comment": "External repositories needed by this component",
+    "repos": [
+      {
+        "name": "rbus",
+        "repo": "https://github.com/rdkcentral/rbus.git",
+        "branch": "v2.7.0",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb/rbus" },
+          { "source": "src/rbus", "destination": "$HOME/usr/include/rdkb/rbus" },
+          { "source": "src/core", "destination": "$HOME/usr/include/rdkb/rbus" },
+          { "source": "src/rtmessage", "destination": "$HOME/usr/include/rdkb/rtmessage" }
+        ],
+        "build": {
+          "type": "cmake",
+          "build_dir": "build",
+          "cmake_flags": "-DCMAKE_INSTALL_PREFIX=$HOME/usr -DCMAKE_PREFIX_PATH=/usr -DBUILD_FOR_DESKTOP=ON -DCMAKE_BUILD_TYPE=Debug"
+        }
+      },
+      {
+        "name": "trower-base64",
+        "repo": "https://github.com/xmidt-org/trower-base64.git",
+        "branch": "v1.2.7",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "include/trower-base64", "destination": "$HOME/usr/include/rdkb/trower-base64" }
+        ],
+        "build": {
+          "type": "commands",
+          "commands": [
+            "meson setup build --prefix=$HOME/usr",
+            "meson compile -C build"
+          ]
+        }
+      },
+      {
+        "name": "jsoncpp",
+        "repo": "https://github.com/open-source-parsers/jsoncpp.git",
+        "branch": "master",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "cmake",
+          "build_dir": "build",
+          "cmake_flags": "-DCMAKE_INSTALL_PREFIX=$HOME/usr/local -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release"
+        }
+      },
+      {
+        "name": "rdk_logger",
+        "repo": "https://github.com/rdkcentral/rdk_logger.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools"
+        }
+      },
+      {
+        "name": "rdkb-halif-moca",
+        "repo": "https://github.com/rdkcentral/rdkb-halif-moca.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      },
+      {
+        "name": "hal_moca",
+        "repo": "https://github.com/rdkcentral/hardware-abstraction-layer.git",
+        "branch": "develop",
+        "build": {
+          "type": "commands",
+          "commands": [
+            "./autogen.sh",
+            "./configure",
+            "make -C source CPPFLAGS=\"-I$HOME/usr/include/rdkb\" LDFLAGS=\"-L$HOME/usr/local/lib\""
+          ]
+        }
+      },
+      {
+        "name": "gmock-broadband",
+        "repo": "https://github.com/rdkcentral/gmock-broadband.git",
+        "branch": "develop",
+        "header_paths": [
+          { "source": "docker_scripts/common_headers", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      },
+      {
+        "name": "libSyscallWrapper",
+        "repo": "https://github.com/rdkcentral/libSyscallWrapper.git",
+        "branch": "develop",
+        "header_paths": [
+          { "source": "source", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "CPPFLAGS=\"-I$HOME/usr/include/rdkb\" LDFLAGS=\"-L$HOME/usr/local/lib\""
+        }
+      },
+      {
+        "name": "rdk-libunpriv",
+        "repo": "https://github.com/rdkcentral/rdk-libunpriv.git",
+        "branch": "develop",
+        "header_paths": [
+          { "source": "source", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "CPPFLAGS=\"-I$HOME/usr/include/rdkb\" LDFLAGS=\"-L$HOME/usr/local/lib\""
+        }
+      },
+      {
+        "name": "WebconfigFramework",
+        "repo": "https://github.com/rdkcentral/WebconfigFramework.git",
+        "branch": "develop",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "CPPFLAGS=\"-I$HOME/usr/include/rdkb -I$HOME/usr/include/rdkb/rbus -I$HOME/usr/local/include -I$HOME/usr/include/rdkb/rtmessage\" LDFLAGS=\"-L$HOME/usr/local/lib -L$HOME/usr/lib\" LIBS=\"-lrbus -lrtMessage\""
+        }
+      },
+      {
+        "name": "telemetry",
+        "repo": "https://github.com/rdkcentral/telemetry.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "--enable-shared --disable-static CPPFLAGS=\"-I$HOME/usr/include/rdkb\" LDFLAGS=\"-L$HOME/usr/local/lib -L$HOME/usr/lib -Wl,-rpath-link,$HOME/usr/local/lib\""
+        }
+      },
+      {
+        "name": "halinterface",
+        "repo": "https://code.rdkcentral.com/r/rdkb/components/opensource/ccsp/halinterface",
+        "branch": "rdk-next",
+        "header_paths": [
+          { "source": ".", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "CPPFLAGS=\"-I$HOME/usr/include/rdkb\" LDFLAGS=\"-L$HOME/usr/local/lib\""
+        }
+      },
+      {
+        "name": "rdkb-halinterface",
+        "repo": "https://github.com/rdkcmf/rdkb-halinterface.git",
+        "branch": "rdk-next",
+        "header_paths": [
+          { "source": ".", "destination": "$HOME/usr/include/rdkb" },
+          { "source": ".", "destination": "$HOME/usr/include/rdkb/ccsp" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "CPPFLAGS=\"-I$HOME/usr/include/rdkb\" LDFLAGS=\"-L$HOME/usr/local/lib\""
+        }
+      },
+
+      {
+        "name": "psm",
+        "repo": "https://github.com/rdkcentral/persistent-storage-manager.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      },
+      {
+        "name": "OvsAgent",
+        "repo": "https://github.com/rdkcentral/open-virtual-switch-agent.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "source/include", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      },
+      {
+        "name": "hotspot",
+        "repo": "https://github.com/rdkcentral/hotspot.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "source/HotspotApi", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/hotspotfd/include", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      },
+      {
+        "name": "lan-manager-lite",
+        "repo": "https://github.com/rdkcentral/lan-manager-lite.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "source/lm", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "commands",
+	      "commands": [
+            "mkdir -p $HOME/usr/lib",
+            "gcc -shared -fPIC source/lm/lm_api.c -o $HOME/usr/lib/liblmapi.so -I$HOME/usr/include/rdkb -I./source/lm -I./source/Ssp -D_GNU_SOURCE -w"
+        ]
+        }
+      },
+      {
+  	"name": "libparodus",
+	"repo": "https://github.com/xmidt-org/libparodus.git",
+	"branch": "master",
+	"header_paths": [
+    	    { "source": "src", "destination": "$HOME/usr/include/rdkb/libparodus" }
+	  ],	
+	  "build": {
+		"type": "cmake",
+		"build_dir": "build",
+		"cmake_flags": "-DCMAKE_INSTALL_PREFIX=$HOME/usr -DCMAKE_C_FLAGS=-I$HOME/usr/include/rdkb -DBUILD_TESTING=OFF -DMAIN_PROJ_BUILD=ON"
+		}
+      },
+      {
+        "name": "rdkb-halif-cm",
+        "repo": "https://github.com/rdkcentral/rdkb-halif-cm.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "include", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      },
+      {
+        "name": "miscellaneous-broadband",
+        "repo": "https://github.com/rdkcentral/miscellaneous-broadband.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "source/TimeConv", "destination": "$HOME/usr/include/rdkb" },
+	  { "source": "source/FwDownloadChk", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "commands",
+	      "commands": [
+			"mkdir -p $HOME/usr/lib",
+			"gcc -shared -fPIC source/TimeConv/time_conversion.c -o $HOME/usr/lib/libtime_conversion.so -I$HOME/usr/include/rdkb -I./source/TimeConv -D_GNU_SOURCE -w",
+			"gcc -shared -fPIC source/FwDownloadChk/fw_download_check.c -o $HOME/usr/lib/libfw_download_chk.so -I$HOME/usr/include/rdkb -I./source/FwDownloadChk -D_GNU_SOURCE -w"
+			]
+        }
+      },
+      {
+        "name": "hal-cm-generic",
+        "repo": "https://code.rdkcentral.com/r/rdkb/components/opensource/ccsp/hal" ,
+        "branch": "rdk-next",
+        "repo_dir": "hal-cm-generic/source/cm",
+        "include_path": "$HOME/usr/include/rdkb/",
+        "lib_output_path": "$HOME/usr/local/lib",
+        "build": {
+        "type": "commands",
+        "commands": [
+            "echo \"${PWD}\"",
+            "cd source/cm",
+            "autoreconf -i",
+            "./configure",
+            "make CFLAGS=\"-Os -pipe -g -feliminate-unused-debug-types -I${HOME}/usr/include/rdkb -I${HOME}/build/rdkb-halif-cm/include\" LDFLAGS=\"-Wl,-O1 -Wl,--hash-style=gnu -Wl,--as-needed\""
+         ]
+        }
+      },
+      {
+		"name": "cimplog",
+		"repo": "https://github.com/Comcast/cimplog.git",
+		"branch": "master",
+		"header_paths": [
+    		{ "source": "src", "destination": "$HOME/usr/include/rdkb/cimplog" }
+  	      ]
+     },
+     {
+        "name": "wrp-c",
+        "repo": "https://github.com/xmidt-org/wrp-c.git",
+		"branch": "master",
+        "header_paths": [
+          { "source": "src", "destination": "$HOME/usr/include/rdkb/wrp-c" }
+        ],
+	"build": {
+    	"type": "cmake",
+    	"build_dir": "build",
+    	"cmake_flags": "-DCMAKE_INSTALL_PREFIX=$HOME/usr -DCMAKE_C_FLAGS=-I$HOME/usr/include/rdkb -DBUILD_TESTING=OFF -DMAIN_PROJ_BUILD=ON"
+	}
+      },
+      {
+        "name": "common-library",
+        "repo": "https://github.com/rdkcentral/common-library.git",
+        "branch": "feature/native_build_for_coverity",
+        "header_paths": [
+          { "source": "source/ccsp/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/ccsp/components/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/ccsp/custom", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/cosa/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/cosa/include/linux", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/cosa/include/linux", "destination": "$HOME/usr/include/rdkb/linux" },
+          { "source": "source/cosa/package/slap/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/debug_api/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/util_api/http/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/util_api/ansc/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/ccsp/components/common/MessageBusHelper/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/ccsp/components/common/PoamIrepFolder", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/dm_pack", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "source_patches": [
+          {
+            "file": "source/ccsp/include/ccsp_message_bus.h",
+            "search": "typedef struct _CCSP_MESSAGE_BUS_CONNECTION",
+            "replace": "typedef struct DBusLoop DBusLoop;\n\ntypedef struct _CCSP_MESSAGE_BUS_CONNECTION"
+          },
+          {
+            "file": "$HOME/usr/include/rdkb/ccsp_message_bus.h",
+            "search": "typedef struct _CCSP_MESSAGE_BUS_CONNECTION",
+            "replace": "typedef struct DBusLoop DBusLoop;\n\ntypedef struct _CCSP_MESSAGE_BUS_CONNECTION"
+          }
+        ],        
+        "build": {
+          "type": "script",
+          "script": "build_tools_workflows/cov_docker_script/common_external_build.sh"
+        }
+	  },
+      {
+        "name": "core-net-library",
+        "repo": "https://github.com/rdkcentral/core-net-library.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": "source", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "autotools",
+          "configure_flags": "CPPFLAGS=\"-I$HOME/usr/include/rdkb -DSAFEC_DUMMY_API\" LDFLAGS=\"-L$HOME/usr/local/lib\""
+        }
+      },
+      {
+        "name": "Utopia",
+        "repo": "https://github.com/rdkcentral/utopia.git",
+        "branch": "feature/cov_native_build",
+        "header_paths": [
+          { "source": "source/include/sysevent", "destination": "$HOME/usr/include/rdkb/sysevent" },
+          { "source": "source/include/syscfg", "destination": "$HOME/usr/include/rdkb/syscfg" },
+          { "source": "source/include", "destination": "$HOME/usr/include/rdkb/utctx" },
+          { "source": "source/include/utctx", "destination": "$HOME/usr/include/rdkb/utctx" },
+          { "source": "source/include", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/utapi/lib", "destination": "$HOME/usr/include/rdkb/utapi" },
+          { "source": "source/utapi/lib", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/include/ulog", "destination": "$HOME/usr/include/rdkb/ulog" },
+          { "source": "source/util/utils", "destination": "$HOME/usr/include/rdkb" },
+          { "source": "source/sysevent/lib", "destination": "$HOME/usr/include/rdkb/sysevent" },
+          { "source": "source/util/print_uptime", "destination": "$HOME/usr/include/rdkb" }
+        ],
+        "build": {
+          "type": "script",
+          "script": "build_tools_workflows/cov_docker_script/common_external_build.sh"
+        }
+      },
+      {
+        "name": "breakpad_wrapper",
+        "repo": "https://github.com/rdkcentral/breakpad_wrapper.git",
+        "branch": "main",
+        "header_paths": [
+          { "source": ".", "destination": "$HOME/usr/include/rdkb" }
+        ]
+      }
+    ]
+  },
+  
+  "native_component": {
+    "_comment": "Configuration for the main component being built",
+    "name": "provisioning-and-management",
+    "include_path": "$HOME/usr/include/rdkb/",
+    "lib_output_path": "$HOME/usr/local/lib/",
+    "pre_build_commands": [
+      {
+        "description": "Generate dm_pack_datamodel.c from XML",
+        "command": "python3 $HOME/usr/include/rdkb/dm_pack_code_gen.py config-arm/TR181-USGv2.XML source/PandMSsp/dm_pack_datamodel.c"
+      }
+    ],
+    "header_sources": [
+      { "source": "config.h", "destination": "$HOME/usr/include/rdkb" },
+      { "source": "source/PandMSsp", "destination": "$HOME/usr/include/rdkb" },
+      { "source": "source/Custom", "destination": "$HOME/usr/include/rdkb" },
+      { "source": "source/TR-181/include", "destination": "$HOME/usr/include/rdkb" },
+      { "source": "source/TR-181/middle_layer_src", "destination": "$HOME/usr/include/rdkb" },
+      { "source": "source-arm/TR-181/board_include", "destination": "$HOME/usr/include/rdkb" },
+      { "source": "source-arm/TR-181/board_sbapi", "destination": "$HOME/usr/include/rdkb" },
+      { "source": "source-arm/TR-181/board_ml", "destination": "$HOME/usr/include/rdkb" }
+    ],
+    "build": {
+      "type": "autotools",
+      "configure_options_file": "cov_docker_script/configure_options.conf"
+
+    }
+  }
+}
