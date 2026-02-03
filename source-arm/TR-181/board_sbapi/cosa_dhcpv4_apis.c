@@ -2460,6 +2460,7 @@ ANSC_STATUS CosaDmlDhcpsSetIpv4Status()
         int            se_fd = -1;
         char           evtValue[10]={'\0'};
 
+		// Don't close the fd returned by s_sysevent_connect as it is a shared fd
         se_fd = s_sysevent_connect(&se_token);
         if (0 > se_fd) {
 
@@ -2488,8 +2489,8 @@ ANSC_STATUS CosaDmlDhcpsSetIpv4Status()
                 }
             }
         }
-  	sysevent_close(se_fd,se_token);
-        return ANSC_STATUS_SUCCESS;
+	
+	return ANSC_STATUS_SUCCESS;
 
 }
 
@@ -2596,6 +2597,7 @@ CosaDmlDhcpsGetPoolInfo
         char           dhcp_status[64];
         int            se_fd = -1;
 
+		// Don't close the fd returned by s_sysevent_connect as it is a shared fd
         se_fd = s_sysevent_connect(&se_token);
         if (0 > se_fd) {
 
