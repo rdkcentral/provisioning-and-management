@@ -1170,7 +1170,56 @@ ManageableNotification_SetParamBoolValue
         char*                       ParamName,
         BOOL                        bValue
     );
+/***********************************************************************
 
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Cron.RdkLogger.Enable
+
+    *  RdkLogger_GetParamBoolValue
+    *  RdkLogger_SetParamBoolValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from RdkLogger object.
+ *
+ * @param[in] hInsContext - The instance handle to the RdkLogger object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+RdkLogger_GetParamBoolValue
+(
+     ANSC_HANDLE                 hInsContext,
+     char*                       ParamName,
+     BOOL*                       pBool
+);
+
+/**
+ * @brief Set boolean parameter value for RdkLogger object.
+ *
+ * @param[in] hInsContext - The instance handle to the RdkLogger object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+RdkLogger_SetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL                        bValue
+);
 /***********************************************************************
 
  APIs for Object:
