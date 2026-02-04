@@ -3160,6 +3160,7 @@ CosaDmlDcGetIGMPProxyEnable
     return ANSC_STATUS_SUCCESS;
 }
 
+#ifndef DISABLE_IGMPPROXY
 ANSC_STATUS
 CosaDmlDcSetIGMPProxyEnable
     (
@@ -3190,6 +3191,7 @@ CosaDmlDcSetIGMPProxyEnable
     }
     return ANSC_STATUS_SUCCESS;
 }
+#endif
 
 ANSC_STATUS
 CosaDmlDcGetDNSProxyEnable
