@@ -1871,6 +1871,9 @@ CosaDmlDcSetRebootDevice
             	CosaDmlDcSaveWiFiHealthStatusintoNVRAM( );
             	sleep (delay_time);
             	v_secure_system("/rdklogger/backupLogs.sh &");
+#if defined (_COSA_QCA_ARM_)
+                system("(sleep 5 && reboot) &");
+#endif
         	}
         	else
             {
@@ -1880,6 +1883,9 @@ CosaDmlDcSetRebootDevice
 				CosaDmlDcSaveWiFiHealthStatusintoNVRAM( );
 				sleep(5);
 				v_secure_system("/rdklogger/backupLogs.sh &");
+#if defined (_COSA_QCA_ARM_)
+                system("(sleep 5 && reboot) &");
+#endif
             }
 		}
 		else {
@@ -1888,6 +1894,9 @@ CosaDmlDcSetRebootDevice
 	         //system("reboot");
  			 CosaDmlDcSaveWiFiHealthStatusintoNVRAM( );
 	         v_secure_system("/rdklogger/backupLogs.sh &");
+#if defined (_COSA_QCA_ARM_)
+             system("reboot");
+#endif
 	    }
     }
 
@@ -2383,13 +2392,26 @@ CosaDmlDcSetFactoryReset
 	   	CcspTraceError(("FactoryReset:%s BAD parameter passed to factory defaults parameter ...\n",__FUNCTION__));
 		return ANSC_STATUS_BAD_PARAMETER;
 	    }
-#if (defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)) && defined (_COSA_BCM_ARM_) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined(_COSA_BCM_MIPS_) || defined(_XER5_PRODUCT_REQ_) || defined (_PLATFORM_BANANAPI_R4_)
+#if (defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)) && defined (_COSA_BCM_ARM_) || defined (_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined(_COSA_BCM_MIPS_) || defined(_XER5_PRODUCT_REQ_) || defined (_PLATFORM_BANANAPI_R4_) || defined(_COSA_QCA_ARM_)
                 {
                         unsigned int dbValue = 0;
                         FILE *pdbFile = NULL;
                         char buf[128]={0};
                         #define FACTORY_RESET_COUNT_FILE "/nvram/.factory_reset_count"
                         pdbFile = fopen(FACTORY_RESET_COUNT_FILE, "r");
+                    #ifdef _COSA_QCA_ARM_
+                        size_t bytesRead = 0;
+                        if(pdbFile != NULL){
+                            bytesRead = fread(buf, 1, sizeof(buf) - 1, pdbFile);
+                            if (bytesRead == 0 || ferror(pdbFile)) {
+                                CcspTraceError(("[%s]: Failed to read\n", __FUNCTION__));
+                            } else {
+                                buf[bytesRead] = '\0';
+                                dbValue = (unsigned int)strtoul(buf, NULL, 10);
+                            }
+                           fclose(pdbFile);
+                        }
+                    #else
                         /* CID 79131 - Ignoring number of bytes read : fix */
                         if(pdbFile != NULL){
                             if ( fread(buf, 1, sizeof(buf), pdbFile) == 0 ) {
@@ -2399,6 +2421,7 @@ CosaDmlDcSetFactoryReset
                             }
                            fclose(pdbFile);
                         }
+                    #endif
                         dbValue++;
                         pdbFile = fopen(FACTORY_RESET_COUNT_FILE, "w+");
                         if(pdbFile != NULL){
@@ -2567,6 +2590,9 @@ CosaDmlDcSetFactoryReset
 		
 		Utopia_Free(&utctx,1);
 		//system("reboot");i
+#if defined (_COSA_QCA_ARM_)
+        system("reboot");
+#endif
 		//Set LastRebootReason before device bootup
 		CcspTraceWarning(("FactoryReset:%s Set LastRebootReason to factory-reset ...\n",__FUNCTION__));
 		if ((syscfg_set_commit(NULL, "X_RDKCENTRAL-COM_LastRebootReason", "factory-reset") != 0))
@@ -3097,6 +3123,99 @@ void  Set_IPMode_AllInterfaces(ULONG value)
 	    }
         }
     }
+}
+
+ANSC_STATUS
+CosaGetMcProxyValues
+    (
+        ANSC_HANDLE                 hContext,
+        PCOSA_DML_MCPROXY           pEntry
+    )
+{
+    char buf1[128] = {0};
+    errno_t rc = -1;
+    memset(buf1, 0, sizeof(buf1));
+
+    syscfg_get( NULL, "mcproxy.disabled", buf1, sizeof(buf1));
+    pEntry->bEnabled = !atoi(buf1);
+
+    syscfg_get( NULL, "mcproxy.name", buf1, sizeof(buf1));
+    rc = snprintf(pEntry->Name, sizeof(pEntry->Name), "%s", buf1);
+    if(rc < EOK)
+    {
+        ERR_CHK(rc);
+    }
+
+    syscfg_get( NULL, "mcproxy.upstream", buf1, sizeof(buf1));
+    rc = snprintf(pEntry->Upstream, sizeof(pEntry->Upstream), "%s", buf1);
+    if(rc < EOK)
+    {
+        ERR_CHK(rc);
+    }
+
+    syscfg_get( NULL, "mcproxy.downstream", buf1, sizeof(buf1));
+    rc  = snprintf(pEntry->Downstream, sizeof(pEntry->Downstream), "%s", buf1);
+    if(rc < EOK)
+    {
+        ERR_CHK(rc);
+    }
+
+    syscfg_get( NULL, "mcproxy.protocol", buf1, sizeof(buf1));
+    if (!_ansc_strcmp ( buf1 , "IGMPv3"))
+        rc = snprintf(pEntry->bProtocol, sizeof(pEntry->bProtocol), "IPv4");
+
+    else if (!_ansc_strcmp (buf1 , "MLDv2"))
+        rc = snprintf(pEntry->bProtocol, sizeof(pEntry->bProtocol), "IPv6");
+    if(rc < EOK)
+    {
+        ERR_CHK(rc);
+    }
+    return ANSC_STATUS_SUCCESS;
+}
+
+ANSC_STATUS
+Cosa_Set_McProxy
+    (
+        ANSC_HANDLE                 hContext,
+        PCOSA_DML_MCPROXY           pEntry
+    )
+{
+    char buf[20];
+    char downstream_buf[20];
+    AnscTraceFlow(("<HL>%s start\n",__func__));
+    vsystem("systemctl start mcproxy.service");
+    sleep(1);
+
+    snprintf(buf, sizeof(buf), "%d", !pEntry->bEnabled);
+    syscfg_set_commit(NULL, "mcproxy.disabled",buf);
+
+    snprintf(buf, sizeof(buf), "%s", pEntry->Name);
+    syscfg_set_commit(NULL, "mcproxy.name", buf);
+
+    snprintf(buf, sizeof(buf), "%s", pEntry->Upstream);
+    syscfg_set_commit(NULL, "mcproxy.upstream", buf);
+
+    snprintf(buf, sizeof(buf), "%s", pEntry->Downstream);
+    syscfg_set_commit(NULL, "mcproxy.downstream", buf);
+
+    if (!_ansc_strcmp ( pEntry->bProtocol , "IPv6"))
+    {
+        syscfg_set_commit(NULL, "mcproxy.protocol", "MLDv2");
+
+        snprintf(buf, sizeof(buf), "%s", pEntry->Ipv6_erouterIP);
+        snprintf(downstream_buf, sizeof(downstream_buf), "%s", pEntry->Downstream);
+        vsystem("ip addr add %s dev %s", buf, downstream_buf);
+    }
+    if (!_ansc_strcmp ( pEntry->bProtocol , "IPv4"))
+        syscfg_set_commit(NULL, "mcproxy.protocol", "IGMPv3");
+
+    if (pEntry->bEnabled) {
+        vsystem("systemctl restart mcproxy.service");
+    } else {
+        vsystem("systemctl stop mcproxy.service");
+    }
+
+    return ANSC_STATUS_SUCCESS;
 }
 #endif
 

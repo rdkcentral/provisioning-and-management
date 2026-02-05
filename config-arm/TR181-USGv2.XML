@@ -14935,7 +14935,66 @@
       </parameters>
       
       <objects>
-        
+<?ifdef _COSA_QCA_ARM_?>
+        <object>
+            <name>X_IPQ_McProxy</name>
+            <objectType>writableTable</objectType>
+            <functions>
+                <func_GetEntryCount>X_IPQ_McProxy_GetEntryCount</func_GetEntryCount>
+                <func_GetEntry>X_IPQ_McProxy_GetEntry</func_GetEntry>
+                <func_GetParamBoolValue>X_IPQ_McProxy_GetParamBoolValue</func_GetParamBoolValue>
+                <func_GetParamStringValue>X_IPQ_McProxy_GetParamStringValue</func_GetParamStringValue>
+                <func_SetParamBoolValue>X_IPQ_McProxy_SetParamBoolValue</func_SetParamBoolValue>
+                <func_SetParamStringValue>X_IPQ_McProxy_SetParamStringValue</func_SetParamStringValue>
+                <func_Validate>X_IPQ_McProxy_Validate</func_Validate>
+               <func_Commit>X_IPQ_McProxy_Commit</func_Commit>
+            </functions>
+            <parameters>
+                <parameter>
+                    <name>Enable</name>
+                    <type>boolean</type>
+                    <syntax>bool</syntax>
+                   <writable>true</writable>
+                </parameter>
+                <parameter>
+                    <name>Protocol</name>
+                    <type>string</type>
+                    <syntax>string</syntax>
+                    <writable>true</writable>
+                </parameter>
+                <parameter>
+                    <name>Upstream</name>
+                    <type>string(64)</type>
+                    <syntax>string</syntax>
+                    <writable>true</writable>
+                </parameter>
+                <parameter>
+                    <name>Downstream</name>
+                    <type>string(64)</type>
+                    <syntax>string</syntax>
+                    <writable>true</writable>
+                </parameter>
+                <parameter>
+                    <name>Name</name>
+                    <type>string(64)</type>
+                    <syntax>string</syntax>
+                    <writable>true</writable>
+                </parameter>
+                <parameter>
+                    <name>X_IPQ_McProxy_IPv6_brlan_IP</name>
+                    <type>string</type>
+                    <syntax>string/ip6_addr</syntax>
+                    <writable>true</writable>
+                </parameter>
+                <parameter>
+                    <name>ApplySettings</name>
+                    <type>boolean</type>
+                    <syntax>bool</syntax>
+                    <writable>true</writable>
+                </parameter>
+            </parameters>
+        </object>
+<?endif?>
         <object>
             
           <name>LanManagementEntry</name>
