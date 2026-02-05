@@ -5841,8 +5841,6 @@ MemoryStatus_GetParamBoolValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    UNREFERENCED_PARAMETER(ParamName);
-    UNREFERENCED_PARAMETER(pBool);
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_RunMemFragSelfheal") == 0)
     {
