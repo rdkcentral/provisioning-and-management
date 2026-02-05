@@ -4262,6 +4262,8 @@
 
             <func_GetParamStringValue>MemoryStatus_GetParamStringValue</func_GetParamStringValue>
 
+            <func_SetParamBoolValue>MemoryStatus_SetParamBoolValue</func_SetParamBoolValue>
+
             <func_SetParamUlongValue>MemoryStatus_SetParamUlongValue</func_SetParamUlongValue>
 
           </functions>
