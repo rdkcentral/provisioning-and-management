@@ -113,22 +113,6 @@
 #include <libnet.h>
 #endif
 
-#include <time.h>
-#define LOG_FILE "/tmp/Debug_syscfgset.txt"
-#define APPLY_PRINT(fmt ...) {\
-FILE *logfp = fopen(LOG_FILE , "a+");\
-if (logfp){\
-time_t s = time(NULL);\
-struct tm* current_time = localtime(&s);\
-fprintf(logfp, "[%02d:%02d:%02d] ",\
-current_time->tm_hour,\
-current_time->tm_min,\
-current_time->tm_sec);\
-fprintf(logfp, fmt);\
-fclose(logfp);\
-}\
-}\
-
 extern ULONG g_currentBsUpdate;
 extern char g_currentParamFullName[512];
 extern ANSC_HANDLE bus_handle;
@@ -24246,7 +24230,6 @@ SelfHeal_GetParamUlongValue
 
     if (strcmp(ParamName, "AggressiveInterval") == 0)
     {
-	    APPLY_PRINT("%s : ParamName = AggressiveInterval \n", __FUNCTION__);
         syscfg_get( NULL, ParamName, buf, sizeof(buf));
         if( 0 == strlen(buf) )
             return FALSE;
@@ -24299,8 +24282,6 @@ SelfHeal_SetParamUlongValue
 
     if (strcmp(ParamName, "AggressiveInterval") == 0)
     {
-	    APPLY_PRINT("%s : ParamName = AggressiveInterval \n", __FUNCTION__);
-
         char buf[16];
         char currentValue[16] = {0};
         ULONG currentInterval = 0;
@@ -24309,13 +24290,11 @@ SelfHeal_SetParamUlongValue
         if (syscfg_get(NULL, "AggressiveInterval", currentValue, sizeof(currentValue)) == 0)
         {
             currentInterval = atol(currentValue);
-	    APPLY_PRINT("%s : Current value = %lu \n", __FUNCTION__, currentInterval);
             
             // Step 2: Compare with new value - if same, skip update
             if (currentInterval == uValue)
             {
                 CcspTraceInfo(("AggressiveInterval value unchanged (%lu), skipping update\n", uValue));
-		APPLY_PRINT("%s : Current value = new value, skipping update \n", __FUNCTION__);
                 return TRUE;
             }
         }
@@ -24324,7 +24303,6 @@ SelfHeal_SetParamUlongValue
         if (uValue < 2) /* Minimum interval is 2 as per the aggressive selfheal US [RDKB-25546] */
 	{
 	    AnscTraceWarning(("Minimum interval is 2 for %s !\n", ParamName));
-	    APPLY_PRINT("%s : Minimum interval is 2 not less than that \n", __FUNCTION__);
 	    return FALSE;
 	}
 #if defined(_ARRIS_XB6_PRODUCT_REQ_) || defined(_CBR_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_) || defined(_PLATFORM_BANANAPI_R4_) || \
@@ -24334,14 +24312,12 @@ SelfHeal_SetParamUlongValue
         if( 0 == strlen(buf) )
 	{
 	    AnscTraceWarning(("syscfg_get returns NULL for resource_monitor_interval !\n"));
-	    APPLY_PRINT("%s : syscfg_get returns NULL for resource_monitor_interval !\n", __FUNCTION__);
 	    return FALSE;
 	}
 	ULONG resource_monitor_interval = atol(buf);
 	if (uValue >= resource_monitor_interval)
 	{
 	    CcspTraceWarning(("AggressiveInterval should be lesser than resource_monitor_interval\n"));
-	    APPLY_PRINT("%s : AggressiveInterval should be lesser than resource_monitor_interval\n", __FUNCTION__);
 	    return FALSE;
 	}
 #endif
@@ -24349,26 +24325,21 @@ SelfHeal_SetParamUlongValue
         if (syscfg_set_u_commit(NULL, ParamName, uValue) != 0)
         {
             AnscTraceWarning(("%s syscfg_set failed!\n", ParamName));
-	    APPLY_PRINT("%s : syscfg_set failed!\n", __FUNCTION__);
             return FALSE;
         }
         
         CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
-        APPLY_PRINT("%s : AggressiveInterval updated from %lu to %lu minutes \n", __FUNCTION__, currentInterval, uValue);
         // Step 6: Stop and restart selfheal_aggressive cron job with new interval
         // First, remove old cron entry
         v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
-        APPLY_PRINT("%s : removed old cron entry \n", __FUNCTION__);
         // Then, add new cron entry with updated interval
         v_secure_system("(crontab -l 2>/dev/null; echo \"*/%lu * * * * /usr/ccsp/tad/selfheal_aggressive.sh\") | crontab -", uValue);
-	APPLY_PRINT("%s : Restarted new cron entry with new interval value %lu minutes \n", __FUNCTION__, uValue);
         
         CcspTraceInfo(("Selfheal aggressive cron job restarted with interval: %lu minutes\n", uValue));
     }
     else
     {
         AnscTraceWarning(("%s is invalid argument!\n", ParamName));
-        APPLY_PRINT("%s : invalid argument %s \n", __FUNCTION__, ParamName);
         return FALSE;
     }
     return TRUE;
