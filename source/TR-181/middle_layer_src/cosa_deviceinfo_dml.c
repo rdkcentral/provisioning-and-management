@@ -5967,6 +5967,13 @@ MemoryStatus_GetParamUlongValue
         return TRUE;
     }
 
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemFragThreshold") == 0)
+    {
+        char buf[12];
+        syscfg_get (NULL, "MemFragThreshold_Value", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -6074,6 +6081,15 @@ MemoryStatus_SetParamUlongValue
     {
         /* CID 339641 Unchecked return value : fix */
         if (syscfg_set_u_commit (NULL, "MinMemoryThreshold_Value", uValue) != 0) {
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemFragThreshold") == 0)
+    {
+        /* CID 339641 Unchecked return value : fix */
+        if (syscfg_set_u_commit (NULL, "MemFragThreshold_Value", uValue) != 0) {
             return FALSE;
         }
         return TRUE;
