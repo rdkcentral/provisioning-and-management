@@ -13598,6 +13598,132 @@ WebUIRemoteMgtOption_SetParamBoolValue
     prototype:
 
         BOOL
+        SelfHeal_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+SelfHeal_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if( AnscEqualString(ParamName, "Enable", TRUE))
+    {
+        char value[8] = {0};
+	/* collect value */
+        if (syscfg_get(NULL,"SelfHealCronEnable",value, sizeof(value)) == 0)
+        {
+             if (strncmp(value, "true", sizeof(value)) == 0)
+                     *pBool = TRUE;
+             else
+                     *pBool = FALSE;
+        }
+        else
+        {
+             CcspTraceError(("%s syscfg_get failed  for SelfHealCronEnable\n",__FUNCTION__));
+             *pBool = TRUE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        SelfHeal_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+SelfHeal_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, SelfHeal_GetParamBoolValue))
+        return TRUE;
+
+    if( AnscEqualString(ParamName, "Enable", TRUE))
+    {
+        if(syscfg_set(NULL, "SelfHealCronEnable", (bValue==TRUE)?"true":"false") != 0)
+        {
+            CcspTraceError(("[%s] syscfg_set failed for SelfHealCronEnable\n",__FUNCTION__));
+            return FALSE;
+        }
+	    if (syscfg_commit() != 0)
+	    {
+        	AnscTraceWarning(("syscfg_commit failed for SelfHealCronEnable param update\n"));
+                return FALSE;
+	    }
+        
+        //Remove selfheal cron job if param is disabled
+        if(bValue == FALSE)
+        {
+            v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
+            v_secure_system("crontab -l 2>/dev/null | sed '/resource_monitor.sh/d' | crontab -");
+            v_secure_system("crontab -l 2>/dev/null | sed '/self_heal_connectivity_test.sh/d' | crontab -");
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
         SWDLDirect_GetParamBoolValue_GetParamBoolValue
             (
                 ANSC_HANDLE                 hInsContext,
@@ -24164,7 +24290,8 @@ EnableOCSPStapling_SetParamBoolValue
     }
     return FALSE;
 }
-/*
+
+// Running this when cron job is disabled
 static void copy_command_output (char *cmd, char *out, int len)
 {
     FILE *fp;
@@ -24185,7 +24312,7 @@ static void copy_command_output (char *cmd, char *out, int len)
         pclose (fp);
     }
 }
-*/
+
 
 /**********************************************************************
 
@@ -24326,6 +24453,18 @@ SelfHeal_SetParamUlongValue
         {
             AnscTraceWarning(("%s syscfg_set failed!\n", ParamName));
             return FALSE;
+        }
+
+        syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
+        if( strcmp(buf, "false") == 0 )
+        {
+            CcspTraceInfo(("SelfHealCronEnable is disabled, running as background process\n"));
+            copy_command_output("pidof selfheal_aggressive.sh", buf, sizeof(buf));
+            if (buf[0] != 0) {
+                v_secure_system("kill -9 %s", buf);
+            }
+            v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
+            return true;
         }
         
         CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
