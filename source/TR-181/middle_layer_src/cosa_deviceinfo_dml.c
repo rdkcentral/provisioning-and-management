@@ -114,7 +114,7 @@
 #endif
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
-#include <sys/stat.h>
+#include <rdkb_common_utils/rdkb_feature_mode_gate.h>
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -21618,17 +21618,7 @@ UPnPRefactor_SetParamBoolValue
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 #if defined(_ONESTACK_PRODUCT_REQ_)
-
-// TODO: Temporary stub
-static BOOL isFeatureSupportedInCurrentMode(int feature_id)
-{
-    struct stat st;
-    (void)feature_id;
-
-    return (stat("/nvram2/mapt.support", &st) == 0) ? TRUE : FALSE;
-}
-
-#if 0 
+#if 0
 // uncomment later when actual check is finalized
 static int IsValuePresentinSyscfgDB (char *param)
 {
@@ -21784,7 +21774,7 @@ MAPT_DeviceInfo_SetParamBoolValue
 #if defined(_ONESTACK_PRODUCT_REQ_)
 	if (bValue)
 	{
-            if (!isFeatureSupportedInCurrentMode(0 /* FEATURE_MAPT id */))
+            if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
             {
                 CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
                 return FALSE;
