@@ -24292,7 +24292,7 @@ EnableOCSPStapling_SetParamBoolValue
 }
 
 // Running this when cron job is disabled
-/*static void copy_command_output (char *cmd, char *out, int len)
+static void copy_command_output (char *cmd, char *out, int len)
 {
     FILE *fp;
 
@@ -24303,7 +24303,7 @@ EnableOCSPStapling_SetParamBoolValue
     {
         if (fgets (out, len, fp) != NULL)
         {
-          CID 252175 fix - Parse warning (PW.PARAMETER_HIDDEN)
+          //CID 252175 fix - Parse warning (PW.PARAMETER_HIDDEN)
             size_t len_out = strlen (out);
             if ((len_out > 0) && (out[len_out - 1] == '\n'))
                 out[len_out - 1] = 0;
@@ -24311,7 +24311,7 @@ EnableOCSPStapling_SetParamBoolValue
 
         pclose (fp);
     }
-}*/
+}
 
 
 /**********************************************************************
@@ -24455,7 +24455,8 @@ SelfHeal_SetParamUlongValue
             return FALSE;
         }
 
-       /* syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
+        syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
+        CcspTraceInfo(("SelfHealCronEnable value is %s\n", buf));
         if( strcmp(buf, "false") == 0 )
         {
             CcspTraceInfo(("SelfHealCronEnable is disabled, running as background process\n"));
@@ -24465,7 +24466,7 @@ SelfHeal_SetParamUlongValue
             }
             v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
             return TRUE;
-        } */
+        }
         
         CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
         // Step 6: Stop and restart selfheal_aggressive cron job with new interval
