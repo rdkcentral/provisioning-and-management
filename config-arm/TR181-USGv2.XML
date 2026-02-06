@@ -13893,7 +13893,7 @@
             <writable>true</writable>
 
           </parameter>
-
+<?endif?>
           <parameter>
 
             <name>TrueStaticIpEnable</name>
@@ -13905,7 +13905,7 @@
             <writable>true</writable>
 
           </parameter>
-<?endif?>
+
           </parameters>
 
         </object>
