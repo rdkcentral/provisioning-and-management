@@ -13711,7 +13711,40 @@ SelfHeal_SetParamBoolValue
             v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
             v_secure_system("crontab -l 2>/dev/null | sed '/resource_monitor.sh/d' | crontab -");
             v_secure_system("crontab -l 2>/dev/null | sed '/self_heal_connectivity_test.sh/d' | crontab -");
+
+	    v_secure_system("/usr/ccsp/tad/self_heal_connectivity_test.sh &");
+	    v_secure_system("/usr/ccsp/tad/resource_monitor.sh &");
+            v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
         }
+	else
+	{
+		// Kill the process if running
+                StopIfRunning("/usr/ccsp/tad/selfheal_aggressive.sh");
+		StopIfRunning("/usr/ccsp/tad/resource_monitor.sh");
+		StopIfRunning("/usr/ccsp/tad/self_heal_connectivity_test.sh");
+
+		char buf[16];
+		ULONG value;
+		syscfg_get(NULL, "AggressiveInterval", buf, sizeof(buf));
+		value = (buf[0] != '\0' && atol(buf) > 2) ? 5 : atol(buf);
+
+                v_secure_system("(crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d'; "
+			" echo '*/%lu * * * * /usr/ccsp/tad/selfheal_aggressive.sh') | crontab -", value);
+
+		syscfg_get(NULL, "resource_monitor_interval", buf, sizeof(buf));
+		value = (buf[0] != '\0' && atol(buf) > 2) ? 15 : atol(buf);
+
+                v_secure_system("(crontab -l 2>/dev/null | sed '/resource_monitor.sh/d'; "                                                                                                       " echo '*/%lu * * * * /usr/ccsp/tad/resource_monitor.sh') | crontab -", value);
+
+		syscfg_get(NULL, "ConnTest_PingInterval", buf, sizeof(buf));
+		value = (buf[0] != '\0' && atol(buf) > 2) ? 60 : atol(buf);
+
+                v_secure_system("(crontab -l 2>/dev/null | sed '/self_heal_connectivity_test.sh/d'; "                                                                                                       " echo '*/%lu * * * * /usr/ccsp/tad/self_heal_connectivity_test.sh') | crontab -", value);
+	}
+
+		        
+
+		
         return TRUE;
     }
     return FALSE;
@@ -24308,11 +24341,30 @@ static void copy_command_output (char *cmd, char *out, int len)
             if ((len_out > 0) && (out[len_out - 1] == '\n'))
                 out[len_out - 1] = 0;
         }
-
         pclose (fp);
     }
 }
 
+void StopIfRunning(const char *script)
+{
+    char cmd[256];
+
+    // Check if process is running
+    snprintf(cmd, sizeof(cmd),
+             "pgrep -f '%s' >/dev/null", script);
+
+    int rc = v_secure_system(cmd);
+
+    // If rc != 0 → pgrep found nothing → return immediately
+    if (rc != 0)
+        return;
+
+    // If rc == 0 → process is running, so kill it
+    snprintf(cmd, sizeof(cmd),
+             "pkill -f '%s'", script);
+
+    v_secure_system(cmd);  // kill running process
+}
 
 /**********************************************************************
 
@@ -24413,12 +24465,9 @@ SelfHeal_SetParamUlongValue
         char currentValue[16] = {0};
         ULONG currentInterval = 0;
 
-        // Step 1: Get current value from syscfg
         if (syscfg_get(NULL, "AggressiveInterval", currentValue, sizeof(currentValue)) == 0)
         {
             currentInterval = atol(currentValue);
-            
-            // Step 2: Compare with new value - if same, skip update
             if (currentInterval == uValue)
             {
                 CcspTraceInfo(("AggressiveInterval value unchanged (%lu), skipping update\n", uValue));
@@ -24426,7 +24475,6 @@ SelfHeal_SetParamUlongValue
             }
         }
 
-        // Step 3: Validate minimum value
         if (uValue < 2) /* Minimum interval is 2 as per the aggressive selfheal US [RDKB-25546] */
 	{
 	    AnscTraceWarning(("Minimum interval is 2 for %s !\n", ParamName));
@@ -24434,7 +24482,6 @@ SelfHeal_SetParamUlongValue
 	}
 #if defined(_ARRIS_XB6_PRODUCT_REQ_) || defined(_CBR_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_) || defined(_PLATFORM_BANANAPI_R4_) || \
 (defined(_XB6_PRODUCT_REQ_) && defined(_COSA_BCM_ARM_))
-        // Step 4: Validate against resource_monitor_interval
 	syscfg_get( NULL, "resource_monitor_interval", buf, sizeof(buf));
         if( 0 == strlen(buf) )
 	{
@@ -24448,7 +24495,6 @@ SelfHeal_SetParamUlongValue
 	    return FALSE;
 	}
 #endif
-        // Step 5: Save new value to syscfg
         if (syscfg_set_u_commit(NULL, ParamName, uValue) != 0)
         {
             AnscTraceWarning(("%s syscfg_set failed!\n", ParamName));
@@ -24459,7 +24505,7 @@ SelfHeal_SetParamUlongValue
         CcspTraceInfo(("SelfHealCronEnable value is %s\n", buf));
         if( strcmp(buf, "false") == 0 )
         {
-            CcspTraceInfo(("SelfHealCronEnable is disabled, running as background process\n"));
+            CcspTraceInfo(("SelfHealCronEnable is disabled\n"));
             copy_command_output("pidof selfheal_aggressive.sh", buf, sizeof(buf));
             if (buf[0] != 0) {
                 v_secure_system("kill -9 %s", buf);
@@ -24469,7 +24515,6 @@ SelfHeal_SetParamUlongValue
         }
         
         CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
-        // Step 6: Stop and restart selfheal_aggressive cron job with new interval
         // First, remove old cron entry
         v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
         // Then, add new cron entry with updated interval
