@@ -24464,7 +24464,7 @@ SelfHeal_SetParamUlongValue
                 v_secure_system("kill -9 %s", buf);
             }
             v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
-            return true;
+            return TRUE;
         }
         
         CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
