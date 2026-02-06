@@ -13709,7 +13709,7 @@ SelfHeal_SetParamBoolValue
         if(bValue == FALSE)
         {
             v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
-            v_secure_system("crontab -l 2>/dev/null | sed '/resource_monitor.sh/d' | crontab -");
+           // v_secure_system("crontab -l 2>/dev/null | sed '/resource_monitor.sh/d' | crontab -");
             v_secure_system("crontab -l 2>/dev/null | sed '/self_heal_connectivity_test.sh/d' | crontab -");
         }
         return TRUE;
