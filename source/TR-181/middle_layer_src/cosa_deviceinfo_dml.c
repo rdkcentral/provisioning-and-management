@@ -13706,12 +13706,12 @@ SelfHeal_SetParamBoolValue
 	    }
         
         //Remove selfheal cron job if param is disabled
-        if(bValue == FALSE)
+        /*if(bValue == FALSE)
         {
             v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
            // v_secure_system("crontab -l 2>/dev/null | sed '/resource_monitor.sh/d' | crontab -");
             v_secure_system("crontab -l 2>/dev/null | sed '/self_heal_connectivity_test.sh/d' | crontab -");
-        }
+        } */
         return TRUE;
     }
     return FALSE;
@@ -24292,7 +24292,7 @@ EnableOCSPStapling_SetParamBoolValue
 }
 
 // Running this when cron job is disabled
-static void copy_command_output (char *cmd, char *out, int len)
+/*static void copy_command_output (char *cmd, char *out, int len)
 {
     FILE *fp;
 
@@ -24311,7 +24311,7 @@ static void copy_command_output (char *cmd, char *out, int len)
 
         pclose (fp);
     }
-}
+}*/
 
 
 /**********************************************************************
@@ -24455,7 +24455,7 @@ SelfHeal_SetParamUlongValue
             return FALSE;
         }
 
-        syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
+       /* syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
         if( strcmp(buf, "false") == 0 )
         {
             CcspTraceInfo(("SelfHealCronEnable is disabled, running as background process\n"));
@@ -24465,7 +24465,7 @@ SelfHeal_SetParamUlongValue
             }
             v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
             return TRUE;
-        }
+        } */
         
         CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
         // Step 6: Stop and restart selfheal_aggressive cron job with new interval
