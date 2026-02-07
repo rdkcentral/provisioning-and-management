@@ -17960,6 +17960,19 @@ Syndication_GetParamStringValue
         return 0;
     }
 
+    if (strcmp(ParamName, "DeviceMode") == 0)
+    {
+        /* collect value - get current device mode from syscfg */
+        CosaDmlDiGetSyndicationDeviceMode((ANSC_HANDLE)pMyObject, pMyObject->DeviceMode);
+        rc = strcpy_s( pValue, *pulSize, pMyObject->DeviceMode);
+        if(rc != EOK)
+        {
+           ERR_CHK(rc);
+           return -1;
+        }
+        return 0;
+    }
+
     if (strcmp(ParamName, "TR69CertLocation") == 0)
     {
         /* collect value */
