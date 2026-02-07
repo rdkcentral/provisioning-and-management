@@ -21736,11 +21736,13 @@ MAPT_DeviceInfo_SetParamBoolValue
 	{
             if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
             {
+                CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
                 t2_event_d("MAP-T_NotSupported", 1);
                 return FALSE;
             }
             else if (IsMAPTConflictingFeaturesEnabled())
             {
+                CcspTraceError(("MAP-T enable rejected due to conflicting features\n"));
                 t2_event_d("MAP-T_NotSupported", 1);
                 return FALSE;
             }
