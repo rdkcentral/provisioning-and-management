@@ -162,16 +162,6 @@ AC_ARG_ENABLE([hotspotsupport],
              [echo "hotspot support is disabled"])
 AM_CONDITIONAL(FEATURE_HOTSPOT_SUPPORT, test "x$HOTSPOT_SUPPORT_ENABLED" = xtrue)
 
-AC_ARG_ENABLE([onestackproduct],
-             AS_HELP_STRING([--enable-onestackproduct],[enable OneStack product support (default is no)]),
-             [
-              case "${enableval}" in
-               yes) ONESTACK_PRODUCT_REQ=true;;
-               no)  ONESTACK_PRODUCT_REQ=false;;
-               *) AC_MSG_ERROR([bad value ${enableval} for --enable-onestackproduct]);;
-              esac
-             ],
-             [echo "OneStack product support is disabled"])
 AM_CONDITIONAL([ONESTACK_PRODUCT_REQ], [test "x$ONESTACK_PRODUCT_REQ" = "xtrue"])
 
 # Checks for header files.
