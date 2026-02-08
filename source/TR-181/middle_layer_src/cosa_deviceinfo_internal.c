@@ -195,7 +195,7 @@ CosaDeviceInfoInitialize
 	CosaDeriveSyndicationPartnerID(pMyObject->PartnerID);	
 	// Initialize DeviceMode
 	_ansc_memset(pMyObject->DeviceMode, 0, sizeof(pMyObject->DeviceMode));
-	CosaDmlDiGetSyndicationDeviceMode((ANSC_HANDLE)pMyObject, pMyObject->DeviceMode);
+	CosaDmlDiGetSyndicationDeviceMode((ANSC_HANDLE)pMyObject, pMyObject->DeviceMode, sizeof(pMyObject->DeviceMode));
 		CosaDmlDiUiBrandingInit((ANSC_HANDLE)pMyObject, &pMyObject->UiBrand, &pMyObject->CdlDM, &pMyObject->PRfcTelemetry);
 	CosaDmlDiWiFiTelemetryInit(&pMyObject->WiFi_Telemetry);
 	CosaDmlDiUniqueTelemetryIdInit(&pMyObject->UniqueTelemetryId);

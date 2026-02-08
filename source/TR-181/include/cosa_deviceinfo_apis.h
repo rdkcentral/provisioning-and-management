@@ -1287,6 +1287,7 @@ CosaDmlDiSetSyndicationTR69CertLocation
 *
 * @param[in] hContext - Handle to the context.
 * @param[out] pValue - Pointer to a buffer where the device mode will be returned as a null-terminated string.
+* @param[in] size - Size of the pValue buffer (must be at least 32 bytes).
 *
 * @return The status of the operation.
 * @retval ANSC_STATUS_SUCCESS if the operation is successful.
@@ -1297,7 +1298,8 @@ ANSC_STATUS
 CosaDmlDiGetSyndicationDeviceMode
     (
         ANSC_HANDLE                 hContext,
-        char*                       pValue
+        char*                       pValue,
+        size_t                      size
     );
 
 /**
