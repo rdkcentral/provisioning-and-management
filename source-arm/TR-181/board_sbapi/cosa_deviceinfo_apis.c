@@ -109,6 +109,7 @@
 #define CUSTOM_DATA_MODEL_ENABLED "custom_data_model_enabled"
 #define SYSTEMD "systemd"
 #define MAX_TIME_FORMAT     5
+#define DEVICEMODE_BUF_SIZE 32
 
 #define MAX_PROCESS_NUMBER 300
 
@@ -151,6 +152,10 @@ extern  ANSC_HANDLE             bus_handle;
 #include "platform_hal.h"
 #include "autoconf.h"     
 #include "secure_wrapper.h"
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include "devicemode.h"
+#endif
 
 #define _ERROR_ "NOT SUPPORTED"
 #define _START_TIME_12AM_ "0"
@@ -2634,6 +2639,42 @@ CosaDmlDiSetSyndicationTR69CertLocation
 		return ANSC_STATUS_FAILURE;
 	}
 
+    return ANSC_STATUS_SUCCESS;
+}
+
+ANSC_STATUS
+CosaDmlDiGetSyndicationDeviceMode
+    (
+        ANSC_HANDLE                 hContext,
+        char*                       pValue,
+        size_t                      size
+    )
+{
+    UNREFERENCED_PARAMETER(hContext);
+    
+    if (!pValue || size < DEVICEMODE_BUF_SIZE)
+    {
+        CcspTraceError(("%s - Invalid buffer: pValue=%p, size=%zu (min required: %d)\n", 
+                        __FUNCTION__, pValue, size, DEVICEMODE_BUF_SIZE));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    // Call onestackutils API to get device mode from syscfg
+    if (onestackutils_get_syscfg_devicemode(pValue, size) != 0)
+    {
+        // If syscfg read fails, default to "residential"
+        snprintf(pValue, size, "residential");
+        CcspTraceWarning(("%s - Failed to get devicemode from syscfg, defaulting to 'residential'\n", __FUNCTION__));
+        return ANSC_STATUS_FAILURE;
+    }
+    CcspTraceInfo(("%s - Retrieved devicemode: '%s'\n", __FUNCTION__, pValue));
+#else
+    // ONESTACK_PRODUCT_REQ is not enabled, default to "residential"
+    snprintf(pValue, size, "residential");
+    CcspTraceInfo(("%s - ONESTACK_PRODUCT_REQ not enabled, defaulting devicemode to 'residential'\n", __FUNCTION__));
+#endif
+    
     return ANSC_STATUS_SUCCESS;
 }
 

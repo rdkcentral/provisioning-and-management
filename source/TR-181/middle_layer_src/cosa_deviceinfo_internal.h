@@ -114,6 +114,7 @@ _COSA_DATAMODEL_DEVICEINFO_CLASS_CONTENT
         COSA_BOOTSTRAP_STR              CrashPortalURL;
 	COSA_BOOTSTRAP_STR              AdvsecRedirectorURL;
 	CHAR 		PartnerID[64];
+	CHAR 		DeviceMode[32];
 	COSA_BOOTSTRAP_BOOL		bWANsideSSHEnable;
 
     COSA_DATAMODEL_RDKB_UIBRANDING	UiBrand;
