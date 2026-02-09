@@ -153,7 +153,6 @@ extern  ANSC_HANDLE             bus_handle;
 #include "secure_wrapper.h"
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
-#define DEVICEMODE_BUF_SIZE 32
 #include "devicemode.h"
 #endif
 

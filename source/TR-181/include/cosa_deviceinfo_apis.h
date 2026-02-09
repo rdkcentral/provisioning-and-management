@@ -1280,19 +1280,23 @@ CosaDmlDiSetSyndicationTR69CertLocation
     );
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
+
+#define DEVICEMODE_BUF_SIZE 32
+
 /**
 * @brief Get the syndication device mode.
 *
 * This function retrieves the current device mode from syscfg.
 * The device mode can be either "business" or "residential".
+* If syscfg read fails, defaults to "residential" and still returns success.
 *
-* @param[in] hContext - Handle to the context.
+* @param[in] hContext - Handle to the context (unused).
 * @param[out] pValue - Pointer to a buffer where the device mode will be returned as a null-terminated string.
-* @param[in] size - Size of the pValue buffer (must be at least 32 bytes).
+* @param[in] size - Size of the pValue buffer (must be at least DEVICEMODE_BUF_SIZE bytes).
 *
 * @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
+* @retval ANSC_STATUS_SUCCESS if pValue is populated successfully (either from syscfg or with default "residential").
+* @retval ANSC_STATUS_FAILURE if pValue is NULL or buffer size is insufficient.
 *
 */
 ANSC_STATUS
