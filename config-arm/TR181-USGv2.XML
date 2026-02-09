@@ -13924,6 +13924,7 @@
 
           </parameter>
 <?endif?>
+<?ifdef _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>TrueStaticIpEnable</name>
@@ -13935,7 +13936,7 @@
             <writable>true</writable>
 
           </parameter>
-
+<?endif?>
           </parameters>
 
         </object>
