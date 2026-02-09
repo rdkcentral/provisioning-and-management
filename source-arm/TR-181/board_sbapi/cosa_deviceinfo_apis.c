@@ -109,7 +109,6 @@
 #define CUSTOM_DATA_MODEL_ENABLED "custom_data_model_enabled"
 #define SYSTEMD "systemd"
 #define MAX_TIME_FORMAT     5
-#define DEVICEMODE_BUF_SIZE 32
 
 #define MAX_PROCESS_NUMBER 300
 
@@ -154,6 +153,7 @@ extern  ANSC_HANDLE             bus_handle;
 #include "secure_wrapper.h"
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
+#define DEVICEMODE_BUF_SIZE 32
 #include "devicemode.h"
 #endif
 
