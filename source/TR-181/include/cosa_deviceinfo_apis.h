@@ -1279,6 +1279,7 @@ CosaDmlDiSetSyndicationTR69CertLocation
         char*                       pValue
     );
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
 /**
 * @brief Get the syndication device mode.
 *
@@ -1301,6 +1302,7 @@ CosaDmlDiGetSyndicationDeviceMode
         char*                       pValue,
         size_t                      size
     );
+#endif
 
 /**
 * @brief Handle partner ID change operations.

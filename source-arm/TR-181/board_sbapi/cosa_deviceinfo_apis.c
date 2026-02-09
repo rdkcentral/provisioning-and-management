@@ -2642,6 +2642,7 @@ CosaDmlDiSetSyndicationTR69CertLocation
     return ANSC_STATUS_SUCCESS;
 }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
 ANSC_STATUS
 CosaDmlDiGetSyndicationDeviceMode
     (
@@ -2659,7 +2660,6 @@ CosaDmlDiGetSyndicationDeviceMode
         return ANSC_STATUS_FAILURE;
     }
     
-#if defined(_ONESTACK_PRODUCT_REQ_)
     // Call onestackutils API to get device mode from syscfg
     if (onestackutils_get_syscfg_devicemode(pValue, size) != 0)
     {
@@ -2669,14 +2669,10 @@ CosaDmlDiGetSyndicationDeviceMode
         return ANSC_STATUS_FAILURE;
     }
     CcspTraceInfo(("%s - Retrieved devicemode: '%s'\n", __FUNCTION__, pValue));
-#else
-    // ONESTACK_PRODUCT_REQ is not enabled, default to "residential"
-    snprintf(pValue, size, "residential");
-    CcspTraceInfo(("%s - ONESTACK_PRODUCT_REQ not enabled, defaulting devicemode to 'residential'\n", __FUNCTION__));
-#endif
     
     return ANSC_STATUS_SUCCESS;
 }
+#endif
 
 ANSC_STATUS getFactoryPartnerId
 	(

@@ -114,9 +114,9 @@ _COSA_DATAMODEL_DEVICEINFO_CLASS_CONTENT
         COSA_BOOTSTRAP_STR              CrashPortalURL;
 	COSA_BOOTSTRAP_STR              AdvsecRedirectorURL;
 	CHAR 		PartnerID[64];
+#if defined(_ONESTACK_PRODUCT_REQ_)
 	CHAR 		DeviceMode[32];
-	COSA_BOOTSTRAP_BOOL		bWANsideSSHEnable;
-
+#endif
     COSA_DATAMODEL_RDKB_UIBRANDING	UiBrand;
     COSA_DATAMODEL_RDKB_CDLDM           CdlDM;
     COSA_DATAMODEL_RDKB_WIFI_TELEMETRY    WiFi_Telemetry;
