@@ -130,7 +130,7 @@
 #include "cosa_dslite_apis.h"
 #include "cosa_dslite_internal.h"
 #endif
-#if CONFIG_CISCO_TRUE_STATIC_IP
+#if defined(CONFIG_CISCO_TRUE_STATIC_IP) || defined(_ONESTACK_PRODUCT_REQ_)
     #include "cosa_x_cisco_com_truestaticip_internal.h"
 #endif
 #if CONFIG_CISCO_FILE_TRANSFER
@@ -157,6 +157,10 @@ static void CheckAndSetRebootReason();
 
 #if defined(_PLATFORM_RASPBERRYPI_)
 extern int sock;
+#endif
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+extern BOOLEAN business_mode;
 #endif
 
 #if defined (INTEL_PUMA7)
@@ -460,9 +464,14 @@ if(id != 0)
     AnscTraceWarning(("  CosaFileTransferCreate done!\n"));
 #endif
 
-#if CONFIG_CISCO_TRUE_STATIC_IP
-    pMyObject->hTSIP          = (ANSC_HANDLE)CosaTSIPCreate();
-    AnscTraceWarning(("  CosaTSIPCreate done!\n"));
+#if defined(CONFIG_CISCO_TRUE_STATIC_IP) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        pMyObject->hTSIP          = (ANSC_HANDLE)CosaTSIPCreate();
+        AnscTraceWarning(("  CosaTSIPCreate done!\n"));
+    }
 #endif
     
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
@@ -761,10 +770,15 @@ CosaBackEndManagerRemove
 	//zqiu<<
 #endif
 
-#if CONFIG_CISCO_TRUE_STATIC_IP
-    if ( pMyObject->hTSIP )
+#if defined(CONFIG_CISCO_TRUE_STATIC_IP) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
     {
-        CosaTSIPRemove((ANSC_HANDLE)pMyObject->hTSIP);
+        if ( pMyObject->hTSIP )
+        {
+            CosaTSIPRemove((ANSC_HANDLE)pMyObject->hTSIP);
+        }
     }
 #endif
 

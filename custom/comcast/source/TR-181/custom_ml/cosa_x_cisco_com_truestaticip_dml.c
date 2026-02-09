@@ -70,7 +70,7 @@
 #include "dml_tr181_custom_cfg.h"
 #include "safec_lib_common.h"
 
-#ifdef   CONFIG_CISCO_TRUE_STATIC_IP
+#if defined(CONFIG_CISCO_TRUE_STATIC_IP) || defined(_ONESTACK_PRODUCT_REQ_)
 
 #include "plugin_main_apis.h"
 #include "cosa_x_cisco_com_truestaticip_dml.h"

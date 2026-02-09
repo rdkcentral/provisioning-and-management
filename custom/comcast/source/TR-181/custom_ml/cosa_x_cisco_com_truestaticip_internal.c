@@ -71,7 +71,7 @@
 
 #include "dml_tr181_custom_cfg.h"
 
-#ifdef   CONFIG_CISCO_TRUE_STATIC_IP
+#if defined(CONFIG_CISCO_TRUE_STATIC_IP) || defined(_ONESTACK_PRODUCT_REQ_)
 
 #include "cosa_apis.h"
 #include "plugin_main_apis.h"
@@ -86,6 +86,10 @@
 #include <syscfg/syscfg.h>
 
 extern void* g_pDslhDmlAgent;
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+extern BOOLEAN business_mode;
+#endif
 
 /**********************************************************************
 
@@ -208,9 +212,14 @@ CosaTSIPInitialize
 
     CosaDmlTSIPLoadMappingFile((ANSC_HANDLE)pMyObject);
 
-#ifdef _COSA_FOR_BCI_
-    /* Initialize Device.X_CISCO_COM_TrueStaticIP. */
-    CosaDmlTSIPGetCfg(NULL, &pMyObject->TSIPCfg);
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        /* Initialize Device.X_CISCO_COM_TrueStaticIP. */
+        CosaDmlTSIPGetCfg(NULL, &pMyObject->TSIPCfg);
+    }
 #endif
 
     /* Initiation Device.X_CISCO_COM_TrueStaticIP.Subnet.{i} */

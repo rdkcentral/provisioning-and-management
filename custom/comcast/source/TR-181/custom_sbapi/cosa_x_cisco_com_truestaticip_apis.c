@@ -78,7 +78,7 @@
 #include <utapi/utapi.h>
 #include <utapi/utapi_util.h>
 #include <stdlib.h>
-#ifdef _BWG_PRODUCT_REQ_
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
 #include <arpa/inet.h>
 #endif
 #include "cosa_drg_common.h"
@@ -88,9 +88,13 @@
 
 extern void* g_pDslhDmlAgent;
 
+#ifdef _ONESTACK_PRODUCT_REQ_
+extern BOOLEAN business_mode;
+#endif
+
 static int iBlockedURLInsNum = 0;
 
-#ifdef _BWG_PRODUCT_REQ_
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
 //CGWTDETS-8800 : Usable Statics will no longer support 1-1 NAT :: START
 BOOLEAN g_tsip_enable = FALSE;
 char g_tsip_ip[64] = {0};
@@ -165,14 +169,29 @@ void ppWrite(const char *buffer)
 
     size = strlen( buffer );
 
-#ifdef _BWG_PRODUCT_REQ_
-    if ( write( fd, buffer, size ) != (int)size )
-#else
-    if ( write( fd, buffer, size ) != size )
-#endif
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
     {
-         printf("%s,%d, %s write error\n", __FUNCTION__, __LINE__, buffer);
+        if ( write( fd, buffer, size ) != (int)size )
+        {
+             printf("%s,%d, %s write error\n", __FUNCTION__, __LINE__, buffer);
+        }
     }
+#endif
+
+#if !defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(!business_mode)
+    #endif
+    {
+        if ( write( fd, buffer, size ) != size )
+        {
+             printf("%s,%d, %s write error\n", __FUNCTION__, __LINE__, buffer);
+        }
+    }
+#endif
 
     close( fd );
     AnscTraceWarning(("%s exits !!!\n", __FUNCTION__));
@@ -190,10 +209,22 @@ void addStaticIP(char *ip, char* subnet)
     convert_ip_address_to_bytes(ip, &ipv4,  &family);
     mask = convert_subnet_to_num(subnet);
 
-#ifdef _BWG_PRODUCT_REQ_
-    snprintf(buf, sizeof(buf), "set addStaticIP %lu %d %d", (ULONG)ipv4.sin_addr.s_addr, mask ,family);
-#else
-    snprintf(buf, sizeof(buf), "set addStaticIP %lu %d %d", ipv4.sin_addr.s_addr, mask ,family);
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set addStaticIP %lu %d %d", (ULONG)ipv4.sin_addr.s_addr, mask ,family);
+    }
+#endif
+
+#if !defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(!business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set addStaticIP %lu %d %d", ipv4.sin_addr.s_addr, mask ,family);
+    }
 #endif
 
     ppWrite(buf);
@@ -215,10 +246,23 @@ void delStaticIP(char *ip)
         return;
     }
     convert_ip_address_to_bytes(ip, &ipv4,  &family);
-#ifdef _BWG_PRODUCT_REQ_
-    snprintf(buf, sizeof(buf), "set deleteStaticIP %lu %d", (ULONG)ipv4.sin_addr.s_addr, family);
-#else
-    snprintf(buf, sizeof(buf), "set deleteStaticIP %lu %d", ipv4.sin_addr.s_addr, family);
+
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set deleteStaticIP %lu %d", (ULONG)ipv4.sin_addr.s_addr, family);
+    }
+#endif
+
+#if !defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(!business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set deleteStaticIP %lu %d", ipv4.sin_addr.s_addr, family);
+    }
 #endif
 
     ppWrite(buf);
@@ -237,10 +281,23 @@ static void addTSIPExclude(char* ip, int index) {
         return;
 
     convert_ip_address_to_bytes(ip, &ipv4,  &family);
-#ifdef _BWG_PRODUCT_REQ_
-    snprintf(buf, sizeof(buf), "set excludedStaticIPAddr %lu %d", (ULONG)ipv4.sin_addr.s_addr, index);
-#else
-    snprintf(buf, sizeof(buf), "set excludedStaticIPAddr %lu %d", ipv4.sin_addr.s_addr, index);
+
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set excludedStaticIPAddr %lu %d", (ULONG)ipv4.sin_addr.s_addr, index);
+    }
+#endif
+
+#if !defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(!business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set excludedStaticIPAddr %lu %d", ipv4.sin_addr.s_addr, index);
+    }
 #endif
 
     AnscTraceWarning(("%s exits !!!\n", __FUNCTION__));
@@ -260,10 +317,23 @@ static void removeTSIPExclude(char* ip) {
         return;
 
     convert_ip_address_to_bytes(ip, &ipv4,  &family);
-#ifdef _BWG_PRODUCT_REQ_
-    snprintf(buf, sizeof(buf), "set deleteExcludedStaticIPAddr %lu", (ULONG)ipv4.sin_addr.s_addr);
-#else
-    snprintf(buf, sizeof(buf), "set deleteExcludedStaticIPAddr %lu", ipv4.sin_addr.s_addr);
+
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set deleteExcludedStaticIPAddr %lu", (ULONG)ipv4.sin_addr.s_addr);
+    }
+#endif
+
+#if !defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(!business_mode)
+    #endif
+    {
+        snprintf(buf, sizeof(buf), "set deleteExcludedStaticIPAddr %lu", ipv4.sin_addr.s_addr);
+    }
 #endif
 
     AnscTraceWarning(("%s exits !!!\n", __FUNCTION__));
@@ -1217,7 +1287,7 @@ CosaDmlTSIPApplyConfigFile
     return returnStatus;
 }
 
-#ifdef _BWG_PRODUCT_REQ_
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
 
 ANSC_STATUS setTSIPToPP(PCOSA_DML_TSIP_CFG  pCfg)
 {
@@ -1281,8 +1351,13 @@ CosaDmlTSIPSetCfg
     {
         AnscTraceWarning(("True Static IP info changed, apply...\n"));
 
-        #ifdef _BWG_PRODUCT_REQ_
-            setTSIPToPP(pCfg);
+        #if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+            #if defined(_ONESTACK_PRODUCT_REQ_)
+                if(business_mode)
+            #endif
+            {
+                setTSIPToPP(pCfg);
+            }
         #endif
 
 #if defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
@@ -1781,10 +1856,15 @@ CosaDmlTSIPGetCfg
         SlapCleanVariable(&SlapValue);
     }
 
-#ifdef _BWG_PRODUCT_REQ_
-    /* Adding setTSIPToPP() to set PP for True Static IP while boot up time */
-    AnscTraceWarning(("%s starts..g_tsip_enable=%d !!!\n", __FUNCTION__,pCfg->Enabled));
-    setTSIPToPP(pCfg);
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        /* Adding setTSIPToPP() to set PP for True Static IP while boot up time */
+        AnscTraceWarning(("%s starts..g_tsip_enable=%d !!!\n", __FUNCTION__,pCfg->Enabled));
+        setTSIPToPP(pCfg);
+    }
 #endif
 
     return ANSC_STATUS_SUCCESS;
@@ -2390,8 +2470,13 @@ CosaDmlTSIPSubnetDelEntry
     /* Will change to Storing to PSM in Utopia script */
     sleep(3);
 
-#ifdef _BWG_PRODUCT_REQ_
-    delStaticIP(pSubnetEntry->IPAddress);
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
+    {
+        delStaticIP(pSubnetEntry->IPAddress);
+    }
 #endif
 
     CosaDmlAdditionalSubnetDelPsm((ANSC_HANDLE)pMyObject, (ANSC_HANDLE)pSubnetEntry);
@@ -2440,14 +2525,19 @@ CosaDmlTSIPSubnetSetEntry
     /* Will change to Storing to PSM in Utopia script */
     sleep(3);
 
-#ifdef _BWG_PRODUCT_REQ_
-    if(pSubnetEntry->Enabled)
+#if defined(_BWG_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+        if(business_mode)
+    #endif
     {
-        addStaticIP(pSubnetEntry->IPAddress, pSubnetEntry->SubnetMask);
-    }
-    else
-    {
-        delStaticIP(pSubnetEntry->IPAddress);
+        if(pSubnetEntry->Enabled)
+        {
+            addStaticIP(pSubnetEntry->IPAddress, pSubnetEntry->SubnetMask);
+        }
+        else
+        {
+            delStaticIP(pSubnetEntry->IPAddress);
+        }
     }
 #endif
 
