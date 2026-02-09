@@ -1118,14 +1118,6 @@
                 <writable>false</writable>
 <?endif?>
             </parameter>
-<?ifdef _ONESTACK_PRODUCT_REQ_?>
-            <parameter>
-                <name>DeviceMode</name>
-                <type>string</type>
-                <syntax>string</syntax>
-                <writable>false</writable>
-            </parameter>
-<?endif?>
             <parameter>
                 <name>TR69CertLocation</name>
                 <type>string</type>
