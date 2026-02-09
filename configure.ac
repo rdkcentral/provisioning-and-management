@@ -161,6 +161,7 @@ AC_ARG_ENABLE([hotspotsupport],
              ],
              [echo "hotspot support is disabled"])
 AM_CONDITIONAL(FEATURE_HOTSPOT_SUPPORT, test "x$HOTSPOT_SUPPORT_ENABLED" = xtrue)
+AM_CONDITIONAL([ONESTACK_PRODUCT_REQ], [test "x$ONESTACK_PRODUCT_REQ" = "xtrue"])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])

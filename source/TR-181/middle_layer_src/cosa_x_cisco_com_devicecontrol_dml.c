@@ -73,6 +73,9 @@
 #include "syscfg/syscfg.h"
 #include <arpa/inet.h>
 
+#ifdef _ONESTACK_PRODUCT_REQ_
+#include <rdkb_feature_mode_gate.h>
+#endif
 static int ifWanRestart = 0;
 
 /***********************************************************************
@@ -2111,14 +2114,6 @@ LanMngm_SetParamIntValue
 
 static bool lan_ip_config_modified=false;
 
-#define _ONESTACK_PRODUCT_REQ_
-#define FEATURE_ADVANCED_BRIDGE_MODE 1
-static bool isFeatureSupportedInCurrentMode (int i)
-{
-    (void) i;
-    return true;
-}
-
 BOOL
 LanMngm_SetParamUlongValue
     (
@@ -2171,7 +2166,7 @@ LanMngm_SetParamUlongValue
             CcspTraceWarning(("BRIDGE_ERROR:Fail to enable Bridge mode when Mesh is on\n"));
             return FALSE;
         }*/
-#if defined(_ONESTACK_PRODUCT_REQ_)
+#ifdef _ONESTACK_PRODUCT_REQ_
         if (COSA_DML_LanMode_BridgeStatic == uValuepUlong)
         {
             if (false == isFeatureSupportedInCurrentMode(FEATURE_ADVANCED_BRIDGE_MODE))
