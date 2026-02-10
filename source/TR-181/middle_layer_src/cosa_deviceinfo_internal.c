@@ -192,7 +192,12 @@ CosaDeviceInfoInitialize
 	//Get TR69CertLocation
 	CosaDmlDiGetSyndicationTR69CertLocation( (ANSC_HANDLE)pMyObject,
 											  pMyObject->TR69CertLocation.ActiveValue );
-	CosaDeriveSyndicationPartnerID(pMyObject->PartnerID);
+	CosaDeriveSyndicationPartnerID(pMyObject->PartnerID);	
+#if defined(_ONESTACK_PRODUCT_REQ_)
+	// Initialize DeviceMode
+	_ansc_memset(pMyObject->DeviceMode, 0, sizeof(pMyObject->DeviceMode));
+	CosaDmlDiGetSyndicationDeviceMode((ANSC_HANDLE)pMyObject, pMyObject->DeviceMode, sizeof(pMyObject->DeviceMode));
+#endif
 	CosaDmlDiUiBrandingInit((ANSC_HANDLE)pMyObject, &pMyObject->UiBrand, &pMyObject->CdlDM, &pMyObject->PRfcTelemetry);
 	CosaDmlDiWiFiTelemetryInit(&pMyObject->WiFi_Telemetry);
 	CosaDmlDiUniqueTelemetryIdInit(&pMyObject->UniqueTelemetryId);
