@@ -152,6 +152,10 @@ extern  ANSC_HANDLE             bus_handle;
 #include "autoconf.h"     
 #include "secure_wrapper.h"
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include "devicemode.h"
+#endif
+
 #define _ERROR_ "NOT SUPPORTED"
 #define _START_TIME_12AM_ "0"
 #define _END_TIME_3AM_ "10800"
@@ -2636,6 +2640,38 @@ CosaDmlDiSetSyndicationTR69CertLocation
 
     return ANSC_STATUS_SUCCESS;
 }
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+ANSC_STATUS
+CosaDmlDiGetSyndicationDeviceMode
+    (
+        ANSC_HANDLE                 hContext,
+        char*                       pValue,
+        size_t                      size
+    )
+{
+    UNREFERENCED_PARAMETER(hContext);
+    
+    if (!pValue || size < DEVICEMODE_BUF_SIZE)
+    {
+        CcspTraceError(("%s - Invalid buffer: pValue=%p, size=%zu (min required: %d)\n", 
+                        __FUNCTION__, pValue, size, DEVICEMODE_BUF_SIZE));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    // Call onestackutils API to get device mode from syscfg
+    if (onestackutils_get_syscfg_devicemode(pValue, size) != 0)
+    {
+        // If syscfg read fails, default to "residential"
+        snprintf(pValue, size, "residential");
+        CcspTraceWarning(("%s - Failed to get devicemode from syscfg, defaulting to 'residential'\n", __FUNCTION__));
+        return ANSC_STATUS_SUCCESS;
+    }
+    
+    CcspTraceInfo(("%s - Retrieved devicemode: '%s'\n", __FUNCTION__, pValue));
+    return ANSC_STATUS_SUCCESS;
+}
+#endif
 
 ANSC_STATUS getFactoryPartnerId
 	(
