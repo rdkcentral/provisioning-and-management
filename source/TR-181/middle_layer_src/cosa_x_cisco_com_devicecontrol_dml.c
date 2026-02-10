@@ -2171,6 +2171,8 @@ LanMngm_SetParamUlongValue
         {
             if (false == isFeatureSupportedInCurrentMode(FEATURE_ADVANCED_BRIDGE_MODE))
             {
+                t2_event_d("AdvancedBridgeMode_NotSupported", 1);
+                CcspTraceError(("Advanced BridgeMode Not Supported\n"));
                 return FALSE;
             }
         }
