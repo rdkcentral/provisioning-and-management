@@ -114,7 +114,7 @@
 #endif
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
-#include <rdkb_common_utils/rdkb_feature_mode_gate.h>
+#include <rdkb_feature_mode_gate.h>
 #endif
 
 extern ULONG g_currentBsUpdate;
