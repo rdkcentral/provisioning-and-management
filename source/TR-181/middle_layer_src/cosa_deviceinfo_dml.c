@@ -13920,8 +13920,6 @@ unsigned long get_interval(const char *key, int def_val) {
     // Handle fixed intervals (null keys)
     if (!key) return (unsigned long)def_val;
 
-    FILE *fp = NULL;
-    char cmd[64];
     char buf[32] = {0};
     unsigned long result = (unsigned long)def_val;
 
