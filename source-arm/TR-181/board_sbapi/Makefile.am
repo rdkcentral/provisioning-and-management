@@ -120,5 +120,5 @@ libCcspPandM_board_sbapi_la_LDFLAGS += -lHotspotApi
 endif
 
 if ONESTACK_PRODUCT_REQ
-libCcspPandM_board_sbapi_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -ldevicemode -lonestack_syscfg -lonestack_log
+libCcspPandM_board_sbapi_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -ldevicemode -lonestack_syscfg -lonestack_log -lrdkb_feature_mode_gate
 endif
