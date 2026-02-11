@@ -98,6 +98,7 @@
 #include "cosa_drg_common.h"
 #include "safec_lib_common.h"
 #include "ansc_string_util.h"
+#include "fw_download_check.h"
 
 #define DEVICE_PROPERTIES    "/etc/device.properties"
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
@@ -4732,6 +4733,12 @@ FirmwareDownloadAndFactoryReset(void* arg)
         }
 
         CcspTraceWarning(("%s: ImageName %s, url %s\n", __FUNCTION__, Imagename, URL));
+        if(can_proceed_fw_download() == FW_DWNLD_MEMCHK_NOT_ENOUGH_MEM)
+        {
+            CcspTraceError(("FirmwareDownloadAndFactoryReset : Not enough memory to proceed firmware download\n"));
+            commonSyseventSet("fw_update_inprogress", "false");
+            return NULL;
+        }
         if( RETURN_ERR == cm_hal_FWupdateAndFactoryReset( URL, Imagename ))
         {
             CcspTraceError(("FirmwareDownloadAndFactoryReset :cm_hal_FWupdateAndFactoryReset failed for webpa.\n"));
