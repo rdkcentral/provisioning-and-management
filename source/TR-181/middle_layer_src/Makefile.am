@@ -153,6 +153,5 @@ libCcspPandM_middle_layer_src_la_LDFLAGS += -lnet
 endif
 
 if ONESTACK_PRODUCT_REQ
-libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lrdkb_feature_mode_gate -lonestack_syscfg -lonestack_log
+libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lrdkb_feature_mode_gate
 endif
-
