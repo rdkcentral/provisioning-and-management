@@ -18084,6 +18084,145 @@ Syndication_GetParamStringValue
     return -1;
 }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        ValidateComcastPartnerIdForDeviceMode
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       pPartnerId
+            );
+
+    description:
+
+        This function validates if "comcast" can be set as PartnerId based on 
+        the current device mode (business or residential).
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       pPartnerId
+                The PartnerId value to set;
+
+    return:     TRUE if "comcast" PartnerId is allowed in current device mode,
+                FALSE otherwise.
+
+**********************************************************************/
+static BOOL
+ValidateComcastPartnerIdForDeviceMode
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       pPartnerId
+    )
+{
+    PCOSA_DATAMODEL_DEVICEINFO pMyObject = (PCOSA_DATAMODEL_DEVICEINFO)g_pCosaBEManager->hDeviceInfo;
+    char PartnerID[PARTNER_ID_LEN] = {0};
+    char deviceMode[DEVICEMODE_BUF_SIZE] = {0};
+    ANSC_STATUS retValue = ANSC_STATUS_FAILURE;
+    errno_t rc = -1;
+    int ind = -1;
+
+    CcspTraceInfo(("[VALIDATE-PARTNERID] ========== Entering Validation API ========== Input PartnerId: '%s'\n", pPartnerId ? pPartnerId : "NULL"));
+
+    // Check if the PartnerId being set is "comcast"
+    rc = strcmp_s("comcast", strlen("comcast"), pPartnerId, &ind);
+    if (rc != EOK)
+    {
+        AnscTraceWarning(("[VALIDATE-PARTNERID] strcmp_s failed for 'comcast' check, rc=%d\n", rc));
+        return FALSE;
+    }
+    
+    if (ind != 0)
+    {
+        // Not "comcast", no special handling needed
+        CcspTraceInfo(("[VALIDATE-PARTNERID] PartnerId is not 'comcast', skipping device mode validation. Exiting Validation API (not applicable)\n"));
+        return FALSE;
+    }
+
+    CcspTraceInfo(("[VALIDATE-PARTNERID] PartnerId is 'comcast', proceeding with device mode validation\n"));
+
+    // Get current device mode from syscfg
+    CcspTraceInfo(("[VALIDATE-PARTNERID] Retrieving device mode from syscfg...\n"));
+    if (ANSC_STATUS_SUCCESS != CosaDmlDiGetSyndicationDeviceMode(hInsContext, deviceMode, sizeof(deviceMode)))
+    {
+        AnscTraceWarning(("[VALIDATE-PARTNERID] Failed to get device mode from syscfg. Exiting Validation API (FAILED - syscfg read error)\n"));
+        return FALSE;
+    }
+
+    CcspTraceInfo(("[VALIDATE-PARTNERID] Retrieved device mode: '%s'\n", deviceMode));
+
+    // Check if device mode is "business" or "residential"
+    int dm_ind = -1;
+    int is_business = 0;
+    int is_residential = 0;
+
+    CcspTraceInfo(("[VALIDATE-PARTNERID] Checking if device mode is 'business'...\n"));
+    rc = strcmp_s("business", strlen("business"), deviceMode, &dm_ind);
+    if (rc != EOK)
+    {
+        AnscTraceWarning(("[VALIDATE-PARTNERID] strcmp_s failed for 'business' check, rc=%d - %s %s:%d. Exiting Validation API (FAILED - strcmp_s error)\n", rc, __FILE__, __FUNCTION__,__LINE__));
+        return FALSE;
+    }
+    if (dm_ind == 0)
+    {
+        is_business = 1;
+        CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode matched: BUSINESS\n"));
+    }
+    else
+    {
+        CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode is not 'business', checking if 'residential'...\n"));
+        dm_ind = -1;
+        rc = strcmp_s("residential", strlen("residential"), deviceMode, &dm_ind);
+        if (rc != EOK)
+        {
+            AnscTraceWarning(("[VALIDATE-PARTNERID] strcmp_s failed for 'residential' check, rc=%d - %s %s:%d. Exiting Validation API (FAILED - strcmp_s error)\n", rc, __FILE__, __FUNCTION__,__LINE__));
+            return FALSE;
+        }
+        if (dm_ind == 0)
+        {
+            is_residential = 1;
+            CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode matched: RESIDENTIAL\n"));
+        }
+    }
+
+    // If device mode is neither business nor residential, deny the change
+    if (!is_business && !is_residential)
+    {
+        CcspTraceWarning(("[VALIDATE-PARTNERID] VALIDATION FAILED: Device mode '%s' is not allowed for PartnerId 'comcast'. Only 'business' or 'residential' modes are permitted. Exiting Validation API (FAILED - invalid device mode)\n", deviceMode));
+        return FALSE;
+    }
+
+    CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode validation PASSED: %s mode is allowed\n", is_business ? "business" : "residential"));
+
+    // Device mode is business or residential, allow setting PartnerId to comcast
+    CcspTraceInfo(("[VALIDATE-PARTNERID] Retrieving factory PartnerId...\n"));
+    ULONG size = sizeof(PartnerID);
+    memset(PartnerID, 0, sizeof(PartnerID));
+    getFactoryPartnerId(PartnerID, &size);
+
+    CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID: '%s', Current_PartnerID: '%s', Setting_PartnerID: '%s' (device mode: %s)\n", 
+                   ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL", pMyObject->PartnerID, pPartnerId, deviceMode));
+
+    // Call setTempPartnerId to persist the change
+    CcspTraceInfo(("[SET-PARTNERID] Calling setTempPartnerId() to persist the change...\n"));
+    retValue = setTempPartnerId(pPartnerId);
+    if (ANSC_STATUS_SUCCESS != retValue)
+    {
+        CcspTraceWarning(("[SET-PARTNERID] setTempPartnerId() FAILED with return value: %d (device mode: %s). Exiting Validation API (FAILED - setTempPartnerId error)\n", retValue, deviceMode));
+        return FALSE;
+    }
+
+    // Return TRUE only when setTempPartnerId succeeds
+    CcspTraceInfo(("[SET-PARTNERID] setTempPartnerId() completed successfully. Successfully set PartnerId to 'comcast' in %s mode. Exiting Validation API (SUCCESS)\n", deviceMode));
+    return TRUE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     owner of this object
@@ -18185,68 +18324,19 @@ Syndication_SetParamStringValue
         if(!(ind))
         {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-                // Allow "comcast" as PartnerId if device mode is "business" or "residential"
-                ind = 0;
-                if (!(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind)) && (ind == 0))
-                {
-                    char deviceMode[DEVICEMODE_BUF_SIZE] = {0};
-                    if (ANSC_STATUS_SUCCESS == CosaDmlDiGetSyndicationDeviceMode(hInsContext, deviceMode, sizeof(deviceMode)))
-                    {
-                        int dm_ind = -1;
-                        int is_business = 0;
-                        int is_residential = 0;
-                        
-                        // Check if device mode is "business" or "residential"
-                        rc = strcmp_s("business", strlen("business"), deviceMode, &dm_ind);
-                        if (rc != EOK)
-                        {
-                            AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
-                            return FALSE;
-                        }
-                        if (dm_ind == 0)
-                        {
-                            is_business = 1;
-                        }
-                        else
-                        {
-                            dm_ind = -1;
-                            rc = strcmp_s("residential", strlen("residential"), deviceMode, &dm_ind);
-                            if (rc != EOK)
-                            {
-                                AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
-                                return FALSE;
-                            }
-                            if (dm_ind == 0)
-                            {
-                                is_residential = 1;
-                            }
-                        }
-                        
-                        if (is_business || is_residential)
-                        {
-                            // Device mode is business or residential, allow setting PartnerId to comcast
-                            ULONG    size = sizeof(PartnerID);
-                            //Get the Factory PartnerID
-                            memset(PartnerID, 0, sizeof(PartnerID));
-                            getFactoryPartnerId(PartnerID, &size);
-                            
-                            CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
-                            CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
-                            CcspTraceInfo(("[SET-PARTNERID] Setting_PartnerID:%s (device mode: %s)\n", pString, deviceMode ));
-                            
-                            // Call setTempPartnerId to persist the change
-                            retValue = setTempPartnerId( pString );
-                            if( ANSC_STATUS_SUCCESS != retValue )
-                            {
-                                CcspTraceWarning(("[SET-PARTNERID] setTempPartnerId failed in %s mode\n", deviceMode));
-                                return FALSE;
-                            }
-                            
-                            // Return TRUE only when setTempPartnerId succeeds
-                            return TRUE;
-                        }
-                    }
-                }
+            CcspTraceInfo(("[SYNDICATION-SET] PartnerId parameter detected, attempting to set to: '%s'. Calling ValidateComcastPartnerIdForDeviceMode API...\n", pString));
+            
+            // Check if "comcast" PartnerId is allowed based on device mode
+            if (ValidateComcastPartnerIdForDeviceMode(hInsContext, pString))
+            {
+                // Successfully set PartnerId to "comcast" in business or residential mode
+                CcspTraceInfo(("[SYNDICATION-SET] ValidateComcastPartnerIdForDeviceMode API returned SUCCESS. PartnerId set operation completed successfully\n"));
+                return TRUE;
+            }
+            else
+            {
+                CcspTraceInfo(("[SYNDICATION-SET] ValidateComcastPartnerIdForDeviceMode API returned FALSE. Proceeding to standard PartnerId validation logic...\n"));
+            }
 #endif
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
