@@ -3441,19 +3441,25 @@
                         </parameters>
                 </object>
                 <object>
-                    <name>xMemInsight</name>
+                    <name>meminsight</name>
                     <objectType>object</objectType>
 
                     <functions>
-                        <func_GetParamBoolValue>xMemInsight_GetParamBoolValue</func_GetParamBoolValue>
-                        <func_SetParamBoolValue>xMemInsight_SetParamBoolValue</func_SetParamBoolValue>
-                        <func_GetParamStringValue>xMemInsight_GetParamStringValue</func_GetParamStringValue>
-                        <func_SetParamStringValue>xMemInsight_SetParamStringValue</func_SetParamStringValue>
+                        <func_GetParamBoolValue>meminsight_GetParamBoolValue</func_GetParamBoolValue>
+                        <func_SetParamBoolValue>meminsight_SetParamBoolValue</func_SetParamBoolValue>
+                        <func_GetParamStringValue>meminsight_GetParamStringValue</func_GetParamStringValue>
+                        <func_SetParamStringValue>meminsight_SetParamStringValue</func_SetParamStringValue>
                     </functions>
 
                     <parameters>
                         <parameter>
                             <name>Enable</name>
+                            <type>boolean</type>
+                            <syntax>bool</syntax>
+                            <writable>true</writable>
+                        </parameter>
+                        <parameter>
+                            <name>Trigger</name>
                             <type>boolean</type>
                             <syntax>bool</syntax>
                             <writable>true</writable>

@@ -1689,7 +1689,7 @@ BOOL
 }
 
 /**
- * RFC Features for xMemInsight
+ * RFC Features for meminsight
  */
 
 /**********************************************************************
@@ -1698,7 +1698,7 @@ BOOL
         owner of this object
 
     prototype:
-        BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+        BOOL meminsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
 
     description:
         This function is called to set BOOL parameter value;
@@ -1714,21 +1714,41 @@ BOOL
 
 **********************************************************************/
 
-BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+BOOL meminsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
 {
     UNREFERENCED_PARAMETER(hInsContext);
     char buf[8];
+
     if (strcmp(ParamName, "Enable") == 0)
     {
         char *value = (bValue == TRUE) ? "true" : "false";
-        syscfg_get(NULL, "xMemEnable", buf, sizeof(buf));
+        syscfg_get(NULL, "meminsight_Enable", buf, sizeof(buf));
         if (!strncmp(buf, value, strlen(value)))
         {
             return TRUE;
         }
-        if (syscfg_set_commit(NULL, "xMemEnable", value) != 0)
+        if (syscfg_set_commit(NULL, "meminsight_Enable", value) != 0)
         {
-            CcspTraceError(("syscfg_set failed on xMemEnable\n"));
+            CcspTraceError(("syscfg_set failed on meminsight_Enable\n"));
+            return FALSE;
+        }
+
+        CcspTraceInfo(("meminsight Enable set to %s\n", value));
+        /* TODO: Implement meminsight download and installation logic */
+
+        return TRUE;
+    }
+    else if (strcmp(ParamName, "Trigger") == 0) /* Start/ Stop meminsight */
+    {
+        char *value = (bValue == TRUE) ? "true" : "false";
+        syscfg_get(NULL, "meminsight_Trigger", buf, sizeof(buf));
+        if (!strncmp(buf, value, strlen(value)))
+        {
+            return TRUE;
+        }
+        if (syscfg_set_commit(NULL, "meminsight_Trigger", value) != 0)
+        {
+            CcspTraceError(("syscfg_set failed on meminsight_Trigger\n"));
             return FALSE;
         }
 
@@ -1811,7 +1831,7 @@ BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
         owner of this object
 
     prototype:
-        BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+        BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 
     description:
         This function is called to retrieve BOOL parameter value;
@@ -1827,12 +1847,14 @@ BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
 
 **********************************************************************/
 
-BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if (strcmp(ParamName, "Enable") == 0) {
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
         char value[8] = {'\0'};
-        if( syscfg_get(NULL, "xMemEnable", value, sizeof(value)) == 0 )
+        if (syscfg_get(NULL, "meminsight_Enable", value, sizeof(value)) == 0)
         {
             if (strcmp(value, "true") == 0)
             {
@@ -1846,7 +1868,27 @@ BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
         }
         else
         {
-            CcspTraceError(("syscfg_get failed for xMemEnable\n"));
+            CcspTraceError(("syscfg_get failed for meminsight_Enable\n"));
+        }
+    }
+    else if (strcmp(ParamName, "Trigger") == 0)
+    {
+        char value[8] = {'\0'};
+        if (syscfg_get(NULL, "meminsight_Trigger", value, sizeof(value)) == 0)
+        {
+            if (strcmp(value, "true") == 0)
+            {
+                *pBool = TRUE;
+            }
+            else
+            {
+                *pBool = FALSE;
+            }
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("syscfg_get failed for meminsight_Trigger\n"));
         }
     }
     else
@@ -1862,7 +1904,7 @@ BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
         owner of this object
 
     prototype:
-        ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
+        ULONG meminsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
 
     description:
         This function is called to retrieve string parameter value;
@@ -1874,12 +1916,12 @@ BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
         ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
 
     return:
-        TRUE if succeeded;
-        FALSE if not supported
+        0 if succeeded;
+        -1 if not supported
 
 **********************************************************************/
 
-ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize)
+ULONG meminsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize)
 {
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(pUlSize);
@@ -1889,7 +1931,7 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
     if(strcmp(ParamName, "Args") == 0) {
         /* collect value */
         char buf[128] = {'\0'};
-        if(!syscfg_get(NULL, "xMemArgs", buf, sizeof(buf)))
+        if(!syscfg_get(NULL, "meminsight_Args", buf, sizeof(buf)))
         {
             rc = strcpy_s(pValue, *pUlSize, buf);
             if(rc != EOK)
@@ -1911,7 +1953,7 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
         owner of this object
 
     prototype:
-        BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+        BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString);
 
     description:
         This function is called to set string parameter value;
@@ -1919,8 +1961,7 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
     argument:
         ANSC_HANDLE hInsContext - The instance handle;
         char* ParamName - The parameter name;
-        char* pValue - The string value buffer;
-        ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
+        char* pString - The string value;
 
     return:
         TRUE if succeeded;
@@ -1928,17 +1969,17 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
 
 **********************************************************************/
 
-BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString)
+BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString)
 {
-    if (IsStringSame(hInsContext, ParamName, pString, xMemInsight_GetParamStringValue))
+    if (IsStringSame(hInsContext, ParamName, pString, meminsight_GetParamStringValue))
     {
         return TRUE;
     }
     if (strcmp(ParamName, "Args") == 0)
     {
-        if (syscfg_set_commit(NULL, "xMemArgs", pString) != 0)
+        if (syscfg_set_commit(NULL, "meminsight_Args", pString) != 0)
         {
-            CcspTraceError(("syscfg_set failed for xMemArgs\n"));
+            CcspTraceError(("syscfg_set failed for meminsight_Args\n"));
         }
         else
         {
