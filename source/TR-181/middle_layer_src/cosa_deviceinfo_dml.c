@@ -18197,14 +18197,26 @@ Syndication_SetParamStringValue
                         int is_residential = 0;
                         
                         // Check if device mode is "business" or "residential"
-                        if (!(rc = strcmp_s("business", strlen("business"), deviceMode, &dm_ind)) && (dm_ind == 0))
+                        rc = strcmp_s("business", strlen("business"), deviceMode, &dm_ind);
+                        if (rc != EOK)
+                        {
+                            AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
+                            return FALSE;
+                        }
+                        if (dm_ind == 0)
                         {
                             is_business = 1;
                         }
                         else
                         {
                             dm_ind = -1;
-                            if (!(rc = strcmp_s("residential", strlen("residential"), deviceMode, &dm_ind)) && (dm_ind == 0))
+                            rc = strcmp_s("residential", strlen("residential"), deviceMode, &dm_ind);
+                            if (rc != EOK)
+                            {
+                                AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
+                                return FALSE;
+                            }
+                            if (dm_ind == 0)
                             {
                                 is_residential = 1;
                             }
@@ -18212,8 +18224,8 @@ Syndication_SetParamStringValue
                         
                         if (is_business || is_residential)
                         {
-                            // Device mode is business or residential, always allow setting/resetting PartnerId to comcast
-                            ULONG    size = 0;
+                            // Device mode is business or residential, allow setting PartnerId to comcast
+                            ULONG    size = sizeof(PartnerID);
                             //Get the Factory PartnerID
                             memset(PartnerID, 0, sizeof(PartnerID));
                             getFactoryPartnerId(PartnerID, &size);
@@ -18222,14 +18234,15 @@ Syndication_SetParamStringValue
                             CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
                             CcspTraceInfo(("[SET-PARTNERID] Setting_PartnerID:%s (device mode: %s)\n", pString, deviceMode ));
                             
-                            // Always call setTempPartnerId to ensure activation happens
+                            // Call setTempPartnerId to persist the change
                             retValue = setTempPartnerId( pString );
                             if( ANSC_STATUS_SUCCESS != retValue )
                             {
-                                CcspTraceWarning(("[SET-PARTNERID] setTempPartnerId failed but allowing operation in %s mode\n", deviceMode));
+                                CcspTraceWarning(("[SET-PARTNERID] setTempPartnerId failed in %s mode\n", deviceMode));
+                                return FALSE;
                             }
                             
-                            // Always return TRUE when setting comcast as PartnerId in business or residential mode
+                            // Return TRUE only when setTempPartnerId succeeds
                             return TRUE;
                         }
                     }
@@ -18249,7 +18262,7 @@ Syndication_SetParamStringValue
 			    retValue = setTempPartnerId( pString );
 			    if( ANSC_STATUS_SUCCESS == retValue )
 			    {
-			        ULONG    size = 0;
+			        ULONG    size = 0;  
 				//Get the Factory PartnerID
 			        memset(PartnerID, 0, sizeof(PartnerID));
 			        getFactoryPartnerId(PartnerID, &size);
