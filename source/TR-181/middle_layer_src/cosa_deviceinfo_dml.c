@@ -18184,6 +18184,42 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+                // Allow "comcast" as PartnerId if device mode is "business"
+                ind = 0;
+                if (!(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind)) && (ind == 0))
+                {
+                    char deviceMode[DEVICEMODE_BUF_SIZE] = {0};
+                    if (ANSC_STATUS_SUCCESS == CosaDmlDiGetSyndicationDeviceMode(hInsContext, deviceMode, sizeof(deviceMode)))
+                    {
+                        int dm_ind = -1;
+                        if (!(rc = strcmp_s("business", strlen("business"), deviceMode, &dm_ind)) && (dm_ind == 0))
+                        {
+                            // Device mode is business, allow setting PartnerId as comcast
+                            if (!(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)))
+                            {
+                                if(ind != 0)
+                                {
+                                    retValue = setTempPartnerId( pString );
+                                    if( ANSC_STATUS_SUCCESS == retValue )
+                                    {
+                                        ULONG    size = 0;
+                                        //Get the Factory PartnerID
+                                        memset(PartnerID, 0, sizeof(PartnerID));
+                                        getFactoryPartnerId(PartnerID, &size);
+                                        
+                                        CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                                        CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                                        CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s (business mode)\n", pString ));
+                                        
+                                        return TRUE;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+#endif
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
