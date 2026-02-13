@@ -796,6 +796,22 @@ DeviceInfo_GetParamUlongValue
         CosaDmlDiGetFactoryResetCount(NULL,puLong);
         return TRUE;
     }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_AvlMem_RsrvThreshold", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_ImageProcMemPercent", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
 	
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1406,7 +1422,23 @@ DeviceInfo_SetParamUlongValue
 	   fprintf(fp, "%s\n", buff);
  	   fclose(fp);
 	   return TRUE;
-    } 
+    }
+
+	if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_AvlMem_RsrvThreshold", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_ImageProcMemPercent", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
