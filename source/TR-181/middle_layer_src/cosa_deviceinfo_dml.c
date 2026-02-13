@@ -113,6 +113,10 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 extern ULONG g_currentBsUpdate;
 extern char g_currentParamFullName[512];
 extern ANSC_HANDLE bus_handle;
@@ -792,6 +796,22 @@ DeviceInfo_GetParamUlongValue
         CosaDmlDiGetFactoryResetCount(NULL,puLong);
         return TRUE;
     }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_AvlMem_RsrvThreshold", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_ImageProcMemPercent", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
 	
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1402,7 +1422,23 @@ DeviceInfo_SetParamUlongValue
 	   fprintf(fp, "%s\n", buff);
  	   fclose(fp);
 	   return TRUE;
-    } 
+    }
+
+	if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_AvlMem_RsrvThreshold", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_ImageProcMemPercent", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -17960,6 +17996,15 @@ Syndication_GetParamStringValue
         return 0;
     }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (strcmp(ParamName, "DeviceMode") == 0)
+    {
+        /* collect value - get current device mode from syscfg */
+        CosaDmlDiGetSyndicationDeviceMode((ANSC_HANDLE)pMyObject, pMyObject->DeviceMode, sizeof(pMyObject->DeviceMode));
+        return update_pValue(pValue, pulSize, pMyObject->DeviceMode);
+    }
+#endif
+
     if (strcmp(ParamName, "TR69CertLocation") == 0)
     {
         /* collect value */
@@ -21613,6 +21658,15 @@ UPnPRefactor_SetParamBoolValue
 }
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsMAPTConflictingFeaturesEnabled(void)
+{
+    // TODO: Add check to see if any conflicting feature of MAP-T 
+    //       like Static Routing, 1-1 NAT, etc are enabled
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     owner of this object
@@ -21718,6 +21772,23 @@ MAPT_DeviceInfo_SetParamBoolValue
 
   if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+	if (bValue)
+	{
+            if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
+            {
+                CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+            else if (IsMAPTConflictingFeaturesEnabled())
+            {
+                CcspTraceError(("MAP-T enable rejected due to conflicting features\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+	}
+#endif
         if (syscfg_set_commit(NULL, "MAPT_Enable", bValue ? "true" : "false") != 0 )
         {
             CcspTraceError(("syscfg_set failed for MAPT_Enable \n"));

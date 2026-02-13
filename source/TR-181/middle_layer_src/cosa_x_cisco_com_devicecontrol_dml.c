@@ -73,6 +73,9 @@
 #include "syscfg/syscfg.h"
 #include <arpa/inet.h>
 
+#ifdef _ONESTACK_PRODUCT_REQ_
+#include <rdkb_feature_mode_gate.h>
+#endif
 static int ifWanRestart = 0;
 
 /***********************************************************************
@@ -2163,6 +2166,17 @@ LanMngm_SetParamUlongValue
             CcspTraceWarning(("BRIDGE_ERROR:Fail to enable Bridge mode when Mesh is on\n"));
             return FALSE;
         }*/
+#ifdef _ONESTACK_PRODUCT_REQ_
+        if (COSA_DML_LanMode_BridgeStatic == uValuepUlong)
+        {
+            if (false == isFeatureSupportedInCurrentMode(FEATURE_ADVANCED_BRIDGE_MODE))
+            {
+                t2_event_d("AdvancedBridgeMode_NotSupported", 1);
+                CcspTraceError(("Advanced BridgeMode Not Supported\n"));
+                return FALSE;
+            }
+        }
+#endif
 
         pLanMngm->LanMode = uValuepUlong;
         CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanMode value (bridge-dhcp(1),bridge-static(2),router(3),full-bridge-static(4)) as (%lu)...\n",
