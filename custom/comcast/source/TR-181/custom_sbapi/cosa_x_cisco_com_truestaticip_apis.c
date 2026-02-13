@@ -86,6 +86,10 @@
 #include "messagebus_interface_helper.h"
 #include "safec_lib_common.h"
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 extern void* g_pDslhDmlAgent;
 
 static int iBlockedURLInsNum = 0;
@@ -352,6 +356,15 @@ free_parameterValStruct
     }
 }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsRIPConflictingFeaturesEnabled(void)
+{
+    // TODO: Add check to see if any conflicting feature of RIP
+    //       like MAP-T are enabled
+    return FALSE;
+}
+#endif
+
 static
 ANSC_STATUS
 TriggerOtherModule
@@ -365,6 +378,24 @@ TriggerOtherModule
     BOOL                            bEnabled               = FALSE;
 
     bEnabled = g_GetParamValueBool(g_pDslhDmlAgent, "Device.Routing.RIP.Enable");
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (bValue)
+    {
+        if (!isFeatureSupportedInCurrentMode(FEATURE_RIPv2))
+        {
+            AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
+            t2_event_d("RIP_NotSupported", 1);
+            return FALSE;
+        }
+        else if (IsRIPConflictingFeaturesEnabled())
+        {
+            AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
+            t2_event_d("RIP_NotSupported", 1);
+            return FALSE;
+        }
+    }
+#endif
+
     AnscTraceWarning(("Get and Set Device.Routing.RIP.Enable: %d\n", bEnabled));
     returnStatus = g_SetParamValueBool("Device.Routing.RIP.Enable", bEnabled);
 
@@ -918,6 +949,21 @@ Start:
             }
             else if ( _ansc_strstr(pStringToken->Name, "wan_rip2") && AnscEqualString(pValue, "true", FALSE) )
             {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+                if (!isFeatureSupportedInCurrentMode(FEATURE_RIPv2))
+                {
+                    AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
+                    t2_event_d("RIP_NotSupported", 1);
+                    return FALSE;
+                }
+                else if (IsRIPConflictingFeaturesEnabled())
+                {
+                    AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
+                    t2_event_d("RIP_NotSupported", 1);
+                    return FALSE;
+                }
+#endif
+
                 g_SetParamValueString("Device.Routing.RIP.InterfaceSetting.1.X_CISCO_COM_SendVersion", "RIP2");
                 g_SetParamValueBool  ("Device.Routing.RIP.InterfaceSetting.1.SendRA", TRUE);
                 g_SetParamValueBool  ("Device.Routing.RIP.InterfaceSetting.1.Enable", TRUE);
