@@ -18144,10 +18144,8 @@ ValidateComcastPartnerIdForDeviceMode
         return FALSE;
     }
 
-    CcspTraceInfo(("[VALIDATE-PARTNERID] PartnerId is 'comcast', proceeding with device mode validation\n"));
-
     // Get current device mode from syscfg
-    CcspTraceInfo(("[VALIDATE-PARTNERID] Retrieving device mode from syscfg...\n"));
+    CcspTraceInfo(("[VALIDATE-PARTNERID] PartnerId is 'comcast', proceeding with device mode validation. Retrieving device mode from syscfg...\n"));
     if (ANSC_STATUS_SUCCESS != CosaDmlDiGetSyndicationDeviceMode(hInsContext, deviceMode, sizeof(deviceMode)))
     {
         AnscTraceWarning(("[VALIDATE-PARTNERID] Failed to get device mode from syscfg. Exiting Validation API (FAILED - syscfg read error)\n"));
@@ -18352,7 +18350,7 @@ Syndication_SetParamStringValue
 			    retValue = setTempPartnerId( pString );
 			    if( ANSC_STATUS_SUCCESS == retValue )
 			    {
-			        ULONG    size = 0;  
+			        ULONG    size = 0;
 				//Get the Factory PartnerID
 			        memset(PartnerID, 0, sizeof(PartnerID));
 			        getFactoryPartnerId(PartnerID, &size);
