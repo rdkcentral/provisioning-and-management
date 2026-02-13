@@ -22432,6 +22432,15 @@ UPnPRefactor_SetParamBoolValue
 }
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsMAPTConflictingFeaturesEnabled(void)
+{
+    // TODO: Add check to see if any conflicting feature of MAP-T 
+    //       like Static Routing, 1-1 NAT, etc are enabled
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     owner of this object
