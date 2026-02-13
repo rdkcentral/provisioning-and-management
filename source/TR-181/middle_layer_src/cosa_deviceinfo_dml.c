@@ -113,6 +113,10 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 extern ULONG g_currentBsUpdate;
 extern char g_currentParamFullName[512];
 extern ANSC_HANDLE bus_handle;
@@ -21654,6 +21658,15 @@ UPnPRefactor_SetParamBoolValue
 }
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsMAPTConflictingFeaturesEnabled(void)
+{
+    // TODO: Add check to see if any conflicting feature of MAP-T 
+    //       like Static Routing, 1-1 NAT, etc are enabled
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     owner of this object
@@ -21759,6 +21772,23 @@ MAPT_DeviceInfo_SetParamBoolValue
 
   if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+	if (bValue)
+	{
+            if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
+            {
+                CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+            else if (IsMAPTConflictingFeaturesEnabled())
+            {
+                CcspTraceError(("MAP-T enable rejected due to conflicting features\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+	}
+#endif
         if (syscfg_set_commit(NULL, "MAPT_Enable", bValue ? "true" : "false") != 0 )
         {
             CcspTraceError(("syscfg_set failed for MAPT_Enable \n"));
