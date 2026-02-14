@@ -381,7 +381,7 @@ TriggerOtherModule
 #if defined(_ONESTACK_PRODUCT_REQ_)
     if (bValue)
     {
-        if (!isFeatureSupportedInCurrentMode(FEATURE_RIPv2))
+        if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
         {
             AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
             t2_event_d("RIP_NotSupported", 1);
@@ -950,7 +950,7 @@ Start:
             else if ( _ansc_strstr(pStringToken->Name, "wan_rip2") && AnscEqualString(pValue, "true", FALSE) )
             {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-                if (!isFeatureSupportedInCurrentMode(FEATURE_RIPv2))
+                if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
                 {
                     AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
                     t2_event_d("RIP_NotSupported", 1);
