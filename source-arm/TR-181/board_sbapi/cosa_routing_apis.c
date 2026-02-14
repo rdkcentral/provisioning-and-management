@@ -77,6 +77,10 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
 #include "cosa_drg_common.h"
 #endif
@@ -1112,6 +1116,15 @@ CosaDmlRipGetCfg
     return returnStatus;
 }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsRIPConflictingFeaturesEnabled(void)
+{
+    // TODO: Add check to see if any conflicting feature of RIP
+    //       like MAP-T are enabled
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     self
@@ -1149,6 +1162,24 @@ CosaDmlRipSetCfg
     ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
     UNREFERENCED_PARAMETER(hContext);
     AnscTraceWarning(("CosaDmlRipSetCfg -- starts.\n"));
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (pCfg->Enable)
+    {
+        if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+        {
+            AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
+            t2_event_d("RIP_NotSupported", 1);
+            return FALSE;
+        }
+        else if (IsRIPConflictingFeaturesEnabled())
+        {
+            AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
+            t2_event_d("RIP_NotSupported", 1);
+            return FALSE;
+        }
+    }
+#endif
 
     CosaDmlRIPCurrentConfig.Enable        = pCfg->Enable;
     CosaDmlRIPCurrentConfig.UpdateTime    = pCfg->X_CISCO_COM_UpdateInterval;
