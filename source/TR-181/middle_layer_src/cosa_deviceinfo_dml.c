@@ -198,6 +198,77 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 // ATOM IP length
 #define IP_LEN 20
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/**
+ * @brief Validates if PartnerID change should be allowed by checking current and nvram values
+ * 
+ * This function checks both the current PartnerID and the /nvram/.partner_ID file content
+ * to determine if a PartnerID change operation should be permitted.
+ * 
+ * @param[in] currentPartnerID - Current PartnerID string from pMyObject
+ * @param[in] newPartnerID - New PartnerID string being set
+ * 
+ * @return int - 1 if change should be allowed, 0 if not allowed
+ */
+static int ValidatePartnerIDChange(const char* currentPartnerID, const char* newPartnerID)
+{
+    int allow_change = 0;
+    int current_differs = 0;
+    int nvram_differs = 0;
+    char nvram_partner_id[PARTNER_ID_LEN] = {0};
+    FILE *partner_file = NULL;
+    
+    if (!currentPartnerID || !newPartnerID) {
+        CcspTraceError(("[PARTNERID-VALIDATE] Invalid input parameters\n"));
+        return 0;
+    }
+    
+    // Check if current PartnerID differs from new one
+    int current_ind = -1;
+    if (!(strcmp_s(currentPartnerID, strlen(currentPartnerID), newPartnerID, &current_ind))) {
+        current_differs = (current_ind != 0) ? 1 : 0;
+    }
+    
+    // Try to read /nvram/.partner_ID file
+    partner_file = fopen("/nvram/.partner_ID", "r");
+    if (partner_file != NULL) {
+        if (fgets(nvram_partner_id, sizeof(nvram_partner_id), partner_file) != NULL) {
+            // Remove newline character if present
+            char *pos = strchr(nvram_partner_id, '\n');
+            if (pos != NULL) {
+                *pos = '\0';
+            }
+            
+            // Check if nvram content differs from new PartnerID
+            int nvram_ind = -1;
+            if (!(strcmp_s(nvram_partner_id, strlen(nvram_partner_id), newPartnerID, &nvram_ind))) {
+                nvram_differs = (nvram_ind != 0) ? 1 : 0;
+            }
+        } else {
+            CcspTraceWarning(("[PARTNERID-VALIDATE] Failed to read /nvram/.partner_ID file content\n"));
+        }
+        fclose(partner_file);
+    } else {
+        CcspTraceWarning(("[PARTNERID-VALIDATE] /nvram/.partner_ID file not found or cannot be opened\n"));
+    }
+    
+    // Determine if change should be allowed (current differs OR nvram differs)
+    allow_change = (current_differs || nvram_differs) ? 1 : 0;
+    
+    // Comprehensive logging
+    CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Change Validation ===\n"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Current PartnerID    : '%s'\n", currentPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] NVRAM PartnerID     : '%s'\n", nvram_partner_id[0] ? nvram_partner_id : "<empty/unreadable>"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID       : '%s'\n", newPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Current differs     : %s\n", current_differs ? "YES" : "NO"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] NVRAM differs       : %s\n", nvram_differs ? "YES" : "NO"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Change allowed      : %s\n", allow_change ? "YES" : "NO"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] =====================================\n"));
+    
+    return allow_change;
+}
+#endif // _ONESTACK_PRODUCT_REQ_
+
 #ifdef COLUMBO_HWTEST
 //RDKB-33114: Default values defined here due to objects not being persistent by design
 #define DEFAULT_HWST_PTR_CPU_THRESHOLD 80
@@ -18084,143 +18155,6 @@ Syndication_GetParamStringValue
     return -1;
 }
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-/**********************************************************************
-
-    caller:     owner of this object
-
-    prototype:
-
-        BOOL
-        ValidateComcastPartnerIdForDeviceMode
-            (
-                ANSC_HANDLE                 hInsContext,
-                char*                       pPartnerId
-            );
-
-    description:
-
-        This function validates if "comcast" can be set as PartnerId based on 
-        the current device mode (business or residential).
-
-    argument:   ANSC_HANDLE                 hInsContext,
-                The instance handle;
-
-                char*                       pPartnerId
-                The PartnerId value to set;
-
-    return:     TRUE if "comcast" PartnerId is allowed in current device mode,
-                FALSE otherwise.
-
-**********************************************************************/
-static BOOL
-ValidateComcastPartnerIdForDeviceMode
-    (
-        ANSC_HANDLE                 hInsContext,
-        char*                       pPartnerId
-    )
-{
-    PCOSA_DATAMODEL_DEVICEINFO pMyObject = (PCOSA_DATAMODEL_DEVICEINFO)g_pCosaBEManager->hDeviceInfo;
-    char PartnerID[PARTNER_ID_LEN] = {0};
-    char deviceMode[DEVICEMODE_BUF_SIZE] = {0};
-    ANSC_STATUS retValue = ANSC_STATUS_FAILURE;
-    errno_t rc = -1;
-    int ind = -1;
-
-    CcspTraceInfo(("[VALIDATE-PARTNERID] ========== Entering Validation API ========== Input PartnerId: '%s'\n", pPartnerId ? pPartnerId : "NULL"));
-
-    // Check if the PartnerId being set is "comcast"
-    rc = strcmp_s("comcast", strlen("comcast"), pPartnerId, &ind);
-    if (rc != EOK)
-    {
-        AnscTraceWarning(("[VALIDATE-PARTNERID] strcmp_s failed for 'comcast' check, rc=%d\n", rc));
-        return FALSE;
-    }
-    
-    if (ind != 0)
-    {
-        // Not "comcast", no special handling needed
-        CcspTraceInfo(("[VALIDATE-PARTNERID] PartnerId is not 'comcast', skipping device mode validation. Exiting Validation API (not applicable)\n"));
-        return FALSE;
-    }
-
-    // Get current device mode from syscfg
-    CcspTraceInfo(("[VALIDATE-PARTNERID] PartnerId is 'comcast', proceeding with device mode validation. Retrieving device mode from syscfg...\n"));
-    if (ANSC_STATUS_SUCCESS != CosaDmlDiGetSyndicationDeviceMode(hInsContext, deviceMode, sizeof(deviceMode)))
-    {
-        AnscTraceWarning(("[VALIDATE-PARTNERID] Failed to get device mode from syscfg. Exiting Validation API (FAILED - syscfg read error)\n"));
-        return FALSE;
-    }
-
-    CcspTraceInfo(("[VALIDATE-PARTNERID] Retrieved device mode: '%s'\n", deviceMode));
-
-    // Check if device mode is "business" or "residential"
-    int dm_ind = -1;
-    int is_business = 0;
-    int is_residential = 0;
-
-    CcspTraceInfo(("[VALIDATE-PARTNERID] Checking if device mode is 'business'...\n"));
-    rc = strcmp_s("business", strlen("business"), deviceMode, &dm_ind);
-    if (rc != EOK)
-    {
-        AnscTraceWarning(("[VALIDATE-PARTNERID] strcmp_s failed for 'business' check, rc=%d - %s %s:%d. Exiting Validation API (FAILED - strcmp_s error)\n", rc, __FILE__, __FUNCTION__,__LINE__));
-        return FALSE;
-    }
-    if (dm_ind == 0)
-    {
-        is_business = 1;
-        CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode matched: BUSINESS\n"));
-    }
-    else
-    {
-        CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode is not 'business', checking if 'residential'...\n"));
-        dm_ind = -1;
-        rc = strcmp_s("residential", strlen("residential"), deviceMode, &dm_ind);
-        if (rc != EOK)
-        {
-            AnscTraceWarning(("[VALIDATE-PARTNERID] strcmp_s failed for 'residential' check, rc=%d - %s %s:%d. Exiting Validation API (FAILED - strcmp_s error)\n", rc, __FILE__, __FUNCTION__,__LINE__));
-            return FALSE;
-        }
-        if (dm_ind == 0)
-        {
-            is_residential = 1;
-            CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode matched: RESIDENTIAL\n"));
-        }
-    }
-
-    // If device mode is neither business nor residential, deny the change
-    if (!is_business && !is_residential)
-    {
-        CcspTraceWarning(("[VALIDATE-PARTNERID] VALIDATION FAILED: Device mode '%s' is not allowed for PartnerId 'comcast'. Only 'business' or 'residential' modes are permitted. Exiting Validation API (FAILED - invalid device mode)\n", deviceMode));
-        return FALSE;
-    }
-
-    CcspTraceInfo(("[VALIDATE-PARTNERID] Device mode validation PASSED: %s mode is allowed\n", is_business ? "business" : "residential"));
-
-    // Device mode is business or residential, allow setting PartnerId to comcast
-    CcspTraceInfo(("[VALIDATE-PARTNERID] Retrieving factory PartnerId...\n"));
-    ULONG size = sizeof(PartnerID);
-    memset(PartnerID, 0, sizeof(PartnerID));
-    getFactoryPartnerId(PartnerID, &size);
-
-    CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID: '%s', Current_PartnerID: '%s', Setting_PartnerID: '%s' (device mode: %s)\n", 
-                   ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL", pMyObject->PartnerID, pPartnerId, deviceMode));
-
-    // Call setTempPartnerId to persist the change
-    CcspTraceInfo(("[SET-PARTNERID] Calling setTempPartnerId() to persist the change...\n"));
-    retValue = setTempPartnerId(pPartnerId);
-    if (ANSC_STATUS_SUCCESS != retValue)
-    {
-        CcspTraceWarning(("[SET-PARTNERID] setTempPartnerId() FAILED with return value: %d (device mode: %s). Exiting Validation API (FAILED - setTempPartnerId error)\n", retValue, deviceMode));
-        return FALSE;
-    }
-
-    // Return TRUE only when setTempPartnerId succeeds
-    CcspTraceInfo(("[SET-PARTNERID] setTempPartnerId() completed successfully. Successfully set PartnerId to 'comcast' in %s mode. Exiting Validation API (SUCCESS)\n", deviceMode));
-    return TRUE;
-}
-#endif
-
 /**********************************************************************
 
     caller:     owner of this object
@@ -18321,21 +18255,6 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
-#if defined(_ONESTACK_PRODUCT_REQ_)
-            CcspTraceInfo(("[SYNDICATION-SET] PartnerId parameter detected, attempting to set to: '%s'. Calling ValidateComcastPartnerIdForDeviceMode API...\n", pString));
-            
-            // Check if "comcast" PartnerId is allowed based on device mode
-            if (ValidateComcastPartnerIdForDeviceMode(hInsContext, pString))
-            {
-                // Successfully set PartnerId to "comcast" in business or residential mode
-                CcspTraceInfo(("[SYNDICATION-SET] ValidateComcastPartnerIdForDeviceMode API returned SUCCESS. PartnerId set operation completed successfully\n"));
-                return TRUE;
-            }
-            else
-            {
-                CcspTraceInfo(("[SYNDICATION-SET] ValidateComcastPartnerIdForDeviceMode API returned FALSE. Proceeding to standard PartnerId validation logic...\n"));
-            }
-#endif
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
@@ -18343,9 +18262,19 @@ Syndication_SetParamStringValue
 			if( ind != 0 )//if input partner ID string is comcast,you wont enter this 'if' loop
 			{
 #endif
+#if defined(_ONESTACK_PRODUCT_REQ_)
+                // Use optimized PartnerID validation API
+                int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+                
+                // Original check: compare with current PartnerID
+                if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
+		{
+                        if(ind != 0 || allow_change)  // Allow if current differs OR nvram file differs
+#else
                 if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
 		{
                         if(ind != 0)
+#endif // _ONESTACK_PRODUCT_REQ_
                         {
 			    retValue = setTempPartnerId( pString );
 			    if( ANSC_STATUS_SUCCESS == retValue )
