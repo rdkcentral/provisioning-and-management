@@ -18258,13 +18258,15 @@ Syndication_SetParamStringValue
 			{
 #endif
 #if defined(_ONESTACK_PRODUCT_REQ_)
-                // Use optimized PartnerID validation API
-                int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
-                
                 // Original check: compare with current PartnerID
                 if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
 		{
-                        if(ind != 0 || allow_change)  // Allow if current differs OR nvram file differs
+                        if(ind != 0)  // Only proceed if values are actually different
+                        {
+                            // Use optimized PartnerID validation to check for duplicate activation
+                            int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+                            if (allow_change)
+                            {
 #else
                 if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
 		{
@@ -18285,6 +18287,9 @@ Syndication_SetParamStringValue
 								
 				return TRUE;
 			    }
+#if defined(_ONESTACK_PRODUCT_REQ_)
+                            }  // Close allow_change check
+#endif
                         }
 		}
 #if defined (_RDK_REF_PLATFORM_)
