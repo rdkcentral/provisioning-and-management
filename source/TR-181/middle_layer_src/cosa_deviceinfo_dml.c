@@ -1721,12 +1721,12 @@ BOOL meminsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
     int ret = 0;
     int setCfgRet = 0;
 
-    if (strncmp(ParamName, "Enable", strlen("Enable")) == 0) /* Download and install meminsight */
+    if (strcmp(ParamName, "Enable") == 0) /* Download and install meminsight */
     {
         char *value = (bValue == TRUE) ? "true" : "false";
         
         ret = syscfg_get(NULL, "meminsight_Enable", buf, sizeof(buf));
-        if (ret == 0 && strncmp(buf, value, sizeof(buf)) == 0)
+        if (ret == 0 && strcmp(buf, value) == 0)
         {
             return TRUE;
         }
@@ -1743,13 +1743,13 @@ BOOL meminsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
 
         return TRUE;
     }
-    else if (strncmp(ParamName, "Trigger", strlen("Trigger")) == 0) /* Start/ Stop meminsight */
+    else if (strcmp(ParamName, "Trigger") == 0) /* Start/ Stop meminsight */
     {
         char *value = (bValue == TRUE) ? "true" : "false";
         
         /* Check syscfg_get return value before using buffer */
         ret = syscfg_get(NULL, "meminsight_Trigger", buf, sizeof(buf));
-        if (ret == 0 && strncmp(buf, value, sizeof(buf)) == 0)
+        if (ret == 0 && strcmp(buf, value) == 0)
         {
             /* Value is already set to the desired value, no need to update */
             return TRUE;
@@ -1862,13 +1862,13 @@ BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
     UNREFERENCED_PARAMETER(hInsContext);
     int ret = 0;
 
-    if (strncmp(ParamName, "Enable", strlen("Enable")) == 0)
+    if (strcmp(ParamName, "Enable") == 0)
     {
         char value[8] = {'\0'};
         ret = syscfg_get(NULL, "meminsight_Enable", value, sizeof(value));
         if (ret == 0)
         {
-            if (strncmp(value, "true", sizeof(value)) == 0)
+            if (strcmp(value, "true") == 0)
             {
                 *pBool = TRUE;
             }
@@ -1885,13 +1885,13 @@ BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
             return FALSE;
         }
     }
-    else if (strncmp(ParamName, "Trigger", strlen("Trigger")) == 0)
+    else if (strcmp(ParamName, "Trigger") == 0)
     {
         char value[8] = {'\0'};
         ret = syscfg_get(NULL, "meminsight_Trigger", value, sizeof(value));
         if (ret == 0)
         {
-            if (strncmp(value, "true", sizeof(value)) == 0)
+            if (strcmp(value, "true") == 0)
             {
                 *pBool = TRUE;
             }
@@ -1945,16 +1945,28 @@ ULONG meminsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, c
     errno_t rc  = -1;
     int ret = 0;
 
-    if(strncmp(ParamName, "Args", strlen("Args")) == 0) {
+    if(strcmp(ParamName, "Args") == 0) {
         /* collect value */
-        char buf[128] = {'\0'};
+        char buf[512] = {'\0'};
         ret = syscfg_get(NULL, "meminsight_Args", buf, sizeof(buf));
         if(ret == 0)
         {
+            size_t bufLen = strlen(buf);
             rc = strcpy_s(pValue, *pUlSize, buf);
             if(rc != EOK)
             {
                ERR_CHK(rc);
+               if(rc == ERANGE)
+               {
+                   *pUlSize = bufLen + 1;
+                   /* NUL-terminate pValue if there's space */
+                   if(*pUlSize > 0)
+                   {
+                       pValue[0] = '\0';
+                   }
+                   CcspTraceWarning(("Buffer too small for meminsight_Args, required=%lu\n", (unsigned long)(bufLen + 1)));
+                   return 1;
+               }
                CcspTraceError(("strcpy_s failed for meminsight_Args, rc=%d\n", rc));
                return -1;
             }
@@ -2001,7 +2013,7 @@ BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, ch
         return TRUE;
     }
     
-    if (strncmp(ParamName, "Args", strlen("Args")) == 0)
+    if (strcmp(ParamName, "Args") == 0)
     {
         ret = syscfg_set_commit(NULL, "meminsight_Args", pString);
         if (ret != 0)
