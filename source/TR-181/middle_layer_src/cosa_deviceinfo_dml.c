@@ -135,7 +135,8 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 
 #define MAX_ALLOWABLE_STRING_LEN  256
 
-#define MEMINSIGHT_ENABLE_FILE "/nvram/.enable_meminsight"
+#define MEMINSIGHT_ENABLE_FILE_NVRAM "/nvram/.enable_meminsight"
+#define MEMINSIGHT_ENABLE_FILE_TMP "/tmp/.enable_meminsight"
 #define MEMINSIGHT_SERVICE "meminsight-runner.service"
 
 #define BOOTSTRAP_INFO_FILE_BACKUP "/nvram/bootstrap.json"
@@ -1976,28 +1977,32 @@ BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, ch
             if (strncasecmp(pString, "start", 5) == 0)
             {
                 CcspTraceInfo(("Starting MemInsight as Trigger is set to start\n"));
-                FILE *enableFile = fopen(MEMINSIGHT_ENABLE_FILE, "w");
-                if (enableFile != NULL)
+                FILE *enableFile_nvram = fopen(MEMINSIGHT_ENABLE_FILE_NVRAM, "w");
+                FILE *enableFile_tmp = fopen(MEMINSIGHT_ENABLE_FILE_TMP, "w");
+                if (enableFile_nvram != NULL && enableFile_tmp != NULL)
                 {
-                    fclose(enableFile);
-                    CcspTraceInfo(("Successfully created MemInsight enable file: %s\n", MEMINSIGHT_ENABLE_FILE));
+                    fclose(enableFile_nvram);
+                    fclose(enableFile_tmp);
+                    CcspTraceInfo(("Successfully created MemInsight enable files: %s and %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP));
                 }
                 else
                 {
-                    CcspTraceError(("Failed to create MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
+                    CcspTraceError(("Failed to create MemInsight enable files: %s and %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP, strerror(errno)));
                     return FALSE;
                 }
             }
             else if(strncasecmp(pString, "stop", 4) == 0)
             {
                 CcspTraceInfo(("Stopping MemInsight as Trigger is set to stop\n"));
-                FILE *checkFile = fopen(MEMINSIGHT_ENABLE_FILE, "r");
-                if (checkFile != NULL)
+                FILE *checkFile_nvram = fopen(MEMINSIGHT_ENABLE_FILE_NVRAM, "r");
+                FILE *checkFile_tmp = fopen(MEMINSIGHT_ENABLE_FILE_TMP, "r");
+                if (checkFile_nvram != NULL && checkFile_tmp != NULL)
                 {
-                    fclose(checkFile);
-                    if (remove(MEMINSIGHT_ENABLE_FILE) == 0)
+                    fclose(checkFile_nvram);
+                    fclose(checkFile_tmp);
+                    if (remove(MEMINSIGHT_ENABLE_FILE_NVRAM) == 0 && remove(MEMINSIGHT_ENABLE_FILE_TMP) == 0)
                     {
-                        CcspTraceInfo(("Successfully removed MemInsight enable file: %s\n", MEMINSIGHT_ENABLE_FILE));
+                        CcspTraceInfo(("Successfully removed MemInsight enable files: %s and %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP));
 
                         int sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
 
@@ -2032,12 +2037,12 @@ BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, ch
                     }
                     else
                     {
-                        CcspTraceError(("Failed to remove MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
+                        CcspTraceError(("Failed to remove MemInsight enable files: %s and %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP, strerror(errno)));
                     }
                 }
                 else
                 {
-                    CcspTraceInfo(("MemInsight is already disabled. File not found: %s\n", MEMINSIGHT_ENABLE_FILE));
+                    CcspTraceInfo(("MemInsight is already disabled. Files not found: %s and %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP));
                 }
             }
             return TRUE;
