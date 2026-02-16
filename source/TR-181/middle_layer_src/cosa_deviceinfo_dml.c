@@ -18257,38 +18257,32 @@ Syndication_SetParamStringValue
 			if( ind != 0 )//if input partner ID string is comcast,you wont enter this 'if' loop
 			{
 #endif
-#if defined(_ONESTACK_PRODUCT_REQ_)
-                // Original check: compare with current PartnerID
                 if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
 		{
                         if(ind != 0)  // Only proceed if values are actually different
                         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
                             // Use optimized PartnerID validation to check for duplicate activation
                             int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
                             if (allow_change)
                             {
-#else
-                if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
-		{
-                        if(ind != 0)
-#endif // _ONESTACK_PRODUCT_REQ_
-                        {
-			    retValue = setTempPartnerId( pString );
-			    if( ANSC_STATUS_SUCCESS == retValue )
-			    {
-			        ULONG    size = 0;
-				//Get the Factory PartnerID
-			        memset(PartnerID, 0, sizeof(PartnerID));
-			        getFactoryPartnerId(PartnerID, &size);
+#endif
+			        retValue = setTempPartnerId( pString );
+			        if( ANSC_STATUS_SUCCESS == retValue )
+			        {
+			            ULONG    size = 0;
+				    //Get the Factory PartnerID
+			            memset(PartnerID, 0, sizeof(PartnerID));
+			            getFactoryPartnerId(PartnerID, &size);
 			
-			        CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
-			        CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
-			        CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+			            CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+			            CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+			            CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
 								
-				return TRUE;
-			    }
+				    return TRUE;
+			        }
 #if defined(_ONESTACK_PRODUCT_REQ_)
-                            }  // Close allow_change check
+                            }
 #endif
                         }
 		}
