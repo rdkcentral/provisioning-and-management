@@ -1948,7 +1948,7 @@ void _cosa_dhcpsv6_refresh_config();
 static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger);
 #define DHCPS6V_SERVER_RESTART_FIFO "/tmp/ccsp-dhcpv6-server-restart-fifo.txt"
 
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || (defined(_ONESTACK_PRODUCT_REQ_) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ))
+#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || (defined(_ONESTACK_PRODUCT_REQ_) 
 #else
 
 static ANSC_STATUS CosaDmlDhcpv6SMsgHandler (ANSC_HANDLE hContext)
@@ -2067,7 +2067,6 @@ CosaDmlDhcpv6Init
     UtopiaContext utctx = {0};
     ULONG         Index = 0;
     ULONG         Index2 = 0;
-    DSLHDMAGNT_CALLBACK *  pEntry = NULL;
     char         value[32] = {0};
     BOOLEAN		 bIsChangesHappened = FALSE;
     errno_t     rc = -1;
@@ -2209,6 +2208,7 @@ CosaDmlDhcpv6Init
 
 #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || defined(_ONESTACK_PRODUCT_REQ_) 
 #else
+    DSLHDMAGNT_CALLBACK *  pEntry = NULL;
 
     /*register callback function to handle message from wan dchcp6 client */
     pEntry = (PDSLHDMAGNT_CALLBACK)AnscAllocateMemory(sizeof(*pEntry));
@@ -9886,11 +9886,17 @@ dhcpv6s_dbg_thrd(void * in)
             sleep(3);
             memset(msg, 0, sizeof(msg));
             read(v6_srvr_fifo_file_dscrptr, msg, sizeof(msg));
+#ifdef _CBR_PRODUCT_REQ_
+            bool is_cbr_build = true;
+#else
+            bool is_cbr_build = false;
+#endif
+
 #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
 #if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
     defined(_ONESTACK_PRODUCT_REQ_)
 #ifdef _ONESTACK_PRODUCT_REQ_
-    if (!(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION)))
+    if (!(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION) && is_cbr_build))
 #endif
     {
             CcspTraceInfo(("%s %d check IPv6subPrefix  \n", __FUNCTION__, __LINE__));

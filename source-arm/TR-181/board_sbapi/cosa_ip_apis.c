@@ -1488,7 +1488,7 @@ ULONG CosaDmlIPv6addrGetV6Status(PCOSA_DML_IP_V6ADDR p_dml_v6addr, PCOSA_DML_IP_
 
     return COSA_DML_IP6_ADDRSTATUS_Invalid;
 }
-static PCOSA_DML_IP_V6ADDR
+PCOSA_DML_IP_V6ADDR
 CosaDmlIPGetIPv6Addresses_PD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
@@ -1543,7 +1543,7 @@ CosaDmlIPGetIPv6Addresses_PD
 #endif
     return p_dml_addr;
 }
-static PCOSA_DML_IP_V6ADDR
+PCOSA_DML_IP_V6ADDR
 CosaDmlIPGetIPv6Addresses_NONPD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
@@ -4106,7 +4106,7 @@ CosaDmlIpIfGetV6Addr2
 /*
  *  IP Interface IPv6Prefix
  */
-static PCOSA_DML_IP_V6PREFIX
+PCOSA_DML_IP_V6PREFIX
 CosaDmlIPGetIPv6Prefixes_PD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
@@ -4159,7 +4159,7 @@ CosaDmlIPGetIPv6Prefixes_PD
 
     return p_dml_pref;
 }
-static PCOSA_DML_IP_V6PREFIX
+PCOSA_DML_IP_V6PREFIX
 CosaDmlIPGetIPv6Prefixes_NONPD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,

@@ -824,13 +824,13 @@ CosaDmlIPGetIPv6Addresses
         PULONG                      p_num
     );
 
-static PCOSA_DML_IP_V6ADDR
+PCOSA_DML_IP_V6ADDR
 CosaDmlIPGetIPv6Addresses_PD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
         PULONG                      p_num
     );
-static PCOSA_DML_IP_V6ADDR
+PCOSA_DML_IP_V6ADDR
 CosaDmlIPGetIPv6Addresses_NONPD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
