@@ -200,33 +200,29 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 /**
- * @brief Validates if PartnerID change should be allowed by checking current and nvram values
+ * @brief Validates PartnerID operations and prevents duplicate activations
  * 
- * This function checks both the current PartnerID and the /nvram/.partner_ID file content
- * to determine if a PartnerID change operation should be permitted.
+ * This function checks /nvram/.partner_ID file to prevent duplicate PartnerID activations
+ * while allowing all legitimate PartnerID configuration operations. The file is created
+ * during the activation process, not during validation.
  * 
- * @param[in] currentPartnerID - Current PartnerID string from pMyObject
+ * @param[in] currentPartnerID - Current PartnerID string from pMyObject  
  * @param[in] newPartnerID - New PartnerID string being set
  * 
- * @return int - 1 if change should be allowed, 0 if not allowed
+ * @return int - 1 if operation allowed, 0 if duplicate activation detected
  */
 static int ValidatePartnerIDChange(const char* currentPartnerID, const char* newPartnerID)
 {
-    int allow_change = 0;
-    int current_differs = 0;
-    int nvram_differs = 0;
     char nvram_partner_id[PARTNER_ID_LEN] = {0};
     FILE *partner_file = NULL;
+    int allow_operation = 1;
     
     if (!currentPartnerID || !newPartnerID) {
         CcspTraceError(("[PARTNERID-VALIDATE] Invalid input parameters\n"));
         return 0;
     }
     
-    // Check if current PartnerID differs from new one
-    current_differs = (strcmp(currentPartnerID, newPartnerID) != 0) ? 1 : 0;
-    
-    // Try to read /nvram/.partner_ID file
+    // Check if /nvram/.partner_ID file exists (created during previous activation)
     partner_file = fopen("/nvram/.partner_ID", "r");
     if (partner_file != NULL) {
         if (fgets(nvram_partner_id, sizeof(nvram_partner_id), partner_file) != NULL) {
@@ -236,46 +232,34 @@ static int ValidatePartnerIDChange(const char* currentPartnerID, const char* new
                 *pos = '\0';
             }
             
-            // Check if nvram content differs from new PartnerID
-            nvram_differs = (strcmp(nvram_partner_id, newPartnerID) != 0) ? 1 : 0;
+            // Check for duplicate activation - same PartnerID already activated
+            size_t nvram_len = strlen(nvram_partner_id);
+            size_t new_len = strlen(newPartnerID);
+            if (nvram_len == new_len && strncmp(nvram_partner_id, newPartnerID, nvram_len) == 0) {
+                allow_operation = 0; // Prevent duplicate activation
+                CcspTraceWarning(("[PARTNERID-VALIDATE] Preventing duplicate activation of '%s'\n", newPartnerID));
+            }
         } else {
-            CcspTraceWarning(("[PARTNERID-VALIDATE] Failed to read /nvram/.partner_ID file content\n"));
-            nvram_differs = 1; // Treat unreadable file as different to allow change
+            CcspTraceWarning(("[PARTNERID-VALIDATE] Cannot read /nvram/.partner_ID content\n"));
         }
         fclose(partner_file);
     } else {
-        CcspTraceWarning(("[PARTNERID-VALIDATE] /nvram/.partner_ID file not found or cannot be opened\n"));
-        nvram_differs = 1; // Treat missing file as different to allow change
+        // File doesn't exist - this is the first PartnerID operation, allow it
+        CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
     }
     
-    // Determine if change should be allowed
-    // Allow if: 1) Setting same value (no-op), OR 2) New value differs from either current or NVRAM
-    if (!current_differs) {
-        // Setting same value - always allow as no-op operation
-        allow_change = 1;
-        CcspTraceInfo(("[PARTNERID-VALIDATE] Setting same value - allowing as no-op operation\n"));
-    } else {
-        // Setting different value - allow only if it differs from NVRAM 
-        allow_change = nvram_differs ? 1 : 0;
-        if (!allow_change) {
-            CcspTraceWarning(("[PARTNERID-VALIDATE] Rejecting duplicate change - new value matches NVRAM\n"));
-        }
+    // Log validation details
+    CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Activation Check ===\n"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Current PartnerID     : '%s'\n", currentPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Previous activation  : '%s'\n", nvram_partner_id[0] ? nvram_partner_id : "<none>"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID        : '%s'\n", newPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Operation allowed    : %s\n", allow_operation ? "YES" : "NO"));
+    if (!allow_operation) {
+        CcspTraceInfo(("[PARTNERID-VALIDATE] Reason              : Duplicate activation\n"));
     }
+    CcspTraceInfo(("[PARTNERID-VALIDATE] =======================================\n"));
     
-    // Comprehensive logging
-    CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Change Validation ===\n"));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] Current PartnerID    : '%s'\n", currentPartnerID));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] NVRAM PartnerID     : '%s'\n", nvram_partner_id[0] ? nvram_partner_id : "<empty/unreadable>"));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID       : '%s'\n", newPartnerID));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] Current differs     : %s\n", current_differs ? "YES" : "NO"));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] NVRAM differs       : %s\n", nvram_differs ? "YES" : "NO"));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] Decision logic      : %s\n", 
-                   !current_differs ? "Same value (no-op)" : 
-                   (nvram_differs ? "Different from NVRAM" : "Duplicate of NVRAM")));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] Change allowed      : %s\n", allow_change ? "YES" : "NO"));
-    CcspTraceInfo(("[PARTNERID-VALIDATE] =====================================\n"));
-    
-    return allow_change;
+    return allow_operation;
 }
 #endif // _ONESTACK_PRODUCT_REQ_
 
