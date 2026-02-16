@@ -945,13 +945,13 @@ CosaDmlIPGetIPv6Prefixes
         PULONG                      p_num
     );
 
-PCOSA_DML_IP_V6PREFIX
+static PCOSA_DML_IP_V6PREFIX
 CosaDmlIPGetIPv6Prefixes_PD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
         PULONG                      p_num
     );
-PCOSA_DML_IP_V6PREFIX
+static PCOSA_DML_IP_V6PREFIX
 CosaDmlIPGetIPv6Prefixes_NONPD
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,

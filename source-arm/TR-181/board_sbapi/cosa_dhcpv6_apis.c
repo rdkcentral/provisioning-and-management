@@ -1134,6 +1134,7 @@ enum {
 
 #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)) || \
     defined(_ONESTACK_PRODUCT_REQ_)
+#define MAX_LAN_IF_NUM              3
 /*erouter topology mode*/
 enum tp_mod {
     TPMOD_UNKNOWN,
@@ -1775,7 +1776,7 @@ void unsetpool_from_utopia( PUCHAR uniqueName, PUCHAR table1Name, ULONG table1In
 void getpool_from_utopia( PUCHAR uniqueName, PUCHAR table1Name, ULONG table1Index, PCOSA_DML_DHCPSV6_POOL_FULL pEntry )
 {
     UtopiaContext utctx = {0};
- #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_BCI_FEATURE_REQ)) || defined(_ONESTACK_PRODUCT_REQ_)
+ #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_BCI_FEATURE_REQ)) || (defined(_ONESTACK_PRODUCT_REQ_) && defined(_BCI_FEATURE_REQ))
     char *INVALID_IANAInterfacePrefixes = "Device.IP.Interface.4.IPv6Prefix.1.";
     char *FIXED_IANAInterfacePrefixes   = "Device.IP.Interface.1.IPv6Prefix.1.";
 #endif
@@ -2206,7 +2207,7 @@ CosaDmlDhcpv6Init
     SETI_INTO_UTOPIA(DHCPV6S_NAME,  "", 0, "", 0, "serverenable", g_dhcpv6_server)
     Utopia_Free(&utctx,1);
 
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || (defined(_ONESTACK_PRODUCT_REQ_) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ))
+#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || defined(_ONESTACK_PRODUCT_REQ_) 
 #else
 
     /*register callback function to handle message from wan dchcp6 client */
@@ -9889,7 +9890,7 @@ dhcpv6s_dbg_thrd(void * in)
 #if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
     defined(_ONESTACK_PRODUCT_REQ_)
 #ifdef _ONESTACK_PRODUCT_REQ_
-    if (!(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION) && defined(_CBR_PRODUCT_REQ_)))
+    if (!(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION)))
 #endif
     {
             CcspTraceInfo(("%s %d check IPv6subPrefix  \n", __FUNCTION__, __LINE__));
