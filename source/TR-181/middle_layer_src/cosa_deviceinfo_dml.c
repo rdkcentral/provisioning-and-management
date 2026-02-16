@@ -1717,19 +1717,24 @@ BOOL
 BOOL meminsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    char buf[8];
+    char buf[8] = {'\0'};
+    int ret = 0;
+    int setCfgRet = 0;
 
-    if (strcmp(ParamName, "Enable") == 0)
+    if (strncmp(ParamName, "Enable", strlen("Enable")) == 0) /* Download and install meminsight */
     {
         char *value = (bValue == TRUE) ? "true" : "false";
-        syscfg_get(NULL, "meminsight_Enable", buf, sizeof(buf));
-        if (!strncmp(buf, value, strlen(value)))
+        
+        ret = syscfg_get(NULL, "meminsight_Enable", buf, sizeof(buf));
+        if (ret == 0 && strncmp(buf, value, sizeof(buf)) == 0)
         {
             return TRUE;
         }
-        if (syscfg_set_commit(NULL, "meminsight_Enable", value) != 0)
+        
+        setCfgRet = syscfg_set_commit(NULL, "meminsight_Enable", value);
+        if (setCfgRet != 0)
         {
-            CcspTraceError(("syscfg_set failed on meminsight_Enable\n"));
+            CcspTraceError(("syscfg_set_commit failed on meminsight_Enable, ret=%d\n", setCfgRet));
             return FALSE;
         }
 
@@ -1738,17 +1743,22 @@ BOOL meminsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
 
         return TRUE;
     }
-    else if (strcmp(ParamName, "Trigger") == 0) /* Start/ Stop meminsight */
+    else if (strncmp(ParamName, "Trigger", strlen("Trigger")) == 0) /* Start/ Stop meminsight */
     {
         char *value = (bValue == TRUE) ? "true" : "false";
-        syscfg_get(NULL, "meminsight_Trigger", buf, sizeof(buf));
-        if (!strncmp(buf, value, strlen(value)))
+        
+        /* Check syscfg_get return value before using buffer */
+        ret = syscfg_get(NULL, "meminsight_Trigger", buf, sizeof(buf));
+        if (ret == 0 && strncmp(buf, value, sizeof(buf)) == 0)
         {
+            /* Value is already set to the desired value, no need to update */
             return TRUE;
         }
-        if (syscfg_set_commit(NULL, "meminsight_Trigger", value) != 0)
+        
+        setCfgRet = syscfg_set_commit(NULL, "meminsight_Trigger", value);
+        if (setCfgRet != 0)
         {
-            CcspTraceError(("syscfg_set failed on meminsight_Trigger\n"));
+            CcspTraceError(("syscfg_set_commit failed on meminsight_Trigger, ret=%d\n", setCfgRet));
             return FALSE;
         }
 
@@ -1850,13 +1860,15 @@ BOOL meminsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
 BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 {
     UNREFERENCED_PARAMETER(hInsContext);
+    int ret = 0;
 
-    if (strcmp(ParamName, "Enable") == 0)
+    if (strncmp(ParamName, "Enable", strlen("Enable")) == 0)
     {
         char value[8] = {'\0'};
-        if (syscfg_get(NULL, "meminsight_Enable", value, sizeof(value)) == 0)
+        ret = syscfg_get(NULL, "meminsight_Enable", value, sizeof(value));
+        if (ret == 0)
         {
-            if (strcmp(value, "true") == 0)
+            if (strncmp(value, "true", sizeof(value)) == 0)
             {
                 *pBool = TRUE;
             }
@@ -1868,15 +1880,18 @@ BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
         }
         else
         {
-            CcspTraceError(("syscfg_get failed for meminsight_Enable\n"));
+            CcspTraceError(("syscfg_get failed for meminsight_Enable, ret=%d\n", ret));
+            *pBool = FALSE; /* Set default value on error */
+            return FALSE;
         }
     }
-    else if (strcmp(ParamName, "Trigger") == 0)
+    else if (strncmp(ParamName, "Trigger", strlen("Trigger")) == 0)
     {
         char value[8] = {'\0'};
-        if (syscfg_get(NULL, "meminsight_Trigger", value, sizeof(value)) == 0)
+        ret = syscfg_get(NULL, "meminsight_Trigger", value, sizeof(value));
+        if (ret == 0)
         {
-            if (strcmp(value, "true") == 0)
+            if (strncmp(value, "true", sizeof(value)) == 0)
             {
                 *pBool = TRUE;
             }
@@ -1888,7 +1903,9 @@ BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
         }
         else
         {
-            CcspTraceError(("syscfg_get failed for meminsight_Trigger\n"));
+            CcspTraceError(("syscfg_get failed for meminsight_Trigger, ret=%d\n", ret));
+            *pBool = FALSE; /* Set default value on error */
+            return FALSE;
         }
     }
     else
@@ -1924,24 +1941,30 @@ BOOL meminsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL
 ULONG meminsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    UNREFERENCED_PARAMETER(pUlSize);
 
     errno_t rc  = -1;
+    int ret = 0;
 
-    if(strcmp(ParamName, "Args") == 0) {
+    if(strncmp(ParamName, "Args", strlen("Args")) == 0) {
         /* collect value */
         char buf[128] = {'\0'};
-        if(!syscfg_get(NULL, "meminsight_Args", buf, sizeof(buf)))
+        ret = syscfg_get(NULL, "meminsight_Args", buf, sizeof(buf));
+        if(ret == 0)
         {
             rc = strcpy_s(pValue, *pUlSize, buf);
             if(rc != EOK)
             {
                ERR_CHK(rc);
+               CcspTraceError(("strcpy_s failed for meminsight_Args, rc=%d\n", rc));
                return -1;
             }
             return 0;
         }
-        return -1;
+        else
+        {
+            CcspTraceError(("syscfg_get failed for meminsight_Args, ret=%d\n", ret));
+            return -1;
+        }
     }
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
     return -1;
@@ -1971,21 +1994,28 @@ ULONG meminsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, c
 
 BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString)
 {
+    int ret = 0;
+    
     if (IsStringSame(hInsContext, ParamName, pString, meminsight_GetParamStringValue))
     {
         return TRUE;
     }
-    if (strcmp(ParamName, "Args") == 0)
+    
+    if (strncmp(ParamName, "Args", strlen("Args")) == 0)
     {
-        if (syscfg_set_commit(NULL, "meminsight_Args", pString) != 0)
+        ret = syscfg_set_commit(NULL, "meminsight_Args", pString);
+        if (ret != 0)
         {
-            CcspTraceError(("syscfg_set failed for meminsight_Args\n"));
+            CcspTraceError(("syscfg_set_commit failed for meminsight_Args, ret=%d\n", ret));
+            return FALSE;
         }
         else
         {
+            CcspTraceInfo(("meminsight Args set successfully\n"));
             return TRUE;
         }
     }
+    
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
     return FALSE;
 }
