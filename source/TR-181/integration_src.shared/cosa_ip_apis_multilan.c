@@ -2495,6 +2495,7 @@ CosaDmlIpIfMlanGetV6Addr2
     return  ANSC_STATUS_UNAPPLICABLE;    
     }
 #endif
+    return  ANSC_STATUS_SUCCESS;
 #endif
         
 }
@@ -2800,6 +2801,7 @@ CosaDmlIpIfMlanGetV6Prefix2
     return  ANSC_STATUS_UNAPPLICABLE;    
     }
 #endif
+    return  ANSC_STATUS_SUCCESS; 
 #endif
 }
 
