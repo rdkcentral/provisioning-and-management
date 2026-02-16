@@ -824,6 +824,18 @@ CosaDmlIPGetIPv6Addresses
         PULONG                      p_num
     );
 
+static PCOSA_DML_IP_V6ADDR
+CosaDmlIPGetIPv6Addresses_PD
+    (
+        PCOSA_DML_IP_IF_FULL2       p_ipif,
+        PULONG                      p_num
+    );
+static PCOSA_DML_IP_V6ADDR
+CosaDmlIPGetIPv6Addresses_NONPD
+    (
+        PCOSA_DML_IP_IF_FULL2       p_ipif,
+        PULONG                      p_num
+    );
 /**
 * @brief Add a new IPv6 address to an interface.
 *
@@ -933,6 +945,18 @@ CosaDmlIPGetIPv6Prefixes
         PULONG                      p_num
     );
 
+PCOSA_DML_IP_V6PREFIX
+CosaDmlIPGetIPv6Prefixes_PD
+    (
+        PCOSA_DML_IP_IF_FULL2       p_ipif,
+        PULONG                      p_num
+    );
+PCOSA_DML_IP_V6PREFIX
+CosaDmlIPGetIPv6Prefixes_NONPD
+    (
+        PCOSA_DML_IP_IF_FULL2       p_ipif,
+        PULONG                      p_num
+    );
 /**
 * @brief Get the number of IPv6 prefixes on an interface.
 *
