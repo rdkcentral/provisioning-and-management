@@ -1948,12 +1948,19 @@ void _cosa_dhcpsv6_refresh_config();
 static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger);
 #define DHCPS6V_SERVER_RESTART_FIFO "/tmp/ccsp-dhcpv6-server-restart-fifo.txt"
 
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || defined(_ONESTACK_PRODUCT_REQ_) 
+#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || !defined(_ONESTACK_PRODUCT_REQ_) 
 #else
 
 static ANSC_STATUS CosaDmlDhcpv6SMsgHandler (ANSC_HANDLE hContext)
 {
     UNREFERENCED_PARAMETER(hContext);
+#ifdef _ONESTACK_PRODUCT_REQ_
+    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    {
+        /* OneStack + PD enabled → behave like PD build */
+        return ANSC_STATUS_SUCCESS;
+    }
+#endif
     char ret[16] = {0};
     
     /*We may restart by DM manager when pam crashed. We need to get current two status values */
@@ -2207,7 +2214,17 @@ CosaDmlDhcpv6Init
     Utopia_Free(&utctx,1);
 
 #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || defined(_ONESTACK_PRODUCT_REQ_) 
-#else
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
+    }
+#endif
+#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
     DSLHDMAGNT_CALLBACK *  pEntry = NULL;
 
     /*register callback function to handle message from wan dchcp6 client */
@@ -2232,7 +2249,7 @@ CosaDmlDhcpv6Init
         EvtDispterRgstCallbackForEvent("dibblerServer-restart", CosaDmlDhcpv6sRestartOnLanStarted, NULL);
     }
 #endif
-
+    }
 #endif
 
 #if defined(FEATURE_RDKB_WAN_MANAGER)
@@ -4061,6 +4078,7 @@ static int get_active_lanif(unsigned int insts[], unsigned int *num)
 /*
  * Break the prefix provisoned from wan to sub-prefixes based on favor width/depth and topology mode
  */
+#ifdef _COSA_BCM_MIPS_
 static int divide_ipv6_prefix()
 {
     ipv6_prefix_t       mso_prefix;
@@ -4244,7 +4262,6 @@ static int divide_ipv6_prefix()
 
     return 0;
 }
-
 static int get_pd_pool(pd_pool_t *pool)
 {
     char evt_val[256] = {0};
@@ -4380,6 +4397,7 @@ static int get_iapd_info(ia_pd_t *iapd)
 
     return 0;
 }
+#endif
 #endif
 #endif
 
@@ -9017,7 +9035,6 @@ This thread can be generic to handle the operations depending on the interfaces.
 #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
     defined(_ONESTACK_PRODUCT_REQ_)
 #else
-static pthread_t InfEvtHandle_tid;
 static int sysevent_fd_1;
 static token_t sysevent_token_1;
 
@@ -9061,7 +9078,7 @@ void enable_Ula_IPv6(char* ifname)
     }
 }
 #endif
-
+#endif
 void enable_IPv6(char* if_name)
 {
         FILE *fp = NULL;
@@ -9116,7 +9133,9 @@ void enable_IPv6(char* if_name)
         #endif
 
 }
-
+#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
+    defined(_ONESTACK_PRODUCT_REQ_)
+#else
 int getprefixinfo(const char *prefix,  char *value, unsigned int val_len, unsigned int *prefix_len)
 {
     /* CID 173700 Dereference after null check fix */
@@ -9284,8 +9303,8 @@ int handle_MocaIpv6(char *status)
     return 0;
 
 }
-
-
+#endif
+static pthread_t InfEvtHandle_tid;
 static void *InterfaceEventHandler_thrd(void *data)
 {
     UNREFERENCED_PARAMETER(data);
@@ -9530,7 +9549,6 @@ static void *InterfaceEventHandler_thrd(void *data)
     }
     return NULL;
 }
-#endif
 
 #if defined (RDKB_EXTENDER_ENABLED) || defined (WAN_FAILOVER_SUPPORTED)
 
