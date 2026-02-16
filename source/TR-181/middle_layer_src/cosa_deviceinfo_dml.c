@@ -224,10 +224,7 @@ static int ValidatePartnerIDChange(const char* currentPartnerID, const char* new
     }
     
     // Check if current PartnerID differs from new one
-    int current_ind = -1;
-    if (!(strcmp_s(currentPartnerID, strlen(currentPartnerID), newPartnerID, &current_ind))) {
-        current_differs = (current_ind != 0) ? 1 : 0;
-    }
+    current_differs = (strcmp(currentPartnerID, newPartnerID) != 0) ? 1 : 0;
     
     // Try to read /nvram/.partner_ID file
     partner_file = fopen("/nvram/.partner_ID", "r");
@@ -240,20 +237,30 @@ static int ValidatePartnerIDChange(const char* currentPartnerID, const char* new
             }
             
             // Check if nvram content differs from new PartnerID
-            int nvram_ind = -1;
-            if (!(strcmp_s(nvram_partner_id, strlen(nvram_partner_id), newPartnerID, &nvram_ind))) {
-                nvram_differs = (nvram_ind != 0) ? 1 : 0;
-            }
+            nvram_differs = (strcmp(nvram_partner_id, newPartnerID) != 0) ? 1 : 0;
         } else {
             CcspTraceWarning(("[PARTNERID-VALIDATE] Failed to read /nvram/.partner_ID file content\n"));
+            nvram_differs = 1; // Treat unreadable file as different to allow change
         }
         fclose(partner_file);
     } else {
         CcspTraceWarning(("[PARTNERID-VALIDATE] /nvram/.partner_ID file not found or cannot be opened\n"));
+        nvram_differs = 1; // Treat missing file as different to allow change
     }
     
-    // Determine if change should be allowed (current differs OR nvram differs)
-    allow_change = (current_differs || nvram_differs) ? 1 : 0;
+    // Determine if change should be allowed
+    // Allow if: 1) Setting same value (no-op), OR 2) New value differs from either current or NVRAM
+    if (!current_differs) {
+        // Setting same value - always allow as no-op operation
+        allow_change = 1;
+        CcspTraceInfo(("[PARTNERID-VALIDATE] Setting same value - allowing as no-op operation\n"));
+    } else {
+        // Setting different value - allow only if it differs from NVRAM 
+        allow_change = nvram_differs ? 1 : 0;
+        if (!allow_change) {
+            CcspTraceWarning(("[PARTNERID-VALIDATE] Rejecting duplicate change - new value matches NVRAM\n"));
+        }
+    }
     
     // Comprehensive logging
     CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Change Validation ===\n"));
@@ -262,6 +269,9 @@ static int ValidatePartnerIDChange(const char* currentPartnerID, const char* new
     CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID       : '%s'\n", newPartnerID));
     CcspTraceInfo(("[PARTNERID-VALIDATE] Current differs     : %s\n", current_differs ? "YES" : "NO"));
     CcspTraceInfo(("[PARTNERID-VALIDATE] NVRAM differs       : %s\n", nvram_differs ? "YES" : "NO"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Decision logic      : %s\n", 
+                   !current_differs ? "Same value (no-op)" : 
+                   (nvram_differs ? "Different from NVRAM" : "Duplicate of NVRAM")));
     CcspTraceInfo(("[PARTNERID-VALIDATE] Change allowed      : %s\n", allow_change ? "YES" : "NO"));
     CcspTraceInfo(("[PARTNERID-VALIDATE] =====================================\n"));
     
