@@ -69,6 +69,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <dirent.h>
 #include <syscfg/syscfg.h>
 #include "ansc_platform.h"
@@ -205,7 +206,7 @@ BOOL CMRt_Isltn_Enable(BOOL status);
  * 
  * This function checks /nvram/.partner_ID file to prevent duplicate PartnerID activations
  * while allowing all legitimate PartnerID configuration operations. The file is created
- * during the activation process, not during validation.
+ * by setTempPartnerId() when a new PartnerID value is set, not during the activation process.
  * 
  * @param[in] currentPartnerID - Current PartnerID string from pMyObject  
  * @param[in] newPartnerID - New PartnerID string being set
@@ -253,8 +254,14 @@ static int ValidatePartnerIDChange(const char* currentPartnerID, const char* new
         }
         fclose(partner_file);
     } else {
-        // File doesn't exist - this is the first PartnerID operation, allow it
-        CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
+        // Handle fopen failure - check errno to distinguish file not existing from other errors
+        if (errno == ENOENT) {
+            // File doesn't exist - this is the first PartnerID operation, allow it
+            CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
+        } else {
+            // Other error (permissions, I/O error, etc.) - log error but allow operation to maintain existing behavior
+            CcspTraceError(("[PARTNERID-VALIDATE] Failed to open /nvram/.partner_ID (errno=%d): %s - allowing operation\n", errno, strerror(errno)));
+        }
     }
     
     // Log validation details
@@ -18290,6 +18297,14 @@ Syndication_SetParamStringValue
 				    return TRUE;
 			        }
 #if defined(_ONESTACK_PRODUCT_REQ_)
+                            }
+                            else
+                            {
+                                // Validation blocked the change (duplicate activation detected)
+                                // Return TRUE to indicate the Set operation itself is valid (idempotent behavior)
+                                // The actual prevention happens by not calling setTempPartnerId()
+                                CcspTraceWarning(("[SET-PARTNERID] Duplicate activation prevented - returning success for idempotent Set\n"));
+                                return TRUE;
                             }
 #endif
                         }
