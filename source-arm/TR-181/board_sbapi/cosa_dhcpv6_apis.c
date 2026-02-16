@@ -3969,6 +3969,7 @@ int remove_single_quote (char *buf)
 
 #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)) || \
     defined(_ONESTACK_PRODUCT_REQ_)
+#ifdef _COSA_BCM_MIPS_
 // adding new logics to handle pd-class
 static int get_ipv6_tpmode (int *tpmod)
 {
@@ -4074,7 +4075,6 @@ static int get_active_lanif(unsigned int insts[], unsigned int *num)
 
     return *num;
 }
-#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
 /*
  * Break the prefix provisoned from wan to sub-prefixes based on favor width/depth and topology mode
  */
@@ -9035,9 +9035,6 @@ This thread can be generic to handle the operations depending on the interfaces.
 #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
     defined(_ONESTACK_PRODUCT_REQ_)
 #else
-static int sysevent_fd_1;
-static token_t sysevent_token_1;
-
 #ifdef RDKB_EXTENDER_ENABLED
 #include <sys/stat.h>
 #define EXT_MODE_ROUTE_TABLE_NUM 12
@@ -9133,9 +9130,6 @@ void enable_IPv6(char* if_name)
         #endif
 
 }
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
-    defined(_ONESTACK_PRODUCT_REQ_)
-#else
 int getprefixinfo(const char *prefix,  char *value, unsigned int val_len, unsigned int *prefix_len)
 {
     /* CID 173700 Dereference after null check fix */
@@ -9303,8 +9297,9 @@ int handle_MocaIpv6(char *status)
     return 0;
 
 }
-#endif
 static pthread_t InfEvtHandle_tid;
+static int sysevent_fd_1;
+static token_t sysevent_token_1;
 static void *InterfaceEventHandler_thrd(void *data)
 {
     UNREFERENCED_PARAMETER(data);
