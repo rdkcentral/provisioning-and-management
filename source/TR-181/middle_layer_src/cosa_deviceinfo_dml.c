@@ -234,14 +234,22 @@ static int ValidatePartnerIDChange(const char* currentPartnerID, const char* new
             }
             
             // Check for duplicate activation - same PartnerID already activated
-            size_t nvram_len = strlen(nvram_partner_id);
-            size_t new_len = strlen(newPartnerID);
-            if (nvram_len == new_len && strncmp(nvram_partner_id, newPartnerID, nvram_len) == 0) {
-                allow_operation = 0; // Prevent duplicate activation
-                CcspTraceWarning(("[PARTNERID-VALIDATE] Preventing duplicate activation of '%s'\n", newPartnerID));
+            size_t nvram_len = strnlen_s(nvram_partner_id, PARTNER_ID_LEN);
+            size_t new_len = strnlen_s(newPartnerID, PARTNER_ID_LEN);
+            int rc = -1, ind = -1;
+            if (nvram_len == new_len) {
+                rc = strcmp_s(nvram_partner_id, PARTNER_ID_LEN, newPartnerID, &ind);
+                if ((rc == EOK) && (!ind)) {
+                    allow_operation = 0; // Prevent duplicate activation
+                    CcspTraceWarning(("[PARTNERID-VALIDATE] Preventing duplicate activation of '%s'\n", newPartnerID));
+                }
             }
         } else {
-            CcspTraceWarning(("[PARTNERID-VALIDATE] Cannot read /nvram/.partner_ID content\n"));
+            if (ferror(partner_file)) {
+                CcspTraceError(("[PARTNERID-VALIDATE] Error reading /nvram/.partner_ID file\n"));
+            } else {
+                CcspTraceWarning(("[PARTNERID-VALIDATE] Empty /nvram/.partner_ID file\n"));
+            }
         }
         fclose(partner_file);
     } else {
