@@ -1941,6 +1941,11 @@ BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, ch
     
     if (strcmp(ParamName, "Args") == 0)
     {
+        if (pString == NULL)
+        {
+            CcspTraceError(("NULL string value provided for meminsight_Args\n"));
+            return FALSE;
+        }
         ret = syscfg_set_commit(NULL, "meminsight_Args", pString);
         if (ret != 0)
         {
