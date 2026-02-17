@@ -3460,8 +3460,8 @@
                         </parameter>
                         <parameter>
                             <name>Trigger</name>
-                            <type>boolean</type>
-                            <syntax>bool</syntax>
+                            <type>string</type>
+                            <syntax>string</syntax>
                             <writable>true</writable>
                         </parameter>
                         <parameter>
