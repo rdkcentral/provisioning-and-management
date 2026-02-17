@@ -2061,16 +2061,6 @@ BOOL meminsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, ch
 }
 
 /**********************************************************************
-        }
-    }
-    else
-    {
-        CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
-        return FALSE;
-    }
-}
-
-/**********************************************************************
 
     caller:     owner of this object
 
