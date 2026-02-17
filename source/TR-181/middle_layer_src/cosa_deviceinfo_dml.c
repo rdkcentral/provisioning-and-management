@@ -260,7 +260,7 @@ static int ValidatePartnerIDChange(const char* currentPartnerID, const char* new
             CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
         } else {
             // Other error (permissions, I/O error, etc.) - log error but allow operation to maintain existing behavior
-            CcspTraceError(("[PARTNERID-VALIDATE] Failed to open /nvram/.partner_ID (errno=%d): %s - allowing operation\n", errno, strerror(errno)));
+            CcspTraceInfo(("[PARTNERID-VALIDATE] Failed to open /nvram/.partner_ID (errno=%d): %s - allowing operation\n", errno, strerror(errno)));
         }
     }
     
@@ -18278,9 +18278,12 @@ Syndication_SetParamStringValue
                         {
 #if defined(_ONESTACK_PRODUCT_REQ_)
                             // Use optimized PartnerID validation to check for duplicate activation
+                            CcspTraceInfo(("[PARTNERID-VALIDATE] === Validating PartnerID change from '%s' to '%s' ===\n", pMyObject->PartnerID, pString));
                             int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+                            CcspTraceInfo(("[PARTNERID-VALIDATE] Validation result: %s (allow_change=%d)\n", allow_change ? "SUCCESS" : "FAILURE", allow_change));
                             if (allow_change)
                             {
+                               CcspTraceInfo(("[PARTNERID-VALIDATE] === Validation successful, proceeding with PartnerID update ===\n"));
 #endif
 			        retValue = setTempPartnerId( pString );
 			        if( ANSC_STATUS_SUCCESS == retValue )
@@ -18297,9 +18300,29 @@ Syndication_SetParamStringValue
 				    return TRUE;
 			        }
 #if defined(_ONESTACK_PRODUCT_REQ_)
+                                else
+                                {
+                                    CcspTraceInfo(("[SET-PARTNERID] Failed to set PartnerID '%s'\n", pString));
+                                    return FALSE;
+                                }
                             }
+                            else
+                            {
+                                CcspTraceInfo(("[PARTNERID-VALIDATE] === Validation failed - duplicate activation prevented ===\n"));
+                                return FALSE;  
+                            }
+#else
+			        return FALSE; // For non-_ONESTACK_PRODUCT_REQ_ builds when setTempPartnerId fails
 #endif
                         }
+#if defined(_ONESTACK_PRODUCT_REQ_)
+                        else
+                        {
+                            // Values are the same - idempotent operation, return success
+                            CcspTraceInfo(("[SET-PARTNERID] PartnerID '%s' already set - idempotent operation\n", pString));
+                            return TRUE;
+                        }
+#endif
 		}
 #if defined (_RDK_REF_PLATFORM_)
 			}
