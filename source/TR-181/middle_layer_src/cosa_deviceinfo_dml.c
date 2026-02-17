@@ -18298,14 +18298,6 @@ Syndication_SetParamStringValue
 			        }
 #if defined(_ONESTACK_PRODUCT_REQ_)
                             }
-                            else
-                            {
-                                // Validation blocked the change (duplicate activation detected)
-                                // Return TRUE to indicate the Set operation itself is valid (idempotent behavior)
-                                // The actual prevention happens by not calling setTempPartnerId()
-                                CcspTraceWarning(("[SET-PARTNERID] Duplicate activation prevented - returning success for idempotent Set\n"));
-                                return TRUE;
-                            }
 #endif
                         }
 		}
