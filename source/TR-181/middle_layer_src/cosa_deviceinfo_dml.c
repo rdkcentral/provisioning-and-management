@@ -18322,16 +18322,16 @@ Syndication_SetParamStringValue
 			    }
                         }
 		}
-#if defined (_RDK_REF_PLATFORM_)
-			}
-		}
-#endif
-#endif // _ONESTACK_PRODUCT_REQ_
                 else if(rc != EOK)
                 {
                      AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
                      return FALSE;
                 }
+#if defined (_RDK_REF_PLATFORM_)
+			}
+		}
+#endif
+#endif // _ONESTACK_PRODUCT_REQ_
         }
     }
     else if(rc != EOK)
