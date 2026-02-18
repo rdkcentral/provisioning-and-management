@@ -101,10 +101,6 @@
 #include <sys/types.h>
 #endif
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-#include <rdkb_feature_mode_gate.h>
-#endif
-
 #include "ccsp_base_api.h"
 #include "messagebus_interface_helper.h"
 
