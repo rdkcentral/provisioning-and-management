@@ -75,6 +75,10 @@
 #endif
 #include <syscfg/syscfg.h>
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <devicemode.h>
+#endif
+
 /***********************************************************************
  IMPORTANT NOTE:
 
@@ -1764,6 +1768,13 @@ Firewall1_SetParamBoolValue
 
     if (strcmp(ParamName, "TrueStaticIpEnable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+		if(!is_devicemode_business())
+	    {
+            return FALSE;
+	    }
+#endif
+
         /* save update to backup */
         pCosaDMSecurity->FirewallConfig.TrueStaticIpEnable = bValue;
 
