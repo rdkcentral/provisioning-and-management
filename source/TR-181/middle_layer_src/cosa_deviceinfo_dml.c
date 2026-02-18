@@ -198,6 +198,85 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 // ATOM IP length
 #define IP_LEN 20
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/**
+ * @brief Validates PartnerID operations and prevents duplicate activations
+ * 
+ * This function checks /nvram/.partner_ID file to prevent duplicate PartnerID activations
+ * while allowing all legitimate PartnerID configuration operations. The file is created
+ * by setTempPartnerId() when a new PartnerID value is set, not during the activation process.
+ * 
+ * @param[in] currentPartnerID - Current PartnerID string from pMyObject  
+ * @param[in] newPartnerID - New PartnerID string being set
+ * 
+ * @return int - 1 if operation allowed, 0 if duplicate activation detected
+ */
+static int ValidatePartnerIDChange(const char* currentPartnerID, const char* newPartnerID)
+{
+    char nvram_partner_id[PARTNER_ID_LEN] = {0};
+    FILE *partner_file = NULL;
+    int allow_operation = 1;
+    
+    if (!currentPartnerID || !newPartnerID) {
+        CcspTraceError(("[PARTNERID-VALIDATE] Invalid input parameters\n"));
+        return 0;
+    }
+    
+    // Check if /nvram/.partner_ID file exists (created during previous activation)
+    partner_file = fopen("/nvram/.partner_ID", "r");
+    if (partner_file != NULL) {
+        if (fgets(nvram_partner_id, sizeof(nvram_partner_id), partner_file) != NULL) {
+            // Remove newline character if present
+            char *pos = strchr(nvram_partner_id, '\n');
+            if (pos != NULL) {
+                *pos = '\0';
+            }
+            
+            // Check for duplicate activation - same PartnerID already activated
+            size_t nvram_len = strnlen_s(nvram_partner_id, PARTNER_ID_LEN);
+            size_t new_len = strnlen_s(newPartnerID, PARTNER_ID_LEN);
+            int rc = -1, ind = -1;
+            if (nvram_len == new_len) {
+                rc = strcmp_s(nvram_partner_id, PARTNER_ID_LEN, newPartnerID, &ind);
+                if ((rc == EOK) && (!ind)) {
+                    allow_operation = 0; // Prevent duplicate activation
+                    CcspTraceWarning(("[PARTNERID-VALIDATE] Preventing duplicate activation of '%s'\n", newPartnerID));
+                }
+            }
+        } else {
+            if (ferror(partner_file)) {
+                CcspTraceError(("[PARTNERID-VALIDATE] Error reading /nvram/.partner_ID file\n"));
+            } else {
+                CcspTraceWarning(("[PARTNERID-VALIDATE] Empty /nvram/.partner_ID file\n"));
+            }
+        }
+        fclose(partner_file);
+    } else {
+        // Handle fopen failure - check errno to distinguish file not existing from other errors
+        if (errno == ENOENT) {
+            // File doesn't exist - this is the first PartnerID operation, allow it
+            CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
+        } else {
+            // Other error (permissions, I/O error, etc.) - log error but allow operation to maintain existing behavior
+            CcspTraceInfo(("[PARTNERID-VALIDATE] Failed to open /nvram/.partner_ID (errno=%d): %s - allowing operation\n", errno, strerror(errno)));
+        }
+    }
+    
+    // Log validation details
+    CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Activation Check ===\n"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Current PartnerID     : '%s'\n", currentPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Previous activation  : '%s'\n", nvram_partner_id[0] ? nvram_partner_id : "<none>"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID        : '%s'\n", newPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Operation allowed    : %s\n", allow_operation ? "YES" : "NO"));
+    if (!allow_operation) {
+        CcspTraceInfo(("[PARTNERID-VALIDATE] Reason              : Duplicate activation\n"));
+    }
+    CcspTraceInfo(("[PARTNERID-VALIDATE] =======================================\n"));
+    
+    return allow_operation;
+}
+#endif // _ONESTACK_PRODUCT_REQ_
+
 #ifdef COLUMBO_HWTEST
 //RDKB-33114: Default values defined here due to objects not being persistent by design
 #define DEFAULT_HWST_PTR_CPU_THRESHOLD 80
@@ -18184,6 +18263,32 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            // Use optimized PartnerID validation API for ONESTACK only
+            CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
+            int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+            CcspTraceInfo(("[SET-PARTNERID] Validation result: %d\n", allow_change));
+            
+            // For ONESTACK, rely on ValidatePartnerIDChange() result only
+            if(allow_change)
+            {
+                retValue = setTempPartnerId( pString );
+                if( ANSC_STATUS_SUCCESS == retValue )
+                {
+                    ULONG    size = 0;
+                    //Get the Factory PartnerID
+                    memset(PartnerID, 0, sizeof(PartnerID));
+                    getFactoryPartnerId(PartnerID, &size);
+            
+                    CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                    CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                    CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+                                    
+                    return TRUE;
+                }
+            }
+#else
+            // Original logic for all non-ONESTACK platforms (completely unchanged)
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
@@ -18220,6 +18325,7 @@ Syndication_SetParamStringValue
                      AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
                      return FALSE;
                 }
+#endif // _ONESTACK_PRODUCT_REQ_
         }
     }
     else if(rc != EOK)
