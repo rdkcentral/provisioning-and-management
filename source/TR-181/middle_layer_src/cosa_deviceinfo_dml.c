@@ -18271,28 +18271,28 @@ Syndication_SetParamStringValue
             int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
             CcspTraceInfo(("[SET-PARTNERID] Validation result: %d (0: no change, 1: allowed change, -1: disallowed change)\n", allow_change));
             
-            // Original check: compare with current PartnerID
-            if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
+            // For ONESTACK, rely on ValidatePartnerIDChange() result only
+            if (allow_change)
             {
-                CcspTraceInfo(("[SET-PARTNERID] strcmp_s result: ind=%d\n", ind));
-                if(ind != 0 && allow_change)
+                CcspTraceInfo(("[SET-PARTNERID] Validation passed (allow_change=%d) - proceeding with PartnerID update\n", allow_change));
+                retValue = setTempPartnerId( pString );
+                if( ANSC_STATUS_SUCCESS == retValue )
                 {
-                    CcspTraceInfo(("[SET-PARTNERID] Condition met: ind=%d, allow_change=%d - proceeding with PartnerID update\n", ind, allow_change));
-                    retValue = setTempPartnerId( pString );
-                    if( ANSC_STATUS_SUCCESS == retValue )
-                    {
-                        ULONG    size = 0;
-                        //Get the Factory PartnerID
-                        memset(PartnerID, 0, sizeof(PartnerID));
-                        getFactoryPartnerId(PartnerID, &size);
-                
-                        CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
-                        CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
-                        CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
-                                        
-                        return TRUE;
-                    }
+                    ULONG    size = 0;
+                    //Get the Factory PartnerID
+                    memset(PartnerID, 0, sizeof(PartnerID));
+                    getFactoryPartnerId(PartnerID, &size);
+            
+                    CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                    CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                    CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+                                    
+                    return TRUE;
                 }
+            }
+            else
+            {
+                CcspTraceInfo(("[SET-PARTNERID] Validation failed (allow_change=%d) - blocking operation\n", allow_change));
             }
 #else
 #if defined (_RDK_REF_PLATFORM_)
