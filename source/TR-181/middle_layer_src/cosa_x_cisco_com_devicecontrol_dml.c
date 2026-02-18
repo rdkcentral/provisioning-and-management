@@ -2167,12 +2167,12 @@ LanMngm_SetParamUlongValue
             return FALSE;
         }*/
 #ifdef _ONESTACK_PRODUCT_REQ_
-        if (COSA_DML_LanMode_BridgeStatic == uValuepUlong)
+        if (COSA_DML_LanMode_FullBridgeStatic == uValuepUlong)
         {
-            if (false == isFeatureSupportedInCurrentMode(FEATURE_ADVANCED_BRIDGE_MODE))
+            if (false == isFeatureSupportedInCurrentMode(FEATURE_BASIC_BRIDGE_MODE))
             {
-                t2_event_d("AdvancedBridgeMode_NotSupported", 1);
-                CcspTraceError(("Advanced BridgeMode Not Supported\n"));
+                t2_event_d("BasicBridgeMode_NotSupported", 1);
+                CcspTraceError(("Basic BridgeMode Not Supported\n"));
                 return FALSE;
             }
         }

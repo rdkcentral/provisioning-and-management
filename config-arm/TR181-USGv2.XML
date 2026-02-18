@@ -15013,10 +15013,14 @@
             <parameter>
                 
               <name>LanMode</name>
+<?ifdef _ONESTACK_PRODUCT_REQ_?>
+              <type>string: bridge-dhcp(1),bridge-static(2),router(3),full-bridge-static(4)</type>
+<?else?>
 <?ifndef BCI?>
               <type>string: bridge-dhcp(1),bridge-static(2),router(3)</type>
 <?else?>
               <type>string: bridge-dhcp(1),bridge-static(2),router(3),full-bridge-static(4)</type>
+<?endif?>
 <?endif?>
               <syntax>uint32/mapped</syntax>
 
