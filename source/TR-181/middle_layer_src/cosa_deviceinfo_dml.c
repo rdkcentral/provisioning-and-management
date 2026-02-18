@@ -18265,6 +18265,40 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            // Use optimized PartnerID validation API for ONESTACK only
+            CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
+            int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+            CcspTraceInfo(("[SET-PARTNERID] Validation result: %d\n", allow_change));
+            
+            // For ONESTACK, rely on ValidatePartnerIDChange() result only
+            if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
+            {
+                if(allow_change)
+                {
+                    retValue = setTempPartnerId( pString );
+                    if( ANSC_STATUS_SUCCESS == retValue )
+                    {
+                        ULONG    size = 0;
+                        //Get the Factory PartnerID
+                        memset(PartnerID, 0, sizeof(PartnerID));
+                        getFactoryPartnerId(PartnerID, &size);
+                
+                        CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                        CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                        CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+                                        
+                        return TRUE;
+                    }
+                }
+            }
+            else if(rc != EOK)
+            {
+                 AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
+                 return FALSE;
+            }
+#else
+            // Original logic for all non-ONESTACK platforms (completely unchanged)
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
@@ -18272,35 +18306,6 @@ Syndication_SetParamStringValue
 			if( ind != 0 )//if input partner ID string is comcast,you wont enter this 'if' loop
 			{
 #endif
-#if defined(_ONESTACK_PRODUCT_REQ_)
-                // Use optimized PartnerID validation API for ONESTACK only
-                CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
-                int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
-                CcspTraceInfo(("[SET-PARTNERID] Validation result: %d\n", allow_change));
-                
-                // For ONESTACK, rely on ValidatePartnerIDChange() result only
-                if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
-                {
-                    if(allow_change)
-                    {
-                        retValue = setTempPartnerId( pString );
-                        if( ANSC_STATUS_SUCCESS == retValue )
-                        {
-                            ULONG    size = 0;
-                            //Get the Factory PartnerID
-                            memset(PartnerID, 0, sizeof(PartnerID));
-                            getFactoryPartnerId(PartnerID, &size);
-                    
-                            CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
-                            CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
-                            CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
-                                            
-                            return TRUE;
-                        }
-                    }
-                }
-#else
-                // Original logic for non-ONESTACK platforms (unchanged)
                 if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
 		{
                         if(ind != 0)
@@ -18321,16 +18326,16 @@ Syndication_SetParamStringValue
 			    }
                         }
 		}
-#endif // _ONESTACK_PRODUCT_REQ_
+#if defined (_RDK_REF_PLATFORM_)
+			}
+		}
+#endif
                 else if(rc != EOK)
                 {
                      AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
                      return FALSE;
                 }
-#if defined (_RDK_REF_PLATFORM_)
-			}
-		}
-#endif
+#endif // _ONESTACK_PRODUCT_REQ_
         }
     }
     else if(rc != EOK)
