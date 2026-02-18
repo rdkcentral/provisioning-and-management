@@ -98,6 +98,7 @@
 #include "cosa_drg_common.h"
 #include "safec_lib_common.h"
 #include "ansc_string_util.h"
+#include "fw_download_check.h"
 
 #define DEVICE_PROPERTIES    "/etc/device.properties"
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
@@ -151,6 +152,10 @@ extern  ANSC_HANDLE             bus_handle;
 #include "platform_hal.h"
 #include "autoconf.h"     
 #include "secure_wrapper.h"
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include "devicemode.h"
+#endif
 
 #define _ERROR_ "NOT SUPPORTED"
 #define _START_TIME_12AM_ "0"
@@ -2637,6 +2642,38 @@ CosaDmlDiSetSyndicationTR69CertLocation
     return ANSC_STATUS_SUCCESS;
 }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+ANSC_STATUS
+CosaDmlDiGetSyndicationDeviceMode
+    (
+        ANSC_HANDLE                 hContext,
+        char*                       pValue,
+        size_t                      size
+    )
+{
+    UNREFERENCED_PARAMETER(hContext);
+    
+    if (!pValue || size < DEVICEMODE_BUF_SIZE)
+    {
+        CcspTraceError(("%s - Invalid buffer: pValue=%p, size=%zu (min required: %d)\n", 
+                        __FUNCTION__, pValue, size, DEVICEMODE_BUF_SIZE));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    // Call onestackutils API to get device mode from syscfg
+    if (onestackutils_get_syscfg_devicemode(pValue, size) != 0)
+    {
+        // If syscfg read fails, default to "residential"
+        snprintf(pValue, size, "residential");
+        CcspTraceWarning(("%s - Failed to get devicemode from syscfg, defaulting to 'residential'\n", __FUNCTION__));
+        return ANSC_STATUS_SUCCESS;
+    }
+    
+    CcspTraceInfo(("%s - Retrieved devicemode: '%s'\n", __FUNCTION__, pValue));
+    return ANSC_STATUS_SUCCESS;
+}
+#endif
+
 ANSC_STATUS getFactoryPartnerId
 	(
 		char*                       pValue,
@@ -4696,6 +4733,12 @@ FirmwareDownloadAndFactoryReset(void* arg)
         }
 
         CcspTraceWarning(("%s: ImageName %s, url %s\n", __FUNCTION__, Imagename, URL));
+        if(can_proceed_fw_download() == FW_DWNLD_MEMCHK_NOT_ENOUGH_MEM)
+        {
+            CcspTraceError(("FirmwareDownloadAndFactoryReset : Not enough memory to proceed firmware download\n"));
+            commonSyseventSet("fw_update_inprogress", "false");
+            return NULL;
+        }
         if( RETURN_ERR == cm_hal_FWupdateAndFactoryReset( URL, Imagename ))
         {
             CcspTraceError(("FirmwareDownloadAndFactoryReset :cm_hal_FWupdateAndFactoryReset failed for webpa.\n"));

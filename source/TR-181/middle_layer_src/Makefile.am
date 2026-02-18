@@ -151,3 +151,7 @@ libCcspPandM_middle_layer_src_la_LDFLAGS = -lccsp_common -lmsgpackc -lwebconfig_
 if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_middle_layer_src_la_LDFLAGS += -lnet
 endif
+
+if ONESTACK_PRODUCT_REQ
+libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lrdkb_feature_mode_gate
+endif
