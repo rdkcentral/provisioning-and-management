@@ -18265,6 +18265,36 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            // Use optimized PartnerID validation API
+            CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
+            int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+            CcspTraceInfo(("[SET-PARTNERID] Validation result: %d (0: no change, 1: allowed change, -1: disallowed change)\n", allow_change));
+            
+            // Original check: compare with current PartnerID
+            if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
+            {
+                CcspTraceInfo(("[SET-PARTNERID] strcmp_s result: ind=%d\n", ind));
+                if(ind != 0 && allow_change)
+                {
+                    CcspTraceInfo(("[SET-PARTNERID] Condition met: ind=%d, allow_change=%d - proceeding with PartnerID update\n", ind, allow_change));
+                    retValue = setTempPartnerId( pString );
+                    if( ANSC_STATUS_SUCCESS == retValue )
+                    {
+                        ULONG    size = 0;
+                        //Get the Factory PartnerID
+                        memset(PartnerID, 0, sizeof(PartnerID));
+                        getFactoryPartnerId(PartnerID, &size);
+                
+                        CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                        CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                        CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+                                        
+                        return TRUE;
+                    }
+                }
+            }
+#else
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
@@ -18272,24 +18302,9 @@ Syndication_SetParamStringValue
 			if( ind != 0 )//if input partner ID string is comcast,you wont enter this 'if' loop
 			{
 #endif
-#if defined(_ONESTACK_PRODUCT_REQ_)
-                // Use optimized PartnerID validation API
-                CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
-                int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
-                CcspTraceInfo(("[SET-PARTNERID] Validation result: %d (0: no change, 1: allowed change, -1: disallowed change)\n", allow_change));
-                
-                // Original check: compare with current PartnerID
-                if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
-		{
-                CcspTraceInfo(("[SET-PARTNERID] strcmp_s result: ind=%d\n", ind));
-                        if(ind != 0 && allow_change)
-                        {
-                            CcspTraceInfo(("[SET-PARTNERID] Condition met: ind=%d, allow_change=%d - proceeding with PartnerID update\n", ind, allow_change));
-#else
                 if ( !(rc = strcmp_s(pMyObject->PartnerID, sizeof(pMyObject->PartnerID), pString, &ind)) )
 		{
                         if(ind != 0)
-#endif // _ONESTACK_PRODUCT_REQ_
                         {
 			    retValue = setTempPartnerId( pString );
 			    if( ANSC_STATUS_SUCCESS == retValue )
@@ -18311,6 +18326,7 @@ Syndication_SetParamStringValue
 			}
 		}
 #endif
+#endif // _ONESTACK_PRODUCT_REQ_
                 else if(rc != EOK)
                 {
                      AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
