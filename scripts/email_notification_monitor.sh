@@ -34,7 +34,7 @@
 #   limitations under the License.
 #######################################################################
 
-
+##cehckonh
 EMAIL_READY="/var/.email_ready"
 SEND_FW="/var/.email_fwlog"
 SEND_PC="/var/.email_pclog"
