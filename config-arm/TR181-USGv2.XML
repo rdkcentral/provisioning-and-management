@@ -13924,7 +13924,7 @@
 
           </parameter>
 <?endif?>
-<?ifdef _ONESTACK_PRODUCT_REQ_?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>TrueStaticIpEnable</name>
