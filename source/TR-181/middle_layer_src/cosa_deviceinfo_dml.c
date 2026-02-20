@@ -8942,9 +8942,9 @@ Identity_SetParamStringValue
 BOOL
 STAGE_GetParamBoolValue
     (
-        ANSC_HANDLE                 hInsContext,
-        char*                       ParamName,
-        BOOL*                       pBool
+         ANSC_HANDLE                 hInsContext,
+         char*                       ParamName,
+         BOOL*                       pBool
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
