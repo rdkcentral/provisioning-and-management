@@ -1523,7 +1523,7 @@
                                      <writable>true</writable>
                                  </parameter>
                              </parameters>
-		     </object>
+                     </object>
                 <object>
                    <name>STAGE</name>
                    <objectType>object</objectType>
