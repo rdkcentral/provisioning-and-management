@@ -9003,7 +9003,7 @@ STAGE_SetParamBoolValue
     {
 	if(syscfg_set_commit(NULL, "StageEnabled", (bValue == TRUE) ? "true" : "false") != 0)
          {
-		CcspTraceError(("[%s] syscfg_set failed for STAGE\n",__FUNCTION__));
+		CcspTraceError(("[%s] syscfg_set_commit failed for key 'StageEnabled' in STAGE\n", __FUNCTION__));
 		return FALSE;
          }
          return TRUE;
