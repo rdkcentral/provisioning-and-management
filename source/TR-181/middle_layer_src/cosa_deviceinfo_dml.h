@@ -947,8 +947,9 @@ Identity_SetParamStringValue
  * @param[out] pBool      - Pointer to store the boolean value.
  *
  * @return The status of the operation.
- * @retval TRUE if the parameter is found and retrieved successfully.
- * @retval FALSE if the parameter is not found or operation fails.
+ * @retval TRUE if the parameter name is supported and a value has been provided
+ *              (the value may be a default if the underlying storage access fails).
+ * @retval FALSE if the parameter name is not supported.
  *
  */
 
