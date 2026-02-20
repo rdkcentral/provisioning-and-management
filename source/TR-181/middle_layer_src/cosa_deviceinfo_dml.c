@@ -9001,15 +9001,15 @@ STAGE_SetParamBoolValue
         return TRUE;
     if (strcmp(ParamName, "Enable") == 0)
     {
-	if(syscfg_set_commit(NULL, "StageEnabled", (bValue == TRUE) ? "true" : "false") != 0)
+        if(syscfg_set_commit(NULL, "StageEnabled", (bValue == TRUE) ? "true" : "false") != 0)
          {
-		CcspTraceError(("[%s] syscfg_set_commit failed for key 'StageEnabled' in STAGE\n", __FUNCTION__));
-		return FALSE;
+            CcspTraceError(("[%s] syscfg_set_commit failed for key 'StageEnabled' in STAGE\n", __FUNCTION__));
+            return FALSE;
          }
          return TRUE;
 
     }
-	return FALSE;
+    return FALSE;
 }
 /**
  *  RFC Feature for CrashUpload S3signing url
