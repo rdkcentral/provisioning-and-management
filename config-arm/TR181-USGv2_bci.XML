@@ -1528,8 +1528,8 @@
                    <name>STAGE</name>
                    <objectType>object</objectType>
                    <functions>
-                        <func_SetParamBoolValue>STAGE_SetParamBoolValue</func_SetParamBoolValue>
                         <func_GetParamBoolValue>STAGE_GetParamBoolValue</func_GetParamBoolValue>
+                        <func_SetParamBoolValue>STAGE_SetParamBoolValue</func_SetParamBoolValue>
                    </functions>
 
                    <parameters>
