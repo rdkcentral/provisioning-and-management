@@ -9006,7 +9006,6 @@ STAGE_SetParamBoolValue
             return FALSE;
          }
          return TRUE;
-
     }
     return FALSE;
 }
