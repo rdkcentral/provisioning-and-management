@@ -8950,20 +8950,20 @@ STAGE_GetParamBoolValue
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "Enable") == 0)
     {
-	char buf[8]={0};
-	if (syscfg_get( NULL, "StageEnabled", buf, sizeof(buf)) == 0)
-	{
-		if (strncmp(buf, "true", sizeof(buf)) == 0)
-			*pBool = TRUE;
-		else
-			*pBool = FALSE;
-	}
-	else
-	{
-		CcspTraceError(("%s syscfg_get failed  for StageEnabled\n",__FUNCTION__));
-		*pBool = FALSE;
-	}
-	return TRUE;
+        char buf[8] = {0};
+        if (syscfg_get(NULL, "StageEnabled", buf, sizeof(buf)) == 0)
+        {
+            if (strncmp(buf, "true", sizeof(buf)) == 0)
+                *pBool = TRUE;
+            else
+                *pBool = FALSE;
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed  for StageEnabled\n", __FUNCTION__));
+            *pBool = FALSE;
+        }
+        return TRUE;
 
     }
     return FALSE;
