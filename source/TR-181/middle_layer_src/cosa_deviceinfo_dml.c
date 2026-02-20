@@ -8964,7 +8964,6 @@ STAGE_GetParamBoolValue
             *pBool = FALSE;
         }
         return TRUE;
-
     }
     return FALSE;
 }
