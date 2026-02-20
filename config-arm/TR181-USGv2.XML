@@ -1967,13 +1967,15 @@
                                 <writable>true</writable>
 			    </parameter>
 <?endif?>
-<?ifdef BCI | COSA_FOR_BCI?>
+<?ifdef BCI | COSA_FOR_BCI | _ONESTACK_PRODUCT_REQ_?>
                             <parameter>
                               <name>OneToOneNAT</name>
                               <type>boolean</type>
                               <syntax>bool</syntax>
                               <writable>true</writable>
                             </parameter>
+<?endif?>
+<?ifdef BCI | COSA_FOR_BCI?>
                             <parameter>
                               <name>EnableMultiProfileXDNS</name>
                               <type>boolean</type>
@@ -13923,7 +13925,8 @@
             <writable>true</writable>
 
           </parameter>
-
+<?endif?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>TrueStaticIpEnable</name>
