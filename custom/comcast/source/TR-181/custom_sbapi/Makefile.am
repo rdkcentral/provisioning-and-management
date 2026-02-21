@@ -32,3 +32,7 @@ libCcspPandM_comcast_sbapi_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_ml 
 
 libCcspPandM_comcast_sbapi_la_SOURCES = cosa_deviceinfo_apis_custom.c cosa_x_cisco_com_hotspot_apis.c cosa_x_cisco_com_truestaticip_apis.c cosa_x_comcast-com_gre_apis.c cosa_x_cisco_com_gre_apis.c cosa_x_comcast_com_gre_apis.c
 libCcspPandM_comcast_sbapi_la_LDFLAGS = -lccsp_common
+
+if ONESTACK_PRODUCT_REQ
+libCcspPandM_comcast_sbapi_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lrdkb_feature_mode_gate
+endif
