@@ -311,27 +311,7 @@ CosaDmlDiGetRouterIPv6Address
 	ipv6_addr_info_t * p_v6addr = NULL;
     int  v6addr_num = 0, i, l_iIpV6AddrLen;
 
-#if defined(_RDKB_GLOBAL_PRODUCT_REQ_)
-    char            acLANIPv6GUASupport[8] = {0};
-    unsigned char   IsLANIPv6GUASupported  = FALSE;
-
-    commonSyseventGet("LANIPv6GUASupport", acLANIPv6GUASupport, sizeof(acLANIPv6GUASupport));
-    if( 0 == strncmp( acLANIPv6GUASupport, "true", strlen( acLANIPv6GUASupport ) ) )
-    {   
-        IsLANIPv6GUASupported = TRUE;
-    }
-
-    if( TRUE == IsLANIPv6GUASupported )
-    {
-        CosaUtilGetIpv6AddrInfo("brlan0", &p_v6addr, &v6addr_num);
-    }
-    else
-    {
-        CosaUtilGetIpv6AddrInfo("erouter0", &p_v6addr, &v6addr_num);
-    }
-#elif defined(_HUB4_PRODUCT_REQ_)
-	CosaUtilGetIpv6AddrInfo("brlan0", &p_v6addr, &v6addr_num);
-#elif defined(_WNXL11BWL_PRODUCT_REQ_)
+#if defined(_WNXL11BWL_PRODUCT_REQ_) || defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
         char wan_interface[32] = {0};
         commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
         CosaUtilGetIpv6AddrInfo(wan_interface, &p_v6addr, &v6addr_num);
@@ -340,38 +320,12 @@ CosaDmlDiGetRouterIPv6Address
 #endif
     for(i = 0; i < v6addr_num; i++ )
     {
-#if defined(_RDKB_GLOBAL_PRODUCT_REQ_)
-        if ( p_v6addr[i].scope == IPV6_ADDR_SCOPE_GLOBAL ) 
-        {
-            if ( TRUE == IsLANIPv6GUASupported )
-            {
-                if ( (strncmp(p_v6addr[i].v6addr, "fd", 2) != 0) && (strncmp(p_v6addr[i].v6addr, "fc", 2) != 0) )
-                {
-                    l_iIpV6AddrLen = strlen(p_v6addr[i].v6addr);
-                    strncpy(pValue, p_v6addr[i].v6addr, l_iIpV6AddrLen);
-                    pValue[l_iIpV6AddrLen] = '\0';
-                }
-            }
-            else
-            {
-                l_iIpV6AddrLen = strlen(p_v6addr[i].v6addr);
-                strncpy(pValue, p_v6addr[i].v6addr, l_iIpV6AddrLen);
-                pValue[l_iIpV6AddrLen] = '\0';
-            }
-
-        }
-#else
-#if defined(_HUB4_PRODUCT_REQ_)
-        if((p_v6addr[i].scope == IPV6_ADDR_SCOPE_GLOBAL) && (strncmp(p_v6addr[i].v6addr, "fd", 2) != 0) && (strncmp(p_v6addr[i].v6addr, "fc", 2) != 0))
-#else
         if(p_v6addr[i].scope == IPV6_ADDR_SCOPE_GLOBAL)
-#endif
         {
 			l_iIpV6AddrLen = strlen(p_v6addr[i].v6addr);
 			strncpy(pValue, p_v6addr[i].v6addr, l_iIpV6AddrLen);
 			pValue[l_iIpV6AddrLen] = '\0';
         }
-#endif /** _RDKB_GLOBAL_PRODUCT_REQ_ */
     }
 	if(p_v6addr)
         free(p_v6addr);
