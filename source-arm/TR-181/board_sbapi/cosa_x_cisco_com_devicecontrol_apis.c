@@ -5208,3 +5208,56 @@ BOOL IsPortInUse(unsigned int port)
 
     return FALSE;
 }
+#if defined (_COSA_QCA_ARM_)
+ANSC_STATUS
+CosaDmlUISetRemotePorts()
+{
+        char buf[20];
+        int ret = 0;
+
+       /*Setting HTTP port*/
+        ret = syscfg_get(NULL, "mgmt_wan_httpaccess", buf, sizeof(buf));
+        if(ret !=0)
+        {
+            CcspTraceError(("Unable to get mgmt_wan_httpaccess from syscfg\n"));
+            return ANSC_STATUS_FAILURE;
+        }
+        if(!strcmp(buf,"1"))
+        {
+            int httpport = 8080;
+            memset(buf, 0, sizeof(buf));
+            ret = syscfg_get(NULL, "mgmt_wan_httpport_ert", buf, sizeof(buf));
+            if(ret !=0)
+            {
+                CcspTraceError(("Unable to get mgmt_wan_httpport_ert from syscfg\n"));
+                return ANSC_STATUS_FAILURE;
+            }
+            httpport = atoi(buf);
+            v_secure_system("sed -i '/SERVER/d' /etc/lighttpd.conf");
+            v_secure_system("echo '$SERVER[\"socket\"] == \":%d\" { server.use-ipv6 = \"enable\" }' >> /etc/lighttpd.conf", httpport);
+        }
+
+       /*Setting HTTPS port*/
+        memset(buf,0,sizeof(buf));
+        ret = syscfg_get(NULL, "mgmt_wan_httpsaccess", buf, sizeof(buf));
+        if(ret !=0)
+        {
+            CcspTraceError(("Unable to get mgmt_wan_httpsaccess from syscfg\n"));
+            return ANSC_STATUS_FAILURE;
+        }
+        if(!strcmp(buf,"1"))
+        {
+            int httpsport = 443;
+            memset(buf, 0, sizeof(buf));
+            ret = syscfg_get(NULL, "mgmt_wan_httpsport", buf, sizeof(buf));
+            if(ret !=0)
+            {
+                CcspTraceError(("Unable to get mgmt_wan_httpsport from syscfg\n"));
+                return ANSC_STATUS_FAILURE;
+            }
+            httpsport = atoi(buf);
+            v_secure_system("echo '$SERVER[\"socket\"] == \":%d\" { server.use-ipv6 = \"enable\" ssl.engine = \"enable\" ssl.pemfile = \"/etc/server.pem\"}' >> /etc/lighttpd.conf", httpsport);
+        }
+        return ANSC_STATUS_SUCCESS;
+}
+#endif

@@ -10079,6 +10079,12 @@ WPA3_Personal_Transition_RFC_GetParamBoolValue
         retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WPA3_Personal_Transition.Enable", NULL, &strValue);
         if (retPsmGet == CCSP_SUCCESS) {
             *pBool = _ansc_atoi(strValue);
+            #if defined (_COSA_QCA_ARM_)
+                if(strncmp(strValue, "TRUE", strlen(strValue)) == 0)
+                    *pBool = 1;
+                else
+                    *pBool = 0;
+	    #endif
             ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
         }
         else

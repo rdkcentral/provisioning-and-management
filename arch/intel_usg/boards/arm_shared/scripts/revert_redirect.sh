@@ -39,6 +39,7 @@ if [ "$1" != "rfcp" ]
 then
     echo_t "Revert Redirect : Reverting back the changes made for redirecting the URL's"
     syscfg set redirection_flag false
+    syscfg set CaptivePortal_Enable false
 
     # Check if command execution was success
     # If not, set syscfg value once again
@@ -47,6 +48,7 @@ then
     then
         echo_t "Revert Redirect : Setting redirection_flag to false failed, try resetting it.."
         syscfg set redirection_flag false
+	syscfg set CaptivePortal_Enable false
     fi
 
     syscfg commit
@@ -203,6 +205,7 @@ then
     then
         echo_t "Revert Redirect : Setting redirection_flag to false failed even after retry, trying to reset it again.."
         syscfg set redirection_flag false
+	syscfg set CaptivePortal_Enable false
         syscfg commit
     fi
             

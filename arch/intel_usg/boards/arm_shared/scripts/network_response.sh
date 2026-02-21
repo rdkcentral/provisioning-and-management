@@ -659,7 +659,7 @@ then
                 echo_t "Network Response: NotifyWiFiChanges is $SET_CONFIGURE_FLAG"
                 echo_t "Network Response: Redirection_flag value is $REDIRECTION_FLAG"
 
-                if [ "$NETWORKRESPONSEVALUE" = "204" ] && [ "$SET_CONFIGURE_FLAG" = "true" ]
+                if [[ "$NETWORKRESPONSEVALUE" = "204" && ( "$SET_CONFIGURE_FLAG" = "true" || "$SET_CONFIGURE_FLAG" = "TRUE" )]]
                 then
                     count=0
                     MaxCount=30
