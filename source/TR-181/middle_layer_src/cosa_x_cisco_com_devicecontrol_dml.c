@@ -1786,6 +1786,503 @@ X_CISCO_COM_DeviceControl_Rollback
 
     return 0;
 }
+#if defined (_COSA_QCA_ARM_)
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceControl.X_CISCO_COM_DeviceControl.
+
+    *  X_IPQ_McProxy_GetEntryCount
+    *  X_IPQ_McProxy_GetEntry
+    *  X_IPQ_McProxy_GetParamBoolValue
+    *  X_IPQ_McProxy_GetParamStringValue
+    *  X_IPQ_McProxy_SetParamBoolValue
+    *  X_IPQ_McProxy_SetParamStringValue
+    *  X_IPQ_McProxy_Validate
+    *  X_IPQ_McProxy_Commit
+
+***********************************************************************/
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        ULONG
+        X_IPQ_McProxy_GetEntryCount
+            (
+                ANSC_HANDLE                 hInsContext
+            );
+
+    description:
+
+        This function is called to retrieve the count of the table.
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+    return:     The count of the table
+
+**********************************************************************/
+COSA_DML_APPLYSETTING        g_tmp_McProxy;
+
+ULONG
+X_IPQ_McProxy_GetEntryCount
+    (
+        ANSC_HANDLE                 hInsContext
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    return 1;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        ANSC_HANDLE
+        X_IPQ_McProxy_GetEntry
+            (
+                ANSC_HANDLE                 hInsContext,
+                ULONG                       nIndex,
+                ULONG*                      pInsNumber
+            );
+
+    description:
+
+        This function is called to retrieve the entry specified by the index.
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                ULONG                       nIndex,
+                The index of this entry;
+
+                ULONG*                      pInsNumber
+                The output instance number;
+
+    return:     The handle to identify the entry
+
+**********************************************************************/
+ANSC_HANDLE
+X_IPQ_McProxy_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    PCOSA_DML_MCPROXY pEntry  = (PCOSA_DML_MCPROXY)AnscAllocateMemory(sizeof(COSA_DML_MCPROXY));
+    memset(pEntry, 0, sizeof(COSA_DML_MCPROXY));
+
+    *pInsNumber = 1;
+    CosaGetMcProxyValues(NULL, (PCOSA_DML_MCPROXY)pEntry);
+    memcpy(&g_tmp_McProxy, pEntry, sizeof(COSA_DML_MCPROXY));
+    return pEntry; /* return the handle*/
+}
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        X_IPQ_McProxy_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+ **********************************************************************/
+
+BOOL
+X_IPQ_McProxy_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    PCOSA_DML_MCPROXY        pMcProxy    = (PCOSA_DML_MCPROXY)hInsContext;
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        *pBool = pMcProxy->bEnabled;
+         return TRUE;
+    }
+    if (strcmp(ParamName, "ApplySettings") == 0)
+    {
+        *pBool = pMcProxy->ApplySetting;
+        return TRUE;
+    }
+    return FALSE;
+}
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        X_IPQ_McProxy_GetParamStringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pValue,
+                ULONG*                      pUlSize
+            );
+
+    description:
+
+        This function is called to retrieve String  parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                char*                       pValue
+                The buffer of returned string  value;
+
+    return:     TRUE if succeeded.
+
+ **********************************************************************/
+
+BOOL
+X_IPQ_McProxy_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    PCOSA_DML_MCPROXY        pMcProxy    = (PCOSA_DML_MCPROXY)hInsContext;
+    errno_t                  rc          = -1;
+    if (strcmp(ParamName, "Protocol") == 0)
+    {
+        if ( AnscSizeOfString(pMcProxy->bProtocol) < *pUlSize)
+        rc = strcpy_s(pValue, *pUlSize, pMcProxy->bProtocol);
+        ERR_CHK(rc);
+        return 0;
+    }
+    if (strcmp(ParamName, "Upstream") == 0)
+    {
+        if ( AnscSizeOfString(pMcProxy->Upstream) < *pUlSize)
+        rc = strcpy_s(pValue, *pUlSize, pMcProxy->Upstream);
+        ERR_CHK(rc);
+        return 0;
+    }
+    if (strcmp(ParamName, "Downstream") == 0)
+    {
+        if ( AnscSizeOfString(pMcProxy->Downstream) < *pUlSize)
+        rc = strcpy_s(pValue, *pUlSize, pMcProxy->Downstream);
+        ERR_CHK(rc);
+        return 0;
+    }
+    if (strcmp(ParamName, "Name") == 0)
+    {
+        if ( AnscSizeOfString(pMcProxy->Name) < *pUlSize)
+        rc = strcpy_s(pValue, *pUlSize, pMcProxy->Name);
+        ERR_CHK(rc);
+        return 0;
+
+    }
+    if (strcmp(ParamName, "X_IPQ_McProxy_IPv6_brlan_IP") == 0)
+    {
+        if ( AnscSizeOfString(pMcProxy->Ipv6_erouterIP) < *pUlSize)
+        rc = strcpy_s(pValue, *pUlSize, pMcProxy->Ipv6_erouterIP);
+        ERR_CHK(rc);
+        return 0;
+    }
+    return FALSE;
+}
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        X_IPQ_McProxy_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated boolean parameter value
+
+    return:     TRUE if succeeded.
+
+ **********************************************************************/
+
+
+BOOL
+X_IPQ_McProxy_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    PCOSA_DML_MCPROXY       pMcProxy  = (PCOSA_DML_MCPROXY)hInsContext;
+    errno_t                 rc        = -1;
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        g_tmp_McProxy.apply_bEnabled  = bValue;
+        g_tmp_McProxy.apply_ApplySetting = pMcProxy->ApplySetting = FALSE;
+        return TRUE;
+    }
+    if (strcmp(ParamName, "ApplySettings") == 0)
+    {
+        g_tmp_McProxy.apply_ApplySetting = bValue;
+
+        if ( g_tmp_McProxy.apply_ApplySetting)
+        {
+            pMcProxy->bEnabled = g_tmp_McProxy.apply_bEnabled;
+            pMcProxy->ApplySetting =  g_tmp_McProxy.apply_ApplySetting;
+            rc = STRCPY_S_NOCLOBBER((char *)pMcProxy->bProtocol, sizeof(pMcProxy->bProtocol), g_tmp_McProxy.apply_bProtocol);
+            if(rc != EOK)
+            {
+                ERR_CHK(rc);
+                return FALSE;
+            }
+            rc = STRCPY_S_NOCLOBBER((char *)pMcProxy->Name, sizeof(pMcProxy->Name), g_tmp_McProxy.apply_Name);
+            if(rc != EOK)
+            {
+                ERR_CHK(rc);
+                return FALSE;
+            }
+            rc = STRCPY_S_NOCLOBBER((char *)pMcProxy->Upstream, sizeof(pMcProxy->Upstream), g_tmp_McProxy.apply_Upstream);
+            if(rc != EOK)
+            {
+                ERR_CHK(rc);
+                return FALSE;
+            }
+            rc = STRCPY_S_NOCLOBBER((char *)pMcProxy->Downstream, sizeof(pMcProxy->Downstream), g_tmp_McProxy.apply_Downstream);
+            if(rc != EOK)
+            {
+                ERR_CHK(rc);
+                return FALSE;
+            }
+            rc = STRCPY_S_NOCLOBBER((char *)pMcProxy->Ipv6_erouterIP, sizeof(pMcProxy->Ipv6_erouterIP), g_tmp_McProxy.apply_Ipv6_erouterIP);
+            if(rc != EOK)
+            {
+                ERR_CHK(rc);
+                return FALSE;
+            }
+
+        }
+        else
+        {
+            //Set only apply setting parameter
+            pMcProxy->ApplySetting = g_tmp_McProxy.apply_ApplySetting ;
+        }
+        return TRUE;
+
+    }
+
+    return FALSE;
+}
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        X_IPQ_McProxy_SetParamstringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pString
+            );
+
+    description:
+
+        This function is called to set Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                char*                       pString
+                The updated string parameter value
+    return:     TRUE if succeeded.
+
+ **********************************************************************/
+
+BOOL
+X_IPQ_McProxy_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    PCOSA_DML_MCPROXY        pMcProxy  = (PCOSA_DML_MCPROXY)hInsContext;
+    ANSC_STATUS              retStatus = ANSC_STATUS_SUCCESS;
+    errno_t                  rc        = -1;
+    int                      ind       = -1;
+
+    if((ParamName == NULL) || (pString == NULL))
+        return FALSE;
+    /* check the parameter name and set the corresponding value */
+
+    rc = strcmp_s("Protocol", strlen("Protocol"), ParamName, &ind);
+    ERR_CHK(rc);
+    if((rc == EOK) && (!ind))
+    {
+	if ((_ansc_strcmp ( pString , "MLDv2")) &&
+            (_ansc_strcmp ( pString , "IGMPv3")))
+    	{
+            return FALSE;
+    	}
+        rc = STRCPY_S_NOCLOBBER((char *)g_tmp_McProxy.apply_bProtocol, sizeof(g_tmp_McProxy.apply_bProtocol), pString);
+        if(rc != EOK)
+        {
+            ERR_CHK(rc);
+            return FALSE;
+        }
+        g_tmp_McProxy.apply_ApplySetting = pMcProxy->ApplySetting = FALSE;
+        return TRUE;
+    }
+    rc = strcmp_s("Upstream", strlen("Upstream"), ParamName, &ind);
+    ERR_CHK(rc);
+    if((rc == EOK) && (!ind))
+    {
+        rc = STRCPY_S_NOCLOBBER((char *)g_tmp_McProxy.apply_Upstream, sizeof(g_tmp_McProxy.apply_Upstream), pString);
+        if(rc != EOK)
+        {
+            ERR_CHK(rc);
+            return FALSE;
+        }
+        g_tmp_McProxy.apply_ApplySetting = pMcProxy->ApplySetting = FALSE;
+        return TRUE;
+    }
+    rc = strcmp_s("Downstream", strlen("Downstream"), ParamName, &ind);
+    ERR_CHK(rc);
+    if((rc == EOK) && (!ind))
+    {
+        rc = STRCPY_S_NOCLOBBER((char *)g_tmp_McProxy.apply_Downstream, sizeof(g_tmp_McProxy.apply_Downstream), pString);
+        if(rc != EOK)
+        {
+            ERR_CHK(rc);
+            return FALSE;
+        }
+        g_tmp_McProxy.apply_ApplySetting = pMcProxy->ApplySetting = FALSE;
+        return TRUE;
+    }
+    rc = strcmp_s("Name", strlen("Name"), ParamName, &ind);
+    ERR_CHK(rc);
+    if((rc == EOK) && (!ind))
+    {
+        rc = STRCPY_S_NOCLOBBER((char *)g_tmp_McProxy.apply_Name, sizeof(g_tmp_McProxy.apply_Name), pString);
+        if(rc != EOK)
+        {
+            ERR_CHK(rc);
+            return FALSE;
+        }
+        g_tmp_McProxy.apply_ApplySetting = pMcProxy->ApplySetting = FALSE;
+        return TRUE;
+    }
+    rc = strcmp_s("X_IPQ_McProxy_IPv6_brlan_IP", strlen("X_IPQ_McProxy_IPv6_brlan_IP"), ParamName, &ind);
+    ERR_CHK(rc);
+    if((rc == EOK) && (!ind))
+    {
+        rc = STRCPY_S_NOCLOBBER((char *)g_tmp_McProxy.apply_Ipv6_erouterIP, sizeof(g_tmp_McProxy.apply_Ipv6_erouterIP), pString);
+        if(rc != EOK)
+        {
+            ERR_CHK(rc);
+            return FALSE;
+        }
+        g_tmp_McProxy.apply_ApplySetting = pMcProxy->ApplySetting = FALSE;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+ULONG
+X_IPQ_McProxy_Validate
+    (
+        ANSC_HANDLE                 hInsContext
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    return TRUE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+        ULONG
+        X_IPQ_McProxy_Commit
+            (
+                ANSC_HANDLE                 hInsContext
+            );
+
+    description:
+
+    This function is called to finally commit all the update.
+
+    argument:    ANSC_HANDLE hInsContext,
+    The instance handle;
+
+    return:     The status of the operation.
+ **********************************************************************/
+ULONG
+X_IPQ_McProxy_Commit
+    (
+        ANSC_HANDLE                 hInsContext
+    )
+{
+    PCOSA_DML_MCPROXY        pMcProxy    = (PCOSA_DML_MCPROXY)hInsContext;
+
+    if (pMcProxy->ApplySetting == TRUE)
+        Cosa_Set_McProxy(NULL, (PCOSA_DML_MCPROXY)pMcProxy);
+    else
+        return  ANSC_STATUS_SUCCESS;
+    return 0;
+}
+#endif
 
 ULONG
 LanMngm_GetEntryCount
