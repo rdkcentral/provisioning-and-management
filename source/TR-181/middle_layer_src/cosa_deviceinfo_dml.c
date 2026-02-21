@@ -5956,9 +5956,12 @@ MemoryStatus_GetParamBoolValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    UNREFERENCED_PARAMETER(ParamName);
-    UNREFERENCED_PARAMETER(pBool);
     /* check the parameter name and return the corresponding value */
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_RunMemFragSelfheal") == 0)
+    {
+        *pBool = FALSE;
+        return TRUE;
+    }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -6082,6 +6085,13 @@ MemoryStatus_GetParamUlongValue
         return TRUE;
     }
 
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemFragThreshold") == 0)
+    {
+        char buf[12];
+        syscfg_get (NULL, "MemFragThreshold_Value", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -6143,7 +6153,61 @@ MemoryStatus_GetParamStringValue
     return -1;
 }
 
+/**********************************************************************
 
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MemoryStatus_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MemoryStatus_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_RunMemFragSelfheal") == 0)
+    {
+       if (bValue == TRUE)
+       {
+          AnscTraceWarning(("X_RDKCENTRAL-COM_RunMemFragSelfheal - running memory compaction\n"));
+	  v_secure_system("/bin/sh /usr/ccsp/tad/check_memory_health.sh check_frag_mem &");
+       }
+       else
+	  AnscTraceWarning(("X_RDKCENTRAL-COM_RunMemFragSelfheal - not running compaction \n"));
+
+       return TRUE;
+    }
+
+    return FALSE;
+}
 
 /**********************************************************************  
 
@@ -6189,6 +6253,15 @@ MemoryStatus_SetParamUlongValue
     {
         /* CID 339641 Unchecked return value : fix */
         if (syscfg_set_u_commit (NULL, "MinMemoryThreshold_Value", uValue) != 0) {
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemFragThreshold") == 0)
+    {
+        /* CID 339641 Unchecked return value : fix */
+        if (syscfg_set_u_commit (NULL, "MemFragThreshold_Value", uValue) != 0) {
             return FALSE;
         }
         return TRUE;
