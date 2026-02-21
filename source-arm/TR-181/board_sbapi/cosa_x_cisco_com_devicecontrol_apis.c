@@ -2062,6 +2062,8 @@ void* restoreAllDBs(void* arg)
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         //voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
         v_secure_system("echo 1 > /data/HFRES_TELCOVOIP;echo 2 > /data/HFRES_TELCOVOICE;");
+        //Remove region default countrycode file.
+        v_secure_system("rm -rf /nvram/CountryCode");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
 #endif
         v_secure_system("mkdir -p /nvram/secure/data/ && touch $_/syscfg.db");
