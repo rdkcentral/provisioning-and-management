@@ -898,10 +898,14 @@ X_CISCO_COM_DeviceControl_SetParamBoolValue
 
     if (strcmp(ParamName, "IGMPProxyEnable") == 0)
     {
+#ifndef DISABLE_IGMPPROXY
         retStatus = CosaDmlDcSetIGMPProxyEnable(NULL, bValue);
         if (retStatus != ANSC_STATUS_SUCCESS)
             return FALSE;
 
+#else
+        CcspTraceWarning(("rdkb igmpproxy service is disabled\n"));
+#endif
         return TRUE;
     }
 
