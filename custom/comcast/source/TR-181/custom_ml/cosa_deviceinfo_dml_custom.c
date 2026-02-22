@@ -635,8 +635,24 @@ PCOSA_DATAMODEL_DEVICEINFO      pMyObject = (PCOSA_DATAMODEL_DEVICEINFO)g_pCosaB
 		printf("Wi-Fi SSID and Passphrase are configured,setting ConfigureWiFi to false ...\n");
 
 		pMyObject->bWiFiConfigued = bValue;
-		printf("%s calling revert_redirect.sh script to remove the redirection changes\n",__FUNCTION__);
-		system("source /etc/revert_redirect.sh &");
+
+        char buf[6]={0};
+        if(!syscfg_get( NULL, "redirection_flag", buf, sizeof(buf)))
+        {
+            if (strcmp(buf,"true") == 0)
+            {
+                CcspTraceWarning(("%s calling revert_redirect.sh script to remove the redirection changes\n",__FUNCTION__));
+                system("source /etc/revert_redirect.sh &");
+            }
+            else
+            {
+                CcspTraceWarning(("%s skipping revert_redirect.sh script execution\n",__FUNCTION__));
+            }
+        }
+        else
+        {
+            CcspTraceWarning(("%s syscfg get of redirection_flag failed\n",__FUNCTION__));
+        }
 
 	    return TRUE;
 	 }	
