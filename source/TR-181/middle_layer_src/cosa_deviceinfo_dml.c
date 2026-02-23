@@ -1902,6 +1902,7 @@ BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
 
     return:
         0 if succeeded;
+        1 if pValue buffer is too small (required size returned in pUlSize);
         -1 if not supported
 
 **********************************************************************/
@@ -1947,7 +1948,7 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
             return -1;
         }
     }
-    else if (strcmp(ParamName, "Trigger" == 0)) /* Trigger to start meminsight */
+    else if (strcmp(ParamName, "Trigger") == 0) /* Trigger to start meminsight */
     {
         char buf[8] = {'\0'};
         ret = syscfg_get(NULL, "xMemTrigger", buf, sizeof(buf));
@@ -2044,19 +2045,12 @@ BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, c
         {
             /* pre-check if already set */
             char currentValue[8] = {'\0'};
-            ret = syscfg_get(NULL, "meminsight_Trigger", currentValue, sizeof(currentValue));
+            ret = syscfg_get(NULL, "xMemTrigger", currentValue, sizeof(currentValue));
             if (ret == 0 && strcasecmp(currentValue, pString) == 0)
             {
-                CcspTraceInfo(("%s: meminsight_Trigger is already set to %s, no action needed\n", __FUNCTION__, currentValue));
+                CcspTraceInfo(("%s: xMemTrigger is already set to %s, no action needed\n", __FUNCTION__, currentValue));
                 return TRUE;
             }
-            int setCfgRet = syscfg_set_commit(NULL, "xMemTrigger", pString);
-            if (setCfgRet != 0)
-            {
-                CcspTraceError(("%s: syscfg_set failed for xMemTrigger with value %s. Return code: %d\n", __FUNCTION__, pString, setCfgRet));
-                return FALSE;
-            }
-
             if(strcasecmp(pString, "start") == 0)
             {
                 CcspTraceInfo(("%s: Starting MemInsight as Trigger is set to start\n", __FUNCTION__));
@@ -2080,11 +2074,29 @@ BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, c
                     {
                         fclose(enableFile_tmp);
                     }
+                    if (access(MEMINSIGHT_ENABLE_FILE_NVRAM, F_OK) == 0)
+                    {
+                        remove(MEMINSIGHT_ENABLE_FILE_NVRAM);
+                    }
+                    if (access(MEMINSIGHT_ENABLE_FILE_TMP, F_OK) == 0)
+                    {
+                        remove(MEMINSIGHT_ENABLE_FILE_TMP);
+                    }
                     return FALSE; 
                 }
                 
                 fclose(enableFile_nvram);
                 fclose(enableFile_tmp);
+
+                int setCfgRet = syscfg_set_commit(NULL, "xMemTrigger", pString);
+                if (setCfgRet != 0)
+                {
+                    CcspTraceError(("%s: syscfg_set failed for xMemTrigger with value %s. Return code: %d\n", __FUNCTION__, pString, setCfgRet));
+                    remove(MEMINSIGHT_ENABLE_FILE_NVRAM);
+                    remove(MEMINSIGHT_ENABLE_FILE_TMP);
+                    return FALSE;
+                }
+
                 CcspTraceInfo(("%s: Successfully created MemInsight enable files: %s and %s\n", __FUNCTION__, MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP));
                 return TRUE;
             }
@@ -2175,6 +2187,13 @@ BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, c
                 else
                 {
                     CcspTraceInfo(("MemInsight service %s is already inactive\n", MEMINSIGHT_SERVICE));
+                }
+
+                int setCfgRet = syscfg_set_commit(NULL, "xMemTrigger", pString);
+                if (setCfgRet != 0)
+                {
+                    CcspTraceError(("%s: syscfg_set failed for xMemTrigger with value %s. Return code: %d\n", __FUNCTION__, pString, setCfgRet));
+                    return FALSE;
                 }
                 
                 return TRUE;
