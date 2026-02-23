@@ -5439,7 +5439,7 @@ BOOL CosaDmlGetInternetStatus()
   return TRUE;
 }
 
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
 #define XDNS_RESOLV_CONF "/etc/resolv.conf"
 #define XDNS_DNSMASQ_SERVERS_BAK "/nvram/dnsmasq_servers.bak"
 #define XDNS_DNSMASQ_SERVERS_CONF "/nvram/dnsmasq_servers.conf"
