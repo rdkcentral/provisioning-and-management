@@ -113,6 +113,10 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 extern ULONG g_currentBsUpdate;
 extern char g_currentParamFullName[512];
 extern ANSC_HANDLE bus_handle;
@@ -193,6 +197,85 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 #define BOX_TYPE_LEN 5
 // ATOM IP length
 #define IP_LEN 20
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/**
+ * @brief Validates PartnerID operations and prevents duplicate activations
+ * 
+ * This function checks /nvram/.partner_ID file to prevent duplicate PartnerID activations
+ * while allowing all legitimate PartnerID configuration operations. The file is created
+ * by setTempPartnerId() when a new PartnerID value is set, not during the activation process.
+ * 
+ * @param[in] currentPartnerID - Current PartnerID string from pMyObject  
+ * @param[in] newPartnerID - New PartnerID string being set
+ * 
+ * @return int - 1 if operation allowed, 0 if duplicate activation detected
+ */
+static int ValidatePartnerIDChange(const char* currentPartnerID, const char* newPartnerID)
+{
+    char nvram_partner_id[PARTNER_ID_LEN] = {0};
+    FILE *partner_file = NULL;
+    int allow_operation = 1;
+    
+    if (!currentPartnerID || !newPartnerID) {
+        CcspTraceError(("[PARTNERID-VALIDATE] Invalid input parameters\n"));
+        return 0;
+    }
+    
+    // Check if /nvram/.partner_ID file exists (created during previous activation)
+    partner_file = fopen("/nvram/.partner_ID", "r");
+    if (partner_file != NULL) {
+        if (fgets(nvram_partner_id, sizeof(nvram_partner_id), partner_file) != NULL) {
+            // Remove newline character if present
+            char *pos = strchr(nvram_partner_id, '\n');
+            if (pos != NULL) {
+                *pos = '\0';
+            }
+            
+            // Check for duplicate activation - same PartnerID already activated
+            size_t nvram_len = strnlen_s(nvram_partner_id, PARTNER_ID_LEN);
+            size_t new_len = strnlen_s(newPartnerID, PARTNER_ID_LEN);
+            int rc = -1, ind = -1;
+            if (nvram_len == new_len) {
+                rc = strcmp_s(nvram_partner_id, PARTNER_ID_LEN, newPartnerID, &ind);
+                if ((rc == EOK) && (!ind)) {
+                    allow_operation = 0; // Prevent duplicate activation
+                    CcspTraceWarning(("[PARTNERID-VALIDATE] Preventing duplicate activation of '%s'\n", newPartnerID));
+                }
+            }
+        } else {
+            if (ferror(partner_file)) {
+                CcspTraceError(("[PARTNERID-VALIDATE] Error reading /nvram/.partner_ID file\n"));
+            } else {
+                CcspTraceWarning(("[PARTNERID-VALIDATE] Empty /nvram/.partner_ID file\n"));
+            }
+        }
+        fclose(partner_file);
+    } else {
+        // Handle fopen failure - check errno to distinguish file not existing from other errors
+        if (errno == ENOENT) {
+            // File doesn't exist - this is the first PartnerID operation, allow it
+            CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
+        } else {
+            // Other error (permissions, I/O error, etc.) - log error but allow operation to maintain existing behavior
+            CcspTraceInfo(("[PARTNERID-VALIDATE] Failed to open /nvram/.partner_ID (errno=%d): %s - allowing operation\n", errno, strerror(errno)));
+        }
+    }
+    
+    // Log validation details
+    CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Activation Check ===\n"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Current PartnerID     : '%s'\n", currentPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Previous activation  : '%s'\n", nvram_partner_id[0] ? nvram_partner_id : "<none>"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID        : '%s'\n", newPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Operation allowed    : %s\n", allow_operation ? "YES" : "NO"));
+    if (!allow_operation) {
+        CcspTraceInfo(("[PARTNERID-VALIDATE] Reason              : Duplicate activation\n"));
+    }
+    CcspTraceInfo(("[PARTNERID-VALIDATE] =======================================\n"));
+    
+    return allow_operation;
+}
+#endif // _ONESTACK_PRODUCT_REQ_
 
 #ifdef COLUMBO_HWTEST
 //RDKB-33114: Default values defined here due to objects not being persistent by design
@@ -792,6 +875,22 @@ DeviceInfo_GetParamUlongValue
         CosaDmlDiGetFactoryResetCount(NULL,puLong);
         return TRUE;
     }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_AvlMem_RsrvThreshold", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_ImageProcMemPercent", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
 	
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1058,7 +1157,7 @@ DeviceInfo_GetParamStringValue
         return 0;
     }
 
-#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_)
+#if !defined(_WNXL11BWL_PRODUCT_REQ_)
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_InActiveFirmware") == 0)
     {
         return CosaDmlDiGetInActiveFirmware(NULL, pValue, pulSize);
@@ -1402,7 +1501,23 @@ DeviceInfo_SetParamUlongValue
 	   fprintf(fp, "%s\n", buff);
  	   fclose(fp);
 	   return TRUE;
-    } 
+    }
+
+	if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_AvlMem_RsrvThreshold", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_ImageProcMemPercent", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -8804,7 +8919,96 @@ Identity_SetParamStringValue
     }
     return TRUE;
 }
+/**********************************************************************
+    caller:     owner of this object
+    prototype:
+        BOOL
+        STAGE_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+    description:
+        This function is called to retrieve Boolean parameter value;
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+                char*                       ParamName,
+                The parameter name;
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+    return:     TRUE if succeeded.
+**********************************************************************/
+BOOL
+STAGE_GetParamBoolValue
+    (
+         ANSC_HANDLE                 hInsContext,
+         char*                       ParamName,
+         BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char buf[8] = {0};
+        if (syscfg_get(NULL, "StageEnabled", buf, sizeof(buf)) == 0)
+        {
+            if (strncmp(buf, "true", sizeof(buf)) == 0)
+                *pBool = TRUE;
+            else
+                *pBool = FALSE;
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed  for StageEnabled\n", __FUNCTION__));
+            *pBool = FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 
+/**********************************************************************
+    caller:     owner of this object
+    prototype:
+        BOOL
+        STAGE_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+    description:
+        This function is called to set BOOL parameter value;
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+                char*                       ParamName,
+                The parameter name;
+                BOOL                        bValue
+                The updated BOOL value;
+    return:     TRUE if succeeded.
+**********************************************************************/
+BOOL
+STAGE_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, STAGE_GetParamBoolValue))
+        return TRUE;
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if(syscfg_set_commit(NULL, "StageEnabled", (bValue == TRUE) ? "true" : "false") != 0)
+        {
+            CcspTraceError(("[%s] syscfg_set_commit failed for key 'StageEnabled' in STAGE\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 /**
  *  RFC Feature for CrashUpload S3signing url
 */
@@ -17966,6 +18170,15 @@ Syndication_GetParamStringValue
         return 0;
     }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (strcmp(ParamName, "DeviceMode") == 0)
+    {
+        /* collect value - get current device mode from syscfg */
+        CosaDmlDiGetSyndicationDeviceMode((ANSC_HANDLE)pMyObject, pMyObject->DeviceMode, sizeof(pMyObject->DeviceMode));
+        return update_pValue(pValue, pulSize, pMyObject->DeviceMode);
+    }
+#endif
+
     if (strcmp(ParamName, "TR69CertLocation") == 0)
     {
         /* collect value */
@@ -18145,6 +18358,32 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            // Use optimized PartnerID validation API for ONESTACK only
+            CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
+            int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+            CcspTraceInfo(("[SET-PARTNERID] Validation result: %d\n", allow_change));
+            
+            // For ONESTACK, rely on ValidatePartnerIDChange() result only
+            if(allow_change)
+            {
+                retValue = setTempPartnerId( pString );
+                if( ANSC_STATUS_SUCCESS == retValue )
+                {
+                    ULONG    size = 0;
+                    //Get the Factory PartnerID
+                    memset(PartnerID, 0, sizeof(PartnerID));
+                    getFactoryPartnerId(PartnerID, &size);
+            
+                    CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                    CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                    CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+                                    
+                    return TRUE;
+                }
+            }
+#else
+            // Original logic for all non-ONESTACK platforms (completely unchanged)
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
@@ -18181,6 +18420,7 @@ Syndication_SetParamStringValue
                      AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
                      return FALSE;
                 }
+#endif // _ONESTACK_PRODUCT_REQ_
         }
     }
     else if(rc != EOK)
@@ -21619,6 +21859,15 @@ UPnPRefactor_SetParamBoolValue
 }
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsMAPTConflictingFeaturesEnabled(void)
+{
+    // TODO: Add check to see if any conflicting feature of MAP-T 
+    //       like Static Routing, 1-1 NAT, etc are enabled
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     owner of this object
@@ -21724,6 +21973,23 @@ MAPT_DeviceInfo_SetParamBoolValue
 
   if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+	if (bValue)
+	{
+            if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
+            {
+                CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+            else if (IsMAPTConflictingFeaturesEnabled())
+            {
+                CcspTraceError(("MAP-T enable rejected due to conflicting features\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+	}
+#endif
         if (syscfg_set_commit(NULL, "MAPT_Enable", bValue ? "true" : "false") != 0 )
         {
             CcspTraceError(("syscfg_set failed for MAPT_Enable \n"));
