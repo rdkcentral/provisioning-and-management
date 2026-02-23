@@ -73,6 +73,9 @@
 #include "syscfg/syscfg.h"
 #include <arpa/inet.h>
 
+#ifdef _ONESTACK_PRODUCT_REQ_
+#include <rdkb_feature_mode_gate.h>
+#endif
 static int ifWanRestart = 0;
 
 /***********************************************************************
@@ -2124,9 +2127,6 @@ LanMngm_SetParamUlongValue
     BOOL                                      bridgeMode;
     ULONG                                     deviceMode;
 
-    char ip_buff[16]  = {0};
-    struct in_addr addr;
-
     if (CosaDmlDcGetDeviceMode(NULL, &deviceMode) != ANSC_STATUS_SUCCESS)
             return FALSE;
     
@@ -2166,6 +2166,17 @@ LanMngm_SetParamUlongValue
             CcspTraceWarning(("BRIDGE_ERROR:Fail to enable Bridge mode when Mesh is on\n"));
             return FALSE;
         }*/
+#ifdef _ONESTACK_PRODUCT_REQ_
+        if (COSA_DML_LanMode_FullBridgeStatic == uValuepUlong)
+        {
+            if (false == isFeatureSupportedInCurrentMode(FEATURE_BASIC_BRIDGE_MODE))
+            {
+                t2_event_d("BasicBridgeMode_NotSupported", 1);
+                CcspTraceError(("Basic BridgeMode Not Supported\n"));
+                return FALSE;
+            }
+        }
+#endif
 
         pLanMngm->LanMode = uValuepUlong;
         CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanMode value (bridge-dhcp(1),bridge-static(2),router(3),full-bridge-static(4)) as (%lu)...\n",
@@ -2189,11 +2200,6 @@ LanMngm_SetParamUlongValue
     }
     if (strcmp(ParamName, "LanSubnetMask") == 0)
     {
-        addr.s_addr = uValuepUlong;
-        if (inet_ntop(AF_INET, &addr, ip_buff, sizeof(ip_buff)) == NULL) {
-            CcspTraceWarning(("inet_ntop: Invalid IPv4 address\n"));
-            return FALSE;
-        }
         if (Dhcpv4_Lan_MutexTryLock() != 0)
         {
             CcspTraceWarning(("%s not supported if already lan blob update is inprogress\n",ParamName));
@@ -2201,7 +2207,6 @@ LanMngm_SetParamUlongValue
         }
 
 		CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanSubnetMask value  ...\n"));
-        syscfg_set_commit(NULL, DHCPV4_LAN_NETMASK, ip_buff);
         pLanMngm->LanSubnetMask.Value = uValuepUlong;
         lan_ip_config_modified=true;
         Dhcpv4_Lan_MutexUnLock();
@@ -2209,11 +2214,6 @@ LanMngm_SetParamUlongValue
     }
     if (strcmp(ParamName, "LanIPAddress") == 0)
     {
-        addr.s_addr = uValuepUlong;
-        if (inet_ntop(AF_INET, &addr, ip_buff, sizeof(ip_buff)) == NULL) {
-            CcspTraceWarning(("inet_ntop: Invalid IPv4 address\n"));
-            return FALSE;
-        }
         if (Dhcpv4_Lan_MutexTryLock() != 0)
         {
             CcspTraceWarning(("%s not supported if already lan blob update is inprogress\n",ParamName));
@@ -2221,7 +2221,6 @@ LanMngm_SetParamUlongValue
         }
 
 		CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanIPAddress value  ...\n"));
-        syscfg_set_commit(NULL, DHCPV4_LAN_IP, ip_buff);
         pLanMngm->LanIPAddress.Value = uValuepUlong;
         lan_ip_config_modified=true;
         Dhcpv4_Lan_MutexUnLock();

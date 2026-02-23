@@ -113,6 +113,10 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 extern ULONG g_currentBsUpdate;
 extern char g_currentParamFullName[512];
 extern ANSC_HANDLE bus_handle;
@@ -193,6 +197,85 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 #define BOX_TYPE_LEN 5
 // ATOM IP length
 #define IP_LEN 20
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/**
+ * @brief Validates PartnerID operations and prevents duplicate activations
+ * 
+ * This function checks /nvram/.partner_ID file to prevent duplicate PartnerID activations
+ * while allowing all legitimate PartnerID configuration operations. The file is created
+ * by setTempPartnerId() when a new PartnerID value is set, not during the activation process.
+ * 
+ * @param[in] currentPartnerID - Current PartnerID string from pMyObject  
+ * @param[in] newPartnerID - New PartnerID string being set
+ * 
+ * @return int - 1 if operation allowed, 0 if duplicate activation detected
+ */
+static int ValidatePartnerIDChange(const char* currentPartnerID, const char* newPartnerID)
+{
+    char nvram_partner_id[PARTNER_ID_LEN] = {0};
+    FILE *partner_file = NULL;
+    int allow_operation = 1;
+    
+    if (!currentPartnerID || !newPartnerID) {
+        CcspTraceError(("[PARTNERID-VALIDATE] Invalid input parameters\n"));
+        return 0;
+    }
+    
+    // Check if /nvram/.partner_ID file exists (created during previous activation)
+    partner_file = fopen("/nvram/.partner_ID", "r");
+    if (partner_file != NULL) {
+        if (fgets(nvram_partner_id, sizeof(nvram_partner_id), partner_file) != NULL) {
+            // Remove newline character if present
+            char *pos = strchr(nvram_partner_id, '\n');
+            if (pos != NULL) {
+                *pos = '\0';
+            }
+            
+            // Check for duplicate activation - same PartnerID already activated
+            size_t nvram_len = strnlen_s(nvram_partner_id, PARTNER_ID_LEN);
+            size_t new_len = strnlen_s(newPartnerID, PARTNER_ID_LEN);
+            int rc = -1, ind = -1;
+            if (nvram_len == new_len) {
+                rc = strcmp_s(nvram_partner_id, PARTNER_ID_LEN, newPartnerID, &ind);
+                if ((rc == EOK) && (!ind)) {
+                    allow_operation = 0; // Prevent duplicate activation
+                    CcspTraceWarning(("[PARTNERID-VALIDATE] Preventing duplicate activation of '%s'\n", newPartnerID));
+                }
+            }
+        } else {
+            if (ferror(partner_file)) {
+                CcspTraceError(("[PARTNERID-VALIDATE] Error reading /nvram/.partner_ID file\n"));
+            } else {
+                CcspTraceWarning(("[PARTNERID-VALIDATE] Empty /nvram/.partner_ID file\n"));
+            }
+        }
+        fclose(partner_file);
+    } else {
+        // Handle fopen failure - check errno to distinguish file not existing from other errors
+        if (errno == ENOENT) {
+            // File doesn't exist - this is the first PartnerID operation, allow it
+            CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
+        } else {
+            // Other error (permissions, I/O error, etc.) - log error but allow operation to maintain existing behavior
+            CcspTraceInfo(("[PARTNERID-VALIDATE] Failed to open /nvram/.partner_ID (errno=%d): %s - allowing operation\n", errno, strerror(errno)));
+        }
+    }
+    
+    // Log validation details
+    CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Activation Check ===\n"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Current PartnerID     : '%s'\n", currentPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Previous activation  : '%s'\n", nvram_partner_id[0] ? nvram_partner_id : "<none>"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID        : '%s'\n", newPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Operation allowed    : %s\n", allow_operation ? "YES" : "NO"));
+    if (!allow_operation) {
+        CcspTraceInfo(("[PARTNERID-VALIDATE] Reason              : Duplicate activation\n"));
+    }
+    CcspTraceInfo(("[PARTNERID-VALIDATE] =======================================\n"));
+    
+    return allow_operation;
+}
+#endif // _ONESTACK_PRODUCT_REQ_
 
 #ifdef COLUMBO_HWTEST
 //RDKB-33114: Default values defined here due to objects not being persistent by design
@@ -792,6 +875,22 @@ DeviceInfo_GetParamUlongValue
         CosaDmlDiGetFactoryResetCount(NULL,puLong);
         return TRUE;
     }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_AvlMem_RsrvThreshold", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+        char buf[10]= {0};
+        syscfg_get( NULL, "FwDwld_ImageProcMemPercent", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
 	
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1058,7 +1157,7 @@ DeviceInfo_GetParamStringValue
         return 0;
     }
 
-#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_)
+#if !defined(_WNXL11BWL_PRODUCT_REQ_)
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_InActiveFirmware") == 0)
     {
         return CosaDmlDiGetInActiveFirmware(NULL, pValue, pulSize);
@@ -1402,7 +1501,23 @@ DeviceInfo_SetParamUlongValue
 	   fprintf(fp, "%s\n", buff);
  	   fclose(fp);
 	   return TRUE;
-    } 
+    }
+
+	if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_AvlMem_RsrvThreshold", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent") == 0)
+    {
+      if (syscfg_set_u_commit (NULL, "FwDwld_ImageProcMemPercent", uValue) != 0) {
+        return FALSE;
+      }
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -8804,7 +8919,96 @@ Identity_SetParamStringValue
     }
     return TRUE;
 }
+/**********************************************************************
+    caller:     owner of this object
+    prototype:
+        BOOL
+        STAGE_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+    description:
+        This function is called to retrieve Boolean parameter value;
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+                char*                       ParamName,
+                The parameter name;
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+    return:     TRUE if succeeded.
+**********************************************************************/
+BOOL
+STAGE_GetParamBoolValue
+    (
+         ANSC_HANDLE                 hInsContext,
+         char*                       ParamName,
+         BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char buf[8] = {0};
+        if (syscfg_get(NULL, "StageEnabled", buf, sizeof(buf)) == 0)
+        {
+            if (strncmp(buf, "true", sizeof(buf)) == 0)
+                *pBool = TRUE;
+            else
+                *pBool = FALSE;
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed  for StageEnabled\n", __FUNCTION__));
+            *pBool = FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 
+/**********************************************************************
+    caller:     owner of this object
+    prototype:
+        BOOL
+        STAGE_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+    description:
+        This function is called to set BOOL parameter value;
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+                char*                       ParamName,
+                The parameter name;
+                BOOL                        bValue
+                The updated BOOL value;
+    return:     TRUE if succeeded.
+**********************************************************************/
+BOOL
+STAGE_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, STAGE_GetParamBoolValue))
+        return TRUE;
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if(syscfg_set_commit(NULL, "StageEnabled", (bValue == TRUE) ? "true" : "false") != 0)
+        {
+            CcspTraceError(("[%s] syscfg_set_commit failed for key 'StageEnabled' in STAGE\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 /**
  *  RFC Feature for CrashUpload S3signing url
 */
@@ -17960,6 +18164,15 @@ Syndication_GetParamStringValue
         return 0;
     }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (strcmp(ParamName, "DeviceMode") == 0)
+    {
+        /* collect value - get current device mode from syscfg */
+        CosaDmlDiGetSyndicationDeviceMode((ANSC_HANDLE)pMyObject, pMyObject->DeviceMode, sizeof(pMyObject->DeviceMode));
+        return update_pValue(pValue, pulSize, pMyObject->DeviceMode);
+    }
+#endif
+
     if (strcmp(ParamName, "TR69CertLocation") == 0)
     {
         /* collect value */
@@ -18139,6 +18352,32 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            // Use optimized PartnerID validation API for ONESTACK only
+            CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
+            int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+            CcspTraceInfo(("[SET-PARTNERID] Validation result: %d\n", allow_change));
+            
+            // For ONESTACK, rely on ValidatePartnerIDChange() result only
+            if(allow_change)
+            {
+                retValue = setTempPartnerId( pString );
+                if( ANSC_STATUS_SUCCESS == retValue )
+                {
+                    ULONG    size = 0;
+                    //Get the Factory PartnerID
+                    memset(PartnerID, 0, sizeof(PartnerID));
+                    getFactoryPartnerId(PartnerID, &size);
+            
+                    CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                    CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                    CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+                                    
+                    return TRUE;
+                }
+            }
+#else
+            // Original logic for all non-ONESTACK platforms (completely unchanged)
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
@@ -18175,6 +18414,7 @@ Syndication_SetParamStringValue
                      AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
                      return FALSE;
                 }
+#endif // _ONESTACK_PRODUCT_REQ_
         }
     }
     else if(rc != EOK)
@@ -21613,6 +21853,15 @@ UPnPRefactor_SetParamBoolValue
 }
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsMAPTConflictingFeaturesEnabled(void)
+{
+    // TODO: Add check to see if any conflicting feature of MAP-T 
+    //       like Static Routing, 1-1 NAT, etc are enabled
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     owner of this object
@@ -21718,6 +21967,23 @@ MAPT_DeviceInfo_SetParamBoolValue
 
   if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+	if (bValue)
+	{
+            if (!isFeatureSupportedInCurrentMode(FEATURE_MAPT))
+            {
+                CcspTraceError(("MAP-T enable rejected, unsupported mode\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+            else if (IsMAPTConflictingFeaturesEnabled())
+            {
+                CcspTraceError(("MAP-T enable rejected due to conflicting features\n"));
+                t2_event_d("MAP-T_NotSupported", 1);
+                return FALSE;
+            }
+	}
+#endif
         if (syscfg_set_commit(NULL, "MAPT_Enable", bValue ? "true" : "false") != 0 )
         {
             CcspTraceError(("syscfg_set failed for MAPT_Enable \n"));
@@ -23406,52 +23672,11 @@ NonRootSupport_GetParamStringValue
 )
 {
   UNREFERENCED_PARAMETER(hInsContext);
-  #define APPARMOR_BLOCKLIST_FILE "/opt/secure/Apparmor_blocklist"
-  #define APPARMOR_PROFILE_DIR "/etc/apparmor.d"
   #define SIZE_LEN 32
   char *buf = NULL;
   FILE *fp = NULL;
   size_t len = 0;
   ssize_t read = 0;
-  DIR *dir=NULL;
-  struct dirent *entry=NULL;
-  char tmp[64]={0};
-  char files_name[MAX_SIZE]={0};
-  char *sptr=NULL;
-  /* check the parameter name and return the corresponding value */
-  if (strcmp(ParamName, "ApparmorBlocklist") == 0)
-  {
-      dir = opendir(APPARMOR_PROFILE_DIR);
-      if( (dir == NULL) ) {
-            CcspTraceError(("Failed to open the %s directory: profiles does not exist\n", APPARMOR_PROFILE_DIR));
-            return FALSE;
-      }
-      memset(files_name,'\0',sizeof(files_name));
-      while((entry = readdir(dir)) != NULL) {
-             strncat(files_name,entry->d_name,strlen(entry->d_name));
-      }
-      closedir(dir);
-      fp=fopen(APPARMOR_BLOCKLIST_FILE,"r");
-      if(fp != NULL) {
-         while((read = getline(&buf, &len, fp)) != -1) {
-	     // CID 279876 : Buffer not null terminated (BUFFER_SIZE)
-             strncpy(tmp,buf,sizeof(tmp)-1);
-             tmp[sizeof(tmp)-1] = '\0';
-             strtok_r(buf,":",&sptr);
-             if(buf != NULL) {
-                 strncat(pValue,tmp,strlen(tmp));
-             }
-         }
-         fclose(fp);
-         Replace_AllOccurrence( pValue, AnscSizeOfString(pValue), '\n', ',');
-         CcspTraceWarning(("Apparmor profile configuration:%s\n", pValue));
-         return 0;
-      }
-      else {
-         CcspTraceWarning(("%s does not exist\n", APPARMOR_BLOCKLIST_FILE));
-         strncpy(pValue,"Apparmorblocklist is empty",SIZE_LEN);
-      }
-  }
   //Blocklist RFC
   if (strcmp(ParamName, "Blocklist") == 0)
   {
@@ -23476,77 +23701,6 @@ NonRootSupport_GetParamStringValue
   return -1;
 }
 
-static BOOL ValidateInput_Arguments(char *input, FILE *tmp_fptr)
-{
-  #define APPARMOR_PROFILE_DIR "/etc/apparmor.d"
-  #define BUF_SIZE 64
-  struct dirent *entry=NULL;
-  DIR *dir=NULL;
-  char files_name[1024]={0};
-  char *token=NULL;
-  char *subtoken=NULL;
-  char *sub_string=NULL;
-  char *service_profile = NULL;
-  char *sp=NULL;
-  char *sptr=NULL;
-  char tmp[BUF_SIZE]={0};
-  char *arg=NULL;
-  dir=opendir(APPARMOR_PROFILE_DIR);
-  // CID 180947 : Resource leak (RESOURCE_LEAK)
-  if( (dir == NULL) || (tmp_fptr == NULL) ) {
-     if(tmp_fptr)
-         fclose(tmp_fptr);
-     if(dir)
-	 closedir(dir);
-     CcspTraceError(("Failed to open the %s directory\n", APPARMOR_PROFILE_DIR));
-     return FALSE;
-  }
-  memset(files_name,'\0',sizeof(files_name));
-  /* storing Apparmor profile (file) names into files_name which can be used to check with input arguments using strstr() */
-  while((entry = readdir(dir)) != NULL) {
-        strncat(files_name,entry->d_name,strlen(entry->d_name));
-  }
-  if (closedir(dir) != 0) {
-      CcspTraceError(("Failed to close %s directory\n", APPARMOR_PROFILE_DIR));
-      fclose(tmp_fptr);
-      return FALSE;
-  }
-  /* Read the input arguments and ensure the corresponding profiles exist or not by searching in
-     Apparmor profile directory (/etc/apparmor.d/). Returns false if input does not have the
-     apparmor profile, Returns true if apparmor profile finds for the input */
-  token=strtok_r( input,",", &sp);
-  while(token != NULL) {
-        arg=strchr(token,':');
-        if(!arg)
-        {
-            CcspTraceWarning(("argument is  null in the parser:%s\n", token));
-            return FALSE;
-        }
-        if ( (arg[0] != ':') || ((strcmp(arg+1,"disable") != 0) && (strcmp(arg+1,"complain") != 0) && (strcmp(arg+1,"enforce") != 0) ) ) {
-              CcspTraceWarning(("Invalid input arguments in the parser:%s\n", token));
-              return FALSE;
-        }
-	// CID 180948 : Buffer not null terminated (BUFFER_SIZE)
-        strncpy(tmp,token,sizeof(tmp)-1);
-        tmp[sizeof(tmp) - 1] = '\0';
-        subtoken=strtok_r(tmp,":",&sptr);
-        if (subtoken != NULL) {
-           sub_string = strstr(files_name, subtoken);
-           if (sub_string == NULL) {
-                service_profile = strstr(subtoken, "service.sp");
-           }
-           if (sub_string != NULL || service_profile != NULL) {
-              fprintf(tmp_fptr, "%s\n", token);
-           } else {
-              CcspTraceWarning(("Invalid arguments %s error found in the parser\n", subtoken));
-              return FALSE;
-           }
-        }
-  token=strtok_r(NULL,",",&sp);
-  }
-  return TRUE;
-}
-
 BOOL
 NonRootSupport_SetParamStringValue
 (
@@ -23556,42 +23710,9 @@ NonRootSupport_SetParamStringValue
  )
 {
   UNREFERENCED_PARAMETER(hInsContext);
-  #define APPARMOR_BLOCKLIST_FILE "/opt/secure/Apparmor_blocklist"
-  #define TMP_FILE "/opt/secure/Apparmor_blocklist_bck.txt"
-  #define SIZE 128
   #define MAX_SIZE 1024
   FILE *fptr = NULL;
-  FILE *tmp_fptr = NULL;
   char *boxType = NULL, *atomIp = NULL;
-  if (strcmp(ParamName, "ApparmorBlocklist") == 0)
-  {
-     fptr = fopen(APPARMOR_BLOCKLIST_FILE,"r");
-     tmp_fptr = fopen(TMP_FILE,"w+");
-     if( (!pValue) || (strstr(pValue,":") == NULL) || (tmp_fptr == NULL) ) {
-         CcspTraceError(("Failed to open the file or invalid argument\n"));
-         if(fptr)
-            fclose(fptr);
-         if(tmp_fptr)
-            fclose(tmp_fptr);
-         return FALSE;
-     }
-     /* To ensure input arguments are valid or not */
-     if (ValidateInput_Arguments(pValue, tmp_fptr) != TRUE) {
-	 // CID 180949 : Resource leak (RESOURCE_LEAK)
-	 if(fptr)
-            fclose(fptr);
-         return FALSE;
-     }
-     /* Copying tmp file contents into main file by using rename() */
-     if(fptr != NULL)
-        fclose(fptr);
-     fclose(tmp_fptr);
-     if(rename( TMP_FILE, APPARMOR_BLOCKLIST_FILE) != 0) {
-        CcspTraceError(("Error in renaming  file\n"));
-        return FALSE;
-     }
-     return TRUE;
-  }
 
   //Blocklist RFC
   if (strcmp(ParamName, "Blocklist") == 0)
