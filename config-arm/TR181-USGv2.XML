@@ -3459,7 +3459,7 @@
                         </parameters>
                 </object>
                 <object>
-                    <name>xMemInsight</name>
+                  <name>meminsight</name>
                     <objectType>object</objectType>
 
                     <functions>
