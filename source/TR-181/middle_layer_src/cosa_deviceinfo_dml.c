@@ -135,7 +135,8 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 
 #define MAX_ALLOWABLE_STRING_LEN  256
 
-#define MEMINSIGHT_ENABLE_FILE "/nvram/.enable_meminsight"
+#define MEMINSIGHT_ENABLE_FILE_NVRAM "/nvram/.enable_meminsight"
+#define MEMINSIGHT_ENABLE_FILE_TMP "/tmp/.enable_meminsight"
 #define MEMINSIGHT_SERVICE "meminsight-runner.service"
 
 #define BOOTSTRAP_INFO_FILE_BACKUP "/nvram/bootstrap.json"
@@ -1796,92 +1797,35 @@ BOOL
 BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    char buf[8];
-    if (strcmp(ParamName, "Enable") == 0)
+    char buf[8] = {'\0'};
+    int ret = 0;
+    int setCfgRet = 0;
+
+    if (strcmp(ParamName, "Enable") == 0) /* Download & Install meminsight */
     {
         char *value = (bValue == TRUE) ? "true" : "false";
-        syscfg_get(NULL, "xMemEnable", buf, sizeof(buf));
-        if (!strncmp(buf, value, strlen(value)))
+
+        ret = syscfg_get(NULL, "xMemEnable", buf, sizeof(buf));
+        if (ret == 0 && strcmp(buf, value) == 0)
         {
+            CcspTraceInfo(("%s: xMemEnable is already set to %s. No change needed.\n", __FUNCTION__, value));
             return TRUE;
         }
-        if (syscfg_set_commit(NULL, "xMemEnable", value) != 0)
+
+        setCfgRet = syscfg_set_commit(NULL, "xMemEnable", value);
+        if (setCfgRet != 0)
         {
-            CcspTraceError(("syscfg_set failed on xMemEnable\n"));
+            CcspTraceError(("%s: syscfg_set_commit failed for xMemEnable with value %s. Return code: %d\n", __FUNCTION__, value, setCfgRet));
             return FALSE;
         }
-
-        if (bValue == TRUE)
-        {
-            CcspTraceInfo(("Enabling MemInsight feature\n"));
-            FILE *enableFile = fopen(MEMINSIGHT_ENABLE_FILE, "w");
-            if (enableFile != NULL)
-            {
-                fclose(enableFile);
-                CcspTraceInfo(("Successfully enabled MemInsight. File created: %s\n", MEMINSIGHT_ENABLE_FILE));
-            }
-            else
-            {
-                CcspTraceError(("Failed to create MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
-                return FALSE;
-            }
-        }
-        else
-        {
-            CcspTraceInfo(("Disabling MemInsight feature\n"));
-            FILE *checkFile = fopen(MEMINSIGHT_ENABLE_FILE, "r");
-            if (checkFile != NULL)
-            {
-                fclose(checkFile);
-                if (remove(MEMINSIGHT_ENABLE_FILE) == 0)
-                {
-                    CcspTraceInfo(("Successfully disabled MemInsight. File removed: %s\n", MEMINSIGHT_ENABLE_FILE));
-
-                    int sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
-
-                    if (sysRet == 0)
-                    {
-                        CcspTraceInfo(("%s is currently active\n", MEMINSIGHT_SERVICE));
-                        sysRet = v_secure_system("systemctl stop %s", MEMINSIGHT_SERVICE);
-
-                        if (sysRet == 0)
-                        {
-                            CcspTraceInfo(("%s stopped successfully\n", MEMINSIGHT_SERVICE));
-                        }
-                        else
-                        {
-                            CcspTraceError(("Failed to stop %s. Return code: %d\n", MEMINSIGHT_SERVICE, sysRet));
-                        }
-                        sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
-
-                        if (sysRet != 0)
-                        {
-                            CcspTraceInfo(("Confirmed: %s is now inactive\n", MEMINSIGHT_SERVICE));
-                        }
-                        else
-                        {
-                            CcspTraceWarning(("Warning: %s appears to still be active after stop command\n", MEMINSIGHT_SERVICE));
-                        }
-                    }
-                    else
-                    {
-                        CcspTraceInfo(("MemInsight service %s is already inactive\n", MEMINSIGHT_SERVICE));
-                    }
-                }
-                else
-                {
-                    CcspTraceError(("Failed to remove MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE, strerror(errno)));
-                }
-            }
-            else
-            {
-                CcspTraceInfo(("MemInsight is already disabled. File not found: %s\n", MEMINSIGHT_ENABLE_FILE));
-            }
-        }
+        CcspTraceInfo(("%s: Setting xMemEnable to %s\n", __FUNCTION__, value));
         return TRUE;
     }
-    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
-    return FALSE;
+    else
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
 }
 
 /**********************************************************************
@@ -1909,9 +1853,12 @@ BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
 BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if (strcmp(ParamName, "Enable") == 0) {
+    int ret = 0;
+    if (strcmp(ParamName, "Enable") == 0)
+    {
         char value[8] = {'\0'};
-        if( syscfg_get(NULL, "xMemEnable", value, sizeof(value)) == 0 )
+        ret = syscfg_get(NULL, "xMemEnable", value, sizeof(value));
+        if( ret == 0 )
         {
             if (strcmp(value, "true") == 0)
             {
@@ -1925,14 +1872,15 @@ BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
         }
         else
         {
-            CcspTraceError(("syscfg_get failed for xMemEnable\n"));
+            CcspTraceError(("%s: syscfg_get failed for xMemEnable, ret=%d\n", __FUNCTION__, ret));
+            return FALSE;
         }
     }
     else
     {
         CcspTraceError(("%s: Unknown parameter %s\n", __FUNCTION__, ParamName));
+        return FALSE;
     }
-    return FALSE;
 }
 
 /**********************************************************************
@@ -1953,8 +1901,8 @@ BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
         ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
 
     return:
-        TRUE if succeeded;
-        FALSE if not supported
+        0 if succeeded;
+        -1 if not supported
 
 **********************************************************************/
 
@@ -1964,24 +1912,80 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
     UNREFERENCED_PARAMETER(pUlSize);
 
     errno_t rc  = -1;
+    int ret = 0;
 
-    if(strcmp(ParamName, "Args") == 0) {
-        /* collect value */
-        char buf[128] = {'\0'};
-        if(!syscfg_get(NULL, "xMemArgs", buf, sizeof(buf)))
+    if(strcmp(ParamName, "Args") == 0) /* Arguments to be passed to meminsight when triggered */
+    {
+        char buf[512] = {'\0'};
+        ret = syscfg_get(NULL, "xMemArgs", buf, sizeof(buf));
+        if( ret == 0 )
         {
+            size_t bufLen = strlen(buf);
             rc = strcpy_s(pValue, *pUlSize, buf);
             if(rc != EOK)
             {
-               ERR_CHK(rc);
-               return -1;
+                ERR_CHK(rc);
+                if (rc == ERANGE)
+                {
+                    *pUlSize = bufLen + 1;
+                    if(*pUlSize > 0)
+                    {
+                        pValue[0] = '\0';
+                    }
+                    CcspTraceWarning(("%s: Buffer too small for xMemArgs, required=%lu\n", __FUNCTION__, (unsigned long)(bufLen + 1)));
+                    return 1;
+                }
+                CcspTraceError(("%s: strcpy_s failed for xMemArgs, rc=%d\n", __FUNCTION__, rc));
+                return -1;
             }
+            CcspTraceInfo(("%s: xMemArgs retrieved successfully: %s\n", __FUNCTION__, buf));
             return 0;
         }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for xMemArgs, ret=%d\n", __FUNCTION__, ret));
+            return -1;
+        }
+    }
+    else if (strcmp(ParamName, "Trigger" == 0)) /* Trigger to start meminsight */
+    {
+        char buf[8] = {'\0'};
+        ret = syscfg_get(NULL, "xMemTrigger", buf, sizeof(buf));
+        if( ret == 0 )
+        {
+            size_t bufLen = strlen(buf);
+            rc = strcpy_s(pValue, *pUlSize, buf);
+            if(rc != EOK)
+            {
+                ERR_CHK(rc);
+                if (rc == ERANGE)
+                {
+                    *pUlSize = bufLen + 1;
+                    if(*pUlSize > 0)
+                    {
+                        pValue[0] = '\0';
+                    }
+                    CcspTraceWarning(("%s: Buffer too small for xMemTrigger, required=%lu\n", __FUNCTION__, (unsigned long)(bufLen + 1)));
+                    return 1;
+                }
+                CcspTraceError(("%s: strcpy_s failed for xMemTrigger, rc=%d\n", __FUNCTION__, rc));
+                return -1;
+            }
+            CcspTraceInfo(("%s: xMemTrigger retrieved successfully: %s\n", __FUNCTION__, buf));
+            return 0;
+        }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for xMemTrigger, ret=%d\n", __FUNCTION__, ret));
+            return -1;
+        }
+    }
+    else
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
         return -1;
     }
-    CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
-    return -1;
+
 }
 
 /**********************************************************************
@@ -1990,7 +1994,7 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
         owner of this object
 
     prototype:
-        BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+        BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString)
 
     description:
         This function is called to set string parameter value;
@@ -1998,8 +2002,7 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
     argument:
         ANSC_HANDLE hInsContext - The instance handle;
         char* ParamName - The parameter name;
-        char* pValue - The string value buffer;
-        ULONGF* pUlSize - The buffer of length of string value; Usually size of 1023 will be used.
+        char* pString - The string value;
 
     return:
         TRUE if succeeded;
@@ -2009,23 +2012,188 @@ ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, 
 
 BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString)
 {
+    int ret = 0;
+
     if (IsStringSame(hInsContext, ParamName, pString, xMemInsight_GetParamStringValue))
     {
         return TRUE;
     }
+    if (pString == NULL)
+    {
+        CcspTraceError(("%s: NULL string provided for parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
     if (strcmp(ParamName, "Args") == 0)
     {
-        if (syscfg_set_commit(NULL, "xMemArgs", pString) != 0)
+        ret = syscfg_set_commit(NULL, "xMemArgs", pString);
+        if (ret != 0)
         {
-            CcspTraceError(("syscfg_set failed for xMemArgs\n"));
+            CcspTraceError(("%s: syscfg_set failed for xMemArgs\n", __FUNCTION__));
+            return FALSE;
         }
         else
         {
+            CcspTraceInfo(("%s: xMemArgs set successfully: %s\n", __FUNCTION__, pString));
             return TRUE;
         }
     }
-    CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
-    return FALSE;
+    else if (strcmp(ParamName, "Trigger") == 0)
+    {
+        /* if pString is start/ stop case insensitive */
+        if (strcasecmp(pString, "start") == 0 || strcasecmp(pString, "stop") == 0)
+        {
+            /* pre-check if already set */
+            char currentValue[8] = {'\0'};
+            ret = syscfg_get(NULL, "meminsight_Trigger", currentValue, sizeof(currentValue));
+            if (ret == 0 && strcasecmp(currentValue, pString) == 0)
+            {
+                CcspTraceInfo(("%s: meminsight_Trigger is already set to %s, no action needed\n", __FUNCTION__, currentValue));
+                return TRUE;
+            }
+            int setCfgRet = syscfg_set_commit(NULL, "xMemTrigger", pString);
+            if (setCfgRet != 0)
+            {
+                CcspTraceError(("%s: syscfg_set failed for xMemTrigger with value %s. Return code: %d\n", __FUNCTION__, pString, setCfgRet));
+                return FALSE;
+            }
+
+            if(strcasecmp(pString, "start") == 0)
+            {
+                CcspTraceInfo(("%s: Starting MemInsight as Trigger is set to start\n", __FUNCTION__));
+                FILE *enableFile_nvram = fopen(MEMINSIGHT_ENABLE_FILE_NVRAM, "w");
+                FILE *enableFile_tmp = fopen(MEMINSIGHT_ENABLE_FILE_TMP, "w");
+                
+                // Check both file creations and handle partial failure
+                if (enableFile_nvram == NULL || enableFile_tmp == NULL)
+                {
+                    CcspTraceError(("%s: Failed to create MemInsight enable files. NVRAM:%s TMP:%s Error: %s\n", __FUNCTION__,
+                                   enableFile_nvram ? "OK" : "FAIL", 
+                                   enableFile_tmp ? "OK" : "FAIL", 
+                                   strerror(errno)));
+                    
+                    // Close files if any opened before return
+                    if (enableFile_nvram != NULL)
+                    {
+                        fclose(enableFile_nvram);
+                    }
+                    if (enableFile_tmp != NULL)
+                    {
+                        fclose(enableFile_tmp);
+                    }
+                    return FALSE; 
+                }
+                
+                fclose(enableFile_nvram);
+                fclose(enableFile_tmp);
+                CcspTraceInfo(("%s: Successfully created MemInsight enable files: %s and %s\n", __FUNCTION__, MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP));
+                return TRUE;
+            }
+            else if (strcasecmp(pString, "stop") == 0)
+            {
+                CcspTraceInfo(("Stopping MemInsight as Trigger is set to stop\n"));
+                
+                // Check and remove both files independently
+                int nvram_removed = 0;
+                int tmp_removed = 0;
+                int nvram_exists = (access(MEMINSIGHT_ENABLE_FILE_NVRAM, F_OK) == 0);
+                int tmp_exists = (access(MEMINSIGHT_ENABLE_FILE_TMP, F_OK) == 0);
+                
+                if (!nvram_exists && !tmp_exists)
+                {
+                    CcspTraceInfo(("MemInsight is already disabled. Files not found: %s and %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM, MEMINSIGHT_ENABLE_FILE_TMP));
+                    return TRUE;
+                }
+                
+                // Remove NVRAM file if it exists
+                if (nvram_exists)
+                {
+                    if (remove(MEMINSIGHT_ENABLE_FILE_NVRAM) == 0)
+                    {
+                        nvram_removed = 1;
+                        CcspTraceInfo(("Successfully removed MemInsight enable file: %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM));
+                    }
+                    else
+                    {
+                        CcspTraceError(("Failed to remove MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE_NVRAM, strerror(errno)));
+                    } 
+                }
+                else
+                {
+                    nvram_removed = 1; // Not an error if file doesn't exist
+                }
+                // Remove TMP file if it exists
+                if (tmp_exists)
+                {
+                    if (remove(MEMINSIGHT_ENABLE_FILE_TMP) == 0)
+                    {
+                        tmp_removed = 1;
+                        CcspTraceInfo(("Successfully removed MemInsight enable file: %s\n", MEMINSIGHT_ENABLE_FILE_TMP));
+                    }
+                    else
+                    {
+                        CcspTraceError(("Failed to remove MemInsight enable file: %s. Error: %s\n", MEMINSIGHT_ENABLE_FILE_TMP, strerror(errno)));
+                    }
+                }
+                else
+                {
+                    tmp_removed = 1; // Not an error if file doesn't exist
+                }
+                
+                // Check if both removals were successful
+                if (!nvram_removed || !tmp_removed)
+                {
+                    CcspTraceError(("Failed to remove one or more MemInsight enable files\n")); 
+                    return FALSE;
+                }
+                // Stop the service if it's running
+                int sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
+                if (sysRet == 0)
+                {
+                    CcspTraceInfo(("%s is currently active\n", MEMINSIGHT_SERVICE));
+                    sysRet = v_secure_system("systemctl stop %s", MEMINSIGHT_SERVICE);
+
+                    if (sysRet == 0)
+                    {
+                        CcspTraceInfo(("%s stopped successfully\n", MEMINSIGHT_SERVICE));
+                    }
+                    else
+                    {
+                        CcspTraceError(("Failed to stop %s. Return code: %d\n", MEMINSIGHT_SERVICE, sysRet));
+                    }
+                    
+                    // Verify service stopped
+                    sysRet = v_secure_system("systemctl is-active %s", MEMINSIGHT_SERVICE);
+                    if (sysRet != 0)
+                    {
+                        CcspTraceInfo(("Confirmed: %s is now inactive\n", MEMINSIGHT_SERVICE));
+                    }
+                    else
+                    {
+                        CcspTraceWarning(("Warning: %s appears to still be active after stop command\n", MEMINSIGHT_SERVICE));
+                    }
+                }
+                else
+                {
+                    CcspTraceInfo(("MemInsight service %s is already inactive\n", MEMINSIGHT_SERVICE));
+                }
+                
+                return TRUE;
+            }
+            /* Never reach here */
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("%s: Invalid value for xMemTrigger: %s. Expected 'start' or 'stop'\n", __FUNCTION__, pString));
+            return FALSE;
+        }
+    }
+    else
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+        
 }
 
 /**********************************************************************
