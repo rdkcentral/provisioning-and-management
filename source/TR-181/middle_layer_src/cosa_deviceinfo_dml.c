@@ -11415,7 +11415,8 @@ Feature_SetParamBoolValue
             return FALSE;
         }
     }
-#endif
+#endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
+
 #if defined (_XB6_PRODUCT_REQ_)
     if (strcmp(ParamName, "BLERadio") == 0)
     {
