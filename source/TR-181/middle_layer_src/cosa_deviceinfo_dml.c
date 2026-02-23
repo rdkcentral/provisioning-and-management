@@ -1860,7 +1860,7 @@ BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
         ret = syscfg_get(NULL, "xMemEnable", value, sizeof(value));
         if( ret == 0 )
         {
-            if (strcmp(value, "true") == 0)
+            if ((strcmp(value, "1") == 0) || (strcasecmp(value, "true") == 0))
             {
                 *pBool = TRUE;
             }
