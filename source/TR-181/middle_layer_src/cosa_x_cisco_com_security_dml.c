@@ -1771,7 +1771,7 @@ Firewall1_SetParamBoolValue
 #if defined(_ONESTACK_PRODUCT_REQ_)
 		if(!is_devicemode_business())
 	    {
-            CcspTraceError(("Firewall TSIP is not supported in non business mode \n"));
+            CcspTraceError(("Firewall True Staic IP is not supported in non business mode \n"));
             t2_event_d("TrueStatic_NotSupported", 1);
             return FALSE;
 	    }
