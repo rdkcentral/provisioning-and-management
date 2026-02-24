@@ -11409,11 +11409,11 @@ Feature_SetParamBoolValue
         }
 #if defined(_ONESTACK_PRODUCT_REQ_)
         if (!is_devicemode_business())
-#endif // _ONESTACK_PRODUCT_REQ_
         {
             CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
             return FALSE;
         }
+#endif // _ONESTACK_PRODUCT_REQ_
     }
 #endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
 
