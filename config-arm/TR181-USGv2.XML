@@ -2073,6 +2073,30 @@
 	                      </parameters>   
                       </object>
                       <object>
+                            <name>Cron</name>
+                            <objectType>object</objectType>
+                            <functions></functions>
+                            <parameters></parameters>
+                            <objects>
+                                <object>
+                                <name>SelfHeal</name>
+                                     <objectType>object</objectType>
+                                     <functions>
+                                         <func_GetParamBoolValue>SelfHeal_GetParamBoolValue</func_GetParamBoolValue>
+                                         <func_SetParamBoolValue>SelfHeal_SetParamBoolValue</func_SetParamBoolValue>
+                                     </functions>
+                                     <parameters>
+                                         <parameter>
+                                             <name>Enable</name>
+                                             <type>boolean</type>
+                                             <syntax>bool</syntax>
+                                             <writable>true</writable>
+                                         </parameter>
+                                     </parameters>
+                                </object>
+                            </objects>
+                        </object>
+                      <object>
                           <name>WebUI</name>
                           <objectType>object</objectType>
                           <functions>
@@ -2353,7 +2377,25 @@
                                     <writable>true</writable>
                                 </parameter>
                             </parameters>
-                    </object>
+                        </object>
+                        <object>
+                            <name>STAGE</name>
+                            <objectType>object</objectType>
+                            <functions>
+                                <func_SetParamBoolValue>STAGE_SetParamBoolValue</func_SetParamBoolValue>
+                                <func_GetParamBoolValue>STAGE_GetParamBoolValue</func_GetParamBoolValue>
+                            </functions>
+
+                            <parameters>
+                                <parameter>
+                                    <name>Enable</name>
+                                    <type>boolean</type>
+                                    <syntax>bool</syntax>
+                                    <writable>true</writable>
+                                </parameter>
+                            </parameters>
+                        </object>
+
                         <object>
                             <name>Telemetry</name>
                             <objectType>object</objectType>
@@ -15013,10 +15055,14 @@
             <parameter>
                 
               <name>LanMode</name>
+<?ifdef _ONESTACK_PRODUCT_REQ_?>
+              <type>string: bridge-dhcp(1),bridge-static(2),router(3),full-bridge-static(4)</type>
+<?else?>
 <?ifndef BCI?>
               <type>string: bridge-dhcp(1),bridge-static(2),router(3)</type>
 <?else?>
               <type>string: bridge-dhcp(1),bridge-static(2),router(3),full-bridge-static(4)</type>
+<?endif?>
 <?endif?>
               <syntax>uint32/mapped</syntax>
 

@@ -198,6 +198,85 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 // ATOM IP length
 #define IP_LEN 20
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/**
+ * @brief Validates PartnerID operations and prevents duplicate activations
+ * 
+ * This function checks /nvram/.partner_ID file to prevent duplicate PartnerID activations
+ * while allowing all legitimate PartnerID configuration operations. The file is created
+ * by setTempPartnerId() when a new PartnerID value is set, not during the activation process.
+ * 
+ * @param[in] currentPartnerID - Current PartnerID string from pMyObject  
+ * @param[in] newPartnerID - New PartnerID string being set
+ * 
+ * @return int - 1 if operation allowed, 0 if duplicate activation detected
+ */
+static int ValidatePartnerIDChange(const char* currentPartnerID, const char* newPartnerID)
+{
+    char nvram_partner_id[PARTNER_ID_LEN] = {0};
+    FILE *partner_file = NULL;
+    int allow_operation = 1;
+    
+    if (!currentPartnerID || !newPartnerID) {
+        CcspTraceError(("[PARTNERID-VALIDATE] Invalid input parameters\n"));
+        return 0;
+    }
+    
+    // Check if /nvram/.partner_ID file exists (created during previous activation)
+    partner_file = fopen("/nvram/.partner_ID", "r");
+    if (partner_file != NULL) {
+        if (fgets(nvram_partner_id, sizeof(nvram_partner_id), partner_file) != NULL) {
+            // Remove newline character if present
+            char *pos = strchr(nvram_partner_id, '\n');
+            if (pos != NULL) {
+                *pos = '\0';
+            }
+            
+            // Check for duplicate activation - same PartnerID already activated
+            size_t nvram_len = strnlen_s(nvram_partner_id, PARTNER_ID_LEN);
+            size_t new_len = strnlen_s(newPartnerID, PARTNER_ID_LEN);
+            int rc = -1, ind = -1;
+            if (nvram_len == new_len) {
+                rc = strcmp_s(nvram_partner_id, PARTNER_ID_LEN, newPartnerID, &ind);
+                if ((rc == EOK) && (!ind)) {
+                    allow_operation = 0; // Prevent duplicate activation
+                    CcspTraceWarning(("[PARTNERID-VALIDATE] Preventing duplicate activation of '%s'\n", newPartnerID));
+                }
+            }
+        } else {
+            if (ferror(partner_file)) {
+                CcspTraceError(("[PARTNERID-VALIDATE] Error reading /nvram/.partner_ID file\n"));
+            } else {
+                CcspTraceWarning(("[PARTNERID-VALIDATE] Empty /nvram/.partner_ID file\n"));
+            }
+        }
+        fclose(partner_file);
+    } else {
+        // Handle fopen failure - check errno to distinguish file not existing from other errors
+        if (errno == ENOENT) {
+            // File doesn't exist - this is the first PartnerID operation, allow it
+            CcspTraceInfo(("[PARTNERID-VALIDATE] No previous /nvram/.partner_ID file - allowing first operation\n"));
+        } else {
+            // Other error (permissions, I/O error, etc.) - log error but allow operation to maintain existing behavior
+            CcspTraceInfo(("[PARTNERID-VALIDATE] Failed to open /nvram/.partner_ID (errno=%d): %s - allowing operation\n", errno, strerror(errno)));
+        }
+    }
+    
+    // Log validation details
+    CcspTraceInfo(("[PARTNERID-VALIDATE] === PartnerID Activation Check ===\n"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Current PartnerID     : '%s'\n", currentPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Previous activation  : '%s'\n", nvram_partner_id[0] ? nvram_partner_id : "<none>"));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] New PartnerID        : '%s'\n", newPartnerID));
+    CcspTraceInfo(("[PARTNERID-VALIDATE] Operation allowed    : %s\n", allow_operation ? "YES" : "NO"));
+    if (!allow_operation) {
+        CcspTraceInfo(("[PARTNERID-VALIDATE] Reason              : Duplicate activation\n"));
+    }
+    CcspTraceInfo(("[PARTNERID-VALIDATE] =======================================\n"));
+    
+    return allow_operation;
+}
+#endif // _ONESTACK_PRODUCT_REQ_
+
 #ifdef COLUMBO_HWTEST
 //RDKB-33114: Default values defined here due to objects not being persistent by design
 #define DEFAULT_HWST_PTR_CPU_THRESHOLD 80
@@ -242,6 +321,22 @@ typedef struct {
   char     *name;
   enum  pString_val type;
 } DEVICEINFO_SET_VALUE;
+
+// Declaring selfheal scripts
+char *SELF_HEAL_SCRIPTS[] = {
+    "selfheal_aggressive.sh",
+    "self_heal_connectivity_test.sh",
+    "resource_monitor.sh"
+};
+
+//Start/stop cron jobs
+typedef struct {
+    const char *name;
+    const char *key;
+    int def_val;
+} CronJob;
+
+#define SCRIPT_COUNT (sizeof(SELF_HEAL_SCRIPTS) / sizeof(SELF_HEAL_SCRIPTS[0]))
 
 static const DEVICEINFO_SET_VALUE deviceinfo_set_table[] = {
     { "ui_access",UIACCESS },
@@ -1078,7 +1173,7 @@ DeviceInfo_GetParamStringValue
         return 0;
     }
 
-#if !defined(_WNXL11BWL_PRODUCT_REQ_) && !defined (_SCER11BEL_PRODUCT_REQ_)
+#if !defined(_WNXL11BWL_PRODUCT_REQ_)
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_InActiveFirmware") == 0)
     {
         return CosaDmlDiGetInActiveFirmware(NULL, pValue, pulSize);
@@ -8840,7 +8935,96 @@ Identity_SetParamStringValue
     }
     return TRUE;
 }
+/**********************************************************************
+    caller:     owner of this object
+    prototype:
+        BOOL
+        STAGE_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+    description:
+        This function is called to retrieve Boolean parameter value;
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+                char*                       ParamName,
+                The parameter name;
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+    return:     TRUE if succeeded.
+**********************************************************************/
+BOOL
+STAGE_GetParamBoolValue
+    (
+         ANSC_HANDLE                 hInsContext,
+         char*                       ParamName,
+         BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char buf[8] = {0};
+        if (syscfg_get(NULL, "StageEnabled", buf, sizeof(buf)) == 0)
+        {
+            if (strncmp(buf, "true", sizeof(buf)) == 0)
+                *pBool = TRUE;
+            else
+                *pBool = FALSE;
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed  for StageEnabled\n", __FUNCTION__));
+            *pBool = FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 
+/**********************************************************************
+    caller:     owner of this object
+    prototype:
+        BOOL
+        STAGE_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+    description:
+        This function is called to set BOOL parameter value;
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+                char*                       ParamName,
+                The parameter name;
+                BOOL                        bValue
+                The updated BOOL value;
+    return:     TRUE if succeeded.
+**********************************************************************/
+BOOL
+STAGE_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, STAGE_GetParamBoolValue))
+        return TRUE;
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if(syscfg_set_commit(NULL, "StageEnabled", (bValue == TRUE) ? "true" : "false") != 0)
+        {
+            CcspTraceError(("[%s] syscfg_set_commit failed for key 'StageEnabled' in STAGE\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
 /**
  *  RFC Feature for CrashUpload S3signing url
 */
@@ -13634,6 +13818,243 @@ WebUIRemoteMgtOption_SetParamBoolValue
     prototype:
 
         BOOL
+        SelfHeal_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+SelfHeal_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if( AnscEqualString(ParamName, "Enable", TRUE))
+    {
+        char value[8] = {0};
+	/* collect value */
+        if (syscfg_get(NULL,"SelfHealCronEnable",value, sizeof(value)) == 0)
+        {
+             if (strncmp(value, "true", sizeof(value)) == 0)
+                     *pBool = TRUE;
+             else
+                     *pBool = FALSE;
+        }
+        else
+        {
+             CcspTraceError(("%s syscfg_get failed  for SelfHealCronEnable\n",__FUNCTION__));
+             *pBool = TRUE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static void copy_command_output (char *cmd, char *out, int len)
+{
+    FILE *fp;
+
+    out[0] = 0;
+
+    fp = popen (cmd, "r");
+    if (fp)
+    {
+        if (fgets (out, len, fp) != NULL)
+        {
+          //CID 252175 fix - Parse warning (PW.PARAMETER_HIDDEN)
+            size_t len_out = strlen (out);
+            if ((len_out > 0) && (out[len_out - 1] == '\n'))
+                out[len_out - 1] = 0;
+        }
+        pclose (fp);
+    }
+}
+
+/* Start all self-heal scripts */
+void start_self_heal_scripts() {
+    for (size_t i = 0; i < SCRIPT_COUNT; i++) {
+        CcspTraceWarning(("%s: Starting %s\n", __FUNCTION__, SELF_HEAL_SCRIPTS[i]));
+        // Uses the shared path and script name
+        v_secure_system("/usr/ccsp/tad/%s &", SELF_HEAL_SCRIPTS[i]);
+    }
+}
+/* Stop all self-heal scripts */
+void stop_self_heal_scripts() {
+    char buf[64], cmd[128];
+    for (size_t i = 0; i < SCRIPT_COUNT; i++) {
+        snprintf(cmd, sizeof(cmd), "pidof %s", SELF_HEAL_SCRIPTS[i]);
+        copy_command_output(cmd, buf, sizeof(buf));
+        CcspTraceInfo(("%s: pidof %s returned: %s\n", __FUNCTION__, SELF_HEAL_SCRIPTS[i], buf));
+        if (buf[0] == '\0') {
+            CcspTraceWarning(("%s: %s is not running\n", __FUNCTION__, SELF_HEAL_SCRIPTS[i]));
+        } else {
+            CcspTraceWarning(("%s: Stopping %s \n", __FUNCTION__, SELF_HEAL_SCRIPTS[i]));
+            v_secure_system("kill -9 %s", buf);
+        }
+    }
+}
+
+/* To fetch syscfg values */
+unsigned long get_interval(const char *key, int def_val) {
+    // Handle fixed intervals (null keys)
+    if (!key) return (unsigned long)def_val;
+
+    char buf[32] = {0};
+    unsigned long result = (unsigned long)def_val;
+
+    if (syscfg_get(NULL, key, buf, sizeof(buf)) == 0 && buf[0] != '\0') {
+        result = (unsigned long)atol(buf);
+    }
+    return result;
+}
+
+/* To Update Crontab (Removes old, Adds new) */
+void update_cron_entry(const char *script, unsigned long interval, bool should_run) {
+    // We always remove the old entry to avoid duplicates
+    v_secure_system("crontab -l 2>/dev/null | sed '/%s/d' | crontab -", script);
+    // If should_run is true, we append the new timing
+    if (should_run) {
+        v_secure_system("(crontab -l 2>/dev/null; echo '*/%lu * * * * /usr/ccsp/tad/%s') | crontab -", 
+                        interval, script);
+    }
+}
+
+/* function to Manage add/remove of cron jobs */
+void manage_self_heal_cron_state(bool SelfhealCronEnable) {
+    const CronJob self_heal_scripts[] = {
+        {"self_heal_connectivity_test.sh", "ConnTest_PingInterval", 60},
+        {"resource_monitor.sh", "resource_monitor_interval", 15},
+        {"selfheal_aggressive.sh", "AggressiveInterval", 5}
+    };
+
+    const CronJob recovery_scripts[] = {
+        {"syscfg_recover.sh", NULL, 15},
+        {"resource_monitor_recover.sh", NULL, 5}
+    };
+
+    if (SelfhealCronEnable) {
+        // Stop Cron Job of Recovery Scripts
+        for (int i = 0; i < 2; i++) 
+            update_cron_entry(recovery_scripts[i].name, 0, false);
+        
+        // Start Cron Jobs of Self-Heal Scripts (using syscfg lookup)
+        for (int i = 0; i < 3; i++) {
+            unsigned long val = get_interval(self_heal_scripts[i].key, self_heal_scripts[i].def_val);
+            update_cron_entry(self_heal_scripts[i].name, val, true);
+        }
+    } else {
+        // Stop Cron Job of Self-Heal Scripts
+        for (int i = 0; i < 3; i++) 
+            update_cron_entry(self_heal_scripts[i].name, 0, false);
+        
+        // Start Cron Job of Recovery Scripts (using fixed defaults)
+        for (int i = 0; i < 2; i++) 
+            update_cron_entry(recovery_scripts[i].name, recovery_scripts[i].def_val, true);
+    }
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        SelfHeal_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+SelfHeal_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, SelfHeal_GetParamBoolValue))
+        return TRUE;
+
+    if( AnscEqualString(ParamName, "Enable", TRUE))
+    {
+        if(syscfg_set(NULL, "SelfHealCronEnable", (bValue==TRUE)?"true":"false") != 0)
+        {
+            CcspTraceError(("[%s] syscfg_set failed for SelfHealCronEnable\n",__FUNCTION__));
+            return FALSE;
+        }
+	    if (syscfg_commit() != 0)
+	    {
+            AnscTraceWarning(("syscfg_commit failed for SelfHealCronEnable param update\n"));
+            return FALSE;
+	    }
+        
+        //Remove selfheal cron job if param is disabled
+        if(bValue == FALSE)
+        {
+            CcspTraceInfo(("SelfHeal cron is disabled, removing cron jobs\n"));
+            manage_self_heal_cron_state(false);
+            CcspTraceInfo(("SelfHeal cron is disabled, starting selfheal scripts as process\n"));
+            start_self_heal_scripts();
+        }
+	    else
+	    {
+            CcspTraceInfo(("SelfHeal cron is enabled, stopping the selfheal scripts process\n"));
+            stop_self_heal_scripts();
+            CcspTraceInfo(("SelfHeal cron is enabled, adding cron jobs\n"));
+            manage_self_heal_cron_state(true);
+	    }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
         SWDLDirect_GetParamBoolValue_GetParamBoolValue
             (
                 ANSC_HANDLE                 hInsContext,
@@ -18184,6 +18605,32 @@ Syndication_SetParamStringValue
     {
         if(!(ind))
         {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            // Use optimized PartnerID validation API for ONESTACK only
+            CcspTraceInfo(("[SET-PARTNERID] Validating PartnerID change from '%s' to '%s'\n", pMyObject->PartnerID, pString));
+            int allow_change = ValidatePartnerIDChange(pMyObject->PartnerID, pString);
+            CcspTraceInfo(("[SET-PARTNERID] Validation result: %d\n", allow_change));
+            
+            // For ONESTACK, rely on ValidatePartnerIDChange() result only
+            if(allow_change)
+            {
+                retValue = setTempPartnerId( pString );
+                if( ANSC_STATUS_SUCCESS == retValue )
+                {
+                    ULONG    size = 0;
+                    //Get the Factory PartnerID
+                    memset(PartnerID, 0, sizeof(PartnerID));
+                    getFactoryPartnerId(PartnerID, &size);
+            
+                    CcspTraceInfo(("[SET-PARTNERID] Factory_Partner_ID:%s\n", ( PartnerID[ 0 ] != '\0' ) ? PartnerID : "NULL" ));
+                    CcspTraceInfo(("[SET-PARTNERID] Current_PartnerID:%s\n", pMyObject->PartnerID ));
+                    CcspTraceInfo(("[SET-PARTNERID] Overriding_PartnerID:%s\n", pString ));
+                                    
+                    return TRUE;
+                }
+            }
+#else
+            // Original logic for all non-ONESTACK platforms (completely unchanged)
 #if defined (_RDK_REF_PLATFORM_)
 		ind = 0;
 		if ( !(rc = strcmp_s("comcast", strlen("comcast"), pString, &ind) ) ) //Compare if input string is comcast
@@ -18220,6 +18667,7 @@ Syndication_SetParamStringValue
                      AnscTraceWarning(("RDK_LOG_WARN, safeclib strcmp_s- %s %s:%d rc =%d \n",__FILE__, __FUNCTION__,__LINE__,rc));
                      return FALSE;
                 }
+#endif // _ONESTACK_PRODUCT_REQ_
         }
     }
     else if(rc != EOK)
@@ -24236,28 +24684,6 @@ EnableOCSPStapling_SetParamBoolValue
     return FALSE;
 }
 
-static void copy_command_output (char *cmd, char *out, int len)
-{
-    FILE *fp;
-
-    out[0] = 0;
-
-    fp = popen (cmd, "r");
-    if (fp)
-    {
-        if (fgets (out, len, fp) != NULL)
-        {
-          /* CID 252175 fix - Parse warning (PW.PARAMETER_HIDDEN) */
-            size_t len_out = strlen (out);
-            if ((len_out > 0) && (out[len_out - 1] == '\n'))
-                out[len_out - 1] = 0;
-        }
-
-        pclose (fp);
-    }
-}
-
-
 /**********************************************************************
 
     caller:     owner of this object
@@ -24354,38 +24780,67 @@ SelfHeal_SetParamUlongValue
     if (strcmp(ParamName, "AggressiveInterval") == 0)
     {
         char buf[16];
+        char currentValue[16] = {0};
+        ULONG currentInterval = 0;
+
+        if (syscfg_get(NULL, "AggressiveInterval", currentValue, sizeof(currentValue)) == 0)
+        {
+            currentInterval = atol(currentValue);
+            if (currentInterval == uValue)
+            {
+                CcspTraceInfo(("AggressiveInterval value unchanged (%lu), skipping update\n", uValue));
+                return TRUE;
+            }
+        }
 
         if (uValue < 2) /* Minimum interval is 2 as per the aggressive selfheal US [RDKB-25546] */
-	{
-	    AnscTraceWarning(("Minimum interval is 2 for %s !\n", ParamName));
-	    return FALSE;
-	}
+	    {
+	        AnscTraceWarning(("Minimum interval is 2 for %s !\n", ParamName));
+	        return FALSE;
+	    }
 #if defined(_ARRIS_XB6_PRODUCT_REQ_) || defined(_CBR_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_) || defined(_PLATFORM_BANANAPI_R4_) || \
 (defined(_XB6_PRODUCT_REQ_) && defined(_COSA_BCM_ARM_))
-	syscfg_get( NULL, "resource_monitor_interval", buf, sizeof(buf));
+	    syscfg_get( NULL, "resource_monitor_interval", buf, sizeof(buf));
         if( 0 == strlen(buf) )
-	{
-	    AnscTraceWarning(("syscfg_get returns NULL for resource_monitor_interval !\n"));
-	    return FALSE;
-	}
-	ULONG resource_monitor_interval = atol(buf);
-	if (uValue >= resource_monitor_interval)
-	{
-	    CcspTraceWarning(("AggressiveInterval should be lesser than resource_monitor_interval\n"));
-	    return FALSE;
-	}
-#endif
+	    {
+	        AnscTraceWarning(("syscfg_get returns NULL for resource_monitor_interval !\n"));
+	        return FALSE;
+	    }
+	    ULONG resource_monitor_interval = atol(buf);
+	    if (uValue >= resource_monitor_interval)
+	    {
+	        CcspTraceWarning(("AggressiveInterval should be lesser than resource_monitor_interval\n"));
+	        return FALSE;
+	    }
+        #endif
         if (syscfg_set_u_commit(NULL, ParamName, uValue) != 0)
         {
             AnscTraceWarning(("%s syscfg_set failed!\n", ParamName));
             return FALSE;
         }
 
-        copy_command_output("pidof selfheal_aggressive.sh", buf, sizeof(buf));
-        if (buf[0] != 0) {
-          v_secure_system("kill -9 %s", buf);
+	    buf[0] = '\0';
+        syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
+        CcspTraceInfo(("SelfHealCronEnable value is %s\n", buf));
+        if( strcmp(buf, "false") == 0 )
+        {
+            CcspTraceInfo(("SelfHealCronEnable is disabled\n"));
+            buf[0] = '\0';
+            copy_command_output("pidof selfheal_aggressive.sh", buf, sizeof(buf));
+            if (buf[0] != 0) {
+                v_secure_system("kill -9 %s", buf);
+            }
+            v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
+            return TRUE;
         }
-        v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
+        
+        CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
+        // First, remove old cron entry
+        v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
+        // Then, add new cron entry with updated interval
+        v_secure_system("(crontab -l 2>/dev/null; echo \"*/%lu * * * * /usr/ccsp/tad/selfheal_aggressive.sh\") | crontab -", uValue);
+        
+        CcspTraceInfo(("Selfheal aggressive cron job restarted with interval: %lu minutes\n", uValue));
     }
     else
     {
