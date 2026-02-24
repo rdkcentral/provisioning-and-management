@@ -5572,7 +5572,7 @@ int setMultiProfileXdnsConfig(BOOL bValue)
     return 1; //success
 }
 
-#endif // _CBR_PRODUCT_REQ_ || _ONESTACK_PRODUCT_REQ_
+#endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
 
 #if defined (FEATURE_SUPPORT_RADIUSGREYLIST)
 BOOL

@@ -11387,9 +11387,9 @@ Feature_SetParamBoolValue
         if (is_devicemode_business())
 #endif // _ONESTACK_PRODUCT_REQ_
         {
-            char buf[5];
+            char buf[5] = {0};
             syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", buf, sizeof(buf));
-            if(buf != NULL && !strcmp(buf, "1"))
+            if (!strcmp(buf, "1"))
             {
                 if(!setMultiProfileXdnsConfig(bValue))
                     return FALSE;
