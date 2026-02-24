@@ -11375,6 +11375,8 @@ Feature_SetParamBoolValue
 #if defined(_ONESTACK_PRODUCT_REQ_)
         if(!is_devicemode_business())
         {
+            CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+            t2_event_d("OneToOneNAT_NotSupported", 1);
             return FALSE;
         }
 #endif
