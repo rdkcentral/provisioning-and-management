@@ -115,6 +115,7 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
+#include <devicemode.h>
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -9528,7 +9529,7 @@ Feature_GetParamBoolValue
          return TRUE;
     }
 
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
          char value[8];
@@ -9544,7 +9545,8 @@ Feature_GetParamBoolValue
 
          return TRUE;
     }
-
+#endif
+#if defined(_COSA_FOR_BCI_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
         char buf[5] = {0};
@@ -11367,9 +11369,17 @@ Feature_SetParamBoolValue
        return TRUE;
     }
 
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if(!is_devicemode_business())
+        {
+            CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+            t2_event_d("OneToOneNAT_NotSupported", 1);
+            return FALSE;
+        }
+#endif
         BOOL bNatEnable = FALSE;
         bNatEnable  = g_GetParamValueBool(g_pDslhDmlAgent, "Device.NAT.X_Comcast_com_EnableNATMapping");
         if ( bValue != bNatEnable )
@@ -11380,7 +11390,8 @@ Feature_SetParamBoolValue
         syscfg_set_commit(NULL, "one_to_one_nat", (bValue == TRUE) ? "true" : "false");
         return TRUE;
     }
-
+#endif
+#if defined(_COSA_FOR_BCI_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
         char buf[5];
