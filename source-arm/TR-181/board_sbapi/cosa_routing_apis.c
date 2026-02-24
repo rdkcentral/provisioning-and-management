@@ -79,6 +79,7 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
+#include <telemetry_busmessage_sender.h>
 #endif
 
 #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
@@ -1119,8 +1120,15 @@ CosaDmlRipGetCfg
 #if defined(_ONESTACK_PRODUCT_REQ_)
 static BOOL IsRIPConflictingFeaturesEnabled(void)
 {
-    // TODO: Add check to see if any conflicting feature of RIP
-    //       like MAP-T are enabled
+    /* MAP-T and RIP are mutually exclusive */
+    char value[8] = {0};
+    if (syscfg_get(NULL, "MAPT_Enable", value, sizeof(value)) == 0)
+    {
+        if (strcmp(value, "true") == 0)
+        {
+            return TRUE;
+        }
+    }
     return FALSE;
 }
 #endif
@@ -1170,13 +1178,13 @@ CosaDmlRipSetCfg
         {
             AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
             t2_event_d("RIP_NotSupported", 1);
-            return FALSE;
+            return ANSC_STATUS_FAILURE;
         }
         else if (IsRIPConflictingFeaturesEnabled())
         {
             AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
             t2_event_d("RIP_NotSupported", 1);
-            return FALSE;
+            return ANSC_STATUS_FAILURE;
         }
     }
 #endif

@@ -357,11 +357,33 @@ free_parameterValStruct
 }
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
-static BOOL IsRIPConflictingFeaturesEnabled(void)
+static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {
-    // TODO: Add check to see if any conflicting feature of RIP
-    //       like MAP-T are enabled
+    /* MAP-T and True Static IP are mutually exclusive */
+    char value[8] = {0};
+    if (syscfg_get(NULL, "MAPT_Enable", value, sizeof(value)) == 0)
+        return (strcmp(value, "true") == 0) ? TRUE : FALSE;
     return FALSE;
+}
+
+static ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
+{
+    if (!bEnable)
+        return ANSC_STATUS_SUCCESS;
+
+    if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+    {
+        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
+        t2_event_d("TrueStatic_NotSupported", 1);
+        return ANSC_STATUS_FAILURE;
+    }
+    if (IsTSIPConflictingFeaturesEnabled())
+    {
+        AnscTraceWarning(("TrueStatic enable rejected, MAP-T active\n"));
+        t2_event_d("TrueStatic_NotSupported", 1);
+        return ANSC_STATUS_FAILURE;
+    }
+    return ANSC_STATUS_SUCCESS;
 }
 #endif
 
@@ -378,23 +400,6 @@ TriggerOtherModule
     BOOL                            bEnabled               = FALSE;
 
     bEnabled = g_GetParamValueBool(g_pDslhDmlAgent, "Device.Routing.RIP.Enable");
-#if defined(_ONESTACK_PRODUCT_REQ_)
-    if (bValue)
-    {
-        if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
-        {
-            AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
-            t2_event_d("RIP_NotSupported", 1);
-            return FALSE;
-        }
-        else if (IsRIPConflictingFeaturesEnabled())
-        {
-            AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
-            t2_event_d("RIP_NotSupported", 1);
-            return FALSE;
-        }
-    }
-#endif
 
     AnscTraceWarning(("Get and Set Device.Routing.RIP.Enable: %d\n", bEnabled));
     returnStatus = g_SetParamValueBool("Device.Routing.RIP.Enable", bEnabled);
@@ -949,21 +954,6 @@ Start:
             }
             else if ( _ansc_strstr(pStringToken->Name, "wan_rip2") && AnscEqualString(pValue, "true", FALSE) )
             {
-#if defined(_ONESTACK_PRODUCT_REQ_)
-                if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
-                {
-                    AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
-                    t2_event_d("RIP_NotSupported", 1);
-                    return FALSE;
-                }
-                else if (IsRIPConflictingFeaturesEnabled())
-                {
-                    AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
-                    t2_event_d("RIP_NotSupported", 1);
-                    return FALSE;
-                }
-#endif
-
                 g_SetParamValueString("Device.Routing.RIP.InterfaceSetting.1.X_CISCO_COM_SendVersion", "RIP2");
                 g_SetParamValueBool  ("Device.Routing.RIP.InterfaceSetting.1.SendRA", TRUE);
                 g_SetParamValueBool  ("Device.Routing.RIP.InterfaceSetting.1.Enable", TRUE);
@@ -1321,6 +1311,11 @@ CosaDmlTSIPSetCfg
         AnscTraceWarning(("Invalid argument for True Static IP!\n"));
         return ANSC_STATUS_FAILURE;
     }
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (CheckTSIPModeGate(pCfg->Enabled) != ANSC_STATUS_SUCCESS)
+        return ANSC_STATUS_FAILURE;
+#endif
 
     /* Send sysevent... */
     if ( pCfg->bIPInfoChanged )
