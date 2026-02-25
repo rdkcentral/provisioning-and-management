@@ -81,6 +81,7 @@
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <syscfg/syscfg.h>
 #include <rdkb_feature_mode_gate.h>
+#include <telemetry_busmessage_sender.h>
 
 static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {

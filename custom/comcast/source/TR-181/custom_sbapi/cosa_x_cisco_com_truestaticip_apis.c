@@ -86,7 +86,6 @@
 #include "messagebus_interface_helper.h"
 #include "safec_lib_common.h"
 
-
 extern void* g_pDslhDmlAgent;
 
 static int iBlockedURLInsNum = 0;
@@ -353,7 +352,6 @@ free_parameterValStruct
     }
 }
 
-
 static
 ANSC_STATUS
 TriggerOtherModule
@@ -367,7 +365,6 @@ TriggerOtherModule
     BOOL                            bEnabled               = FALSE;
 
     bEnabled = g_GetParamValueBool(g_pDslhDmlAgent, "Device.Routing.RIP.Enable");
-
     AnscTraceWarning(("Get and Set Device.Routing.RIP.Enable: %d\n", bEnabled));
     returnStatus = g_SetParamValueBool("Device.Routing.RIP.Enable", bEnabled);
 
