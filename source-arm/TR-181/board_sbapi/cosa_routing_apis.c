@@ -1117,22 +1117,6 @@ CosaDmlRipGetCfg
     return returnStatus;
 }
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-static BOOL IsRIPConflictingFeaturesEnabled(void)
-{
-    /* MAP-T and RIP are mutually exclusive */
-    char value[8] = {0};
-    if (syscfg_get(NULL, "MAPT_Enable", value, sizeof(value)) == 0)
-    {
-        if (strcmp(value, "true") == 0)
-        {
-            return TRUE;
-        }
-    }
-    return FALSE;
-}
-#endif
-
 /**********************************************************************
 
     caller:     self
@@ -1170,24 +1154,6 @@ CosaDmlRipSetCfg
     ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
     UNREFERENCED_PARAMETER(hContext);
     AnscTraceWarning(("CosaDmlRipSetCfg -- starts.\n"));
-
-#if defined(_ONESTACK_PRODUCT_REQ_)
-    if (pCfg->Enable)
-    {
-        if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
-        {
-            AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
-            t2_event_d("RIP_NotSupported", 1);
-            return ANSC_STATUS_FAILURE;
-        }
-        else if (IsRIPConflictingFeaturesEnabled())
-        {
-            AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
-            t2_event_d("RIP_NotSupported", 1);
-            return ANSC_STATUS_FAILURE;
-        }
-    }
-#endif
 
     CosaDmlRIPCurrentConfig.Enable        = pCfg->Enable;
     CosaDmlRIPCurrentConfig.UpdateTime    = pCfg->X_CISCO_COM_UpdateInterval;
