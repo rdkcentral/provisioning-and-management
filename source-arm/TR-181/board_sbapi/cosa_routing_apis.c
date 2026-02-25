@@ -77,11 +77,6 @@
 #include <libnet.h>
 #endif
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-#include <rdkb_feature_mode_gate.h>
-#include <telemetry_busmessage_sender.h>
-#endif
-
 #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
 #include "cosa_drg_common.h"
 #endif
