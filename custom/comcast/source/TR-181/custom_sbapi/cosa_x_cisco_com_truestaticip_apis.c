@@ -86,9 +86,6 @@
 #include "messagebus_interface_helper.h"
 #include "safec_lib_common.h"
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-#include <rdkb_feature_mode_gate.h>
-#endif
 
 extern void* g_pDslhDmlAgent;
 
@@ -356,36 +353,6 @@ free_parameterValStruct
     }
 }
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-static BOOL IsTSIPConflictingFeaturesEnabled(void)
-{
-    /* MAP-T and True Static IP are mutually exclusive */
-    char value[8] = {0};
-    if (syscfg_get(NULL, "MAPT_Enable", value, sizeof(value)) == 0)
-        return (strcmp(value, "true") == 0) ? TRUE : FALSE;
-    return FALSE;
-}
-
-static ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
-{
-    if (!bEnable)
-        return ANSC_STATUS_SUCCESS;
-
-    if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
-    {
-        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
-        t2_event_d("TrueStatic_NotSupported", 1);
-        return ANSC_STATUS_FAILURE;
-    }
-    if (IsTSIPConflictingFeaturesEnabled())
-    {
-        AnscTraceWarning(("TrueStatic enable rejected, MAP-T active\n"));
-        t2_event_d("TrueStatic_NotSupported", 1);
-        return ANSC_STATUS_FAILURE;
-    }
-    return ANSC_STATUS_SUCCESS;
-}
-#endif
 
 static
 ANSC_STATUS
@@ -1311,11 +1278,6 @@ CosaDmlTSIPSetCfg
         AnscTraceWarning(("Invalid argument for True Static IP!\n"));
         return ANSC_STATUS_FAILURE;
     }
-
-#if defined(_ONESTACK_PRODUCT_REQ_)
-    if (CheckTSIPModeGate(pCfg->Enabled) != ANSC_STATUS_SUCCESS)
-        return ANSC_STATUS_FAILURE;
-#endif
 
     /* Send sysevent... */
     if ( pCfg->bIPInfoChanged )
