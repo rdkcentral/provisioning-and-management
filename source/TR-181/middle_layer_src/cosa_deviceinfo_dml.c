@@ -13927,6 +13927,7 @@ static void copy_command_output (char *cmd, char *out, int len)
     }
 }
 
+#if 0
 /* Start all self-heal scripts */
 void start_self_heal_scripts() {
     for (size_t i = 0; i < SCRIPT_COUNT; i++) {
@@ -14008,7 +14009,8 @@ void manage_self_heal_cron_state(bool SelfhealCronEnable) {
         for (int i = 0; i < 2; i++) 
             update_cron_entry(recovery_scripts[i].name, recovery_scripts[i].def_val, true);
     }
-}
+} 
+#endif
 
 /**********************************************************************
 
@@ -14064,8 +14066,8 @@ SelfHeal_SetParamBoolValue
             return FALSE;
 	    }
         
-        //Stop all self-heal scripts before updating cron jobs
-        if(bValue == TRUE)
+      /*  if(bValue == TRUE)
+
         {
             CcspTraceInfo(("SelfHeal cron is enabled, stopping the selfheal scripts process\n"));
             stop_self_heal_scripts();
@@ -14077,8 +14079,10 @@ SelfHeal_SetParamBoolValue
             CcspTraceInfo(("SelfHeal cron is disabled, removing cron jobs\n"));
             manage_self_heal_cron_state(false);
             CcspTraceInfo(("SelfHeal cron is disabled, starting selfheal scripts as process\n"));
-            start_self_heal_scripts();   
+            start_self_heal_scripts();
 	    }
+	    } */
+
         return TRUE;
     }
     return FALSE;
