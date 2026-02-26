@@ -115,7 +115,6 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
-#include <devicemode.h>
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -11386,7 +11385,7 @@ Feature_SetParamBoolValue
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-        if(!is_devicemode_business())
+        if(!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
         {
             CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
             t2_event_d("OneToOneNAT_NotSupported", 1);
