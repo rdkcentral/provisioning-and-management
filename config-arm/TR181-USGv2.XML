@@ -1967,7 +1967,7 @@
                                 <writable>true</writable>
 			    </parameter>
 <?endif?>
-<?ifdef BCI | COSA_FOR_BCI?>
+<?ifdef BCI | COSA_FOR_BCI | _ONESTACK_PRODUCT_REQ_?>
                             <parameter>
                               <name>OneToOneNAT</name>
                               <type>boolean</type>
@@ -2074,6 +2074,30 @@
 		                      </parameter>
 	                      </parameters>   
                       </object>
+                      <object>
+                            <name>Cron</name>
+                            <objectType>object</objectType>
+                            <functions></functions>
+                            <parameters></parameters>
+                            <objects>
+                                <object>
+                                <name>SelfHeal</name>
+                                     <objectType>object</objectType>
+                                     <functions>
+                                         <func_GetParamBoolValue>SelfHeal_GetParamBoolValue</func_GetParamBoolValue>
+                                         <func_SetParamBoolValue>SelfHeal_SetParamBoolValue</func_SetParamBoolValue>
+                                     </functions>
+                                     <parameters>
+                                         <parameter>
+                                             <name>Enable</name>
+                                             <type>boolean</type>
+                                             <syntax>bool</syntax>
+                                             <writable>true</writable>
+                                         </parameter>
+                                     </parameters>
+                                </object>
+                            </objects>
+                        </object>
                       <object>
                           <name>WebUI</name>
                           <objectType>object</objectType>
@@ -13943,7 +13967,8 @@
             <writable>true</writable>
 
           </parameter>
-
+<?endif?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>TrueStaticIpEnable</name>
