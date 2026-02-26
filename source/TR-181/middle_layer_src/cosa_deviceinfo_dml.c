@@ -113,6 +113,10 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 extern ULONG g_currentBsUpdate;
 extern char g_currentParamFullName[512];
 extern ANSC_HANDLE bus_handle;
@@ -11255,6 +11259,14 @@ Feature_SetParamBoolValue
 #if defined(_COSA_FOR_BCI_)
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if(!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+        {
+            CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+            t2_event_d("OneToOneNAT_NotSupported", 1);
+            return FALSE;
+        }
+#endif
         BOOL bNatEnable = FALSE;
         bNatEnable  = g_GetParamValueBool(g_pDslhDmlAgent, "Device.NAT.X_Comcast_com_EnableNATMapping");
         if ( bValue != bNatEnable )
