@@ -85,10 +85,7 @@
 
 static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {
-    /* MAP-T and True Static IP are mutually exclusive */
-    char value[8] = {0};
-    if (syscfg_get(NULL, "MAPT_Enable", value, sizeof(value)) == 0)
-        return (strcmp(value, "true") == 0) ? TRUE : FALSE;
+    /* TODO: MAP-T and True Static IP are mutually exclusive */
     return FALSE;
 }
 
