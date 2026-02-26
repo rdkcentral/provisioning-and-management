@@ -1966,6 +1966,8 @@
                               <syntax>bool</syntax>
                               <writable>true</writable>
                             </parameter>
+<?endif?>
+<?ifdef BCI | COSA_FOR_BCI | ONESTACK_PRODUCT_REQ?>
                             <parameter>
                               <name>EnableMultiProfileXDNS</name>
                               <type>boolean</type>
