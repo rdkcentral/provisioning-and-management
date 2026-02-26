@@ -63,6 +63,7 @@ DeviceControl_Net_Mode deviceControl_Net_Mode;
 extern ANSC_HANDLE g_MessageBusHandle;
 extern char g_Subsystem[32];
 extern void* g_pDslhDmlAgent;
+extern void subscribeForRbusEvents(rbusHandle_t * pRbusHandle);
 
 unsigned int gSubscribersCount = 0;
 
@@ -1528,7 +1529,7 @@ rbusError_t devCtrlRbusInit()
         //Subscribe WAN Status Event
 	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
-
+    subscribeForRbusEvents(&handle);
 	return rc;
 }
 #endif
