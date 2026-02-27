@@ -115,7 +115,6 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
-#include <devicemode.h>
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -9546,26 +9545,39 @@ Feature_GetParamBoolValue
          return TRUE;
     }
 #endif
-#if defined(_COSA_FOR_BCI_)
+
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
-        char buf[5] = {0};
-         /*CID: 66608 Array compared against 0*/
-        if(!syscfg_get( NULL, "MultiProfileXDNS", buf, sizeof(buf)))
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (is_devicemode_business())
+#endif // _ONESTACK_PRODUCT_REQ_
         {
+            char buf[5] = {0};
+            /*CID: 66608 Array compared against 0*/
+            if(!syscfg_get(NULL, "MultiProfileXDNS", buf, sizeof(buf)))
+            {
                 if (strcmp(buf,"1") == 0)
                 {
-                        *pBool = TRUE;
-                        return TRUE;
+                    *pBool = TRUE;
+                    return TRUE;
                 }
-        } else 
-             return FALSE; 
+            } else 
+                return FALSE;
 
-        *pBool = FALSE;
+            *pBool = FALSE;
 
-        return TRUE;
+            return TRUE;
+        }
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (!is_devicemode_business())
+        {
+            CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+            return FALSE;
+        }
+#endif // _ONESTACK_PRODUCT_REQ_
     }
-#endif
+#endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
 
 #if defined(_XB6_PRODUCT_REQ_)   
    if (strcmp(ParamName, "BLERadio") == 0)
@@ -11373,7 +11385,7 @@ Feature_SetParamBoolValue
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-        if(!is_devicemode_business())
+        if(!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
         {
             CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
             t2_event_d("OneToOneNAT_NotSupported", 1);
@@ -11391,31 +11403,44 @@ Feature_SetParamBoolValue
         return TRUE;
     }
 #endif
-#if defined(_COSA_FOR_BCI_)
+
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
-        char buf[5];
-        syscfg_get( NULL, "X_RDKCENTRAL-COM_XDNS", buf, sizeof(buf));
-        if( buf != NULL && !strcmp(buf,"1") )
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (is_devicemode_business())
+#endif // _ONESTACK_PRODUCT_REQ_
         {
+            char buf[5] = {0};
+            syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", buf, sizeof(buf));
+            if (!strcmp(buf, "1"))
+            {
                 if(!setMultiProfileXdnsConfig(bValue))
-                        return FALSE;
+                    return FALSE;
 
                 if (syscfg_set_commit(NULL, "MultiProfileXDNS", bValue ? "1" : "0") != 0)
                 {
-                        AnscTraceWarning(("[XDNS] syscfg_set MultiProfileXDNS failed!\n"));
+                    CcspTraceError(("[XDNS] syscfg_set MultiProfileXDNS failed!\n"));
                 }
-        }
-        else
-        {
-                CcspTraceError(("XDNS Feature is not Enabled. so,EnableMultiProfileXDNS set operation to %d failed \n",bValue));
+            }
+            else
+            {
+                CcspTraceError(("XDNS Feature is not Enabled. so,EnableMultiProfileXDNS set operation to %d failed \n", bValue));
                 return FALSE;
+            }
+
+            return TRUE;
         }
-
-        return TRUE;
-
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (!is_devicemode_business())
+        {
+            CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+            return FALSE;
+        }
+#endif // _ONESTACK_PRODUCT_REQ_
     }
-#endif
+#endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
+
 #if defined (_XB6_PRODUCT_REQ_)
     if (strcmp(ParamName, "BLERadio") == 0)
     {
