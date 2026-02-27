@@ -78,38 +78,6 @@
 #include "cosa_x_cisco_com_truestaticip_internal.h"
 #include "ansc_string_util.h"
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-#include <syscfg/syscfg.h>
-#include <rdkb_feature_mode_gate.h>
-#include <telemetry_busmessage_sender.h>
-
-static BOOL IsTSIPConflictingFeaturesEnabled(void)
-{
-    /* TODO: MAP-T and True Static IP are mutually exclusive */
-    return FALSE;
-}
-
-static ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
-{
-    if (!bEnable)
-        return ANSC_STATUS_SUCCESS;
-
-    if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
-    {
-        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
-        t2_event_d("TrueStatic_NotSupported", 1);
-        return ANSC_STATUS_FAILURE;
-    }
-    if (IsTSIPConflictingFeaturesEnabled())
-    {
-        AnscTraceWarning(("TrueStatic enable rejected, MAP-T active\n"));
-        t2_event_d("TrueStatic_NotSupported", 1);
-        return ANSC_STATUS_FAILURE;
-    }
-    return ANSC_STATUS_SUCCESS;
-}
-#endif
-
 BOOL
 TrueStaticIP_GetParamBoolValue
     (
