@@ -13983,7 +13983,7 @@
             <writable>true</writable>
 
           </parameter>
-<?ifdef BCI?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>WanPingEnable</name>
@@ -14007,8 +14007,7 @@
             <writable>true</writable>
 
           </parameter>
-<?endif?>
-<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
+
           <parameter>
 
             <name>TrueStaticIpEnable</name>
@@ -14949,7 +14948,7 @@
             <writable>true</writable>
         </parameter>
 <!-- disable static ip on XB3 -->
-<?ifdef BCI?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
         <parameter>
             <name>EnableStaticNameServer</name>
             <type>boolean</type>
@@ -14968,6 +14967,8 @@
             <syntax>uint32/ip4_addr</syntax>
             <writable>true</writable>
         </parameter>
+<?endif?>
+<?ifdef BCI?>
         <parameter>
             <name>ReleaseWan</name>
             <type>boolean</type>
