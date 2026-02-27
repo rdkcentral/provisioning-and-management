@@ -13915,7 +13915,7 @@
             <writable>true</writable>
 
           </parameter>
-<?ifdef BCI?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>WanPingEnable</name>
