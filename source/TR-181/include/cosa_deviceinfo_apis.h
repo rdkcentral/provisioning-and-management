@@ -83,6 +83,10 @@
 
 #define PARTNERID_FILE  "/nvram/.partner_ID"
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include "devicemode.h"
+#endif // _ONESTACK_PRODUCT_REQ_
+
 /**********************************************************************
                 STRUCTURE AND CONSTANT DEFINITIONS
 **********************************************************************/
