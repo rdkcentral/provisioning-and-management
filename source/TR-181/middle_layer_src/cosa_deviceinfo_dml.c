@@ -14202,7 +14202,7 @@ RdkLogger_GetParamBoolValue
 		/* collect value */
         if (syscfg_get(NULL,"RdkbLogCronEnable",value, sizeof(value)) == 0)
         {
-            if (strncmp(value, "true", sizeof(value)) == 0)
+            if (strcmp(value, "true") == 0)
                 *pBool = TRUE;
             else
                 *pBool = FALSE;
