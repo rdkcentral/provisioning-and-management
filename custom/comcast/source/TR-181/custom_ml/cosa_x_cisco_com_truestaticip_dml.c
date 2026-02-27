@@ -78,6 +78,38 @@
 #include "cosa_x_cisco_com_truestaticip_internal.h"
 #include "ansc_string_util.h"
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <syscfg/syscfg.h>
+#include <rdkb_feature_mode_gate.h>
+#include <telemetry_busmessage_sender.h>
+
+static BOOL IsTSIPConflictingFeaturesEnabled(void)
+{
+    /* TODO: MAP-T and True Static IP are mutually exclusive */
+    return FALSE;
+}
+
+static ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
+{
+    if (!bEnable)
+        return ANSC_STATUS_SUCCESS;
+
+    if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+    {
+        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
+        t2_event_d("TrueStatic_NotSupported", 1);
+        return ANSC_STATUS_FAILURE;
+    }
+    if (IsTSIPConflictingFeaturesEnabled())
+    {
+        AnscTraceWarning(("TrueStatic enable rejected, MAP-T active\n"));
+        t2_event_d("TrueStatic_NotSupported", 1);
+        return ANSC_STATUS_FAILURE;
+    }
+    return ANSC_STATUS_SUCCESS;
+}
+#endif
+
 BOOL
 TrueStaticIP_GetParamBoolValue
     (
@@ -191,6 +223,10 @@ TrueStaticIP_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pTSIP->Enabled        = bValue;
         pTSIP->bIPInfoChanged = TRUE;
@@ -575,6 +611,10 @@ Subnet_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pSubnet->Enabled        = bValue;
         return TRUE;
@@ -750,6 +790,10 @@ PortManagement_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pCfg->Enabled = bValue;
         return TRUE;
@@ -1088,6 +1132,10 @@ Rule_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pRule->Enabled = bValue;
         return TRUE;

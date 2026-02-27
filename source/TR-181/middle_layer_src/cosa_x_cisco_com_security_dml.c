@@ -76,7 +76,7 @@
 #include <syscfg/syscfg.h>
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
-#include <devicemode.h>
+#include <rdkb_feature_mode_gate.h>
 #endif
 
 /***********************************************************************
@@ -1769,7 +1769,7 @@ Firewall1_SetParamBoolValue
     if (strcmp(ParamName, "TrueStaticIpEnable") == 0)
     {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-        if (!is_devicemode_business())
+        if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
         {
             CcspTraceError(("Firewall True Static IP is not supported in non business mode \n"));
             t2_event_d("TrueStatic_NotSupported", 1);
