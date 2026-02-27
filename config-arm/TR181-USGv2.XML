@@ -4262,6 +4262,8 @@
 
             <func_GetParamStringValue>MemoryStatus_GetParamStringValue</func_GetParamStringValue>
 
+            <func_SetParamBoolValue>MemoryStatus_SetParamBoolValue</func_SetParamBoolValue>
+
             <func_SetParamUlongValue>MemoryStatus_SetParamUlongValue</func_SetParamUlongValue>
 
           </functions>
@@ -4310,6 +4312,28 @@
             <writable>true</writable>
 
           </parameter>
+          <parameter>
+
+            <name>X_RDKCENTRAL-COM_MemFragThreshold</name>
+
+            <type>unsignedInt</type>
+
+            <syntax>uint32</syntax>
+
+            <writable>true</writable>
+
+           </parameter>
+          <parameter>
+
+            <name>X_RDKCENTRAL-COM_RunMemFragSelfheal</name>
+
+            <type>boolean</type>
+
+            <syntax>bool</syntax>
+
+            <writable>true</writable>
+
+           </parameter>
 
           </parameters>
 
