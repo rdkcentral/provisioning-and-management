@@ -77,6 +77,11 @@
 #include <libnet.h>
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#include <telemetry_busmessage_sender.h>
+#endif
+
 #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
 #include "cosa_drg_common.h"
 #endif
@@ -805,7 +810,7 @@ ULONG CosaDmlGetBitsNumFromNetMask(char * Address)
 void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
 {
     PCOSA_DML_RIPD_CONF pConf = &CosaDmlRIPCurrentConfig;
-    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
     FILE * pFile              = NULL;
     #endif
     FILE * fp                 = fopen(COSA_RIPD_CUR_CONF, "w+");
@@ -816,7 +821,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
     AnscTraceWarning(("CosaDmlGenerateRipdConfigFile -- starts.\n"));
 
     bTrueStaticIP  = g_GetParamValueBool(g_pDslhDmlAgent, "Device.X_CISCO_COM_TrueStaticIP.Enable");
-    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 	commonSyseventSet("ripd_conf-status","empty");
     #endif
     if (fp)
@@ -1046,7 +1051,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
         fclose(fp);
 
     }
-	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 	pFile=fopen("/tmp/pam_ripd_config_completed","a+");
 	    if(pFile)
 	    {
@@ -1112,6 +1117,22 @@ CosaDmlRipGetCfg
     return returnStatus;
 }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsRIPConflictingFeaturesEnabled(void)
+{
+    /* MAP-T and RIP are mutually exclusive */
+    char value[8] = {0};
+    if (syscfg_get(NULL, "MAPT_Enable", value, sizeof(value)) == 0)
+    {
+        if (strcmp(value, "true") == 0)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+#endif
+
 /**********************************************************************
 
     caller:     self
@@ -1149,6 +1170,24 @@ CosaDmlRipSetCfg
     ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
     UNREFERENCED_PARAMETER(hContext);
     AnscTraceWarning(("CosaDmlRipSetCfg -- starts.\n"));
+
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    if (pCfg->Enable)
+    {
+        if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+        {
+            AnscTraceWarning(("RIP enable rejected, unsupported mode\n"));
+            t2_event_d("RIP_NotSupported", 1);
+            return ANSC_STATUS_FAILURE;
+        }
+        else if (IsRIPConflictingFeaturesEnabled())
+        {
+            AnscTraceWarning(("RIP enable rejected due to conflicting features\n"));
+            t2_event_d("RIP_NotSupported", 1);
+            return ANSC_STATUS_FAILURE;
+        }
+    }
+#endif
 
     CosaDmlRIPCurrentConfig.Enable        = pCfg->Enable;
     CosaDmlRIPCurrentConfig.UpdateTime    = pCfg->X_CISCO_COM_UpdateInterval;
