@@ -1488,8 +1488,10 @@ ULONG CosaDmlIPv6addrGetV6Status(PCOSA_DML_IP_V6ADDR p_dml_v6addr, PCOSA_DML_IP_
 
     return COSA_DML_IP6_ADDRSTATUS_Invalid;
 }
+#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
+
 PCOSA_DML_IP_V6ADDR
-CosaDmlIPGetIPv6Addresses_PD
+CosaDmlIPGetIPv6Addresses
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
         PULONG                      p_num
@@ -1543,8 +1545,9 @@ CosaDmlIPGetIPv6Addresses_PD
 #endif
     return p_dml_addr;
 }
+#else
 PCOSA_DML_IP_V6ADDR
-CosaDmlIPGetIPv6Addresses_NONPD
+CosaDmlIPGetIPv6Addresses
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
         PULONG                      p_num
@@ -1619,41 +1622,7 @@ CosaDmlIPGetIPv6Addresses_NONPD
 #endif
     return p_dml_addr;
 }
-PCOSA_DML_IP_V6ADDR
-CosaDmlIPGetIPv6Addresses(
-    PCOSA_DML_IP_IF_FULL2 p_ipif,
-    PULONG p_num
-)
-{
-#ifdef _ONESTACK_PRODUCT_REQ_
-
-    /* OneStack → runtime PD decision */
-    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    {
-    #ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
-        return CosaDmlIPGetIPv6Addresses_PD(p_ipif, p_num);
-    #else
-        /* safety fallback */
-        return CosaDmlIPGetIPv6Addresses_NONPD(p_ipif, p_num);
-    #endif
-    }
-    else
-    {
-        return CosaDmlIPGetIPv6Addresses_NONPD(p_ipif, p_num);
-    }
-
-#else   /* Legacy (non-OneStack) builds */
-
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
-    return CosaDmlIPGetIPv6Addresses_PD(p_ipif, p_num);
-#else
-    return CosaDmlIPGetIPv6Addresses_NONPD(p_ipif, p_num);
 #endif
-
-#endif
-}
-
-
 
 static int
 IPIF_getEntry_for_Ipv6Pre
@@ -1787,7 +1756,11 @@ IPIF_getEntry_for_Ipv6Pre
         if (g_ipif_be_bufs[ulIndex].ulNumOfV6Pre >= MAX_IPV6_ENTRY_NUM)
             break;
 
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION        
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {	
   #if defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
         /* We just put this prefix into erouter0 && brlan0 entry */
         if ( ulIndex > 0 && ulIndex != 3)
@@ -1804,11 +1777,18 @@ IPIF_getEntry_for_Ipv6Pre
             p_dml_v6pre->Origin = (ulIndex == 0) ? COSA_DML_IP6PREFIX_ORIGIN_PrefixDelegation : COSA_DML_IP6PREFIX_ORIGIN_Child;
         else 
             break;
-#else
+    }
+#endif
+#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
   #ifdef _COSA_INTEL_USG_ARM_
         /* We just put this prefix into erouter0 entry */
         if ( ulIndex > 0 )
             break;
+    }
 #endif
 
         p_dml_v6pre = &g_ipif_be_bufs[ulIndex].V6PreList[g_ipif_be_bufs[ulIndex].ulNumOfV6Pre];
@@ -4102,12 +4082,12 @@ CosaDmlIpIfGetV6Addr2
         return returnStatus;
     }
 }
-
+#if defined (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION)
 /*
  *  IP Interface IPv6Prefix
  */
 PCOSA_DML_IP_V6PREFIX
-CosaDmlIPGetIPv6Prefixes_PD
+CosaDmlIPGetIPv6Prefixes
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
         PULONG                      p_num
@@ -4159,8 +4139,9 @@ CosaDmlIPGetIPv6Prefixes_PD
 
     return p_dml_pref;
 }
+#else
 PCOSA_DML_IP_V6PREFIX
-CosaDmlIPGetIPv6Prefixes_NONPD
+CosaDmlIPGetIPv6Prefixes
     (
         PCOSA_DML_IP_IF_FULL2       p_ipif,
         PULONG                      p_num
@@ -4238,41 +4219,7 @@ CosaDmlIPGetIPv6Prefixes_NONPD
     }
 #endif
 }
-PCOSA_DML_IP_V6PREFIX
-CosaDmlIPGetIPv6Prefixes(
-    PCOSA_DML_IP_IF_FULL2 p_ipif,
-    PULONG p_num
-)
-{
-#ifdef _ONESTACK_PRODUCT_REQ_
-
-    /* OneStack → runtime PD decision */
-    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    {
-    #ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
-        return CosaDmlIPGetIPv6Prefixes_PD(p_ipif, p_num);
-    #else
-        /* safety fallback */
-        return CosaDmlIPGetIPv6Prefixes_NONPD(p_ipif, p_num);
-    #endif
-    }
-    else
-    {
-        return CosaDmlIPGetIPv6Prefixes_NONPD(p_ipif, p_num);
-    }
-
-#else   /* Legacy (non-OneStack) builds */
-
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
-    return CosaDmlIPGetIPv6Prefixes_PD(p_ipif, p_num);
-#else
-    return CosaDmlIPGetIPv6Prefixes_NONPD(p_ipif, p_num);
 #endif
-
-#endif
-}
-
-
 
 /**********************************************************************
 

@@ -1075,8 +1075,7 @@ BOOL tagPermitted(int tag)
 #include "cosa_managedwifi_webconfig_apis.h"
 #endif /*WIFI_MANAGE_SUPPORTED*/
 
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)) || \
-    defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)
 #include <netinet/in.h>
 #endif
 
@@ -1132,8 +1131,7 @@ enum {
     DHCPV6_SERVER_TYPE_STATELESS
 };
 
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)) || \
-    defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)
 #define MAX_LAN_IF_NUM              3
 /*erouter topology mode*/
 enum tp_mod {
@@ -1776,7 +1774,7 @@ void unsetpool_from_utopia( PUCHAR uniqueName, PUCHAR table1Name, ULONG table1In
 void getpool_from_utopia( PUCHAR uniqueName, PUCHAR table1Name, ULONG table1Index, PCOSA_DML_DHCPSV6_POOL_FULL pEntry )
 {
     UtopiaContext utctx = {0};
- #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_BCI_FEATURE_REQ)) || (defined(_ONESTACK_PRODUCT_REQ_) && defined(_BCI_FEATURE_REQ))
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_BCI_FEATURE_REQ)
     char *INVALID_IANAInterfacePrefixes = "Device.IP.Interface.4.IPv6Prefix.1.";
     char *FIXED_IANAInterfacePrefixes   = "Device.IP.Interface.1.IPv6Prefix.1.";
 #endif
@@ -1950,7 +1948,6 @@ static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger);
 
 #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ))  
 #else
-#ifdef _ONESTACK_PRODUCT_REQ_
 static ANSC_STATUS CosaDmlDhcpv6SMsgHandler (ANSC_HANDLE hContext)
 {
     UNREFERENCED_PARAMETER(hContext);
@@ -2054,7 +2051,6 @@ static int CosaDmlDhcpv6sRestartOnLanStarted(void *arg)
     return 0;
 }
 #endif
-#endif
 
 ANSC_STATUS
 CosaDmlDhcpv6Init
@@ -2071,7 +2067,7 @@ CosaDmlDhcpv6Init
     char         value[32] = {0};
     BOOLEAN		 bIsChangesHappened = FALSE;
     errno_t     rc = -1;
-
+    DSLHDMAGNT_CALLBACK *  pEntry = NULL;
 
 #if 0
     /* This is for test Begin */
@@ -2207,25 +2203,15 @@ CosaDmlDhcpv6Init
     SETI_INTO_UTOPIA(DHCPV6S_NAME,  "", 0, "", 0, "serverenable", g_dhcpv6_server)
     Utopia_Free(&utctx,1);
 
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)) || defined(_ONESTACK_PRODUCT_REQ_) 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    #endif
-    {
-    }
-#endif
-#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-    #if defined(_ONESTACK_PRODUCT_REQ_)
-    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    #endif
-    {
-    DSLHDMAGNT_CALLBACK *  pEntry = NULL;
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(_CBR_PRODUCT_REQ_) && ! defined(_BWG_PRODUCT_REQ_) && ! defined(_BCI_FEATURE_REQ)
+
+#else
 
     /*register callback function to handle message from wan dchcp6 client */
     pEntry = (PDSLHDMAGNT_CALLBACK)AnscAllocateMemory(sizeof(*pEntry));
     if(pEntry == NULL)
     {
-	CcspTraceWarning(("%s -- %d pEntry memory allocation error \n", __FUNCTION__, __LINE__));
+        CcspTraceWarning(("%s -- %d pEntry memory allocation error \n", __FUNCTION__, __LINE__));
         return ANSC_STATUS_FAILURE;
     }
     pEntry->func = CosaDmlDhcpv6SMsgHandler;
@@ -2243,7 +2229,7 @@ CosaDmlDhcpv6Init
         EvtDispterRgstCallbackForEvent("dibblerServer-restart", CosaDmlDhcpv6sRestartOnLanStarted, NULL);
     }
 #endif
-    }
+
 #endif
 
 #if defined(FEATURE_RDKB_WAN_MANAGER)
@@ -3961,9 +3947,7 @@ int remove_single_quote (char *buf)
   return 0;
 }
 
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)) || \
-    defined(_ONESTACK_PRODUCT_REQ_)
-#ifdef _COSA_BCM_MIPS_
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_COSA_BCM_MIPS_)
 // adding new logics to handle pd-class
 static int get_ipv6_tpmode (int *tpmod)
 {
@@ -4391,7 +4375,6 @@ static int get_iapd_info(ia_pd_t *iapd)
 
     return 0;
 }
-#endif
 #endif
 #endif
 
@@ -6492,7 +6475,7 @@ void __cosa_dhcpsv6_refresh_config()
     char responseCode[10];
     struct stat check_ConfigFile;
     errno_t rc = -1;
-#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) 
     pd_pool_t           pd_pool;
     ia_pd_t             ia_pd;
 #endif
@@ -6505,11 +6488,7 @@ void __cosa_dhcpsv6_refresh_config()
     if (!fp)
         goto EXIT;
 
-#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-    #if defined(_ONESTACK_PRODUCT_REQ_)
-    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    #endif
-    {
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION)
     /* handle logic:
      *  1) divide the Operator-delegated prefix to sub-prefixes
      *  2) further break the first of these sub-prefixes into /64 interface-prefixes for lan interface
@@ -6524,7 +6503,6 @@ void __cosa_dhcpsv6_refresh_config()
         // sysevent_set(si6->sefd, si6->setok, "service_ipv6-status", "error", 0);
         commonSyseventSet("service_ipv6-status", "error");
         return;
-    }
     }
 #endif
 
@@ -6730,12 +6708,7 @@ void __cosa_dhcpsv6_refresh_config()
             }
 
             AnscFreeMemory(pTmp3);
-
-#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-    #if defined(_ONESTACK_PRODUCT_REQ_)
-    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    #endif
-    {
+#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
             CcspTraceInfo(("[%s]  %d - See if need to emit pd-class, sDhcpv6ServerPool[Index].Cfg.IAPDEnable: %d, Index: %lu\n",
                            __FUNCTION__, __LINE__, sDhcpv6ServerPool[Index].Cfg.IAPDEnable, Index));
 
@@ -6750,21 +6723,10 @@ void __cosa_dhcpsv6_refresh_config()
                                __FUNCTION__, __LINE__, pd_pool.pd_length));
 
                 fprintf(fp, "   pd-class {\n");
-#if defined (_CBR_PRODUCT_REQ_) || defined (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-#if defined(_ONESTACK_PRODUCT_REQ_)
-    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    #endif
-    {
+#if defined (_CBR_PRODUCT_REQ_) || defined (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION)
                 fprintf(fp, "       pd-pool %s /%d\n", pd_pool.start, pd_pool.prefix_length);
-    }
-#endif
-#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-    #if defined(_ONESTACK_PRODUCT_REQ_)
-    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    #endif
-    {
+#else
                 fprintf(fp, "       pd-pool %s - %s /%d\n", pd_pool.start, pd_pool.end, pd_pool.prefix_length);
-    }
 #endif
                 fprintf(fp, "       pd-length %d\n", pd_pool.pd_length);
 
@@ -6778,7 +6740,6 @@ void __cosa_dhcpsv6_refresh_config()
                 fprintf(fp, "   }\n");
               }
             }
-    }
 #endif
 
         }
@@ -8754,6 +8715,15 @@ int dhcpv6_assign_global_ip(char * prefix, char * intfName, char * ipAddr)
 */
 void CosaDmlDhcpv6sRebootServer()
 {
+#if defined (_ONESTACK_PRODUCT_REQ_)
+    //In Onestack Product, new sysevent ipv6_prefix_delegation will take of dhcpv6 server start.
+    if(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    {
+	commonSyseventSet("dhcpv6_server-restart", "");
+	return;
+    }
+#endif
+
     char event_value[64] = {0};
 #ifdef FEATURE_RDKB_WAN_MANAGER
     commonSyseventGet("ipv6_prefix", event_value, sizeof(event_value));
@@ -9026,9 +8996,12 @@ int Get_Device_Mode()
 
 /* This thread is added to handle the LnF interface IPv6 rule, because LnF is coming up late in XB6 devices. 
 This thread can be generic to handle the operations depending on the interfaces. Other interface and their events can be register here later based on requirement */
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
-    defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)
 #else
+static pthread_t InfEvtHandle_tid;
+static int sysevent_fd_1;
+static token_t sysevent_token_1;
+
 #ifdef RDKB_EXTENDER_ENABLED
 #include <sys/stat.h>
 #define EXT_MODE_ROUTE_TABLE_NUM 12
@@ -9068,7 +9041,6 @@ void enable_Ula_IPv6(char* ifname)
         }
     }
 }
-#endif
 #endif
 void enable_IPv6(char* if_name)
 {
@@ -9291,9 +9263,7 @@ int handle_MocaIpv6(char *status)
     return 0;
 
 }
-static pthread_t InfEvtHandle_tid;
-static int sysevent_fd_1;
-static token_t sysevent_token_1;
+
 static void *InterfaceEventHandler_thrd(void *data)
 {
     UNREFERENCED_PARAMETER(data);
@@ -9539,6 +9509,7 @@ static void *InterfaceEventHandler_thrd(void *data)
     return NULL;
 }
 
+#endif
 #if defined (RDKB_EXTENDER_ENABLED) || defined (WAN_FAILOVER_SUPPORTED)
 
 #define CELLULAR_IFNAME "cellular_ifname"
@@ -9859,7 +9830,6 @@ dhcpv6s_dbg_thrd(void * in)
     char msg[1024] = {0};
     fd_set rfds;
     struct timeval tm;
-    bool is_cbr_build = true;
 
     v6_srvr_fifo_file_dscrptr = open(DHCPS6V_SERVER_RESTART_FIFO, O_RDWR);
 
@@ -9905,17 +9875,11 @@ dhcpv6s_dbg_thrd(void * in)
             sleep(3);
             memset(msg, 0, sizeof(msg));
             read(v6_srvr_fifo_file_dscrptr, msg, sizeof(msg));
-#if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_))
-            is_cbr_build = true;
-#else
-            is_cbr_build = false;
-#endif
-
 #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
 #if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
     defined(_ONESTACK_PRODUCT_REQ_)
 #ifdef _ONESTACK_PRODUCT_REQ_
-    if (!(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION) && is_cbr_build))
+    if (!(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION)))
 #endif
     {
             CcspTraceInfo(("%s %d check IPv6subPrefix  \n", __FUNCTION__, __LINE__));
@@ -9948,8 +9912,7 @@ dhcpv6s_dbg_thrd(void * in)
                     fp = v_secure_popen("r","syscfg get IPv6_Interface");
                     _get_shell_output(fp, InterfaceList, sizeof(InterfaceList));
                     pt = InterfaceList;
-
-                    while((token = strtok_r(pt, ",", &pt)))
+		                        while((token = strtok_r(pt, ",", &pt)))
                     {
                         char InterfacePrefix[256] ={0};
                         if(GenIPv6Prefix(token,IPv6pref,InterfacePrefix,sizeof(InterfacePrefix)))
@@ -10667,97 +10630,83 @@ dhcpv6c_dbg_thrd(void * in)
     }    
     commonSyseventSet(COSA_DML_DHCPV6C_PREF_SYSEVENT_NAME,       wan_v6_pref_received);
 #endif
-#if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || defined (_ONESTACK_PRODUCT_REQ_)
-#if defined(_ONESTACK_PRODUCT_REQ_)
-    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-#endif
-    {
-	    //Do Nothing
-    }
-#endif
-#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-    #if defined(_ONESTACK_PRODUCT_REQ_)
-    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-    #endif
-    {
-			char out1[100]; 
-			char *token = NULL;char *pt;
-            		char interface_name[32] = {0};	
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)
+#else
+                        char out1[100];
+                        char *token = NULL;char *pt;
+                        char interface_name[32] = {0};
                         char out[128] = {0};
-                        FILE *fp = NULL; 
+                        FILE *fp = NULL;
 
-                            
-			if(pref_len < 64)
-			{
-			    memset(out1,0,sizeof(out1));
+
+                        if(pref_len < 64)
+                        {
+                            memset(out1,0,sizeof(out1));
                             fp = v_secure_popen("r","syscfg get IPv6subPrefix");
                             _get_shell_output(fp, out, sizeof(out));
-			    if(!strcmp(out,"true"))
-				{
+                            if(!strcmp(out,"true"))
+                                {
                                 static int first = 0;
 
                                 fp = v_secure_popen("r","syscfg get IPv6_Interface");
                                 _get_shell_output(fp, out, sizeof(out));
-				pt = out;
+                                pt = out;
+                                while((token = strtok_r(pt, ",", &pt)))
+                                 {
 
+                                        if(GenIPv6Prefix(token,v6Tpref,out1,sizeof(out1)))
+                                        {
+                                                memset(cmd,0,sizeof(cmd));
+                                                memset(interface_name,0,sizeof(interface_name));
 
-				while((token = strtok_r(pt, ",", &pt)))
-				 {
-			 
-					if(GenIPv6Prefix(token,v6Tpref,out1,sizeof(out1)))
-					{
-						memset(cmd,0,sizeof(cmd));
-                        			memset(interface_name,0,sizeof(interface_name));
-
-                        			#ifdef _COSA_INTEL_XB3_ARM_
+                                                #ifdef _COSA_INTEL_XB3_ARM_
                                                 char LnFIfName[32] = {0} , LnFBrName[32] = {0} ;
-                            			syscfg_get( NULL, "iot_ifname", LnFIfName, sizeof(LnFIfName));
-                            			if( (LnFIfName[0] != '\0' ) && ( strlen(LnFIfName) != 0 ) )
-                            			{
-                                			if (strcmp((const char*)token,LnFIfName) == 0 )
-                                			{
-                                    				syscfg_get( NULL, "iot_brname", LnFBrName, sizeof(LnFBrName));
-                                    				if( (LnFBrName[0] != '\0' ) && ( strlen(LnFBrName) != 0 ) )
-                                    				{
-                                        				strncpy(interface_name,LnFBrName,sizeof(interface_name)-1);
-                                    				}
-                                    				else
-                                    				{
-                                        				strncpy(interface_name,token,sizeof(interface_name)-1);
-                                    				}
-                                			}
-                                			else
-                                			{
-                                    				strncpy(interface_name,token,sizeof(interface_name)-1);
-                                			}
-                            			}
-                            			else
-                            			{
-                                    			strncpy(interface_name,token,sizeof(interface_name)-1);
+                                                syscfg_get( NULL, "iot_ifname", LnFIfName, sizeof(LnFIfName));
+                                                if( (LnFIfName[0] != '\0' ) && ( strlen(LnFIfName) != 0 ) )
+                                                {
+                                                        if (strcmp((const char*)token,LnFIfName) == 0 )
+                                                        {
+                                                                syscfg_get( NULL, "iot_brname", LnFBrName, sizeof(LnFBrName));
+                                                                if( (LnFBrName[0] != '\0' ) && ( strlen(LnFBrName) != 0 ) )
+                                                                {
+                                                                        strncpy(interface_name,LnFBrName,sizeof(interface_name)-1);
+                                                                }
+                                                                else
+                                                                {
+                                                                        strncpy(interface_name,token,sizeof(interface_name)-1);
+                                                                }
+                                                        }
+                                                        else
+                                                        {
+                                                                strncpy(interface_name,token,sizeof(interface_name)-1);
+                                                        }
+                                                }
+                                                else
+                                                {
+                                                        strncpy(interface_name,token,sizeof(interface_name)-1);
 
-                            			}
-                        			#else
-                            				strncpy(interface_name,token,sizeof(interface_name)-1);
-						#endif
-						rc = sprintf_s(cmd, sizeof(cmd), "%s_ipaddr_v6", interface_name);
-						if(rc < EOK)
-						{
-							ERR_CHK(rc);
-						}
-						commonSyseventSet(cmd, out1);
+                                                }
+                                                #else
+                                                        strncpy(interface_name,token,sizeof(interface_name)-1);
+                                                #endif
+                                                rc = sprintf_s(cmd, sizeof(cmd), "%s_ipaddr_v6", interface_name);
+                                                if(rc < EOK)
+                                                {
+                                                        ERR_CHK(rc);
+                                                }
+                                                commonSyseventSet(cmd, out1);
 
-                        			enable_IPv6(interface_name);
-						memset(out1,0,sizeof(out1));
-					}
-				} 
+                                                enable_IPv6(interface_name);
+                                                memset(out1,0,sizeof(out1));
+                                        }
+                                }
                                         memset(out,0,sizeof(out));
                                         if(first == 0)
                                         {       first = 1;
                                                 pthread_create(&InfEvtHandle_tid, NULL, InterfaceEventHandler_thrd, NULL);
                                         }
-				}
-			}
-    }
+                                }
+                        }
 #endif
                         if (iapd_iaid[0] != '\0') {
 							remove_single_quote(iapd_iaid);
@@ -11374,9 +11323,8 @@ dhcpv6c_dbg_thrd(void * in)
                     AnscFreeMemory(pString);                    
             }
             
-        }
 #ifdef _DEBUG
-        else if (!strncmp(msg, "mem", 3)) 
+        if (!strncmp(msg, "mem", 3)) 
         {
             /*add the test funcs in the run time.*/
 
