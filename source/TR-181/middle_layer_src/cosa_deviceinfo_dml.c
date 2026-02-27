@@ -18151,7 +18151,7 @@ Logging_GetParamUlongValue
     if (strcmp(ParamName, "DmesgLogSyncInterval") == 0)
     {
         /* collect value */
-	 char buf[8];
+	 char buf[8] = {0};
 
 	 syscfg_get(NULL, "dmesglogsync_interval", buf, sizeof(buf));
          *puLong = atoi(buf);
