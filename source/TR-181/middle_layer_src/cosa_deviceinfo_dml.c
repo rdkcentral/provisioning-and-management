@@ -14351,6 +14351,119 @@ SelfHeal_SetParamBoolValue
     prototype:
 
         BOOL
+        RdkLogger_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+RdkLogger_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if( AnscEqualString(ParamName, "Enable", TRUE))
+    {
+        char value[8] = {0};
+		/* collect value */
+        if (syscfg_get(NULL,"RdkbLogCronEnable",value, sizeof(value)) == 0)
+        {
+            if (strcmp(value, "true") == 0)
+                *pBool = TRUE;
+            else
+                *pBool = FALSE;
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed  for RdkbLogCronEnable\n",__FUNCTION__));
+            *pBool = FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RdkLogger_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+RdkLogger_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, RdkLogger_GetParamBoolValue))
+        return TRUE;
+
+    if( AnscEqualString(ParamName, "Enable", TRUE))
+    {
+        if (syscfg_set_commit (NULL, "RdkbLogCronEnable", bValue ? "true" : "false") != 0)
+        {
+            CcspTraceError(("syscfg_set RdkbLogCronEnable failed\n"));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
         SWDLDirect_GetParamBoolValue_GetParamBoolValue
             (
                 ANSC_HANDLE                 hInsContext,
@@ -18225,7 +18338,7 @@ Logging_GetParamUlongValue
     if (strcmp(ParamName, "DmesgLogSyncInterval") == 0)
     {
         /* collect value */
-	 char buf[8];
+	 char buf[8] = {0};
 
 	 syscfg_get(NULL, "dmesglogsync_interval", buf, sizeof(buf));
          *puLong = atoi(buf);
@@ -18280,11 +18393,40 @@ Logging_SetParamUlongValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "DmesgLogSyncInterval") == 0)
     {
+		char buf[16];
+		char currentValue[16] = {0};
+		ULONG currentInterval = 0;
+
+		if (syscfg_get(NULL, "dmesglogsync_interval", currentValue, sizeof(currentValue)) == 0)
+		{
+			currentInterval = atol(currentValue);
+			if (currentInterval == uValue)
+			{
+				CcspTraceInfo(("DmesgLogSyncInterval value unchanged (%lu), skipping update\n", uValue));
+				return TRUE;
+			}
+		}
+
 		if (syscfg_set_u_commit(NULL, "dmesglogsync_interval", uValue) != 0) 
 		{
 			CcspTraceWarning(("syscfg_set failed to set DmesgLogSyncInterval \n"));
-		       return FALSE;
+			return FALSE;
 		}
+
+		syscfg_get( NULL, "RdkbLogCronEnable", buf, sizeof(buf));
+
+		if( strcmp(buf, "false") == 0 )
+		{
+			CcspTraceInfo(("RdkbLogCronEnable is disabled, running as background process\n"));
+			return TRUE;
+		}
+		
+		unsigned long minutes = (uValue > 0) ? (uValue / 60) : 15;
+
+		v_secure_system("crontab -l 2>/dev/null | sed '/update_journal_log.sh/d' | crontab -");
+		v_secure_system("(crontab -l 2>/dev/null; echo \"*/%lu * * * * /rdklogger/update_journal_log.sh start\") | crontab -", minutes);
+
+		CcspTraceInfo(("Cron scheduled for update_journal_log every %lu min\n", minutes));
 		return TRUE;
     } 
 
