@@ -63,13 +63,13 @@ DeviceControl_Net_Mode deviceControl_Net_Mode;
 extern ANSC_HANDLE g_MessageBusHandle;
 extern char g_Subsystem[32];
 extern void* g_pDslhDmlAgent;
-extern void subscribeForRbusEvents(rbusHandle_t * pRbusHandle);
 
 unsigned int gSubscribersCount = 0;
 
 static int sysevent_fd 	  = -1;
 static token_t sysevent_token = 0;
 #endif
+extern void subscribeForRbusEvents(rbusHandle_t * pRbusHandle);
 
 #if defined (USE_REMOTE_DEBUGGER)
 char RRDIssueType[256];

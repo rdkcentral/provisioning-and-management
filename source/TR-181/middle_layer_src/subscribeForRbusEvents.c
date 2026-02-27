@@ -24,7 +24,7 @@
 #include "telemetry_busmessage_sender.h"
 
 #define WIFI_IGNITE_LINK_QUALITY_STATUS "Device.WiFi.Ignite.1.LinkQualityStatus"
-#define LINK_QUALITY_VALUE_SERVICABLE "Serviceable"
+#define LINK_QUALITY_VALUE_SERVICEABLE "Serviceable"
 #define LINK_QUALITY_VALUE_NON_SERVICEABLE "Non-serviceable"
 
 /**
@@ -35,22 +35,23 @@
  * @param rbus The RBUS handle (unused in this handler)
  * @param pRbusEvent Pointer to the RBUS event data
  * @param pRbusSubscription Pointer to the RBUS subscription data (unused in this handler)
- * @return RBUS_ERROR_SUCCESS on successful handling of the event, or an appropriate error code on failure
+ * @return void
 */
-rbusError_t rbusEventHandler(rbusHandle_t rbus, rbusEvent_t const* pRbusEvent, rbusEventSubscription_t* pRbusSubscription)
+static void rbusEventHandler(rbusHandle_t rbusHandle, rbusEvent_t const* pRbusEvent, rbusEventSubscription_t* pRbusSubscription)
 {
-    (void)rbus; // Unused parameter
+    (void)rbusHandle; // Unused parameter
     (void)pRbusSubscription; // Unused parameter
     if (NULL == pRbusEvent || NULL == pRbusEvent->name )
     {
         CcspTraceError(("%s: Invalid RBUS event data\n", __FUNCTION__));
-        return RBUS_ERROR_INVALID_INPUT;
+        return;
+
     }
     CcspTraceInfo(("%s: Received RBUS event %s\n", __FUNCTION__, pRbusEvent->name));
     if (NULL == pRbusEvent->data)
     {
         CcspTraceWarning(("%s: RBUS event %s has no data\n", __FUNCTION__, pRbusEvent->name));
-        return RBUS_ERROR_SUCCESS;
+        return;
     }
     if (0 == strcmp(pRbusEvent->name, WIFI_IGNITE_LINK_QUALITY_STATUS))
     {
@@ -65,10 +66,10 @@ rbusError_t rbusEventHandler(rbusHandle_t rbus, rbusEvent_t const* pRbusEvent, r
                 CcspTraceInfo(("%s: Link Quality Status: %s\n", __FUNCTION__, pStrVal ? pStrVal : "NULL"));
                 if (NULL != pStrVal)
                 {
-                    if (0 == strcasecmp(pStrVal, LINK_QUALITY_VALUE_SERVICABLE))
+                    if (0 == strcasecmp(pStrVal, LINK_QUALITY_VALUE_SERVICEABLE))
                     {
                         CcspTraceInfo(("%s: Link quality is Serviceable\n", __FUNCTION__));
-                        t2_event_d("LinkQualityServiceble_Lan2WanAllowed", 1);
+                        t2_event_d("LinkQualityServiceable_Lan2WanAllowed", 1);
                         if (0 != commonSyseventSet("lan_wan_forwarding_enabled", "1"))
                         {
                             CcspTraceError(("%s: Failed to set sysevent lan_wan_forwarding_enabled to 1\n", __FUNCTION__));
@@ -81,7 +82,7 @@ rbusError_t rbusEventHandler(rbusHandle_t rbus, rbusEvent_t const* pRbusEvent, r
                     else if (0 == strcasecmp(pStrVal, LINK_QUALITY_VALUE_NON_SERVICEABLE))
                     {
                         CcspTraceInfo(("%s: Link quality is Non-serviceable\n", __FUNCTION__));
-                        t2_event_d("LinkQualityNonServiceble_Lan2WanBlocked", 1);
+                        t2_event_d("LinkQualityNonServiceable_Lan2WanBlocked", 1);
                         if (0 != commonSyseventSet("lan_wan_forwarding_enabled", "0"))
                         {
                             CcspTraceError(("%s: Failed to set sysevent lan_wan_forwarding_enabled to 0\n", __FUNCTION__));
@@ -93,7 +94,6 @@ rbusError_t rbusEventHandler(rbusHandle_t rbus, rbusEvent_t const* pRbusEvent, r
                     }
                     else
                     {
-                        //any other/unset/unknown → default allow
                         CcspTraceWarning(("%s: Unrecognized link quality value %s\n", __FUNCTION__, pStrVal));
                     }
                 }
@@ -116,7 +116,7 @@ rbusError_t rbusEventHandler(rbusHandle_t rbus, rbusEvent_t const* pRbusEvent, r
     {
         CcspTraceWarning(("%s: Unrecognized event %s\n", __FUNCTION__, pRbusEvent->name));
     }
-    return RBUS_ERROR_SUCCESS;
+    return;
 }
 
 /**
@@ -127,7 +127,7 @@ rbusError_t rbusEventHandler(rbusHandle_t rbus, rbusEvent_t const* pRbusEvent, r
  * @param pArg Pointer to the RBUS handle passed as an argument
  * @return NULL on thread exit
 */
-void *rbusSubscriptionThread(void *pArg)
+static void *rbusSubscriptionThread(void *pArg)
 {
     if (NULL == pArg)
     {
@@ -137,10 +137,10 @@ void *rbusSubscriptionThread(void *pArg)
     rbusHandle_t rbusHandle = *(rbusHandle_t *)pArg;
     while (1)
     {
-        rbusError_t rbusRet = rbusEvent_Subscribe(rbusHandle, WIFI_IGNITE_LINK_QUALITY_STATUS,(void*)&rbusEventHandler, NULL,0);
+        rbusError_t rbusRet = rbusEvent_Subscribe(rbusHandle, WIFI_IGNITE_LINK_QUALITY_STATUS,rbusEventHandler, NULL,0);
         if (rbusRet != RBUS_ERROR_SUCCESS && rbusRet != RBUS_ERROR_SUBSCRIPTION_ALREADY_EXIST)
         {
-            CcspTraceError(("%s: rbus_event_subscribe failed for event %s with error code %d\n", __FUNCTION__, WIFI_IGNITE_LINK_QUALITY_STATUS, rbusRet));
+            CcspTraceError(("%s: rbus_event_subscribe failed for event %s with error code %d (%s)\n",__FUNCTION__, WIFI_IGNITE_LINK_QUALITY_STATUS, rbusRet,rbusError_ToString(rbusRet)));
             CcspTraceError(("%s: Retrying event subscription after 5 seconds...\n", __FUNCTION__));
             sleep(5);
         }
