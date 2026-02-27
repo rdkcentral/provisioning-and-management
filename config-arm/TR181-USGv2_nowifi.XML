@@ -538,8 +538,32 @@
           <writable>true</writable>
 
          </parameter>	
+
+	<parameter>
+
+          <name>X_RDKCENTRAL-COM_FwDwld_AvlMem_RsrvThreshold</name>
+
+          <type>unsignedInt</type>
+
+          <syntax>uint32</syntax>
+
+          <writable>true</writable>
+
+         </parameter>
+         
+	<parameter>
+
+          <name>X_RDKCENTRAL-COM_FwDwld_ImageProcMemPercent</name>
+
+          <type>unsignedInt</type>
+
+          <syntax>uint32</syntax>
+
+          <writable>true</writable>
+
+         </parameter>
 	 
-	 <parameter>
+	<parameter>
 
           <name>X_RDKCENTRAL-COM_WiFiNeedsPersonalization</name>
 	
