@@ -151,6 +151,7 @@ static void *rbusSubscriptionThread(void *pArg)
         }
     }
     pthread_exit(NULL);
+    return NULL;
 }
 
 /**
