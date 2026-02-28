@@ -69,6 +69,7 @@ unsigned int gSubscribersCount = 0;
 static int sysevent_fd 	  = -1;
 static token_t sysevent_token = 0;
 #endif
+extern void subscribeForRbusEvents(rbusHandle_t * pRbusHandle);
 
 #if defined (USE_REMOTE_DEBUGGER)
 char RRDIssueType[256];
@@ -1527,6 +1528,7 @@ rbusError_t devCtrlRbusInit()
         //Subscribe WAN Status Event
 	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
+    subscribeForRbusEvents(&handle);
 	return rc;
 }
 #endif
