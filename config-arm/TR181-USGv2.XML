@@ -3461,7 +3461,7 @@
                         </parameters>
                 </object>
                 <object>
-                    <name>xMemInsight</name>
+                  <name>meminsight</name>
                     <objectType>object</objectType>
 
                     <functions>
@@ -3476,6 +3476,12 @@
                             <name>Enable</name>
                             <type>boolean</type>
                             <syntax>bool</syntax>
+                            <writable>true</writable>
+                        </parameter>
+                        <parameter>
+                            <name>Trigger</name>
+                            <type>string(8)</type>
+                            <syntax>string</syntax>
                             <writable>true</writable>
                         </parameter>
                         <parameter>
