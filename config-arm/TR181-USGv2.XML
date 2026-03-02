@@ -1967,13 +1967,15 @@
                                 <writable>true</writable>
 			    </parameter>
 <?endif?>
-<?ifdef BCI | COSA_FOR_BCI?>
+<?ifdef BCI | COSA_FOR_BCI | _ONESTACK_PRODUCT_REQ_?>
                             <parameter>
                               <name>OneToOneNAT</name>
                               <type>boolean</type>
                               <syntax>bool</syntax>
                               <writable>true</writable>
                             </parameter>
+<?endif?>
+<?ifdef BCI | COSA_FOR_BCI | ONESTACK_PRODUCT_REQ?>
                             <parameter>
                               <name>EnableMultiProfileXDNS</name>
                               <type>boolean</type>
@@ -2072,6 +2074,46 @@
 		                      </parameter>
 	                      </parameters>   
                       </object>
+                      <object>
+                            <name>Cron</name>
+                            <objectType>object</objectType>
+                            <functions></functions>
+                            <parameters></parameters>
+                            <objects>
+                                <object>
+                                <name>SelfHeal</name>
+                                     <objectType>object</objectType>
+                                     <functions>
+                                         <func_GetParamBoolValue>SelfHeal_GetParamBoolValue</func_GetParamBoolValue>
+                                         <func_SetParamBoolValue>SelfHeal_SetParamBoolValue</func_SetParamBoolValue>
+                                     </functions>
+                                     <parameters>
+                                         <parameter>
+                                             <name>Enable</name>
+                                             <type>boolean</type>
+                                             <syntax>bool</syntax>
+                                             <writable>true</writable>
+                                         </parameter>
+                                     </parameters>
+                                </object>
+                                <object>
+                                  <name>RdkLogger</name>
+                                  <objectType>object</objectType>
+                                  <functions>
+                                      <func_GetParamBoolValue>RdkLogger_GetParamBoolValue</func_GetParamBoolValue>
+                                      <func_SetParamBoolValue>RdkLogger_SetParamBoolValue</func_SetParamBoolValue>
+                                  </functions>
+                                  <parameters>
+                                      <parameter>
+                                        <name>Enable</name>
+                                        <type>boolean</type>
+                                        <syntax>bool</syntax>
+                                        <writable>true</writable>
+                                      </parameter>
+                                  </parameters>
+                              </object>
+                            </objects>
+                        </object>
                       <object>
                           <name>WebUI</name>
                           <objectType>object</objectType>
@@ -4310,6 +4352,8 @@
 
             <func_GetParamStringValue>MemoryStatus_GetParamStringValue</func_GetParamStringValue>
 
+            <func_SetParamBoolValue>MemoryStatus_SetParamBoolValue</func_SetParamBoolValue>
+
             <func_SetParamUlongValue>MemoryStatus_SetParamUlongValue</func_SetParamUlongValue>
 
           </functions>
@@ -4358,6 +4402,28 @@
             <writable>true</writable>
 
           </parameter>
+          <parameter>
+
+            <name>X_RDKCENTRAL-COM_MemFragThreshold</name>
+
+            <type>unsignedInt</type>
+
+            <syntax>uint32</syntax>
+
+            <writable>true</writable>
+
+           </parameter>
+          <parameter>
+
+            <name>X_RDKCENTRAL-COM_RunMemFragSelfheal</name>
+
+            <type>boolean</type>
+
+            <syntax>bool</syntax>
+
+            <writable>true</writable>
+
+           </parameter>
 
           </parameters>
 
@@ -13923,7 +13989,7 @@
             <writable>true</writable>
 
           </parameter>
-<?ifdef BCI?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>WanPingEnable</name>
@@ -14888,7 +14954,7 @@
             <writable>true</writable>
         </parameter>
 <!-- disable static ip on XB3 -->
-<?ifdef BCI?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
         <parameter>
             <name>EnableStaticNameServer</name>
             <type>boolean</type>
@@ -14907,6 +14973,8 @@
             <syntax>uint32/ip4_addr</syntax>
             <writable>true</writable>
         </parameter>
+<?endif?>
+<?ifdef BCI?>
         <parameter>
             <name>ReleaseWan</name>
             <type>boolean</type>
