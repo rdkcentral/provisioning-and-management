@@ -72,7 +72,11 @@
 #include "safec_lib_common.h"
 #include "syscfg/syscfg.h"
 #include <arpa/inet.h>
+#include "cosa_apis_util.h"
 
+#ifdef _ONESTACK_PRODUCT_REQ_
+#include <rdkb_feature_mode_gate.h>
+#endif
 static int ifWanRestart = 0;
 
 /***********************************************************************
@@ -946,6 +950,10 @@ X_CISCO_COM_DeviceControl_SetParamBoolValue
 
     if (strcmp(ParamName, "EnableStaticNameServer") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         pMyObject->EnableStaticNameServer = bValue;
 
         retStatus = CosaDmlDcSetEnableStaticNameServer(NULL, pMyObject->EnableStaticNameServer);
@@ -1241,6 +1249,10 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
 
     if (strcmp(ParamName, "NameServer1") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(TRUE) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         pMyObject->NameServer1.Value = uValue;
 
         retStatus = CosaDmlDcSetWanNameServer(NULL, pMyObject->NameServer1.Value, 1);
@@ -1252,6 +1264,10 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
 
     if (strcmp(ParamName, "NameServer2") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(TRUE) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         pMyObject->NameServer2.Value = uValue;
 
         retStatus = CosaDmlDcSetWanNameServer(NULL, pMyObject->NameServer2.Value, 2);
@@ -2163,6 +2179,17 @@ LanMngm_SetParamUlongValue
             CcspTraceWarning(("BRIDGE_ERROR:Fail to enable Bridge mode when Mesh is on\n"));
             return FALSE;
         }*/
+#ifdef _ONESTACK_PRODUCT_REQ_
+        if (COSA_DML_LanMode_FullBridgeStatic == uValuepUlong)
+        {
+            if (false == isFeatureSupportedInCurrentMode(FEATURE_BASIC_BRIDGE_MODE))
+            {
+                t2_event_d("BasicBridgeMode_NotSupported", 1);
+                CcspTraceError(("Basic BridgeMode Not Supported\n"));
+                return FALSE;
+            }
+        }
+#endif
 
         pLanMngm->LanMode = uValuepUlong;
         CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Setting new LanMode value (bridge-dhcp(1),bridge-static(2),router(3),full-bridge-static(4)) as (%lu)...\n",

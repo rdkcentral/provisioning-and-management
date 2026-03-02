@@ -1437,6 +1437,47 @@
                               </parameter>
                             </parameters>
                         </object>
+                        <object>
+                            <name>Cron</name>
+                            <objectType>object</objectType>
+                            <functions></functions>
+                            <parameters></parameters>
+                            <objects>
+                                <object>
+                                <name>SelfHeal</name>
+                                     <objectType>object</objectType>
+                                     <functions>
+                                         <func_GetParamBoolValue>SelfHeal_GetParamBoolValue</func_GetParamBoolValue>
+                                         <func_SetParamBoolValue>SelfHeal_SetParamBoolValue</func_SetParamBoolValue>
+                                     </functions>
+                                     <parameters>
+                                         <parameter>
+                                             <name>Enable</name>
+                                             <type>boolean</type>
+                                             <syntax>bool</syntax>
+                                             <writable>true</writable>
+                                         </parameter>
+                                     </parameters>
+                                </object>
+                                <object>
+                                  <name>RdkLogger</name>
+                                  <objectType>object</objectType>
+                                  <functions>
+                                      <func_GetParamBoolValue>RdkLogger_GetParamBoolValue</func_GetParamBoolValue>
+                                      <func_SetParamBoolValue>RdkLogger_SetParamBoolValue</func_SetParamBoolValue>
+                                  </functions>
+                                  <parameters>
+                                      <parameter>
+                                        <name>Enable</name>
+                                        <type>boolean</type>
+                                        <syntax>bool</syntax>
+                                        <writable>true</writable>
+                                      </parameter>
+                                  </parameters>
+                              </object>
+                            </objects>
+                        </object>
+                      <object>
 			<object>
                         	<name>RBUS</name>
                         	<objectType>object</objectType>
@@ -1523,7 +1564,25 @@
                                      <writable>true</writable>
                                  </parameter>
                              </parameters>
-                     </object>
+		     </object>
+                        <object>
+                            <name>STAGE</name>
+                            <objectType>object</objectType>
+                            <functions>
+                                <func_GetParamBoolValue>STAGE_GetParamBoolValue</func_GetParamBoolValue>
+                                <func_SetParamBoolValue>STAGE_SetParamBoolValue</func_SetParamBoolValue>
+                            </functions>
+
+                            <parameters>
+                                <parameter>
+                                    <name>Enable</name>
+                                    <type>boolean</type>
+                                    <syntax>bool</syntax>
+                                    <writable>true</writable>
+                                </parameter>
+                            </parameters>
+                        </object>
+
                         <object>
                             <name>Telemetry</name>
                             <objectType>object</objectType>
