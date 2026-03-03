@@ -2488,6 +2488,34 @@
 				</parameter>
 			      </parameters>
 			    </object>
+          <object>
+            <name>DeviceDetails</name>
+            <objectType>object</objectType>
+            <functions>
+                <func_GetParamStringValue>DeviceDetails_GetParamStringValue</func_GetParamStringValue>
+                <func_SetParamStringValue>DeviceDetails_SetParamStringValue</func_SetParamStringValue>             
+            </functions>
+            <parameters>
+                <parameter>
+                    <name>mode</name>
+                    <type>string</type>
+                    <syntax>string</syntax>
+                </parameter>
+                <parameter>
+                    <name>cm_mac</name>
+                    <type>string</type>
+                    <syntax>string</syntax>
+                </parameter>
+                <parameter>
+                    <name>name</name>
+                    <type>string</type>
+                    <syntax>string</syntax>
+                    <writable>true</writable>
+                </parameter>
+
+            </parameters>
+        </object> 
+
 			  </objects>
 			</object>
                         <object>

@@ -4990,3 +4990,30 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
         BOOL                        bValue
     );
 #endif
+
+/********************************************************************
+APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DeviceDetails
+
+    *  DeviceDetails_GetParamStringValue
+    *  DeviceDetails_SetParamStringValue
+
+ *******************************************************************/
+
+ULONG
+DeviceDetails_GetParamStringValue
+    (
+        ANSC_HANDLE hInsContext;
+        char*                        ParamName;
+        char*                        pValue;
+        ULONG*                       pUlSize
+    );
+
+BOOL
+DeviceDetails_SetParamStringValue
+    (
+        ANSC_HANDLE                  hInsContext;
+        char*                        ParamName;
+        char*                        pString
+    );

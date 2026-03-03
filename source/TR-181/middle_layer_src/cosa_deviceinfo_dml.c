@@ -25718,4 +25718,157 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
     return FALSE;
 
 }
+/****************************************************************************
+ caller: owner of this object
 
+ prototype:
+
+    ULONG
+    DeviceDetails_GetParamStringValue
+    (
+        ANSC_HANDLE          hInsContext;
+        char*                ParamName;
+        char*                pValue;
+        ULONG*               pUlSize
+    );
+
+    description:
+        This function is called to retrieve the value of a string parameter.
+
+    arguments:
+        ANSC_HANDLE              hInsContext,
+        The instance handle;
+
+        char*                    ParamName,
+        The parameter name;
+
+        char*                    pValue,
+        The string value buffer;
+
+        ULONG*                   pUlSize
+        The buffer of the length of string value;
+
+    return:
+        0 if succeeded;
+        1 if short of buffer size;
+        -1 if failed.
+
+ *****************************************************************************/
+
+
+ULONG
+DeviceDetails_GetParamStringValue(
+    ANSC_HANDLE hInsContext;
+    char*    ParamName;
+    char*    pValue;
+    ULONG*   pUlSize
+){
+    UNREFERENCED_PARAMETER(hInsContext);
+    errno_t rc;
+    if(!paramName || !pValue || !pUlSize){
+        return -1;
+    }
+    if(strcmp(ParamName,"name")==0){
+        char buf[64]={0};
+        if(syscfg_get(NULL,"DeviceDetails_Name",buf,sizeof(buf))!=0 || buf[0]=='\0'){
+            return -1;
+        }
+        rc=strcpy_s(pValue,*pUlSize,buf);
+        if(rc!=EOK){
+            ERR_CHK(rc);
+            return -1;
+        }
+        return 0;
+
+    }
+    if(strcmp(ParamName,"mode")==0){
+        const char *cmd="deviceinfo.sh -mode";
+        char buf[64]={0};
+        FILE *f=popen(cmd,"r");
+        if(!f) return -1;
+        if(!fgets(buf,sizeof(buf),f)){
+            pclose(f);
+            return -1;
+        }
+        pclose(f);
+        size_t len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n') buf[--len] = '\0';
+        rc=strcpy_s(pValue,*pUlSize,buf);
+        if(rc!=EOK){
+            ERR_CHK(rc);
+            return -1;
+        }
+        return 0;
+
+    }
+    if(strcmp(ParamName,"cm_mac")==0){
+         const char *cmd="deviceinfo.sh -cmac";
+        char buf[64]={0};
+        FILE *f=popen(cmd,"r");
+        if(!f) return -1;
+        if(!fgets(buf,sizeof(buf),f)){
+            pclose(f);
+            return -1;
+        }
+        pclose(f);
+        size_t len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n') buf[--len] = '\0';
+        rc=strcpy_s(pValue,*pUlSize,buf);
+        if(rc!=EOK){
+            ERR_CHK(rc);
+            return -1;
+        }
+        return 0;
+
+    }
+    return -1;
+
+}
+/**********************************************************************
+caller: owner of this object
+
+prototype:
+
+    BOOL
+    DeviceDetails_SetParamStringValue
+    (
+        ANSC_HANDLE          hInsContext;
+        char*                ParamName;
+        char*                pString
+
+    );
+description:
+    This function is called to set the value of a string parameter.
+
+arguments:
+    ANSC_HANDLE              hInsContext,
+    The instance handle;
+
+    char*                    ParamName,
+    The parameter name;
+
+    char*                    pString
+    The string value to be set;
+
+return:
+    TRUE if succeeded.
+****************************************************************************/
+BOOL
+DeviceDetails_SetParamStringValue(
+    ANSC_HANDLE hInsContext;
+    char*    ParamName;
+    char*    pString
+){
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName,"name")!=0){
+        retrun false;
+    }
+    if(!pString) return false;
+    if(syscfg_set(null,"DeviceDetails_Name",pString)!=0){
+        return false;
+    }
+    if(syscfg_commit()!=0){
+        return false;
+    }
+    return true;
+}
