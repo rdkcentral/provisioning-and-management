@@ -71,6 +71,9 @@
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
 
+#ifdef _ONESTACK_PRODUCT_REQ_
+#include <rdkb_feature_mode_gate.h>
+#endif
 extern void* g_pDslhDmlAgent;
 extern ANSC_HANDLE bus_handle;
 
@@ -1486,6 +1489,7 @@ ULONG CosaDmlIPv6addrGetV6Status(PCOSA_DML_IP_V6ADDR p_dml_v6addr, PCOSA_DML_IP_
     return COSA_DML_IP6_ADDRSTATUS_Invalid;
 }
 #ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
+
 PCOSA_DML_IP_V6ADDR
 CosaDmlIPGetIPv6Addresses
     (
@@ -1618,9 +1622,7 @@ CosaDmlIPGetIPv6Addresses
 #endif
     return p_dml_addr;
 }
-
 #endif
-
 
 static int
 IPIF_getEntry_for_Ipv6Pre
@@ -1754,7 +1756,11 @@ IPIF_getEntry_for_Ipv6Pre
         if (g_ipif_be_bufs[ulIndex].ulNumOfV6Pre >= MAX_IPV6_ENTRY_NUM)
             break;
 
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION        
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {	
   #if defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
         /* We just put this prefix into erouter0 && brlan0 entry */
         if ( ulIndex > 0 && ulIndex != 3)
@@ -1771,11 +1777,18 @@ IPIF_getEntry_for_Ipv6Pre
             p_dml_v6pre->Origin = (ulIndex == 0) ? COSA_DML_IP6PREFIX_ORIGIN_PrefixDelegation : COSA_DML_IP6PREFIX_ORIGIN_Child;
         else 
             break;
-#else
+    }
+#endif
+#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
   #ifdef _COSA_INTEL_USG_ARM_
         /* We just put this prefix into erouter0 entry */
         if ( ulIndex > 0 )
             break;
+    }
 #endif
 
         p_dml_v6pre = &g_ipif_be_bufs[ulIndex].V6PreList[g_ipif_be_bufs[ulIndex].ulNumOfV6Pre];
@@ -4069,11 +4082,10 @@ CosaDmlIpIfGetV6Addr2
         return returnStatus;
     }
 }
-
+#if defined (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION)
 /*
  *  IP Interface IPv6Prefix
  */
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
 PCOSA_DML_IP_V6PREFIX
 CosaDmlIPGetIPv6Prefixes
     (
@@ -4207,7 +4219,6 @@ CosaDmlIPGetIPv6Prefixes
     }
 #endif
 }
-
 #endif
 
 /**********************************************************************
