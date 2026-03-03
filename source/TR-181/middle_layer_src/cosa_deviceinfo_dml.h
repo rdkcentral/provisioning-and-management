@@ -4989,7 +4989,7 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
         char*                       ParamName,
         BOOL                        bValue
     );
-#endif
+
 
 /********************************************************************
 APIs for Object:
@@ -5004,16 +5004,19 @@ APIs for Object:
 ULONG
 DeviceDetails_GetParamStringValue
     (
-        ANSC_HANDLE hInsContext;
-        char*                        ParamName;
-        char*                        pValue;
+        ANSC_HANDLE                  hInsContext,
+        char*                        ParamName,
+        char*                        pValue,
         ULONG*                       pUlSize
     );
 
 BOOL
 DeviceDetails_SetParamStringValue
     (
-        ANSC_HANDLE                  hInsContext;
-        char*                        ParamName;
+        ANSC_HANDLE                  hInsContext,
+        char*                        ParamName,
         char*                        pString
     );
+
+#endif
+
