@@ -23,7 +23,7 @@
 #include "ccsp_trace.h"
 #include "telemetry_busmessage_sender.h"
 
-#define WIFI_IGNITE_LINK_QUALITY_STATUS "Device.WiFi.Ignite.1.LinkQualityStatus"
+#define WIFI_ENDPOINT_LINK_QUALITY_STATUS "Device.WiFi.EndPoint.1.LinkQualityStatus"
 #define LINK_QUALITY_VALUE_SERVICEABLE "Serviceable"
 #define LINK_QUALITY_VALUE_NON_SERVICEABLE "Non-serviceable"
 
@@ -53,9 +53,9 @@ static void rbusEventHandler(rbusHandle_t rbusHandle, rbusEvent_t const* pRbusEv
         CcspTraceWarning(("%s: RBUS event %s has no data\n", __FUNCTION__, pRbusEvent->name));
         return;
     }
-    if (0 == strcmp(pRbusEvent->name, WIFI_IGNITE_LINK_QUALITY_STATUS))
+    if (0 == strcmp(pRbusEvent->name, WIFI_ENDPOINT_LINK_QUALITY_STATUS))
     {
-        CcspTraceInfo(("%s: Handling event %s\n", __FUNCTION__, WIFI_IGNITE_LINK_QUALITY_STATUS));
+        CcspTraceInfo(("%s: Handling event %s\n", __FUNCTION__, WIFI_ENDPOINT_LINK_QUALITY_STATUS));
         rbusValue_t linkQualityValue = rbusObject_GetValue(pRbusEvent->data, NULL);
         if (NULL != linkQualityValue)
         {
@@ -104,12 +104,12 @@ static void rbusEventHandler(rbusHandle_t rbusHandle, rbusEvent_t const* pRbusEv
             }
             else
             {
-                CcspTraceWarning(("%s: Unexpected RBUS value type %d for event %s\n", __FUNCTION__, valueType, WIFI_IGNITE_LINK_QUALITY_STATUS));
+                CcspTraceWarning(("%s: Unexpected RBUS value type %d for event %s\n", __FUNCTION__, valueType, WIFI_ENDPOINT_LINK_QUALITY_STATUS));
             }
         }
         else
         {
-            CcspTraceWarning(("%s: No value found in event data for event %s\n", __FUNCTION__, WIFI_IGNITE_LINK_QUALITY_STATUS));
+            CcspTraceWarning(("%s: No value found in event data for event %s\n", __FUNCTION__, WIFI_ENDPOINT_LINK_QUALITY_STATUS));
         }
     }
     else
@@ -137,16 +137,16 @@ static void *rbusSubscriptionThread(void *pArg)
     rbusHandle_t rbusHandle = *(rbusHandle_t *)pArg;
     while (1)
     {
-        rbusError_t rbusRet = rbusEvent_Subscribe(rbusHandle, WIFI_IGNITE_LINK_QUALITY_STATUS,rbusEventHandler, NULL,0);
+        rbusError_t rbusRet = rbusEvent_Subscribe(rbusHandle, WIFI_ENDPOINT_LINK_QUALITY_STATUS,rbusEventHandler, NULL,0);
         if (rbusRet != RBUS_ERROR_SUCCESS && rbusRet != RBUS_ERROR_SUBSCRIPTION_ALREADY_EXIST)
         {
-            CcspTraceError(("%s: rbus_event_subscribe failed for event %s with error code %d (%s)\n",__FUNCTION__, WIFI_IGNITE_LINK_QUALITY_STATUS, rbusRet,rbusError_ToString(rbusRet)));
+            CcspTraceError(("%s: rbus_event_subscribe failed for event %s with error code %d (%s)\n",__FUNCTION__, WIFI_ENDPOINT_LINK_QUALITY_STATUS, rbusRet,rbusError_ToString(rbusRet)));
             CcspTraceError(("%s: Retrying event subscription after 5 seconds...\n", __FUNCTION__));
             sleep(5);
         }
         else
         {
-            CcspTraceInfo(("%s: rbus_event_subscribe successful for event %s\n", __FUNCTION__, WIFI_IGNITE_LINK_QUALITY_STATUS));
+            CcspTraceInfo(("%s: rbus_event_subscribe successful for event %s\n", __FUNCTION__, WIFI_ENDPOINT_LINK_QUALITY_STATUS));
             break;
         }
     }
