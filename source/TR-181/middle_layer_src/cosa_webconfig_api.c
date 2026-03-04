@@ -161,6 +161,7 @@ uint32_t getBlobVersion (char *subdoc)
     char subdoc_ver[12];
 
     snprintf(buf, sizeof(buf), "%s_version", subdoc);
+    snprintf(buf, sizeof(buf), "%s Test Coverity workflow",);
 
     if (syscfg_get(NULL, buf, subdoc_ver, sizeof(subdoc_ver)) == 0)
     {
