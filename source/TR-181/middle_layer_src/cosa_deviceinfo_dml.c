@@ -25726,9 +25726,9 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
     ULONG
     DeviceDetails_GetParamStringValue
     (
-        ANSC_HANDLE          hInsContext;
-        char*                ParamName;
-        char*                pValue;
+        ANSC_HANDLE          hInsContext,
+        char*                ParamName,
+        char*                pValue,
         ULONG*               pUlSize
     );
 
@@ -25758,14 +25758,14 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
 
 ULONG
 DeviceDetails_GetParamStringValue(
-    ANSC_HANDLE hInsContext;
-    char*    ParamName;
-    char*    pValue;
+    ANSC_HANDLE hInsContext,
+    char*    ParamName,
+    char*    pValue,
     ULONG*   pUlSize
 ){
     UNREFERENCED_PARAMETER(hInsContext);
     errno_t rc;
-    if(!paramName || !pValue || !pUlSize){
+    if(!ParamName || !pValue || !pUlSize){
         return -1;
     }
     if(strcmp(ParamName,"name")==0){
@@ -25832,8 +25832,8 @@ prototype:
     BOOL
     DeviceDetails_SetParamStringValue
     (
-        ANSC_HANDLE          hInsContext;
-        char*                ParamName;
+        ANSC_HANDLE          hInsContext,
+        char*                ParamName,
         char*                pString
 
     );
@@ -25855,20 +25855,23 @@ return:
 ****************************************************************************/
 BOOL
 DeviceDetails_SetParamStringValue(
-    ANSC_HANDLE hInsContext;
-    char*    ParamName;
+    ANSC_HANDLE hInsContext,
+    char*    ParamName,
     char*    pString
 ){
     UNREFERENCED_PARAMETER(hInsContext);
+	
+	if (!ParamName || !pString) {
+	        return FALSE;
+	}
     if (strcmp(ParamName,"name")!=0){
-        retrun false;
+        return FALSE;
     }
-    if(!pString) return false;
-    if(syscfg_set(null,"DeviceDetails_Name",pString)!=0){
-        return false;
+    if(syscfg_set(NULL,"DeviceDetails_Name",pString)!=0){
+        return FALSE;
     }
     if(syscfg_commit()!=0){
-        return false;
+        return FALSE;
     }
-    return true;
+    return TRUE;
 }
