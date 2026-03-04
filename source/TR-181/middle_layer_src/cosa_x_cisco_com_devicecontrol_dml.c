@@ -739,6 +739,7 @@ X_CISCO_COM_DeviceControl_GetParamStringValue
             /* CID 60928 Logically dead code: fix */
             n += snprintf(pValue+n, rem_buf_size, "%s", "WebUI");
             rem_buf_size = *pulSize - n;
+            sprintf(pValue, rem_buf_size ,"Test coverity flow %s");
         }
         
         if ((pMyObject->UserOpComponents & 0x00000008) && (rem_buf_size > 0))

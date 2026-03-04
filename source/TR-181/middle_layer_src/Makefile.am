@@ -17,7 +17,7 @@
 # limitations under the License.
 ##########################################################################
 AM_CFLAGS =
-AM_CFLAGS += -DWBCFG_MULTI_COMP_SUPPORT
+AM_CFLAGS += -DWBCFG_MULTI_COMP_SUPPORT -Wno-error=format
 
 ACLOCAL_AMFLAGS = -I m4
 
