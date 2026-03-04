@@ -25860,18 +25860,23 @@ DeviceDetails_SetParamStringValue(
     char*    pString
 ){
     UNREFERENCED_PARAMETER(hInsContext);
-	
+    
+    CcspTraceInfo(("DeviceDetails_SetParamStringValue: Entry ParamName=%p pString=%p\n",ParamName, pString));
 	if (!ParamName || !pString) {
 	        return FALSE;
 	}
     if (strcmp(ParamName,"name")!=0){
+        CcspTraceInfo(("DeviceDetails_SetParamStringValue: Unsupported parameter '%s' -> FALSE\n", ParamName));
         return FALSE;
     }
     if(syscfg_set(NULL,"DeviceDetails_Name",pString)!=0){
-        return FALSE;
+        CcspTraceInfo(("DeviceDetails_SetParamStringValue: syscfg_set failed -> FALSE\n"));
+        return FALSE;   
     }
     if(syscfg_commit()!=0){
+        CcspTraceInfo(("DeviceDetails_SetParamStringValue: syscfg_commit failed -> FALSE\n"));
         return FALSE;
     }
+    CcspTraceInfo(("DeviceDetails_SetParamStringValue: Success -> TRUE\n"));
     return TRUE;
 }
