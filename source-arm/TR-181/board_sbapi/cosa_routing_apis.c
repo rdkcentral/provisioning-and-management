@@ -805,7 +805,7 @@ ULONG CosaDmlGetBitsNumFromNetMask(char * Address)
 void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
 {
     PCOSA_DML_RIPD_CONF pConf = &CosaDmlRIPCurrentConfig;
-    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
     FILE * pFile              = NULL;
     #endif
     FILE * fp                 = fopen(COSA_RIPD_CUR_CONF, "w+");
@@ -816,7 +816,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
     AnscTraceWarning(("CosaDmlGenerateRipdConfigFile -- starts.\n"));
 
     bTrueStaticIP  = g_GetParamValueBool(g_pDslhDmlAgent, "Device.X_CISCO_COM_TrueStaticIP.Enable");
-    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 	commonSyseventSet("ripd_conf-status","empty");
     #endif
     if (fp)
@@ -1046,7 +1046,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
         fclose(fp);
 
     }
-	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 	pFile=fopen("/tmp/pam_ripd_config_completed","a+");
 	    if(pFile)
 	    {
