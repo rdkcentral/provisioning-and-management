@@ -25766,11 +25766,13 @@ DeviceDetails_GetParamStringValue(
     UNREFERENCED_PARAMETER(hInsContext);
     errno_t rc;
     if(!ParamName || !pValue || !pUlSize){
+        CcspTraceInfo(("DeviceDetails_GetParamStringValue: NULL input(s) -> returning -1\n")); 
         return -1;
     }
     if(strcmp(ParamName,"name")==0){
         char buf[64]={0};
         if(syscfg_get(NULL,"DeviceDetails_Name",buf,sizeof(buf))!=0 || buf[0]=='\0'){
+            CcspTraceInfo(("DeviceDetails_GetParamStringValue: syscfg_get failed or empty for 'DeviceDetails_Name' -> -1\n"));
             return -1;
         }
         rc=strcpy_s(pValue,*pUlSize,buf);
@@ -25785,8 +25787,12 @@ DeviceDetails_GetParamStringValue(
         const char *cmd="deviceinfo.sh -mode";
         char buf[64]={0};
         FILE *f=popen(cmd,"r");
-        if(!f) return -1;
+        if(!f) {
+            CcspTraceInfo(("DeviceDetails_GetParamStringValue: popen('%s') failed -> -1\n", cmd));
+            return -1;
+        }
         if(!fgets(buf,sizeof(buf),f)){
+            CcspTraceInfo(("DeviceDetails_GetParamStringValue: fgets() returned NULL for '%s' -> -1\n", cmd));
             pclose(f);
             return -1;
         }
@@ -25798,6 +25804,8 @@ DeviceDetails_GetParamStringValue(
             ERR_CHK(rc);
             return -1;
         }
+
+        CcspTraceInfo(("DeviceDetails_GetParamStringValue: Success for 'mode' -> 0\n"));
         return 0;
 
     }
@@ -25805,8 +25813,12 @@ DeviceDetails_GetParamStringValue(
          const char *cmd="deviceinfo.sh -cmac";
         char buf[64]={0};
         FILE *f=popen(cmd,"r");
-        if(!f) return -1;
+        if(!f)  {
+            CcspTraceInfo(("DeviceDetails_GetParamStringValue: popen('%s') failed -> -1\n", cmd));
+            return -1;
+        }
         if(!fgets(buf,sizeof(buf),f)){
+            CcspTraceInfo(("DeviceDetails_GetParamStringValue: fgets() returned NULL for '%s' -> -1\n", cmd));
             pclose(f);
             return -1;
         }
@@ -25818,6 +25830,7 @@ DeviceDetails_GetParamStringValue(
             ERR_CHK(rc);
             return -1;
         }
+        CcspTraceInfo(("DeviceDetails_GetParamStringValue: Success for 'cm-mac' -> 0\n"));
         return 0;
 
     }
