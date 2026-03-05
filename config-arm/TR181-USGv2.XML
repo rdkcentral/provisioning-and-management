@@ -2096,6 +2096,22 @@
                                          </parameter>
                                      </parameters>
                                 </object>
+                                <object>
+                                  <name>RdkLogger</name>
+                                  <objectType>object</objectType>
+                                  <functions>
+                                      <func_GetParamBoolValue>RdkLogger_GetParamBoolValue</func_GetParamBoolValue>
+                                      <func_SetParamBoolValue>RdkLogger_SetParamBoolValue</func_SetParamBoolValue>
+                                  </functions>
+                                  <parameters>
+                                      <parameter>
+                                        <name>Enable</name>
+                                        <type>boolean</type>
+                                        <syntax>bool</syntax>
+                                        <writable>true</writable>
+                                      </parameter>
+                                  </parameters>
+                              </object>
                             </objects>
                         </object>
                       <object>
@@ -3485,7 +3501,7 @@
                         </parameters>
                 </object>
                 <object>
-                    <name>xMemInsight</name>
+                  <name>meminsight</name>
                     <objectType>object</objectType>
 
                     <functions>
@@ -3500,6 +3516,12 @@
                             <name>Enable</name>
                             <type>boolean</type>
                             <syntax>bool</syntax>
+                            <writable>true</writable>
+                        </parameter>
+                        <parameter>
+                            <name>Trigger</name>
+                            <type>string(8)</type>
+                            <syntax>string</syntax>
                             <writable>true</writable>
                         </parameter>
                         <parameter>
@@ -13967,7 +13989,7 @@
             <writable>true</writable>
 
           </parameter>
-<?ifdef BCI?>
+<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
           <parameter>
 
             <name>WanPingEnable</name>
@@ -13991,8 +14013,7 @@
             <writable>true</writable>
 
           </parameter>
-<?endif?>
-<?ifdef BCI | _ONESTACK_PRODUCT_REQ_?>
+
           <parameter>
 
             <name>TrueStaticIpEnable</name>
