@@ -14160,7 +14160,7 @@ SelfHeal_GetParamBoolValue
         else
         {
              CcspTraceError(("%s syscfg_get failed  for SelfHealCronEnable\n",__FUNCTION__));
-             *pBool = TRUE;
+             *pBool = FALSE;
         }
         return TRUE;
     }
@@ -14187,6 +14187,7 @@ static void copy_command_output (char *cmd, char *out, int len)
     }
 }
 
+#if 0
 /* Start all self-heal scripts */
 void start_self_heal_scripts() {
     for (size_t i = 0; i < SCRIPT_COUNT; i++) {
@@ -14268,7 +14269,8 @@ void manage_self_heal_cron_state(bool SelfhealCronEnable) {
         for (int i = 0; i < 2; i++) 
             update_cron_entry(recovery_scripts[i].name, recovery_scripts[i].def_val, true);
     }
-}
+} 
+#endif
 
 /**********************************************************************
 
@@ -14324,21 +14326,23 @@ SelfHeal_SetParamBoolValue
             return FALSE;
 	    }
         
-        //Remove selfheal cron job if param is disabled
-        if(bValue == FALSE)
+      /*  if(bValue == TRUE)
+
         {
-            CcspTraceInfo(("SelfHeal cron is disabled, removing cron jobs\n"));
-            manage_self_heal_cron_state(false);
-            CcspTraceInfo(("SelfHeal cron is disabled, starting selfheal scripts as process\n"));
-            start_self_heal_scripts();
-        }
-	    else
-	    {
             CcspTraceInfo(("SelfHeal cron is enabled, stopping the selfheal scripts process\n"));
             stop_self_heal_scripts();
             CcspTraceInfo(("SelfHeal cron is enabled, adding cron jobs\n"));
             manage_self_heal_cron_state(true);
+        }
+	    else
+	    {
+            CcspTraceInfo(("SelfHeal cron is disabled, removing cron jobs\n"));
+            manage_self_heal_cron_state(false);
+            CcspTraceInfo(("SelfHeal cron is disabled, starting selfheal scripts as process\n"));
+            start_self_heal_scripts();
 	    }
+	    } */
+
         return TRUE;
     }
     return FALSE;
@@ -25258,9 +25262,9 @@ SelfHeal_SetParamUlongValue
         }
 
 	    buf[0] = '\0';
-        syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
+        int ret = syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
         CcspTraceInfo(("SelfHealCronEnable value is %s\n", buf));
-        if( strcmp(buf, "false") == 0 )
+        if (ret != 0 || (strcmp(buf, "true") != 0))
         {
             CcspTraceInfo(("SelfHealCronEnable is disabled\n"));
             buf[0] = '\0';
