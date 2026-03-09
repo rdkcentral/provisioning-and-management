@@ -1805,7 +1805,7 @@ CosaDmlDcSetRebootDevice
 		}
 		else
         {
-#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined(_ONESTACK_PRODUCT_REQ_)
 //TCCBR-4087
             int                         ret = -1;
             int                         size = 0;
