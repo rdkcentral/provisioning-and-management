@@ -14452,6 +14452,7 @@ RdkLogger_SetParamBoolValue
             CcspTraceError(("syscfg_set RdkbLogCronEnable failed\n"));
             return FALSE;
         }
+        CcspTraceInfo(("RDKLOGGER RFC updated. Reboot required to apply mode change\n"));
         return TRUE;
     }
     return FALSE;
@@ -18415,7 +18416,7 @@ Logging_SetParamUlongValue
 
 		syscfg_get( NULL, "RdkbLogCronEnable", buf, sizeof(buf));
 
-		if( strcmp(buf, "false") == 0 )
+		if (strcmp(buf, "false") == 0 || strcmp(buf, "") == 0)
 		{
 			CcspTraceInfo(("RdkbLogCronEnable is disabled, running as background process\n"));
 			return TRUE;
