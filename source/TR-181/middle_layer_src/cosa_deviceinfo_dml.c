@@ -124,6 +124,7 @@ extern char g_Subsystem[32];
 extern void* g_pDslhDmlAgent;
 static BOOL g_clearDB = false;
 static char *g_AdvSecDefaultEndpointURL = "Advsecurity_DefaultEndpointURL";
+extern int g_boot_cron_mode;
 
 void Send_Notification_Task(char* delay, char* startTime, char* download_status, char* status, char *system_ready_time, char * priority,  char *current_fw_ver, char *download_fw_ver);
 void set_firmware_download_start_time(char *start_time);
@@ -14160,7 +14161,7 @@ SelfHeal_GetParamBoolValue
         else
         {
              CcspTraceError(("%s syscfg_get failed  for SelfHealCronEnable\n",__FUNCTION__));
-             *pBool = TRUE;
+             *pBool = FALSE;
         }
         return TRUE;
     }
@@ -14184,89 +14185,6 @@ static void copy_command_output (char *cmd, char *out, int len)
                 out[len_out - 1] = 0;
         }
         pclose (fp);
-    }
-}
-
-/* Start all self-heal scripts */
-void start_self_heal_scripts() {
-    for (size_t i = 0; i < SCRIPT_COUNT; i++) {
-        CcspTraceWarning(("%s: Starting %s\n", __FUNCTION__, SELF_HEAL_SCRIPTS[i]));
-        // Uses the shared path and script name
-        v_secure_system("/usr/ccsp/tad/%s &", SELF_HEAL_SCRIPTS[i]);
-    }
-}
-/* Stop all self-heal scripts */
-void stop_self_heal_scripts() {
-    char buf[64], cmd[128];
-    for (size_t i = 0; i < SCRIPT_COUNT; i++) {
-        snprintf(cmd, sizeof(cmd), "pidof %s", SELF_HEAL_SCRIPTS[i]);
-        copy_command_output(cmd, buf, sizeof(buf));
-        CcspTraceInfo(("%s: pidof %s returned: %s\n", __FUNCTION__, SELF_HEAL_SCRIPTS[i], buf));
-        if (buf[0] == '\0') {
-            CcspTraceWarning(("%s: %s is not running\n", __FUNCTION__, SELF_HEAL_SCRIPTS[i]));
-        } else {
-            CcspTraceWarning(("%s: Stopping %s \n", __FUNCTION__, SELF_HEAL_SCRIPTS[i]));
-            v_secure_system("kill -9 %s", buf);
-        }
-    }
-}
-
-/* To fetch syscfg values */
-unsigned long get_interval(const char *key, int def_val) {
-    // Handle fixed intervals (null keys)
-    if (!key) return (unsigned long)def_val;
-
-    char buf[32] = {0};
-    unsigned long result = (unsigned long)def_val;
-
-    if (syscfg_get(NULL, key, buf, sizeof(buf)) == 0 && buf[0] != '\0') {
-        result = (unsigned long)atol(buf);
-    }
-    return result;
-}
-
-/* To Update Crontab (Removes old, Adds new) */
-void update_cron_entry(const char *script, unsigned long interval, bool should_run) {
-    // We always remove the old entry to avoid duplicates
-    v_secure_system("crontab -l 2>/dev/null | sed '/%s/d' | crontab -", script);
-    // If should_run is true, we append the new timing
-    if (should_run) {
-        v_secure_system("(crontab -l 2>/dev/null; echo '*/%lu * * * * /usr/ccsp/tad/%s') | crontab -", 
-                        interval, script);
-    }
-}
-
-/* function to Manage add/remove of cron jobs */
-void manage_self_heal_cron_state(bool SelfhealCronEnable) {
-    const CronJob self_heal_scripts[] = {
-        {"self_heal_connectivity_test.sh", "ConnTest_PingInterval", 60},
-        {"resource_monitor.sh", "resource_monitor_interval", 15},
-        {"selfheal_aggressive.sh", "AggressiveInterval", 5}
-    };
-
-    const CronJob recovery_scripts[] = {
-        {"syscfg_recover.sh", NULL, 15},
-        {"resource_monitor_recover.sh", NULL, 5}
-    };
-
-    if (SelfhealCronEnable) {
-        // Stop Cron Job of Recovery Scripts
-        for (int i = 0; i < 2; i++) 
-            update_cron_entry(recovery_scripts[i].name, 0, false);
-        
-        // Start Cron Jobs of Self-Heal Scripts (using syscfg lookup)
-        for (int i = 0; i < 3; i++) {
-            unsigned long val = get_interval(self_heal_scripts[i].key, self_heal_scripts[i].def_val);
-            update_cron_entry(self_heal_scripts[i].name, val, true);
-        }
-    } else {
-        // Stop Cron Job of Self-Heal Scripts
-        for (int i = 0; i < 3; i++) 
-            update_cron_entry(self_heal_scripts[i].name, 0, false);
-        
-        // Start Cron Job of Recovery Scripts (using fixed defaults)
-        for (int i = 0; i < 2; i++) 
-            update_cron_entry(recovery_scripts[i].name, recovery_scripts[i].def_val, true);
     }
 }
 
@@ -14322,22 +14240,6 @@ SelfHeal_SetParamBoolValue
 	    {
             AnscTraceWarning(("syscfg_commit failed for SelfHealCronEnable param update\n"));
             return FALSE;
-	    }
-        
-        //Remove selfheal cron job if param is disabled
-        if(bValue == FALSE)
-        {
-            CcspTraceInfo(("SelfHeal cron is disabled, removing cron jobs\n"));
-            manage_self_heal_cron_state(false);
-            CcspTraceInfo(("SelfHeal cron is disabled, starting selfheal scripts as process\n"));
-            start_self_heal_scripts();
-        }
-	    else
-	    {
-            CcspTraceInfo(("SelfHeal cron is enabled, stopping the selfheal scripts process\n"));
-            stop_self_heal_scripts();
-            CcspTraceInfo(("SelfHeal cron is enabled, adding cron jobs\n"));
-            manage_self_heal_cron_state(true);
 	    }
         return TRUE;
     }
@@ -25258,10 +25160,7 @@ SelfHeal_SetParamUlongValue
             return FALSE;
         }
 
-	    buf[0] = '\0';
-        syscfg_get( NULL, "SelfHealCronEnable", buf, sizeof(buf));
-        CcspTraceInfo(("SelfHealCronEnable value is %s\n", buf));
-        if( strcmp(buf, "false") == 0 )
+        if( g_boot_cron_mode == 0 )
         {
             CcspTraceInfo(("SelfHealCronEnable is disabled\n"));
             buf[0] = '\0';
