@@ -427,6 +427,7 @@ static int se_fd = 0;
 static token_t token;
 
 static async_id_t async_id[7];
+static async_id_t lan2wanAsync_id;
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
@@ -853,6 +854,10 @@ EvtDispterEventInits(void)
     if (rc) {
        return(EVENT_ERROR);
     }
+    rc = sysevent_setnotification(se_fd, token, "wan_to_lan_operational_mode", &lan2wanAsync_id);
+    if (rc) {
+        CcspTraceError(("%s: sysevent_setnotification failed for wan_to_lan_operational_mode\n", __FUNCTION__));
+    }
     #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
     rc = sysevent_setnotification(se_fd, token, SYSEVENT_MAPT_CONFIG_FLAG, &mapt_async_id[0]);
@@ -1058,6 +1063,11 @@ EvtDispterEventListen(void)
                 CcspTraceDebug(("%s: Current MAP-T total ports is %d\n", __FUNCTION__, gMaptTotalPorts));
             }
 #endif
+            else if (!strcmp(name_str, "wan_to_lan_operational_mode"))
+            {
+               CcspTraceInfo(("%s:wan_to_lan_operational_mode value:%s\n",__FUNCTION__, value_str));
+               sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
+            }
         } else {
             CcspTraceWarning(("Received msg that is not a SE_MSG_NOTIFICATION (%d)\n", msg_type));
 	    if (  0 != system("pidof syseventd")) {
@@ -1197,7 +1207,14 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
         gMaptTotalPorts = atoi(evtValue);
         CcspTraceDebug(("%s: Current MAP-T total ports is %d\n", __FUNCTION__, gMaptTotalPorts));
     }
-
+    if (0 == sysevent_get(fd, token, "wan_to_lan_operational_mode", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
+    {
+        if (0 == strcmp(evtValue, "Manageable"))
+        {
+           CcspTraceInfo(("%s:wan_to_lan_operational_mode value:%s\n",__FUNCTION__, evtValue));
+           sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
+        }
+    }
 #endif
     return returnStatus;
 }
