@@ -73,6 +73,8 @@
 #include "syscfg/syscfg.h"
 #include "safec_lib_common.h"
 
+int g_boot_cron_mode = -1;
+
 /**********************************************************************
 
     caller:     owner of the object
@@ -161,6 +163,20 @@ CosaDeviceInfoInitialize
 
     /* Initiation all functions */
     _ansc_memset(pMyObject->ProvisioningCode, 0, 64);
+    char buf[32];
+    if(g_boot_cron_mode == -1)
+    {
+        if (syscfg_get(NULL, "SelfHealCronEnable", buf, sizeof(buf)) == 0) 
+        {
+            g_boot_cron_mode = (strcmp(buf, "true") == 0) ? 1 : 0;
+            CcspTraceInfo(("%s: Boot-time Cron Mode locked to: %s\n", 
+                    __FUNCTION__, (g_boot_cron_mode ? "Cron" : "Process")));
+        }
+        else 
+        {
+            g_boot_cron_mode = 0; // Default fallback to Process Mode
+        }
+    }
 #if !defined (NO_MOCA_FEATURE_SUPPORT)
     CosaDmlDiGetEnableMoCAforXi5Flag( pMyObject , &pMyObject->bEnableMoCAforXi5 );
 #endif
