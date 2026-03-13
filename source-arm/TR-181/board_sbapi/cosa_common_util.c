@@ -79,6 +79,8 @@
 #define IPV6_PREFIX "Device.IP.Interface.1.IPv6Prefix.1.Prefix"
 #define IPV6_PREFIX_EVENT "tr_erouter0_dhcpv6_client_v6pref"
 
+#define WAN_TO_LAN_OPERATIONAL_MODE "wan_to_lan_operational_mode"
+
 #if defined(_RDKB_GLOBAL_PRODUCT_REQ_)
 unsigned char gIsLANULAFeatureSupport = FALSE;
 #endif
@@ -854,7 +856,7 @@ EvtDispterEventInits(void)
     if (rc) {
        return(EVENT_ERROR);
     }
-    rc = sysevent_setnotification(se_fd, token, "wan_to_lan_operational_mode", &lan2wanAsync_id);
+    rc = sysevent_setnotification(se_fd, token, WAN_TO_LAN_OPERATIONAL_MODE, &lan2wanAsync_id);
     if (rc) {
         CcspTraceError(("%s: sysevent_setnotification failed for wan_to_lan_operational_mode\n", __FUNCTION__));
     }
@@ -1063,7 +1065,7 @@ EvtDispterEventListen(void)
                 CcspTraceDebug(("%s: Current MAP-T total ports is %d\n", __FUNCTION__, gMaptTotalPorts));
             }
 #endif
-            else if (!strcmp(name_str, "wan_to_lan_operational_mode"))
+            else if (!strcmp(name_str, WAN_TO_LAN_OPERATIONAL_MODE))
             {
                CcspTraceInfo(("%s:wan_to_lan_operational_mode value:%s\n",__FUNCTION__, value_str));
                sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
@@ -1207,7 +1209,7 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
         gMaptTotalPorts = atoi(evtValue);
         CcspTraceDebug(("%s: Current MAP-T total ports is %d\n", __FUNCTION__, gMaptTotalPorts));
     }
-    if (0 == sysevent_get(fd, token, "wan_to_lan_operational_mode", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
+    if (0 == sysevent_get(fd, token, WAN_TO_LAN_OPERATIONAL_MODE, evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
     {
         if (0 == strcmp(evtValue, "Manageable"))
         {
