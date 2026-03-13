@@ -1067,8 +1067,18 @@ EvtDispterEventListen(void)
 #endif
             else if (!strcmp(name_str, WAN_TO_LAN_OPERATIONAL_MODE))
             {
-               CcspTraceInfo(("%s:wan_to_lan_operational_mode value:%s\n",__FUNCTION__, value_str));
-               sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
+                CcspTraceDebug(("%s:wan_to_lan_operational_mode value:%s\n",__FUNCTION__, value_str));
+                if (0 == strcasecmp(value_str, "Manageable"))
+                {
+                    CcspTraceInfo(("%s:wan_to_lan_operational_mode is set to Manageable\n",__FUNCTION__));
+                    t2_event_d("LinkQualityNonServiceble_Lan2WanBlocked", 1);
+                }
+                else
+                {
+                   CcspTraceInfo(("%s:wan_to_lan_operational_mode is not in Manageable mode\n",__FUNCTION__));
+                   t2_event_d("LinkQualityServiceble_Lan2WanAllowed", 1);
+                }
+                sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
             }
         } else {
             CcspTraceWarning(("Received msg that is not a SE_MSG_NOTIFICATION (%d)\n", msg_type));
@@ -1213,7 +1223,8 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
     {
         if (0 == strcmp(evtValue, "Manageable"))
         {
-           CcspTraceInfo(("%s:wan_to_lan_operational_mode value:%s\n",__FUNCTION__, evtValue));
+           t2_event_d("LinkQualityNonServiceble_Lan2WanBlocked", 1);
+           CcspTraceInfo(("%s:wan_to_lan_operational_mode is set to Manageable\n",__FUNCTION__));
            sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
         }
     }
