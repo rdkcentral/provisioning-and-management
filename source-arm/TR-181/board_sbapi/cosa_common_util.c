@@ -1071,12 +1071,12 @@ EvtDispterEventListen(void)
                 if (0 == strcasecmp(value_str, "Manageable"))
                 {
                     CcspTraceInfo(("%s:wan_to_lan_operational_mode is set to Manageable\n",__FUNCTION__));
-                    t2_event_d("LinkQualityNonServiceble_Lan2WanBlocked", 1);
+                    t2_event_d("Lan2WanOperationalModeManageable_Lan2WanBlocked", 1);
                 }
                 else
                 {
                    CcspTraceInfo(("%s:wan_to_lan_operational_mode is not in Manageable mode\n",__FUNCTION__));
-                   t2_event_d("LinkQualityServiceble_Lan2WanAllowed", 1);
+                   t2_event_d("Lan2WanOperationalModeServiceable_Lan2WanAllowed", 1);
                 }
                 sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
             }
@@ -1117,6 +1117,7 @@ EvtDispterEventClose(void)
     }
 #endif
     sysevent_rmnotification(se_fd, token, async_id[6]);
+    sysevent_rmnotification(se_fd, token, lan2wanAsync_id);
     /* close this session with syseventd */
     sysevent_close(se_fd, token);
 
@@ -1219,16 +1220,16 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
         gMaptTotalPorts = atoi(evtValue);
         CcspTraceDebug(("%s: Current MAP-T total ports is %d\n", __FUNCTION__, gMaptTotalPorts));
     }
+#endif
     if (0 == sysevent_get(fd, token, WAN_TO_LAN_OPERATIONAL_MODE, evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
     {
         if (0 == strcmp(evtValue, "Manageable"))
         {
-           t2_event_d("LinkQualityNonServiceble_Lan2WanBlocked", 1);
+           t2_event_d("Lan2WanOperationalModeManageable_Lan2WanBlocked", 1);
            CcspTraceInfo(("%s:wan_to_lan_operational_mode is set to Manageable\n",__FUNCTION__));
            sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
         }
     }
-#endif
     return returnStatus;
 }
 
