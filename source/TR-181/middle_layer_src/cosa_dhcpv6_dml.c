@@ -4578,6 +4578,7 @@ Pool1_GetParamStringValue
     PCOSA_CONTEXT_POOLV6_LINK_OBJECT  pCxtLink          = (PCOSA_CONTEXT_POOLV6_LINK_OBJECT)hInsContext;
     PCOSA_DML_DHCPSV6_POOL_FULL       pPool             = (PCOSA_DML_DHCPSV6_POOL_FULL)pCxtLink->hContext;
     PUCHAR                            pString           = NULL;
+    BOOL                              bAllocated        = FALSE;
     errno_t   rc = -1;
 
     /* check the parameter name and return the corresponding value */
@@ -4597,6 +4598,10 @@ Pool1_GetParamStringValue
                         (PUCHAR)"Name",
                         (PUCHAR)pPool->Cfg.Interface /* When brlan0 works ,change to "brlan0"*/
                     );
+        if (pString)
+        {
+            bAllocated = TRUE;
+        }
      #elif defined (MULTILAN_FEATURE)
         pString = (PUCHAR)pPool->Cfg.Interface;
      #else
@@ -4606,16 +4611,30 @@ Pool1_GetParamStringValue
                         (PUCHAR)"Name",
                         (PUCHAR)"brlan0" /* When brlan0 works ,change to "brlan0"*/
                     );
+        if (pString)
+        {
+            bAllocated = TRUE;
+        }
      #endif
 #if defined(_ONESTACK_PRODUCT_REQ_)
         if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
         {
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || !defined(MULTILAN_FEATURE)
+            if (pString)
+            {
+                AnscFreeMemory(pString);
+            }
+#endif
             pString = CosaUtilGetFullPathNameByKeyword
                         (
                             (PUCHAR)"Device.IP.Interface.",
                             (PUCHAR)"Name",
                             (PUCHAR)pPool->Cfg.Interface /* When brlan0 works ,change to "brlan0"*/
                         );
+            if (pString)
+            {
+                bAllocated = TRUE;
+            }
         }
 #endif 
         if ( pString )
@@ -4626,10 +4645,16 @@ Pool1_GetParamStringValue
                 ERR_CHK(rc);
 #if defined (MULTILAN_FEATURE)
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-        AnscFreeMemory(pString);
+                if (bAllocated)
+                {
+                    AnscFreeMemory(pString);
+                }
 #endif
 #else
-                AnscFreeMemory(pString);
+                if (bAllocated)
+                {
+                    AnscFreeMemory(pString);
+                }
 #endif
                 return 0;
             }
@@ -4638,10 +4663,16 @@ Pool1_GetParamStringValue
                 *pUlSize = AnscSizeOfString((const char*)pString)+1;
 #if defined (MULTILAN_FEATURE)
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
-		AnscFreeMemory(pString);
+                if (bAllocated)
+                {
+                    AnscFreeMemory(pString);
+                }
 #endif
 #else
-                AnscFreeMemory(pString);
+                if (bAllocated)
+                {
+                    AnscFreeMemory(pString);
+                }
 #endif
                 return 1;
             }
