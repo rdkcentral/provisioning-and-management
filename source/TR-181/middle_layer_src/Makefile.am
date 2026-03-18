@@ -107,8 +107,7 @@ libCcspPandM_middle_layer_src_la_SOURCES = \
     webui_webconfig_apis.c \
     webui_webconfig_dml.c \
     cosa_x_rdk_features_dml.c \
-    cosa_x_rdk_features_internal.c \
-    subscribeForRbusEvents.c
+    cosa_x_rdk_features_internal.c
 
 if FEATURE_HOTSPOT_SUPPORT
 libCcspPandM_middle_layer_src_la_SOURCES += \
