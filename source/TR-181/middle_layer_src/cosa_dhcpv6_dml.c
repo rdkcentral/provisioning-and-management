@@ -4601,24 +4601,24 @@ Pool1_GetParamStringValue
         pString = (PUCHAR)pPool->Cfg.Interface;
      #else
      #if defined(_ONESTACK_PRODUCT_REQ_)
-	if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
-	{
-	    pString = CosaUtilGetFullPathNameByKeyword
-		(
-		 (PUCHAR)"Device.IP.Interface.",
-		 (PUCHAR)"Name",
-		 (PUCHAR)pPool->Cfg.Interface /* When brlan0 works ,change to "brlan0"*/
-		);
-	}
-	else
-	{
-	    pString = CosaUtilGetFullPathNameByKeyword
-		(
-		 (PUCHAR)"Device.IP.Interface.",
-		 (PUCHAR)"Name",
-		 (PUCHAR)"brlan0" /* When brlan0 works ,change to "brlan0"*/
-		);		
-	}
+        if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+        {
+            pString = CosaUtilGetFullPathNameByKeyword
+                (
+                    (PUCHAR)"Device.IP.Interface.",
+                    (PUCHAR)"Name",
+                    (PUCHAR)pPool->Cfg.Interface /* When brlan0 works ,change to "brlan0"*/
+                );
+        }
+        else
+        {
+            pString = CosaUtilGetFullPathNameByKeyword
+                (
+                    (PUCHAR)"Device.IP.Interface.",
+                    (PUCHAR)"Name",
+                    (PUCHAR)"brlan0" /* When brlan0 works ,change to "brlan0"*/
+                );		
+        }
      #else
 	pString = CosaUtilGetFullPathNameByKeyword
                     (
@@ -4635,7 +4635,7 @@ Pool1_GetParamStringValue
                 rc = strcpy_s(pValue, *pUlSize, (char*) pString);
                 ERR_CHK(rc);
 #if defined (MULTILAN_FEATURE)
-#ifdef (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION)
+#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
                 AnscFreeMemory(pString);
 #endif
 #else
@@ -4647,7 +4647,7 @@ Pool1_GetParamStringValue
             {
                 *pUlSize = AnscSizeOfString((const char*)pString)+1;
 #if defined (MULTILAN_FEATURE)
-#ifdef (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) 
+#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
                 AnscFreeMemory(pString);
 #endif
 #else
