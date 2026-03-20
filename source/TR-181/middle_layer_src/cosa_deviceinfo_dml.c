@@ -6296,6 +6296,22 @@ MemoryStatus_GetParamUlongValue
         *puLong = atoi(buf);
         return TRUE;
     }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemCompTargetUptime") == 0)
+    {
+        char buf[12] = {0};
+        if ( 0 == syscfg_get (NULL, "MemCompactionDelaySecs", buf, sizeof(buf)) )
+        {
+            *puLong = atoi(buf);
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed  for MemCompactionDelaySecs\n",__FUNCTION__));
+            *puLong = 0;
+        }
+        return TRUE;
+    }
+
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -6466,6 +6482,15 @@ MemoryStatus_SetParamUlongValue
     {
         /* CID 339641 Unchecked return value : fix */
         if (syscfg_set_u_commit (NULL, "MemFragThreshold_Value", uValue) != 0) {
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemCompTargetUptime") == 0)
+    {
+        /* CID 339641 Unchecked return value : fix */
+        if (syscfg_set_u_commit (NULL, "MemCompactionDelaySecs", uValue) != 0) {
             return FALSE;
         }
         return TRUE;
