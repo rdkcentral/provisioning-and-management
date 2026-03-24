@@ -2094,6 +2094,11 @@ void* restoreAllDBs(void* arg)
 #elif defined(_COSA_BCM_MIPS_)
         v_secure_system("xf3_erase_nvram");
 #elif defined(_SR213_PRODUCT_REQ_)
+	/* Remove LXY database and certs from nvram during Factory-Reset */
+	v_secure_system("touch /nvram/ssa_factory_reset");
+	v_secure_system("rm -rf /nvram/lxy");
+	v_secure_system("rm -rf /nvram/certs");
+	v_secure_system("rm -rf /nvram/dl");
     /* Wipe out all user data. */
     v_secure_system("sync; find /nvram2 /data -mindepth 1 | grep -vE \"Q[[:xdigit:]]{8}$\" | xargs rm -rf; sync");
     //set flags for all necessary modules.voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
