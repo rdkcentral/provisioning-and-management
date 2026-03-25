@@ -2095,7 +2095,6 @@ void* restoreAllDBs(void* arg)
         v_secure_system("xf3_erase_nvram");
 #elif defined(_SR213_PRODUCT_REQ_)
 	/* Remove LXY database and certs from nvram during Factory-Reset */
-	v_secure_system("touch /nvram/ssa_factory_reset");
 	v_secure_system("rm -rf /nvram/lxy");
 	v_secure_system("rm -rf /nvram/certs");
 	v_secure_system("rm -rf /nvram/dl");
