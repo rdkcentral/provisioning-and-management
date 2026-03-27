@@ -109,6 +109,22 @@
 #include "ccsp_psm_helper.h"
 #include <rbus/rbus.h>
 
+#include <time.h>
+#define LOG_FILE_ROUTED "/tmp/pandm_1.txt"
+#define APPLY_PRINT(fmt ...) {\
+FILE *logfp = fopen(LOG_FILE_ROUTED , "a+");\
+if (logfp){\
+time_t s = time(NULL);\
+struct tm* current_time = localtime(&s);\
+fprintf(logfp, "[%02d:%02d:%02d] ",\
+current_time->tm_hour,\
+current_time->tm_min,\
+current_time->tm_sec);\
+fprintf(logfp, fmt);\
+fclose(logfp);\
+}\
+}\
+
 #ifdef CORE_NET_LIB
 #include <libnet.h>
 #endif

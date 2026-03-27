@@ -86,6 +86,22 @@
 #include <libnet.h>
 #endif
 
+#include <time.h>
+#define LOG_FILE_ROUTED "/tmp/pandm_2.txt"
+#define APPLY_PRINT(fmt ...) {\
+FILE *logfp = fopen(LOG_FILE_ROUTED , "a+");\
+if (logfp){\
+time_t s = time(NULL);\
+struct tm* current_time = localtime(&s);\
+fprintf(logfp, "[%02d:%02d:%02d] ",\
+current_time->tm_hour,\
+current_time->tm_min,\
+current_time->tm_sec);\
+fprintf(logfp, fmt);\
+fclose(logfp);\
+}\
+}\
+
 extern void* g_pDslhDmlAgent;
 extern ANSC_HANDLE bus_handle;
 extern char g_Subsystem[32];
@@ -2128,6 +2144,7 @@ CosaDmlDhcpv6Init
         Utopia_RawSet(&utctx,NULL,"router_managed_flag","1");
         SETI_INTO_UTOPIA(DHCPV6S_NAME,  "", 0, "", 0, "servertype", g_dhcpv6_server_type)
 
+        APPLY_PRINT("%s : Change DHCPv6 Server default behavior to stateful, and restart zebra to make it work. \n", __FUNCTION__);
        v_secure_system("sysevent set zebra-restart");
     }
 #endif
@@ -6979,6 +6996,7 @@ CosaDmlDhcpv6sEnable
     Utopia_Free(&utctx,1);
 
     #if defined(_BCI_FEATURE_REQ)
+    APPLY_PRINT("%s : starting zebra in business feature \n", __FUNCTION__);
     v_secure_system("sysevent set zebra-restart");
      
     #endif
@@ -7078,6 +7096,7 @@ CosaDmlDhcpv6sSetType
     if( TRUE == IsThisCurrentPartnerID("sky-") )
 #endif /** _SCER11BEL_PRODUCT_REQ_ */
         {
+            APPLY_PRINT("%s : restarting zebra in hub4 and scer11bel product \n", __FUNCTION__);
             v_secure_system("sysevent set zebra-restart");
         }
 #endif
@@ -7579,6 +7598,7 @@ CosaDmlDhcpv6sSetPoolCfg
 	if( bNeedZebraRestart )
 	{
         CcspTraceWarning(("%s Restarting Zebra Process\n", __FUNCTION__));
+        APPLY_PRINT("%s : restarting zebra due to static dns change \n", __FUNCTION__);
         v_secure_system("killall zebra && sysevent set zebra-restart");
 	}
 
@@ -8527,6 +8547,7 @@ CosaDmlDhcpv6sSetOption
                         ( _ansc_strcmp((const char*)sDhcpv6ServerPoolOption[Index][Index2].Value, (const char*)pEntry->Value) &&
                                   !_ansc_strlen((const char*)pEntry->PassthroughClient) ) ) )
                     {
+                        APPLY_PRINT("%s : restarting zebra due to DHCPv6 option change \n", __FUNCTION__);
                         v_secure_system("sysevent set zebra-restart");
                     }
 
@@ -9254,6 +9275,7 @@ int handle_MocaIpv6(char *status)
     }
     if (restart_zebra)
     {
+        APPLY_PRINT("%s : restarting zebra due to MoCA interface status change \n", __FUNCTION__);
         v_secure_system("sysevent set zebra-restart");
     }
 	if(NULL != Inf_name){
@@ -9937,6 +9959,7 @@ dhcpv6s_dbg_thrd(void * in)
                             }
                             commonSyseventSet(sysEventOut, InterfacePrefix);
                             enable_IPv6(interface_name);
+                            APPLY_PRINT("%s Restarting zebra for interface %s \n", __FUNCTION__, interface_name);
                             commonSyseventSet("zebra-restart","");
                         }
                     }
@@ -11176,8 +11199,10 @@ dhcpv6c_dbg_thrd(void * in)
                         }
 #else
 #ifndef _HUB4_PRODUCT_REQ_
+                        APPLY_PRINT("%s Setting ipv6_prefix sysevent for zebra if not HUB4\n", __FUNCTION__);
                         v_secure_system("sysevent set ipv6_prefix %s ",v6pref);
 #else
+                        APPLY_PRINT("%s Setting ipv6_prefix sysevent for zebra \n", __FUNCTION__);
                         v_secure_system("sysevent set zebra-restart ");
 #endif
 #endif /** _SCER11BEL_PRODUCT_REQ_ */
@@ -11316,6 +11341,7 @@ dhcpv6c_dbg_thrd(void * in)
     if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
 #endif
     {
+        APPLY_PRINT(("%s Setting zebra-restart sysevent for zebra if not ONESTACK_PRODUCT_REQ_\n", __FUNCTION__));
         v_secure_system("sysevent set zebra-restart");
     }
 #endif
@@ -11423,6 +11449,7 @@ void SwitchToGlobalIpv6()
         commonSyseventSet("ula_ipv6_enabled","0");
         commonSyseventSet("mode_switched","GLOBAL_IPV6");
         commonSyseventSet("disable_old_prefix_ra","true");
+        APPLY_PRINT("%s Setting zebra-restart and firewall-restart sysevent for zebra and firewall \n", __FUNCTION__);
         commonSyseventSet("zebra-restart","");
         commonSyseventSet("firewall-restart","");   
     }
@@ -11435,6 +11462,7 @@ void SwitchToULAIpv6()
     commonSyseventSet("ula_ipv6_enabled","1");
     commonSyseventSet("mode_switched","ULA_IPV6");
     commonSyseventSet("disable_old_prefix_ra","true");
+    APPLY_PRINT("%s Setting zebra-restart and firewall-restart sysevent for zebra and firewall \n", __FUNCTION__);
     commonSyseventSet("zebra-restart","");
     commonSyseventSet("firewall-restart","");
 }

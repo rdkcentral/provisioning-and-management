@@ -16,6 +16,22 @@
 #include <arpa/inet.h>
 #endif
 
+#include <time.h>
+#define LOG_FILE_ROUTED "/tmp/pandm_4.txt"
+#define APPLY_PRINT(fmt ...) {\
+FILE *logfp = fopen(LOG_FILE_ROUTED , "a+");\
+if (logfp){\
+time_t s = time(NULL);\
+struct tm* current_time = localtime(&s);\
+fprintf(logfp, "[%02d:%02d:%02d] ",\
+current_time->tm_hour,\
+current_time->tm_min,\
+current_time->tm_sec);\
+fprintf(logfp, fmt);\
+fclose(logfp);\
+}\
+}\
+
 #if defined (AMENITIES_NETWORK_ENABLED)
 #include "ccsp_trace.h"
 #include "cosa_deviceinfo_apis_custom.h"
@@ -588,7 +604,10 @@ int confirmAmentitiesNetworkVap(void)
         {
             bDisabledManagedWifi = FALSE;
             if (0 != commonSyseventSet("zebra-restart", ""))
+            {
                 CcspTraceError(("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__));
+                APPLY_PRINT("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__);
+            }
             if (0 != commonSyseventSet("dhcp_server-restart", ""))
                 CcspTraceError(("%s:%d, commonSyseventSet failed for dhcp_server-restart\n",__FUNCTION__,__LINE__));
 
@@ -1803,8 +1822,11 @@ void * ManageWiFiBridgeCreationThread(void * vArg)
             {
                 publishEvent(MANAGE_WIFI_LAN_BRIDGE,sManageWiFiInfo.aKey, RBUS);
                 CcspTraceInfo(("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__));
-                if (0 != commonSyseventSet("zebra-restart", ""))
+                APPLY_PRINT("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__);
+                if (0 != commonSyseventSet("zebra-restart", "")) {
                     CcspTraceError(("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__));
+                    APPLY_PRINT("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__);
+                }
                 CcspTraceInfo(("%s:%d, Restarting the dhcp_server\n",__FUNCTION__,__LINE__));
                 int fd = creat("/var/tmp/lan_not_restart", O_WRONLY|O_CREAT);
                 if (-1 != fd)
@@ -1865,8 +1887,11 @@ void * ManageWiFiBridgeCreationThread(void * vArg)
                     if (pThreadStruct->cFlag & (1 << 4))
                     {
                         CcspTraceInfo(("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__));
-                        if (0 != commonSyseventSet("zebra-restart", ""))
+                        APPLY_PRINT("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__);
+                        if (0 != commonSyseventSet("zebra-restart", "")) {
                             CcspTraceError(("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__));
+                            APPLY_PRINT("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__);
+                        }
                     }
                     if ((pThreadStruct->cFlag & (1 << 3)) || (pThreadStruct->cFlag & (1 << 2)))
                     {
@@ -1886,8 +1911,11 @@ void * ManageWiFiBridgeCreationThread(void * vArg)
                     CcspTraceInfo(("%s:%d,notifying:%s\n",__FUNCTION__,__LINE__, sManageWiFiInfo.aKey));
                     publishEvent(MANAGE_WIFI_LAN_BRIDGE,sManageWiFiInfo.aKey, RBUS);
                     CcspTraceInfo(("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__));
-                    if (0 != commonSyseventSet("zebra-restart", ""))
+                    APPLY_PRINT("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__);
+                    if (0 != commonSyseventSet("zebra-restart", "")) {
                         CcspTraceError(("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__));
+                        APPLY_PRINT("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__);
+                    }
                     CcspTraceInfo(("%s:%d, Restarting the dhcp_server\n",__FUNCTION__,__LINE__));
                     int fd = creat("/var/tmp/lan_not_restart", O_WRONLY|O_CREAT);
                     if (-1 != fd)
@@ -2343,9 +2371,11 @@ void processManageWifiData(backupLanconfig_t * pLanConfig, char cFlag, pErr pErr
     if ((!(cFlag & (1 << 0))) && (cFlag & (1 << 4)))
     {
         CcspTraceInfo(("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__));
+        APPLY_PRINT("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__);
         if (0 != commonSyseventSet("zebra-restart", ""))
         {
             CcspTraceError(("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__));
+            APPLY_PRINT("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__);
             snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"sysevent set failed for zebra-restart \n");
             pErrRetVal->ErrorCode = SYSEVENT_FAILURE;
             return ;

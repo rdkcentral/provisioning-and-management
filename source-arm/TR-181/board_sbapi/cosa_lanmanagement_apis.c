@@ -86,6 +86,22 @@
 #define SYSEVENT_ULA_ENABLE  "lan_ula_enable"
 #define LAN_BRIDGE "brlan0"
 
+#include <time.h>
+#define LOG_FILE_ROUTED "/tmp/pandm_3.txt"
+#define APPLY_PRINT(fmt ...) {\
+FILE *logfp = fopen(LOG_FILE_ROUTED , "a+");\
+if (logfp){\
+time_t s = time(NULL);\
+struct tm* current_time = localtime(&s);\
+fprintf(logfp, "[%02d:%02d:%02d] ",\
+current_time->tm_hour,\
+current_time->tm_min,\
+current_time->tm_sec);\
+fprintf(logfp, fmt);\
+fclose(logfp);\
+}\
+}\
+
 extern  ANSC_HANDLE  bus_handle;
 extern void* g_pDslhDmlAgent;
 extern ANSC_HANDLE bus_handle;
@@ -555,6 +571,7 @@ CosaDmlLanManagementSetCfg
         CosaDmlLanMngm_SetLanIpv6UlaEnable(pLanMngmCfg->LanIpv6UlaEnable);
         if(!pLanMngmCfg->LanIpv6UlaEnable)
         {
+            APPLY_PRINT("%s Killing zebra process as ULA is disabled \n", __FUNCTION__);
             system("killall zebra");
         }
         isIpv6UlaEnableChanged = TRUE;
@@ -579,6 +596,7 @@ CosaDmlLanManagementSetCfg
 
     if (isUlaPrefixChanged && pLanMngmCfg->LanIpv6UlaEnable)
     {
+        APPLY_PRINT("%s Restarting zebra as ULA prefix is changed \n", __FUNCTION__);
         system("killall zebra; sysevent set zebra-restart");
     }
     system("gw_lan_refresh");
