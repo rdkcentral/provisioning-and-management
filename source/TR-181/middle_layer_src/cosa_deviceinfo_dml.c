@@ -9792,11 +9792,14 @@ Feature_GetParamBoolValue
 #endif
 
 #if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
-    if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0) {
+    if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
+    {
         char buf[5] = {0};
         /*CID: 66608 Array compared against 0*/
-        if(!syscfg_get(NULL, "MultiProfileXDNS", buf, sizeof(buf))) {
-            if (strcmp(buf,"1") == 0) {
+        if(!syscfg_get(NULL, "MultiProfileXDNS", buf, sizeof(buf)))
+        {
+            if (strcmp(buf,"1") == 0)
+            {
                 *pBool = TRUE;
                 return TRUE;
             }
