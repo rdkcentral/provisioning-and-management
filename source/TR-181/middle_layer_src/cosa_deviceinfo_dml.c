@@ -9818,6 +9818,7 @@ Feature_GetParamBoolValue
         if (!is_devicemode_business())
         {
             CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+            t2_event_d("XDNS_MultiProfile_NotSupported", 1);
             return FALSE;
         }
 #endif // _ONESTACK_PRODUCT_REQ_
@@ -11680,6 +11681,7 @@ Feature_SetParamBoolValue
         if (!is_devicemode_business())
         {
             CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+            t2_event_d("XDNS_MultiProfile_NotSupported", 1);
             return FALSE;
         }
 #endif // _ONESTACK_PRODUCT_REQ_
