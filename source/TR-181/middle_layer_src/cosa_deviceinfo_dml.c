@@ -9794,33 +9794,21 @@ Feature_GetParamBoolValue
 #if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (is_devicemode_business())
-#endif // _ONESTACK_PRODUCT_REQ_
+        char buf[5] = {0};
+        /*CID: 66608 Array compared against 0*/
+        if(!syscfg_get(NULL, "MultiProfileXDNS", buf, sizeof(buf)))
         {
-            char buf[5] = {0};
-            /*CID: 66608 Array compared against 0*/
-            if(!syscfg_get(NULL, "MultiProfileXDNS", buf, sizeof(buf)))
+            if (strcmp(buf,"1") == 0)
             {
-                if (strcmp(buf,"1") == 0)
-                {
-                    *pBool = TRUE;
-                    return TRUE;
-                }
-            } else 
-                return FALSE;
-
-            *pBool = FALSE;
-
-            return TRUE;
+                *pBool = TRUE;
+                return TRUE;
+            }
         }
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (!is_devicemode_business())
-        {
-            CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+        else {
             return FALSE;
         }
-#endif // _ONESTACK_PRODUCT_REQ_
+        *pBool = FALSE;
+        return TRUE;
     }
 #endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
 
@@ -11680,6 +11668,7 @@ Feature_SetParamBoolValue
         if (!is_devicemode_business())
         {
             CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+            t2_event_d("XDNS_MultiProfile_NotSupported", 1);
             return FALSE;
         }
 #endif // _ONESTACK_PRODUCT_REQ_
