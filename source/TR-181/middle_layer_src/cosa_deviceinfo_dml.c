@@ -324,22 +324,6 @@ typedef struct {
   enum  pString_val type;
 } DEVICEINFO_SET_VALUE;
 
-// Declaring selfheal scripts
-char *SELF_HEAL_SCRIPTS[] = {
-    "selfheal_aggressive.sh",
-    "self_heal_connectivity_test.sh",
-    "resource_monitor.sh"
-};
-
-//Start/stop cron jobs
-typedef struct {
-    const char *name;
-    const char *key;
-    int def_val;
-} CronJob;
-
-#define SCRIPT_COUNT (sizeof(SELF_HEAL_SCRIPTS) / sizeof(SELF_HEAL_SCRIPTS[0]))
-
 static const DEVICEINFO_SET_VALUE deviceinfo_set_table[] = {
     { "ui_access",UIACCESS },
     { "ui_success",UISUCCESS},
@@ -6296,6 +6280,22 @@ MemoryStatus_GetParamUlongValue
         *puLong = atoi(buf);
         return TRUE;
     }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemCompTargetUptime") == 0)
+    {
+        char buf[12] = {0};
+        if ( 0 == syscfg_get (NULL, "MemCompactionDelaySecs", buf, sizeof(buf)) )
+        {
+            *puLong = atoi(buf);
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed  for MemCompactionDelaySecs\n",__FUNCTION__));
+            *puLong = 0;
+        }
+        return TRUE;
+    }
+
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -6466,6 +6466,15 @@ MemoryStatus_SetParamUlongValue
     {
         /* CID 339641 Unchecked return value : fix */
         if (syscfg_set_u_commit (NULL, "MemFragThreshold_Value", uValue) != 0) {
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_MemCompTargetUptime") == 0)
+    {
+        /* CID 339641 Unchecked return value : fix */
+        if (syscfg_set_u_commit (NULL, "MemCompactionDelaySecs", uValue) != 0) {
             return FALSE;
         }
         return TRUE;
@@ -9810,33 +9819,21 @@ Feature_GetParamBoolValue
 #if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (is_devicemode_business())
-#endif // _ONESTACK_PRODUCT_REQ_
+        char buf[5] = {0};
+        /*CID: 66608 Array compared against 0*/
+        if(!syscfg_get(NULL, "MultiProfileXDNS", buf, sizeof(buf)))
         {
-            char buf[5] = {0};
-            /*CID: 66608 Array compared against 0*/
-            if(!syscfg_get(NULL, "MultiProfileXDNS", buf, sizeof(buf)))
+            if (strcmp(buf,"1") == 0)
             {
-                if (strcmp(buf,"1") == 0)
-                {
-                    *pBool = TRUE;
-                    return TRUE;
-                }
-            } else 
-                return FALSE;
-
-            *pBool = FALSE;
-
-            return TRUE;
+                *pBool = TRUE;
+                return TRUE;
+            }
         }
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (!is_devicemode_business())
-        {
-            CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+        else {
             return FALSE;
         }
-#endif // _ONESTACK_PRODUCT_REQ_
+        *pBool = FALSE;
+        return TRUE;
     }
 #endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
 
@@ -11696,6 +11693,7 @@ Feature_SetParamBoolValue
         if (!is_devicemode_business())
         {
             CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
+            t2_event_d("XDNS_MultiProfile_NotSupported", 1);
             return FALSE;
         }
 #endif // _ONESTACK_PRODUCT_REQ_
@@ -14241,6 +14239,7 @@ SelfHeal_SetParamBoolValue
             AnscTraceWarning(("syscfg_commit failed for SelfHealCronEnable param update\n"));
             return FALSE;
 	    }
+        CcspTraceInfo(("SelfHeal Cron RFC updated. Reboot required to apply mode change\n"));
         return TRUE;
     }
     return FALSE;
@@ -25172,12 +25171,10 @@ SelfHeal_SetParamUlongValue
             return TRUE;
         }
         
-        CcspTraceInfo(("AggressiveInterval updated from %lu to %lu minutes\n", currentInterval, uValue));
         // First, remove old cron entry
         v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
         // Then, add new cron entry with updated interval
         v_secure_system("(crontab -l 2>/dev/null; echo \"*/%lu * * * * /usr/ccsp/tad/selfheal_aggressive.sh\") | crontab -", uValue);
-        
         CcspTraceInfo(("Selfheal aggressive cron job restarted with interval: %lu minutes\n", uValue));
     }
     else
