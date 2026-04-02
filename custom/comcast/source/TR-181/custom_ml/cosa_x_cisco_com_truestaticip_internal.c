@@ -208,7 +208,7 @@ CosaTSIPInitialize
 
     CosaDmlTSIPLoadMappingFile((ANSC_HANDLE)pMyObject);
 
-#ifdef _COSA_FOR_BCI_
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     /* Initialize Device.X_CISCO_COM_TrueStaticIP. */
     CosaDmlTSIPGetCfg(NULL, &pMyObject->TSIPCfg);
 #endif
