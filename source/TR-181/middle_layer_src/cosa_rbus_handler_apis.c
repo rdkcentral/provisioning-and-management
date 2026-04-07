@@ -73,7 +73,21 @@ static token_t sysevent_token = 0;
 #if defined (USE_REMOTE_DEBUGGER)
 char RRDIssueType[256];
 char RRDWebCfgData[256];
+char RRDProfileCategory[256];
+char RRDProfileData[8192]; // Large buffer for JSON profile data
 bool RRD_BoolValue;
+
+// RRD RBUS Event Names
+#define RRD_SET_ISSUE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKRemoteDebugger.IssueType"
+#define RRD_WEBCFG_ISSUE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKRemoteDebugger.WebCfgData" 
+#define RRD_SET_PROFILE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.setProfileData"
+#define RRD_GET_PROFILE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.getProfileData"
+#define RDM_DOWNLOAD_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKRemoteDebugger.DownloadTrigger"
+
+// Function declarations for RRD profile handlers
+rbusError_t RRDProfile_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusSetHandlerOptions_t* opts);
+rbusError_t RRDProfile_GetStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts);
+rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts);
 #endif
 /***********************************************************************
 
@@ -115,6 +129,8 @@ rbusDataElement_t devCtrlRbusDataElements[] = {
 #if defined (USE_REMOTE_DEBUGGER)  
     {RRD_SET_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRD_GetStringHandler, RRD_SetStringHandler, NULL, NULL, NULL, NULL}},
     {RRD_WEBCFG_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDWebCfg_GetStringHandler, RRDWebCfg_SetStringHandler, NULL, NULL, NULL, NULL}},
+    {RRD_SET_PROFILE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDProfile_GetStringHandler, RRDProfile_SetStringHandler, NULL, NULL, NULL, NULL}},
+    {RRD_GET_PROFILE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDProfile_GetDataHandler, NULL, NULL, NULL, NULL, NULL}},
     {RDM_DOWNLOAD_EVENT,RBUS_ELEMENT_TYPE_EVENT, {NULL, RRD_SetBoolHandler, NULL, NULL, NULL, NULL}},
 #endif  
 };
@@ -793,6 +809,149 @@ rbusError_t RRD_SetBoolHandler(rbusHandle_t handle, rbusProperty_t property, rbu
 
     CcspTraceInfo(("Exit %s \n", __FUNCTION__));
 
+    return RBUS_ERROR_SUCCESS;
+}
+
+// Handler for setProfileData - stores the category selection
+rbusError_t RRDProfile_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusSetHandlerOptions_t* opts)
+{
+    (void) handle;
+    (void) opts;
+    char const* propertyName;
+    rbusError_t ret = RBUS_ERROR_SUCCESS;
+
+    CcspTraceInfo(("Enter %s \n", __FUNCTION__));
+
+    propertyName = rbusProperty_GetName(property);
+    if(!propertyName) {
+        CcspTraceError(("[%s]: Invalid property name\n", __FUNCTION__));
+        return RBUS_ERROR_INVALID_INPUT;
+    }
+
+    if(strcmp(propertyName, RRD_SET_PROFILE_EVENT) == 0) {
+        char prev_val[256] = {0};
+        rbusValue_t value = rbusProperty_GetValue(property);
+        
+        if(rbusValue_GetType(value) != RBUS_STRING) {
+            CcspTraceError(("[%s]: Invalid type for setProfileData\n", __FUNCTION__));
+            return RBUS_ERROR_INVALID_INPUT;
+        }
+
+        strncpy(prev_val, RRDProfileCategory, sizeof(prev_val)-1);
+        const char* str = rbusValue_GetString(value, NULL);
+        
+        if(strlen(str) > 255) {
+            CcspTraceError(("[%s]: String too long for setProfileData\n", __FUNCTION__));
+            return RBUS_ERROR_INVALID_INPUT;
+        }
+
+        strncpy(RRDProfileCategory, str, sizeof(RRDProfileCategory)-1);
+        CcspTraceInfo(("[%s]: setProfileData value: %s\n", __FUNCTION__, RRDProfileCategory));
+
+        // Store the category selection in syscfg
+        if(syscfg_set_commit(NULL, "RDKRemoteDebuggerProfileCategory", RRDProfileCategory) != 0) {
+            CcspTraceError(("[%s]: Failed to store profile category\n", __FUNCTION__));
+            return RBUS_ERROR_BUS_ERROR;
+        }
+
+        ret = sendUpdateEvent(RRD_SET_PROFILE_EVENT, RRDProfileCategory, prev_val, RBUS_STRING);
+        if(ret != RBUS_ERROR_SUCCESS) {
+            CcspTraceWarning(("[%s]: Failed to publish setProfileData event\n", __FUNCTION__));
+        }
+    }
+
+    CcspTraceInfo(("Exit %s \n", __FUNCTION__));
+    return RBUS_ERROR_SUCCESS;
+}
+
+// Handler for getProfileData - returns the selected profile category
+rbusError_t RRDProfile_GetStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
+{
+    (void) handle;
+    (void) opts;
+    char const* propertyName;
+
+    CcspTraceInfo(("Enter %s \n", __FUNCTION__));
+
+    propertyName = rbusProperty_GetName(property);
+    if(!propertyName) {
+        CcspTraceError(("[%s]: Invalid property name\n", __FUNCTION__));
+        return RBUS_ERROR_INVALID_INPUT;
+    }
+
+    if(strcmp(propertyName, RRD_SET_PROFILE_EVENT) == 0) {
+        rbusValue_t value;
+        rbusValue_Init(&value);
+        rbusValue_SetString(value, RRDProfileCategory);
+        rbusProperty_SetValue(property, value);
+        rbusValue_Release(value);
+    }
+
+    CcspTraceInfo(("Exit %s \n", __FUNCTION__));
+    return RBUS_ERROR_SUCCESS;
+}
+
+// Handler for getProfileData - returns the actual profile JSON data
+rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
+{
+    (void) handle;
+    (void) opts;
+    char const* propertyName;
+    extern rbusHandle_t rbusHandle; // This should be available from main tr69hostif
+
+    CcspTraceInfo(("Enter %s \n", __FUNCTION__));
+
+    propertyName = rbusProperty_GetName(property);
+    if(!propertyName) {
+        CcspTraceError(("[%s]: Invalid property name\n", __FUNCTION__));
+        return RBUS_ERROR_INVALID_INPUT;
+    }
+
+    if(strcmp(propertyName, RRD_GET_PROFILE_EVENT) == 0) {
+        // Call the existing Device_DeviceInfo implementation
+        HOSTIF_MsgData_t stMsgData;
+        memset(&stMsgData, 0, sizeof(stMsgData));
+        
+        // Set up the message data structure
+        strncpy(stMsgData.paramName, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.getProfileData", 
+                sizeof(stMsgData.paramName)-1);
+        stMsgData.paramtype = hostIf_StringType;
+
+        // Call the existing implementation (we need to expose this somehow)
+        // For now, read from the JSON file directly using the same logic
+        const char *filename = "/etc/rrd/remote_debugger.json";
+        // Alternative: /opt/conf/rdk_remote_debugger_profile.json
+        const char *fallback_filename = "/opt/conf/rdk_remote_debugger_profile.json";
+        
+        FILE *fp = fopen(filename, "rb");
+        if (!fp) {
+            fp = fopen(fallback_filename, "rb");
+        }
+        
+        if (fp) {
+            // Read and process JSON file similar to Device_DeviceInfo implementation
+            fseek(fp, 0L, SEEK_END);
+            long fileSz = ftell(fp);
+            rewind(fp);
+            
+            if (fileSz > 0 && fileSz < sizeof(RRDProfileData)) {
+                size_t bytesRead = fread(RRDProfileData, 1U, (size_t)fileSz, fp);
+                RRDProfileData[bytesRead] = '\0';
+                
+                rbusValue_t value;
+                rbusValue_Init(&value);
+                rbusValue_SetString(value, RRDProfileData);
+                rbusProperty_SetValue(property, value);
+                rbusValue_Release(value);
+            }
+            fclose(fp);
+        } else {
+            CcspTraceError(("[%s]: Unable to read profile file\n", __FUNCTION__));
+            return RBUS_ERROR_BUS_ERROR;
+        }
+    }
+
+    CcspTraceInfo(("Exit %s \n", __FUNCTION__));
     return RBUS_ERROR_SUCCESS;
 }
 
