@@ -78,6 +78,7 @@ char RRDProfileData[8192]; // Large buffer for JSON profile data
 bool RRD_BoolValue;
 
 // RRD RBUS Event Names
+
 #define RRD_SET_PROFILE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.setProfileData"
 #define RRD_GET_PROFILE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.getProfileData"
 
@@ -894,7 +895,6 @@ rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t proper
     (void) handle;
     (void) opts;
     char const* propertyName;
-    extern rbusHandle_t rbusHandle; // This should be available from main tr69hostif
 
     CcspTraceInfo(("Enter %s \n", __FUNCTION__));
 
@@ -905,25 +905,11 @@ rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t proper
     }
 
     if(strcmp(propertyName, RRD_GET_PROFILE_EVENT) == 0) {
-        // Call the existing Device_DeviceInfo implementation
-        HOSTIF_MsgData_t stMsgData;
-        memset(&stMsgData, 0, sizeof(stMsgData));
-        
-        // Set up the message data structure
-        strncpy(stMsgData.paramName, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.getProfileData", 
-                sizeof(stMsgData.paramName)-1);
-        stMsgData.paramtype = hostIf_StringType;
-
-        // Call the existing implementation (we need to expose this somehow)
-        // For now, read from the JSON file directly using the same logic
+        // Read RDK Remote Debugger profile data from JSON file directly
+        // This is an RBus handler, so we use native RBus types and methods
         const char *filename = "/etc/rrd/remote_debugger.json";
-        // Alternative: /opt/conf/rdk_remote_debugger_profile.json
-        const char *fallback_filename = "/opt/conf/rdk_remote_debugger_profile.json";
         
         FILE *fp = fopen(filename, "rb");
-        if (!fp) {
-            fp = fopen(fallback_filename, "rb");
-        }
         
         if (fp) {
             // Read and process JSON file similar to Device_DeviceInfo implementation
