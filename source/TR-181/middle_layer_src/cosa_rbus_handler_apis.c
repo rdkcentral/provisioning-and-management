@@ -917,7 +917,7 @@ rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t proper
             long fileSz = ftell(fp);
             rewind(fp);
             
-            if (fileSz > 0 && fileSz < sizeof(RRDProfileData)) {
+            if (fileSz > 0 && (size_t)fileSz < sizeof(RRDProfileData)) {
                 size_t bytesRead = fread(RRDProfileData, 1U, (size_t)fileSz, fp);
                 RRDProfileData[bytesRead] = '\0';
                 
