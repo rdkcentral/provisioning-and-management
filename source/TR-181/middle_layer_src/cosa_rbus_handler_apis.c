@@ -78,11 +78,8 @@ char RRDProfileData[8192]; // Large buffer for JSON profile data
 bool RRD_BoolValue;
 
 // RRD RBUS Event Names
-#define RRD_SET_ISSUE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKRemoteDebugger.IssueType"
-#define RRD_WEBCFG_ISSUE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKRemoteDebugger.WebCfgData" 
 #define RRD_SET_PROFILE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.setProfileData"
 #define RRD_GET_PROFILE_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.getProfileData"
-#define RDM_DOWNLOAD_EVENT "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKRemoteDebugger.DownloadTrigger"
 
 // Function declarations for RRD profile handlers
 rbusError_t RRDProfile_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, rbusSetHandlerOptions_t* opts);
