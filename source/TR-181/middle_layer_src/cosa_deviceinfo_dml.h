@@ -4989,4 +4989,94 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
         char*                       ParamName,
         BOOL                        bValue
     );
+
+/**********************************************************************
+
+APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.DiskSize
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.StatsInterval
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Tunables.Swappiness
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Tunables.WatermarkScaleFactor
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Tunables.PageCluster
+
+    *  MEMSWAP_GetParamBoolValue
+    *  MEMSWAP_GetParamUlongValue
+    *  MEMSWAP_SetParamBoolValue
+    *  MEMSWAP_SetParamUlongValue
+
+
+**********************************************************************/
+
+/**
+ * @brief Retrieves boolean parameter values for MEMSWAP object.
+ *
+ * @param[in]  hInsContext - Instance handle for the MEMSWAP object.
+ * @param[in]  ParamName   - Pointer to the parameter name
+ * @param[out] pBool       - Pointer to store the boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ */
+BOOL
+MEMSWAP_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for MACsec required feature enable status.
+ *
+ * @param[in] hInsContext Instance handle for the MACsecRequired context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MEMSWAP_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+BOOL
+MEMSWAP_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pValue
+    );
+
+BOOL
+MEMSWAP_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       value
+    );
+
+BOOL
+Tunables_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pValue
+    );
+
+BOOL
+Tunables_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    );
+
 #endif
