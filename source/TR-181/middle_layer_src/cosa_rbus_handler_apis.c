@@ -127,8 +127,8 @@ rbusDataElement_t devCtrlRbusDataElements[] = {
 #if defined (USE_REMOTE_DEBUGGER)  
     {RRD_SET_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRD_GetStringHandler, RRD_SetStringHandler, NULL, NULL, NULL, NULL}},
     {RRD_WEBCFG_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDWebCfg_GetStringHandler, RRDWebCfg_SetStringHandler, NULL, NULL, NULL, NULL}},
-    {RRD_SET_PROFILE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDProfile_GetStringHandler, RRDProfile_SetStringHandler, NULL, NULL, NULL, NULL}},
-    {RRD_GET_PROFILE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDProfile_GetDataHandler, NULL, NULL, NULL, NULL, NULL}},
+    {RRD_SET_PROFILE_EVENT, RBUS_ELEMENT_TYPE_PROPERTY, {RRDProfile_GetStringHandler, RRDProfile_SetStringHandler, NULL, NULL, NULL, NULL}},
+    {RRD_GET_PROFILE_EVENT, RBUS_ELEMENT_TYPE_PROPERTY, {RRDProfile_GetDataHandler, NULL, NULL, NULL, NULL, NULL}},
     {RDM_DOWNLOAD_EVENT,RBUS_ELEMENT_TYPE_EVENT, {NULL, RRD_SetBoolHandler, NULL, NULL, NULL, NULL}},
 #endif  
 };
@@ -907,9 +907,13 @@ rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t proper
     if(strcmp(propertyName, RRD_GET_PROFILE_EVENT) == 0) {
         // Read RDK Remote Debugger profile data from JSON file directly
         // This is an RBus handler, so we use native RBus types and methods
-        const char *filename = "/etc/rrd/remote_debugger.json";
+        const char *filename = "/etc/tr69hostif/rdk_remote_debugger_profile.json";
+        const char *fallback_filename = "/opt/conf/rdk_remote_debugger_profile.json";
         
         FILE *fp = fopen(filename, "rb");
+        if (!fp) {
+            fp = fopen(fallback_filename, "rb");
+        }
         
         if (fp) {
             // Read and process JSON file similar to Device_DeviceInfo implementation
