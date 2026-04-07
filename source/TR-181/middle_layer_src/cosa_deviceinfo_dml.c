@@ -10110,35 +10110,35 @@ SyndicationFlowControl_GetParamStringValue
     return:     TRUE if succeeded.
 
 **********************************************************************/
-BOOL
-MEMSWAP_GetParamBoolValue
-
-    (
-        ANSC_HANDLE                 hInsContext,
-        char*                       ParamName,
-        BOOL*                       pBool
-    )
-{
-    UNREFERENCED_PARAMETER(hInsContext);
-    if (strcmp(ParamName, "Enable") == 0)
-    {
-       /* Collect Value */
-       char *strValue = NULL;
-       int retPsmGet = CCSP_SUCCESS;
-
-
-        retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable", NULL, &strValue);
-        if (retPsmGet == CCSP_SUCCESS) {
-            *pBool = _ansc_atoi(strValue);
-            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
-        }
-        else
-            *pBool = FALSE;
-
-         return TRUE;
-    }
-    return FALSE;
-}
+// BOOL
+// MEMSWAP_GetParamBoolValue
+//
+//     (
+//         ANSC_HANDLE                 hInsContext,
+//         char*                       ParamName,
+//         BOOL*                       pBool
+//     )
+// {
+//     UNREFERENCED_PARAMETER(hInsContext);
+//     if (strcmp(ParamName, "Enable") == 0)
+//     {
+//        /* Collect Value */
+//        char *strValue = NULL;
+//        int retPsmGet = CCSP_SUCCESS;
+//
+//
+//         retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable", NULL, &strValue);
+//         if (retPsmGet == CCSP_SUCCESS) {
+//             *pBool = _ansc_atoi(strValue);
+//             ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+//         }
+//         else
+//             *pBool = FALSE;
+//
+//          return TRUE;
+//     }
+//     return FALSE;
+// }
 
 
 /**********************************************************************
@@ -12234,31 +12234,31 @@ UploadLogsOnUnscheduledReboot_SetParamBoolValue
     return:     TRUE if succeeded.
 
 **********************************************************************/
-BOOL
-MEMSWAP_SetParamBoolValue
-    (
-        ANSC_HANDLE                 hInsContext,
-        char*                       ParamName,
-        BOOL                        bValue
-    )
-{
-    if (IsBoolSame(hInsContext, ParamName, bValue, MEMSWAP_GetParamBoolValue))
-        return TRUE;
-
-    if (strcmp(ParamName, "Enable") == 0)
-    {
-       int retPsmGet = CCSP_SUCCESS;
-
-       retPsmGet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable", ccsp_string, bValue ? "1" : "0");
-       if (retPsmGet != CCSP_SUCCESS) {
-           CcspTraceError(("Set failed for MEMSWAP support \n"));
-           return FALSE;
-       }
-       CcspTraceInfo(("Successfully set MEMSWAP support \n"));
-       return TRUE;
-    }
-    return FALSE;
-}
+// BOOL
+// MEMSWAP_SetParamBoolValue
+//     (
+//         ANSC_HANDLE                 hInsContext,
+//         char*                       ParamName,
+//         BOOL                        bValue
+//     )
+// {
+//     if (IsBoolSame(hInsContext, ParamName, bValue, MEMSWAP_GetParamBoolValue))
+//         return TRUE;
+//
+//     if (strcmp(ParamName, "Enable") == 0)
+//     {
+//        int retPsmGet = CCSP_SUCCESS;
+//
+//        retPsmGet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable", ccsp_string, bValue ? "1" : "0");
+//        if (retPsmGet != CCSP_SUCCESS) {
+//            CcspTraceError(("Set failed for MEMSWAP support \n"));
+//            return FALSE;
+//        }
+//        CcspTraceInfo(("Successfully set MEMSWAP support \n"));
+//        return TRUE;
+//     }
+//     return FALSE;
+// }
 
 /**********************************************************************
 
@@ -25614,5 +25614,220 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
 
     return FALSE;
 
+}
+
+// TODO: Define in proper place
+#define ZRAM_DEVICE "zram0"
+uint32_t zram_disk_size = 300; /* 300MB */
+uint32_t zram_stats_interval = 30; /* 30 minutes */
+uint32_t swappiness = 200; /* Default swappiness value */
+uint32_t watermark_scale_factor = 80; /* Default watermark scale factor */
+uint32_t page_cluster = 0; /* Default page cluster value */
+
+// TODO: Formattings and comments
+BOOL
+MEMSWAP_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        struct sysinfo info;
+        int ret = sysinfo(&info);
+        if (ret != 0) {
+            CcspTraceError(("sysinfo failed: %s\n", strerror(errno)));
+            return FALSE;
+        }
+
+        *pBool = (info.totalswap > 0) ? TRUE : FALSE;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+BOOL
+MEMSWAP_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, MEMSWAP_GetParamBoolValue))
+    {
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        // Format ZRAM block device path
+        char zram_device_path[64];
+        snprintf(zram_device_path, sizeof(zram_device_path), "/dev/%s", ZRAM_DEVICE);
+
+        if (bValue) {
+            // Reset the ZRAM device before configuring
+            char reset_path[64];
+            snprintf(reset_path, sizeof(reset_path), "/sys/block/%s/reset", ZRAM_DEVICE);
+            FILE *fp = fopen(reset_path, "w");
+            if (fp == NULL) {
+                CcspTraceError(("Failed to open %s for writing\n", reset_path));
+                return FALSE;
+            }
+            fprintf(fp, "1");
+            fclose(fp);
+
+            // Configure disk size for ZRAM device
+            char disk_size_path[64];
+            snprintf(disk_size_path, sizeof(disk_size_path), "/sys/block/%s/disksize", ZRAM_DEVICE);
+            fp = fopen(disk_size_path, "w");
+            if (fp == NULL) {
+                CcspTraceError(("Failed to open %s for writing\n", disk_size_path));
+                return FALSE;
+            }
+            fprintf(fp, "%uM", zram_disk_size);
+            fclose(fp);
+
+            // Configure swappiness
+            v_secure_system("sysctl -w vm.swappiness=%u", swappiness);
+
+            // Configure watermark scale factor
+            v_secure_system("sysctl -w vm.watermark_scale_factor=%u", watermark_scale_factor);
+
+            // Configure page cluster
+            v_secure_system("sysctl -w vm.page-cluster=%u", page_cluster);
+
+            // Format the ZRAM device for SWAP
+            v_secure_system("/sbin/mkswap %s", zram_device_path);
+
+            // Enable SWAP on the ZRAM device
+            v_secure_system("/sbin/swapon %s", zram_device_path);
+        } else {
+            // Disable SWAP
+            v_secure_system("/sbin/swapoff %s", zram_device_path);
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+BOOL
+MEMSWAP_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "DiskSize") == 0)
+    {
+        *puLong = zram_disk_size;
+        return TRUE;
+    } else if (strcmp(ParamName, "StatsInterval") == 0)
+    {
+        // For demonstration, returning a fixed value. This can be extended to read from actual stats if needed.
+        *puLong = 60; // Stats collection interval in seconds
+        return TRUE;
+    }
+    return FALSE;
+}
+
+BOOL
+MEMSWAP_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "DiskSize") == 0)
+    {
+        if (uValue < 50 || uValue > 1024 ) {
+            CcspTraceWarning(("DiskSize value should be between 50MB and 1GB\n"));
+            return FALSE;
+        }
+        zram_disk_size = uValue;
+        return TRUE;
+    } else if (strcmp(ParamName, "StatsInterval") == 0) {
+        if (uValue < 10 || uValue > 120) {
+            CcspTraceWarning(("StatsInterval value should be between 10 seconds and 1 hour\n"));
+            return FALSE;
+        }
+        zram_stats_interval = uValue;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+BOOL
+Tunables_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Swappiness") == 0)
+    {
+        *pValue = swappiness;
+        return TRUE;
+    } else if (strcmp(ParamName, "WatermarkScaleFactor") == 0)
+    {
+        *pValue = watermark_scale_factor;
+        return TRUE;
+    } else if (strcmp(ParamName, "PageCluster") == 0)
+    {
+        *pValue = page_cluster;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+BOOL
+Tunables_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "Swappiness") == 0)
+    {
+        if (uValue > 200) {
+            CcspTraceWarning(("Swappiness value should be between 0 and 200\n"));
+            return FALSE;
+        }
+        swappiness = uValue;
+        v_secure_system("sysctl -w vm.swappiness=%u", swappiness);
+        return TRUE;
+    } else if (strcmp(ParamName, "WatermarkScaleFactor") == 0)
+    {
+        if (uValue < 10 || uValue > 200) {
+            CcspTraceWarning(("WatermarkScaleFactor value should be between 10 and 200\n"));
+            return FALSE;
+        }
+        watermark_scale_factor = uValue;
+        v_secure_system("sysctl -w vm.watermark_scale_factor=%u", watermark_scale_factor);
+        return TRUE;
+    } else if (strcmp(ParamName, "PageCluster") == 0)
+    {
+        if (uValue > 3) {
+            CcspTraceWarning(("PageCluster value should be between 0 and 3\n"));
+            return FALSE;
+        }
+        page_cluster = uValue;
+        v_secure_system("sysctl -w vm.page-cluster=%u", page_cluster);
+        return TRUE;
+    }
+    return FALSE;
 }
 
