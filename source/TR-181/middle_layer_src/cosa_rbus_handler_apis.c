@@ -907,14 +907,9 @@ rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t proper
     if(strcmp(propertyName, RRD_GET_PROFILE_EVENT) == 0) {
         // Read RDK Remote Debugger profile data from JSON file directly
         // This is an RBus handler, so we use native RBus types and methods
-        const char *filename = "/etc/tr69hostif/rdk_remote_debugger_profile.json";
-        const char *fallback_filename = "/opt/conf/rdk_remote_debugger_profile.json";
+        const char *filename = "/etc/rrd/remote_debugger.json";
         
         FILE *fp = fopen(filename, "rb");
-        if (!fp) {
-            fp = fopen(fallback_filename, "rb");
-        }
-        
         if (fp) {
             // Read and process JSON file similar to Device_DeviceInfo implementation
             fseek(fp, 0L, SEEK_END);
