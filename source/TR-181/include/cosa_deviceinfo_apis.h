@@ -33,9 +33,10 @@
    limitations under the License.
 **********************************************************************/
 
+
 /**************************************************************************
 
-    module: cosa_deviceinfo_apis.h
+    module: cosa_deviceinfo_dml.h
 
         For COSA Data Model Library Development
 
@@ -56,17 +57,28 @@
 
     revision:
 
-        01/11/2011    initial revision.
+        01/14/2011    initial revision.
 
 **************************************************************************/
 
 
-#ifndef  _COSA_DEVICEINFO_APIS_H
-#define  _COSA_DEVICEINFO_APIS_H
+#ifndef  _COSA_DEVICEINFO_DML_H
+#define  _COSA_DEVICEINFO_DML_H
 
 #include "cosa_apis.h"
 #include "plugin_main_apis.h"
-#include <cjson/cJSON.h>
+#include "cosa_deviceinfo_internal.h"
+#include "cosa_deviceinfo_apis.h"
+#include "cosa_deviceinfo_dml_custom.h"
+#define  PARTNER_ID_LEN  64
+#define PARAM_TCP_IPV4_ENABLE "Device.QOS.X_RDK_LatencyMeasure_IPv4Enable"
+#define COMP_TCP_IPV4_ENABLE "com.cisco.spvtg.ccsp.tdm"
+#define DBUSPATH_TCP_IPV4_ENABLE "/com/cisco/spvtg/ccsp/tdm"
+
+#define PARAM_TCP_IPV6_ENABLE "Device.QOS.X_RDK_LatencyMeasure_IPv6Enable"
+#define COMP_TCP_IPV6_ENABLE "com.cisco.spvtg.ccsp.tdm"
+#define DBUSPATH_TCP_IPV6_ENABLE "/com/cisco/spvtg/ccsp/tdm"
+
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
 
 #define LOGGING_MODULE           "PAM"
@@ -74,2123 +86,4907 @@
 #else
 #define OnboardLog(...)
 #endif
-#include <sys/sysinfo.h>
+/***********************************************************************
 
-#include "cm_hal.h"
+ APIs for Object:
 
-#define MAX_SECURITYNUM_LEN         128
-#define MAX_SECURITYNAME_LEN        18      // includes room for NULL terminator
+    DeviceInfo.
 
-#define PARTNERID_FILE  "/nvram/.partner_ID"
+    *  DeviceInfo_GetParamBoolValue
+    *  DeviceInfo_GetParamIntValue
+    *  DeviceInfo_GetParamUlongValue
+    *  DeviceInfo_GetParamStringValue
+    *  DeviceInfo_SetParamBoolValue
+    *  DeviceInfo_SetParamIntValue
+    *  DeviceInfo_SetParamUlongValue
+    *  DeviceInfo_SetParamStringValue
+    *  DeviceInfo_Validate
+    *  DeviceInfo_Commit
+    *  DeviceInfo_Rollback
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-#include "devicemode.h"
-#endif // _ONESTACK_PRODUCT_REQ_
-
-/**********************************************************************
-                STRUCTURE AND CONSTANT DEFINITIONS
-**********************************************************************/
-
-#if !defined (RESOURCE_OPTIMIZATION)
-
-enum
-{
-    COSA_DML_PROC_STATUS_Running = 1,
-    COSA_DML_PROC_STATUS_Sleeping,
-    COSA_DML_PROC_STATUS_Stopped,
-    COSA_DML_PROC_STATUS_Idle,
-    COSA_DML_PROC_STATUS_Uninterruptible,
-    COSA_DML_PROC_STATUS_Zombie,
-};
-
-typedef  struct
-_COSA_PROCESS_ENTRY
-{
-    ULONG                           Pid;
-    char                            Command[256];
-    ULONG                           Size;
-    ULONG                           Priority;
-    ULONG                           CPUTime;
-    ULONG                           State;
-}
-COSA_PROCESS_ENTRY, *PCOSA_PROCESS_ENTRY;
-
-#define  COSA_DATAMODEL_PROCESS_CLASS_CONTENT                                                   \
-    /* duplication of the base object class content */                                      \
-    COSA_BASE_CONTENT                                                                       \
-    ULONG                           ProcessNumberOfEntries;                             \
-    ULONG                           CPUUsage;                                           \
-    PCOSA_PROCESS_ENTRY             pProcTable;                                       \
-
-typedef  struct
-_COSA_DATAMODEL_PROCESS
-{
-    COSA_DATAMODEL_PROCESS_CLASS_CONTENT
-}
-COSA_DATAMODEL_PROCSTATUS,  *PCOSA_DATAMODEL_PROCSTATUS;
-
-#endif
-
-typedef  struct
-_COSA_BOOTSTRAP_STR
-{
-    CHAR                    ActiveValue[512];
-    CHAR		    UpdateSource[16];
-}
-COSA_BOOTSTRAP_STR;
-
-typedef  struct
-_COSA_BOOTSTRAP_BOOL
-{
-    BOOL                    ActiveValue;
-    CHAR		    UpdateSource[16];
-}
-COSA_BOOTSTRAP_BOOL;
-
-typedef  struct
-COSA_AUTO_REBOOT
-{
-    BOOL            Enable;
-    INT	            UpTime;
-}
-COSA_AUTO_REBOOT;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_FOOTER_CLASS_CONTENT
-{
-	COSA_BOOTSTRAP_STR 		PartnerLink;
-	COSA_BOOTSTRAP_STR 		UserGuideLink;
-	COSA_BOOTSTRAP_STR 		CustomerCentralLink;
-	COSA_BOOTSTRAP_STR		PartnerText;
-	COSA_BOOTSTRAP_STR		UserGuideText;
-	COSA_BOOTSTRAP_STR		CustomerCentralText;
-}
-COSA_DATAMODEL_RDKB_FOOTER, *PCOSA_DATAMODEL_RDKB_FOOTER;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_CONNECTION_CLASS_CONTENT
-{
-	COSA_BOOTSTRAP_STR 		MSOmenu;
-	COSA_BOOTSTRAP_STR 		MSOinfo;
-	COSA_BOOTSTRAP_STR 		StatusTitle;
-	COSA_BOOTSTRAP_STR 		StatusInfo;
-}
-COSA_DATAMODEL_RDKB_CONNECTION, *PCOSA_DATAMODEL_RDKB_CONNECTION;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_NETWORKDIAGNOSTICTOOLS_CLASS_CONTENT
-{
-	COSA_BOOTSTRAP_STR 		ConnectivityTestURL;
-}
-COSA_DATAMODEL_RDKB_NETWORKDIAGNOSTICTOOLS, *PCOSA_DATAMODEL_RDKB_NETWORKDIAGNOSTICTOOLS;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_WIFIPERSONALIZATION_CLASS_CONTENT
-{
-	COSA_BOOTSTRAP_BOOL			Support;
-	COSA_BOOTSTRAP_STR			PartnerHelpLink;
-	COSA_BOOTSTRAP_BOOL			SMSsupport;
-	COSA_BOOTSTRAP_BOOL			MyAccountAppSupport;
-	COSA_BOOTSTRAP_STR			MSOLogo;
-	COSA_BOOTSTRAP_STR			Title;
-	COSA_BOOTSTRAP_STR			WelcomeMessage;
-	COSA_BOOTSTRAP_STR			WelcomeMessage_fre;
-}
-
-COSA_DATAMODEL_RDKB_WIFIPERSONALIZATION, *PCOSA_DATAMODEL_RDKB_WIFIPERSONALIZATION;
-typedef  struct
-_COSA_DATAMODEL_RDKB_LOCALUI_CLASS_CONTENT
-{
-	COSA_BOOTSTRAP_STR			MSOLogo;
-	COSA_BOOTSTRAP_STR			DefaultLoginUsername;
-	COSA_BOOTSTRAP_STR			DefaultLoginPassword;
-	COSA_BOOTSTRAP_STR			MSOLogoTitle;
-	COSA_BOOTSTRAP_BOOL			HomeNetworkControl;
-}
-COSA_DATAMODEL_RDKB_LOCALUI, *PCOSA_DATAMODEL_RDKB_LOCALUI;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_HELPTIP_CLASS_CONTENT
-{
-	COSA_BOOTSTRAP_STR			NetworkName;
-}
-COSA_DATAMODEL_RDKB_HELPTIP, *PCOSA_DATAMODEL_RDKB_HELPTIP;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_CLOUDUI_CLASS_CONTENT
-{
-    COSA_BOOTSTRAP_STR            brandname;
-    COSA_BOOTSTRAP_STR            productname;
-    COSA_BOOTSTRAP_STR            link;
-}
-COSA_DATAMODEL_RDKB_CLOUDUI, *PCOSA_DATAMODEL_RDKB_CLOUDUI;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_UIBRANDING_CLASS_CONTENT
-{
-	COSA_DATAMODEL_RDKB_FOOTER			Footer;
-	COSA_DATAMODEL_RDKB_CONNECTION			Connection;
-	COSA_DATAMODEL_RDKB_NETWORKDIAGNOSTICTOOLS	NDiagTool;
-	COSA_DATAMODEL_RDKB_WIFIPERSONALIZATION		WifiPersonal;
-	COSA_DATAMODEL_RDKB_LOCALUI			LocalUI;
-	COSA_DATAMODEL_RDKB_HELPTIP			HelpTip;
-	COSA_DATAMODEL_RDKB_CLOUDUI			CloudUI;
-	COSA_BOOTSTRAP_STR				DefaultAdminIP;
-	COSA_BOOTSTRAP_STR				DefaultLocalIPv4SubnetRange;
-	COSA_BOOTSTRAP_STR                        	DefaultLanguage;
-	COSA_BOOTSTRAP_STR				PauseScreenFileLocation;
-	COSA_BOOTSTRAP_BOOL				AllowEthernetWAN;
-}
-COSA_DATAMODEL_RDKB_UIBRANDING, *PCOSA_DATAMODEL_RDKB_UIBRANDING;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_CDLDM_CLASS_CONTENT
-{
-        COSA_BOOTSTRAP_STR                      CDLModuleUrl;
-}
-COSA_DATAMODEL_RDKB_CDLDM, *PCOSA_DATAMODEL_RDKB_CDLDM;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_WIFI_TELEMETRY_CLASS_CONTENT
-{
-    INT                 LogInterval;
-    INT                 ChUtilityLogInterval;
-    CHAR            NormalizedRssiList[256];
-    CHAR            CliStatList[256];
-    CHAR            TxRxRateList[256];
-    CHAR            SNRList[256];
-}
-COSA_DATAMODEL_RDKB_WIFI_TELEMETRY, *PCOSA_DATAMODEL_RDKB_WIFI_TELEMETRY;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_RFC_TELEMETRY_CLASS_CONTENT
-{
-    COSA_BOOTSTRAP_BOOL               Enable;
-    COSA_BOOTSTRAP_STR                Version;
-    COSA_BOOTSTRAP_STR                ConfigURL;
-
-}
-COSA_DATAMODEL_RDKB_RFC_TELEMETRY, *PCOSA_DATAMODEL_RDKB_RFC_TELEMETRY;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_UNIQUE_TELEMETRY_ID_CLASS_CONTENT
-{
-    BOOL		Enable;
-    CHAR            	TagString[256];
-    INT                 TimingInterval;
-
-}
-COSA_DATAMODEL_RDKB_UNIQUE_TELEMETRY_ID, *PCOSA_DATAMODEL_RDKB_UNIQUE_TELEMETRY_ID;
-
-//RDKB-47490
-typedef  struct
-_COSA_DATAMODEL_RDKB_LATENCYMEASURE_TCP_IPV4_CLASS_CONTENT
-{
-    BOOL		Enable;
-}
-COSA_DATAMODEL_RDKB_LATENCYMEASURE_TCP_IPV4, *PCOSA_DATAMODEL_RDKB_LATENCYMEASURE_TCP_IPV4;
-
-//RDKB-47490
-typedef  struct
-_COSA_DATAMODEL_RDKB_LATENCYMEASURE_TCP_IPV6_CLASS_CONTENT
-{
-    BOOL		Enable;
-}
-COSA_DATAMODEL_RDKB_LATENCYMEASURE_TCP_IPV6, *PCOSA_DATAMODEL_RDKB_LATENCYMEASURE_TCP_IPV6;
-
-typedef  struct
-_COSA_DATAMODEL_RDKB_SYNDICATIONFLOWCONTROL_CLASS_CONTENT
-{
-    COSA_BOOTSTRAP_BOOL    Enable;
-    COSA_BOOTSTRAP_STR    InitialForwardedMark;
-    COSA_BOOTSTRAP_STR    InitialOutputMark;
-}
-COSA_DATAMODEL_RDKB_SYNDICATIONFLOWCONTROL, *PCOSA_DATAMODEL_RDKB_SYNDICATIONFLOWCONTROL;
-
-
-typedef  struct
-    _COSA_DATAMODEL_KICKSTARTTABLE
-{
-    UINT    SecurityNumberLen;
-    uint8_t SecurityNumber[MAX_SECURITYNUM_LEN];
-    CHAR    SecurityName[MAX_SECURITYNAME_LEN];
-}
-COSA_DATAMODEL_KICKSTARTTABLE, *PCOSA_DATAMODEL_KICKSTARTTABLE;
-
-#define COSA_DATAMODEL_KICKSTART_CLASS_CONTENT                      \
-    /* duplication of the base object class content */              \
-    /* COSA_BASE_CONTENT */                                         \
-    BOOL                            TableUpdated;                   \
-    BOOL                            Enabled;                        \
-    UINT                            KickstartTotal;                 \
-    UINT                            TableNumberOfEntries;           \
-    COSA_DATAMODEL_KICKSTARTTABLE   KickstartTable[MAX_KICKSTART_ROWS];
-
-typedef  struct
-    _COSA_DATAMODEL_KICKSTART
-{
-    COSA_DATAMODEL_KICKSTART_CLASS_CONTENT
-}
-COSA_DATAMODEL_KICKSTART,   *PCOSA_DATAMODEL_KICKSTART;
-
-typedef struct
-    _COSA_HHT_PTR
-{
-    UINT CPUThreshold;
-    UINT DRAMThreshold;
-    UINT Frequency;
-    BOOL PTREnable;
-}
-COSA_HHT_PTR;
-
-/**********************************************************************
-                FUNCTION PROTOTYPES
-**********************************************************************/
-#if !defined (NO_MOCA_FEATURE_SUPPORT)
-
+***********************************************************************/
 /**
-* @brief Get the Enable MoCA for Xi5 flag status.
-*
-* This function retrieves the current status of the MoCA enable flag for Xi5 devices.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a boolean variable where the flag status will be returned.
-*                      \n TRUE: MoCA is enabled for Xi5.
-*                      \n FALSE: MoCA is disabled for Xi5.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetEnableMoCAforXi5Flag
-  (
-         ANSC_HANDLE                             hContext,
-         BOOLEAN*                                        pValue
-  );
-
-/**
-* @brief Set the Enable MoCA for Xi5 flag status.
-*
-* This function updates the MoCA enable flag for Xi5 devices with the specified value.
-*
-* @param[in] hContext - Handle to the context.
-* @param[in] pValue - Pointer to a boolean variable containing the new flag value to be set.
-*                     \n TRUE: Enable MoCA for Xi5.
-*                     \n FALSE: Disable MoCA for Xi5.
-* @param[in,out] pEnableMoCAforXi5Flag - Pointer to the current MoCA Xi5 flag value.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSetEnableMoCAforXi5Flag
-   (
-          ANSC_HANDLE                             hContext,
-          BOOLEAN*                                        pValue,
-          BOOLEAN*                                        pEnableMoCAforXi5Flag
-   );
-
-/**
-* @brief Check and enable MoCA if required.
-*
-* This function checks the current MoCA configuration and enables MoCA
-* functionality if the conditions are met for Xi5 devices.
-*
-* @return None.
-*
-*/
-void CosaDmlDiCheckAndEnableMoCA( void );
-#endif
-
-/**
-* @brief Get the reboot counter value.
-*
-* This function retrieves the current reboot counter which tracks the number of device reboots.
-*
-* @return The reboot counter value.
-*
-*/
-int getRebootCounter();
-
-/**
-* @brief Increment and set the reboot counter.
-*
-* This function increments the reboot counter and persists the updated value.
-*
-* @return The status of the operation.
-* @retval 0 if successful.
-* @retval -1 if any error occurs.
-*
-*/
-int setRebootCounter();
-
-/**
-* @brief Set unknown reboot reason.
-*
-* This function records an unknown reboot reason when the cause of reboot cannot be determined.
-*
-* @return The status of the operation.
-* @retval 0 if successful.
-* @retval -1 if any error occurs.
-*
-*/
-int setUnknownRebootReason();
-#if !defined (RESOURCE_OPTIMIZATION)
-
-/**
-* @brief Create a process status object.
-*
-* This function creates and initializes a process status data model object.
-*
-* @return Handle to the created process status object.
-* @retval Non-NULL Handle to the created process status.
-* @retval NULL if failed.
-*/
-ANSC_HANDLE CosaProcStatusCreate();
-
-/**
-* @brief Remove process information.
-*
-* This function cleans up and removes process information from the process status object.
-*
-* @param[in,out] pObj - Pointer to the process status data model object.
-*
-* @return None.
-*
-*/
-void COSADmlRemoveProcessInfo(PCOSA_DATAMODEL_PROCSTATUS pObj);
-
-/**
-* @brief Get process information.
-*
-* This function retrieves current process information.
-*
-* @param[out] p_info - Pointer to the process status data model structure where
-*                      process information will be returned.
-*
-* @return None.
-*
-*/
-void COSADmlGetProcessInfo(PCOSA_DATAMODEL_PROCSTATUS p_info);
-#endif
-
-/**
-* @brief Get the CPU usage percentage.
-*
-* This function retrieves the current CPU usage as a percentage.
-*
-* @return CPU usage percentage value(Valid range: 1-100)
-*
-*/
-ULONG COSADmlGetCpuUsage();
-#if defined (RESOURCE_OPTIMIZATION)
-
-/**
-* @brief Get the number of process entries.
-*
-* This function retrieves the total count of active processes in the system.
-*
-* @return The number of process entries.
-*
-*/
-ULONG COSADmlGetProcessNumberOfEntries();
-#endif
-
-/**
-* @brief Get memory status information.
-*
-* This function retrieves specific memory status information based on the parameter name provided.
-*
-* @param[in] ParamName - Pointer to a null-terminated string specifying the
-*                        memory parameter to query.
-*
-* @return The requested memory status value in appropriate units.
-* @retval The requested memory status value on success
-* @retval 0 on failure
-*
-*/
-ULONG COSADmlGetMemoryStatus(char * ParamName);
-
-/**
-* @brief Get the maximum TCP window size.
-*
-* This function retrieves the maximum TCP window size configured for the system.
-*
-* @return The maximum TCP window size value in bytes.
-* @retval The maximum window size in bytes on success.
-* @retval 0 on failure.
-*
-*/
-ULONG COSADmlGetMaxWindowSize();
-
-/**
-* @brief Initialize the Device Info subsystem.
-*
-* This function initializes the Device Info data model subsystem and sets up the platform HAL database.
-*
-* @param[in] hDml - Handle to the DML context.
-* @param[in,out] phContext - Pointer to handle for returning context information.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiInit
+ * @brief Get boolean parameter value from DeviceInfo object.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DeviceInfo_GetParamBoolValue
     (
-        ANSC_HANDLE                 hDml,
-        PANSC_HANDLE                phContext
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
     );
 
 /**
-* @brief Get the device manufacturer name.
-*
-* This function retrieves the manufacturer name of the device from the vendor configuration.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the manufacturer name will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetManufacturer
+ * @brief Get integer parameter value from DeviceInfo object.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DeviceInfo_GetParamIntValue
     (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
     );
 
 /**
-* @brief Get the manufacturer OUI (Organizationally Unique Identifier).
-*
-* This function retrieves the manufacturer's OUI which uniquely identifies the vendor organization.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the manufacturer OUI will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetManufacturerOUI
+ * @brief Get unsigned long parameter value from DeviceInfo object.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DeviceInfo_GetParamUlongValue
     (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
     );
 
 /**
-* @brief Get the device description.
-*
-* This function retrieves a human-readable description of the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the device description will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetDescription
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get the device product class.
-*
-* This function retrieves the product class identifier of the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the product class will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetProductClass
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get the device serial number.
-*
-* This function retrieves the unique serial number of the device from the platform HAL.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the serial number will be returned as a null-terminated string.
-*                      \n Recommended minimum buffer size: 128 bytes.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetSerialNumber
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get the device hardware version.
-*
-* This function retrieves the hardware version string of the device from the platform HAL.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the hardware version will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetHardwareVersion
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get additional hardware version information.
-*
-* This function retrieves additional hardware version details.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the additional hardware version will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetAdditionalHardwareVersion
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get the provisioning code.
-*
-* This function retrieves the current provisioning code configured for the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the provisioning code will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetProvisioningCode
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Set the provisioning code.
-*
-* This function updates the provisioning code for the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[in] pProvisioningCode - Pointer to a null-terminated string containing the new provisioning code to be set.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ERR_UTCTX_INIT on failure
-*
-*/
-ANSC_STATUS
-CosaDmlDiSetProvisioningCode
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pProvisioningCode
-    );
-
-/**
-* @brief Get the device uptime.
-*
-* This function retrieves the elapsed time in seconds since the device was last rebooted.
-*
-* @param[in] hContext - Handle to the context.
-*
-* @return The device uptime in seconds.
-* @retval Device uptime in seconds on success.
-* @retval 0 on failure.
-*
-*/
+ * @brief Get string parameter value from DeviceInfo object.
+ *
+ * @param[in] hInsContext  - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if not supported
+ *
+ */
 ULONG
-CosaDmlDiGetUpTime
+DeviceInfo_GetParamStringValue
     (
-        ANSC_HANDLE                 hContext
-    );
-
-/**
-* @brief Get the first use date of the device.
-*
-* This function retrieves the timestamp of when the device was first powered on or activated.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the first use date will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetFirstUseDate
-    (
-        ANSC_HANDLE                 hContext,
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
         char*                       pValue,
-        PULONG                      pulSize
+        ULONG*                      pUlSize
     );
 
 /**
-* @brief Get the hardware information.
-*
-* This function retrieves detailed hardware information of the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the hardware information will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetHardware
+ * @brief Set boolean parameter value for DeviceInfo object.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DeviceInfo_SetParamBoolValue
     (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the bootloader version.
-*
-* This function retrieves the version string of the device's bootloader.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the bootloader version will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetBootloaderVersion
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the firmware build time.
-*
-* This function retrieves the build timestamp of the currently running firmware.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the firmware build time will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetFirmwareBuildTime
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the base MAC address.
-*
-* This function retrieves the base MAC address of the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the base MAC address will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetBaseMacAddress
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the TCP implementation information.
-*
-* This function retrieves information about the TCP/IP stack implementation used by the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the TCP implementation information will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlGetTCPImplementation
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get advanced services information.
-*
-* This function retrieves information about advanced services available on the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the advanced services information will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetAdvancedServices
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get the processor speed.
-*
-* This function retrieves the processor speed information of the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the processor speed will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetProcessorSpeed
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Validate and sanitize input parameters.
-*
-* This function validates input parameters.
-*
-* @param[in] inputparam - Pointer to the input parameter string to be validated.
-* @param[out] wrapped_inputparam - Pointer to a buffer where the sanitized and wrapped parameter will be stored.
-* @param[in] lengthof_inputparam - Length of the input parameter string.
-* @param[in] sizeof_wrapped_inputparam - Size of the wrapped_inputparam buffer in bytes.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-isValidInput
-    (
-        char                       *inputparam,
-        char                       *wrapped_inputparam,
-        int                         lengthof_inputparam,
-        int                         sizeof_wrapped_inputparam
-    );
-
-/**
-* @brief Get the firmware upgrade start time.
-*
-* This function retrieves the timestamp when the last firmware upgrade process was initiated.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the start time will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetFirmwareUpgradeStartTime
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get the firmware upgrade end time.
-*
-* This function retrieves the timestamp when the last firmware upgrade process was completed.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the end time will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetFirmwareUpgradeEndTime
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Set the firmware upgrade start time.
-*
-* This function records the start time of a firmware upgrade process.
-*
-* @param[in] pString - Pointer to a null-terminated string containing the start time timestamp to be recorded.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSetFirmwareUpgradeStartTime (char* pString);
-
-/**
-* @brief Set the firmware upgrade end time.
-*
-* This function records the end time of a firmware upgrade process.
-*
-* @param[in] pString - Pointer to a null-terminated string containing the end time timestamp to be recorded.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSetFirmwareUpgradeEndTime (char* pString);
-
-/**
-* @brief Get the custom data model enabled status.
-*
-* This function retrieves whether the custom data model is enabled on the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a boolean variable where the status will be returned.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-*
-*/
-ULONG
-CosaDmlGiGetCustomDataModelEnabled
-(
-    ANSC_HANDLE                 hContext,
-    BOOL                        *pValue
-);
-
-/**
-* @brief Set the custom data model enabled status.
-*
-* This function enables or disables the custom data model on the device.
-*
-* @param[in] hContext - Handle to the context.
-* @param[in] bValue - Boolean value to set.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-*
-*/
-ULONG
-CosaDmlGiSetCustomDataModelEnabled
-(
-    ANSC_HANDLE                 hContext,
-    BOOL                        bValue
-);
-
-/**
-* @brief Get and process DHCP server detection flag.
-*
-* This function retrieves the current state of the DHCP server detection flag.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a boolean variable where the flag status will be returned.
-*                      \n TRUE: DHCP server detection is enabled.
-*                      \n FALSE: DHCP server detection is disabled.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetAndProcessDhcpServDetectionFlag
-   (
-	   ANSC_HANDLE				   hContext,
-	   BOOLEAN*			   		   pValue
-   );
-
-/**
-* @brief Set and process DHCP server detection flag.
-*
-* This function updates the DHCP server detection flag.
-*
-* @param[in] hContext - Handle to the context.
-* @param[in] pValue - Pointer to a boolean variable containing the new flag value.
-*                     \n TRUE: Enable DHCP server detection.
-*                     \n FALSE: Disable DHCP server detection.
-* @param[in,out] pDhcpServDetectEnable - Pointer to the current DHCP server detection enable flag.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSetAndProcessDhcpServDetectionFlag
-   (
-	   ANSC_HANDLE				   hContext,
-	   BOOLEAN*					   pValue,
-	   BOOLEAN*					   pDhcpServDetectEnable
-   );
-
-/**
-* @brief Trigger XOps reverse SSH connection.
-*
-* This function initiates a reverse SSH connection for XOps remote support operations.
-*
-* @param[in] input - Pointer to a null-terminated string containing the trigger command.
-*
-* @return The status of the operation.
-* @retval OK if successful.
-* @retval NOK if any error occurs.
-*
-*/
-int setXOpsReverseSshTrigger(char *input);
-
-/**
-* @brief Set XOps reverse SSH arguments.
-*
-* This function configures the arguments for XOps reverse SSH connection.
-*
-* @param[in] pString - Pointer to a null-terminated string containing the SSH arguments.
-*
-* @return The status of the operation.
-* @retval 0 if successful.
-* @retval 1 if any error occurs.
-*
-*/
-int setXOpsReverseSshArgs(char* pString);
-
-/**
-* @brief Get XOps reverse SSH arguments.
-*
-* This function retrieves the currently configured arguments for XOps reverse SSH.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the SSH arguments will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS getXOpsReverseSshArgs
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Check if reverse SSH is active.
-*
-* This function checks whether a reverse SSH connection is currently active.
-*
-* @return Status of reverse SSH.
-* @retval OK if reverse SSH is active.
-* @retval NOK if reverse SSH is not active.
-*
-*/
-int isRevSshActive(void);
-
-/**
-* @brief Get the syndication partner ID.
-*
-* This function retrieves the current syndication partner ID from the device configuration.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the partner ID will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetSyndicationPartnerId
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the syndication TR-069 certificate location.
-*
-* This function retrieves the file path where the TR-069 certificate for syndication is stored.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the certificate location path will be returned as a null-terminated string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetSyndicationTR69CertLocation
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue
-    );
-
-/**
-* @brief Set the syndication TR-069 certificate location.
-*
-* This function updates the file path where the TR-069 certificate for syndication stored or retrieved from.
-*
-* @param[in] hContext - Handle to the context.
-* @param[in] pValue - Pointer to a null-terminated string containing the new certificate location path.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSetSyndicationTR69CertLocation
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue
-    );
-
-#if defined(_ONESTACK_PRODUCT_REQ_)
-
-#define DEVICEMODE_BUF_SIZE 32
-
-/**
-* @brief Get the syndication device mode.
-*
-* This function retrieves the current device mode from syscfg.
-* The device mode can be either "business" or "residential".
-* If syscfg read fails, defaults to "residential" and still returns success.
-*
-* @param[in] hContext - Handle to the context (unused).
-* @param[out] pValue - Pointer to a buffer where the device mode will be returned as a null-terminated string.
-* @param[in] size - Size of the pValue buffer (must be at least DEVICEMODE_BUF_SIZE bytes).
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if pValue is populated successfully (either from syscfg or with default "residential").
-* @retval ANSC_STATUS_FAILURE if pValue is NULL or buffer size is insufficient.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetSyndicationDeviceMode
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        size_t                      size
-    );
-#endif
-
-/**
-* @brief Handle partner ID change operations.
-*
-* This function processes partner ID changes and performs necessary configuration updates.
-*
-* @param[in] buff - Pointer to a buffer containing partner ID change information.
-*
-* @return Pointer to result data or NULL.
-*
-*/
-void *CosaDmlDiPartnerIDChangeHandling( void* buff );
-
-/**
-* @brief Get the syndication local UI branding table.
-*
-* This function retrieves the branding configuration table for the local user interface
-* based on the current syndication partner.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the branding table will be returned
-*                      as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetSyndicationLocalUIBrandingTable
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the syndication WiFi UI branding table.
-*
-* This function retrieves the WiFi UI branding configuration table based on the current syndication partner.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the WiFi branding table will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetSyndicationWifiUIBrandingTable
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-#ifndef FEATURE_FWUPGRADE_MANAGER
-/**
-* @brief Initiate firmware download and factory reset.
-*
-* This function triggers a firmware download followed by a factory reset operation.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSetFirmwareDownloadAndFactoryReset(void);
-
-/**
-* @brief Get the defer firmware download reboot flag.
-*
-* This function retrieves the current status of the defer firmware download reboot flag.
-*
-* @param[out] puLong - Pointer to a variable where the flag value will be returned.
-*
-* @return None.
-*
-*/
-void CosaDmlDiGet_DeferFWDownloadReboot(ULONG* puLong);
-
-/**
-* @brief Set the defer firmware download reboot flag.
-*
-* This function updates the defer firmware download reboot flag.
-*
-* @param[in,out] DeferFWDownloadReboot - Pointer to the current flag value.
-* @param[in] uValue - New value to set for the defer reboot flag.
-*
-* @return None.
-*
-*/
-void CosaDmlDiSet_DeferFWDownloadReboot(ULONG* DeferFWDownloadReboot , ULONG uValue);
-#endif
-
-/**
-* @brief Reboot the device.
-*
-* This function initiates a device reboot with the specified reboot reason.
-*
-* @param[in] pValue - Pointer to a null-terminated string containing the reboot reason.
-*
-* @return None.
-*
-*/
-void CosaDmlDiSet_RebootDevice(char* pValue);
-
-/**
-* @brief Disable remote management.
-*
-* This function disables remote management capabilities on the device.
-*
-* @return None.
-*
-*/
-void CosaDmlDiSet_DisableRemoteManagement();
-
-/**
-* @brief Validate reboot device parameter.
-*
-* This function validates the reboot device parameter to ensure a valid reboot reason.
-*
-* @param[in] pValue - Pointer to a null-terminated string containing the parameter to validate.
-*
-* @return Validation result.
-* @retval TRUE if the parameter is valid.
-* @retval FALSE if the parameter is invalid.
-*
-*/
-BOOL CosaDmlDi_ValidateRebootDeviceParam(char *pValue);
-
-/**
-* @brief Initialize UI branding subsystem.
-*
-* This function initializes the UI branding data model with partner-specific branding configurations.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] PUiBrand - Pointer to the UI branding data model structure to be initialized.
-* @param[out] PCdlDM - Pointer to the CDL DM (Code Download) data model structure.
-* @param[out] PRfcTelemetry - Pointer to the RFC telemetry data model structure.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiUiBrandingInit
-  (
-	ANSC_HANDLE                 hContext,
-	PCOSA_DATAMODEL_RDKB_UIBRANDING	PUiBrand,
-	PCOSA_DATAMODEL_RDKB_CDLDM PCdlDM,
-	PCOSA_DATAMODEL_RDKB_RFC_TELEMETRY PRfcTelemetry
-  );
-
-/**
-* @brief Fill partner ID specific values.
-*
-* This function populates the branding data structures with partner-specific configuration values from JSON.
-*
-* @param[in] json - Pointer to the cJSON object containing partner configuration.
-* @param[in] partnerID - Pointer to a null-terminated string containing the partner ID.
-* @param[out] PUiBrand - Pointer to the UI branding structure to be populated.
-* @param[out] PCdlDM - Pointer to the CDL DM structure to be populated.
-* @param[out] PRfcTelemetry - Pointer to the RFC telemetry structure to be populated.
-* @param[in] hContext - Handle to the context.
-*
-* @return None.
-*
-*/
-void FillPartnerIDValues(cJSON *json , char *partnerID , PCOSA_DATAMODEL_RDKB_UIBRANDING PUiBrand, PCOSA_DATAMODEL_RDKB_CDLDM PCdlDM, PCOSA_DATAMODEL_RDKB_RFC_TELEMETRY PRfcTelemetry, ANSC_HANDLE hContext);
-
-/**
-* @brief Update JSON parameter in configuration.
-*
-* This function updates a specific JSON parameter with the provided value and metadata.
-*
-* @param[in] pKey - Pointer to a null-terminated string containing the parameter key.
-* @param[in] PartnerId - Pointer to a null-terminated string containing the partner ID.
-* @param[in] pValue - Pointer to a null-terminated string containing the new value.
-* @param[in] pSource - Pointer to a null-terminated string indicating the update source.
-* @param[in] pCurrentTime - Pointer to a null-terminated string containing the current timestamp.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS UpdateJsonParam
-	(
-		char*           pKey,
-		char*			PartnerId,
-		char*			pValue,
-		char*                   pSource,
-		char*			pCurrentTime
-    );
-
-/**
-* @brief Initialize WiFi telemetry subsystem.
-*
-* This function initializes the WiFi telemetry data model with configuration.
-*
-* @param[out] PWiFi_Telemetry - Pointer to the WiFi telemetry data model structure to be initialized.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiWiFiTelemetryInit
-  (
-	PCOSA_DATAMODEL_RDKB_WIFI_TELEMETRY PWiFi_Telemetry
-  );
-
-/**
-* @brief Initialize unique telemetry ID subsystem.
-*
-* This function initializes the unique telemetry ID data model for telemetry data with unique identifiers.
-*
-* @param[out] PUniqueTelemetryId - Pointer to the unique telemetry ID data model structure to be initialized.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiUniqueTelemetryIdInit
-  (
-	PCOSA_DATAMODEL_RDKB_UNIQUE_TELEMETRY_ID PUniqueTelemetryId
-  );
-
-/**
-* @brief Convert time to day, hour, and minutes.
-*
-* This function converts a time value in minutes into separate day, hour, and minute string components.
-*
-* @param[in] time - Time value in minutes to be converted.
-* @param[out] day - Array to store the day component as a string.
-* @param[out] hour - Array to store the hour component as a string.
-* @param[out] mins - Array to store the minute component as a string.
-*
-* @return None.
-*
-*/
-void ConvertTime(int time, char day[], char hour[], char mins[]);
-
-/**
-* @brief Configure unique telemetry cron job.
-*
-* This function enables or disables the unique telemetry cron job with specified time interval and tag string.
-*
-* @param[in] enable - Boolean flag to enable or disable the cron job.
-*                     \n TRUE: Enable cron job.
-*                     \n FALSE: Disable cron job.
-* @param[in] timeInterval - Time interval in minutes for the cron job execution.
-* @param[in] tagString - Pointer to a null-terminated string containing the tag for telemetry.
-*
-* @return None.
-*
-*/
-void UniqueTelemetryCronJob(BOOL enable, INT timeInterval, char* tagString);
-
-/**
-* @brief Get the device boot time.
-*
-* This function retrieves the absolute time when the device was last booted.
-*
-* @param[in] Context - Handle to the context.
-*
-* @return The boot time as a UNIX timestamp in seconds.
-* @retval The device boot time
-* @retval 0 on failure
-*
-*/
-ULONG
-CosaDmlDiGetBootTime
-    (
-        ANSC_HANDLE                 Context
-    );
-
-/**
-* @brief Get the factory reset count.
-*
-* This function retrieves the number of times the device has been factory reset.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a variable where the factory reset count will be returned.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetFactoryResetCount
-    (
-        ANSC_HANDLE                 hContext,
-        ULONG                       *pValue
-    );
-
-/**
-* @brief Get the hardware memory used.
-*
-* This function retrieves the amount of memory currently in use by the system.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the memory used value will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetHardware_MemUsed
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the hardware memory free.
-*
-* This function retrieves the amount of free memory available in the system.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the memory free value will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetHardware_MemFree
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Get the CMTS MAC address.
-*
-* This function retrieves the MAC address of the Cable Modem Termination System (CMTS).
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the CMTS MAC address will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetCMTSMac
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        ULONG*                      pulSize
-    );
-
-/**
-* @brief Get the inactive firmware version.
-*
-* This function retrieves the firmware version of the inactive firmware bank.
-* The .bin extension is automatically removed from the returned value.
-*
-* @param[in] hContext - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the inactive firmware version will be returned as a null-terminated string.
-*                      \n Minimum recommended buffer size: 64 bytes.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiGetInActiveFirmware
-    (
-        ANSC_HANDLE                 hContext,
-        char*                       pValue,
-        PULONG                      pulSize
-    );
-
-/**
-* @brief Clear the factory reset count.
-*
-* This function resets the factory reset counter to zero.
-*
-* @param[in] hContext - Handle to the context.
-* @param[in] bValue - Boolean value to trigger the clear operation.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS CosaDmlDiClearResetCount
-    (
-        ANSC_HANDLE                 hContext,
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
         BOOL                        bValue
-   );
-
-/**
-* @brief Set new NTP enable status.
-*
-* This function enables or disables the Network Time Protocol (NTP) client.
-*
-* @param[in] bValue - Boolean value to set.
-*                     \n TRUE: Enable NTP client.
-*                     \n FALSE: Disable NTP client.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlSetnewNTPEnable(BOOL bValue);
-
-/**
-* @brief Get the internet connection status.
-*
-* This function checks whether the device has active internet connectivity.
-*
-* @return Internet connection status.
-* @retval TRUE if internet is connected.
-* @retval FALSE if internet is not connected.
-*
-*/
-BOOL CosaDmlGetInternetStatus();
-
-/**
-* @brief Get the upload logs status.
-*
-* This function retrieves the current status of the log upload operation.
-*
-* @param[in] Context - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the status will be returned as a null-terminated string.
-* @param[in,out] pUlSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-COSADmlUploadLogsStatus
-    (
-        ANSC_HANDLE                 Context,
-        char*   pValue,
-        ULONG*  pUlSize
     );
 
 /**
-* @brief Trigger immediate log upload.
-*
-* This function initiates an immediate upload of device logs to the configured server.
-*
-* @param[in] hContext - Handle to the context.
-* @param[in] bEnable - Boolean flag to trigger the upload.
-*                      \n TRUE: Start log upload immediately.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-COSADmlUploadLogsNow
+ * @brief Set integer parameter value for DeviceInfo object.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] value       - The integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DeviceInfo_SetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         value
+    );
+
+/**
+ * @brief Set unsigned long parameter value for DeviceInfo object.
+ *
+ * @param[in] hInsContext  - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[in] uValuepUlong - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DeviceInfo_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValuepUlong
+    );
+
+/**
+ * @brief Set string parameter value for DeviceInfo object.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] strValue    - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DeviceInfo_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       strValue
+    );
+
+/**
+ * @brief Validate DeviceInfo object parameter values.
+ *
+ * @param[in] hInsContext        - The instance handle to the DeviceInfo object.
+ * @param[out] pReturnParamName  - Pointer to a buffer(128 bytes) to store the parameter name if there is a validation.
+ * @param[in,out] puLength       - Pointer to the buffer length.
+ *
+ * @return The validation result.
+ * @retval TRUE if there is no validation.
+ * @retval FALSE if there's validation .
+ *
+ */
+BOOL
+DeviceInfo_Validate
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       pReturnParamName,
+        ULONG*                      puLength
+    );
+
+/**
+ * @brief Commit DeviceInfo object parameter changes.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ *
+ * @return The status of the operation.
+ *
+ */
+ULONG
+DeviceInfo_Commit
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+/**
+ * @brief Rollback DeviceInfo object parameter changes whenever there's a validation found.
+ *
+ * @param[in] hInsContext - The instance handle to the DeviceInfo object.
+ *
+ * @return The status of the operation.
+ *
+ */
+ULONG
+DeviceInfo_Rollback
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_WIFI_TELEMETRY.{i}.
+
+    *  WiFi_Telemetry_SetParamIntValue
+    *  WiFi_Telemetry_SetParamStringValue
+    *  WiFi_Telemetry_GetParamIntValue
+    *  WiFi_Telemetry_GetParamStringValue
+***********************************************************************/
+/**
+ * @brief Set integer parameter value for WiFi_Telemetry object.
+ *
+ * @param[in] hInsContext - The instance handle to the WiFi_Telemetry object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] iValue      - The integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+WiFi_Telemetry_SetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         iValue
+    );
+
+/**
+ * @brief Set string parameter value for WiFi_Telemetry object.
+ *
+ * @param[in] hInsContext - The instance handle to the WiFi_Telemetry object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] pString     - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+WiFi_Telemetry_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Get integer parameter value from WiFi_Telemetry object.
+ *
+ * @param[in] hInsContext - The instance handle to the WiFi_Telemetry object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+WiFi_Telemetry_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
+    );
+
+/**
+ * @brief Get string parameter value from WiFi_Telemetry object.
+ *
+ * @param[in] hInsContext  - The instance handle to the WiFi_Telemetry object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if not supported.
+ *
+ */
+ULONG
+WiFi_Telemetry_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+
+/**
+ * @brief Get boolean parameter value from EasyConnect object.
+ *
+ * @param[in] hInsContext - The instance handle to the EasyConnect object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+EasyConnect_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set boolean parameter value for EasyConnect object.
+ *
+ * @param[in] hInsContext - The instance handle to the EasyConnect object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+EasyConnect_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Get boolean parameter value from DFS object.
+ *
+ * @param[in] hInsContext - The instance handle to the DFS object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DFS_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set boolean parameter value for DFS object.
+ *
+ * @param[in] hInsContext - The instance handle to the DFS object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DFS_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Get boolean parameter value from DFSatBootUp object.
+ *
+ * @param[in] hInsContext - The instance handle to the DFSatBootUp object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DFSatBootUp_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set boolean parameter value for DFSatBootUp object.
+ *
+ * @param[in] hInsContext - The instance handle to the DFSatBootUp object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+DFSatBootUp_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.
+
+    *  Generic_GetParamUlongValue
+    *  Generic_SetParamUlongValue
+    *  Generic_GetParamBoolValue
+    *  Generic_GetParamStringValue
+    *  Generic_GetParamIntValue
+    *  Generic_SetParamBoolValue
+    *  Generic_SetParamStringValue
+    *  Generic_SetParamIntValue
+***********************************************************************/
+/**
+ * @brief Get unsigned long parameter value from Generic RFC object.
+ *
+ * @param[in] hInsContext - The instance handle to the Generic RFC object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pValue     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Generic_GetParamUlongValue
+    (
+        ANSC_HANDLE             hInsContext,
+        char*                   ParamName,
+        ULONG*                  pValue
+    );
+
+/**
+ * @brief Get boolean parameter value from Generic RFC object.
+ *
+ * @param[in] hInsContext - The instance handle to the Generic RFC object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Generic_GetParamBoolValue
         (
-                ANSC_HANDLE                 hContext,
-                BOOL                        bEnable
+                ANSC_HANDLE                             hInsContext,
+                char*                                           ParamName,
+                BOOL*                                           pBool
         );
 
 /**
-* @brief Get the log file name.
-*
-* This function retrieves the name of the current log file being used.
-*
-* @param[in] Context - Handle to the context.
-* @param[out] pValue - Pointer to a buffer where the log file name will be returned as a null-terminated string.
-* @param[in,out] pUlSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-COSADmlLogFileName
+ * @brief Get string parameter value from Generic RFC object.
+ *
+ * @param[in] hInsContext  - The instance handle to the Generic RFC object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if Not Supported
+ *
+ */
+ULONG
+Generic_GetParamStringValue
     (
-        ANSC_HANDLE                 Context,
-    	char* 	pValue,
-    	ULONG*	pUlSize
-    );
-
-/**
-* @brief Enable or disable presence detection.
-*
-* This function enables or disables the presence detection feature.
-*
-* @param[in] enable - Boolean flag to control presence detection.
-*                     \n TRUE: Enable presence detection.
-*                     \n FALSE: Disable presence detection.
-*
-* @return None.
-*
-*/
-void CosaDmlPresenceEnable(BOOL enable);
-
-/**
-* @brief Start RFC (Remote Feature Control) processing.
-*
-* This function initiates the RFC processing to handle remote feature configurations.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-StartRfcProcessing();
-
-/**
-* @brief End RFC processing.
-*
-* This function finalizes the RFC processing and updates the RFC store.
-*
-* @param[in,out] pRfcStore - Pointer to a pointer to the cJSON RFC store object.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-EndRfcProcessing(cJSON **pRfcStore);
-
-/**
-* @brief Set syndication flow control enable status.
-*
-* This function enables or disables syndication flow control for traffic management.
-*
-* @param[in] bValue - Character value representing the enable/disable state.
-*                     \n '1' or non-zero: Enable flow control.
-*                     \n '0': Disable flow control.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSet_SyndicationFlowControl_Enable
-    (
-        char bValue
-    );
-
-/**
-* @brief Set syndication flow control initial forwarded mark.
-*
-* This function configures the initial forwarded packet marking for syndication flow control.
-*
-* @param[in] pString - Pointer to a null-terminated string containing the mark value.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSet_SyndicationFlowControl_InitialForwardedMark
-    (
-        char *pString
-    );
-
-/**
-* @brief Set syndication flow control initial output mark.
-*
-* This function configures the initial output packet marking for syndication flow control.
-*
-* @param[in] pString - Pointer to a null-terminated string containing the mark value.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSet_SyndicationFlowControl_InitialOutputMark
-    (
-        char *pString
-    );
-
-/**
-* @brief Set temporary partner ID.
-*
-* This function stores a temporary partner ID for syndication purposes.
-*
-* @param[in] pValue - Pointer to a null-terminated string containing the temporary partner ID.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-setTempPartnerId
-    (
-        char*                       pValue
-    );
-
-/**
-* @brief Get the factory default partner ID.
-*
-* This function retrieves the factory default partner ID.
-*
-* @param[out] pValue - Pointer to a buffer where the factory partner ID will be returned as a null-terminated string.
-* @param[in,out] pulSize - Pointer to a variable containing the buffer size.
-*                          \n [in] Size of the pValue buffer in bytes.
-*                          \n [out] Actual length of the returned string.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-getFactoryPartnerId
-    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
         char*                       pValue,
-        PULONG                      pulSize
+        ULONG*                      pUlSize
     );
 
 /**
-* @brief Derive syndication partner ID.
-*
-* This function derives and validates the syndication partner ID.
-*
-* @param[out] Partner_ID - Pointer to a buffer where the derived partner ID will be stored.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDeriveSyndicationPartnerID
-    (
-        char *Partner_ID
-    );
-
-/**
-* @brief Initialize syndication flow control.
-*
-* This function initializes the syndication flow control data model with configuration parameters.
-*
-* @param[out] pSyndicatonFlowControl - Pointer to the syndication flow control data model
-*                                       structure to be initialized.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiSyndicationFlowControlInit
-    (
-        PCOSA_DATAMODEL_RDKB_SYNDICATIONFLOWCONTROL pSyndicatonFlowControl
-    );
-
-/**
-* @brief Initialize RFC defaults.
-*
-* This function initializes the RFC defaults configuration from stored settings.
-*
-* @param[in,out] pRfcDefaults - Pointer to a pointer to the cJSON RFC defaults object.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiRfcDefaultsInit
-    (
-        cJSON **pRfcDefaults
-    );
-
-/**
-* @brief Initialize RFC store.
-*
-* This function initializes the RFC store for storing remote feature control settings.
-*
-* @param[in,out] pRfcStore - Pointer to a pointer to the cJSON RFC store object.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlDiRfcStoreInit
-    (
-        cJSON **pRfcStore
-    );
-
-/**
-* @brief Activate partner ID.
-*
-* This function activates the currently configured syndication partner ID.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-activatePartnerId();
-
-/**
-* @brief Process RFC set operation.
-*
-* This function processes RFC parameter set requests and updates the RFC store.
-*
-* @param[in,out] pRfcStore - Pointer to a pointer to the cJSON RFC store object.
-* @param[in] clearDB - Boolean flag to indicate if database should be cleared.
-*                      \n TRUE: Clear database before setting.
-*                      \n FALSE: Update database without clearing.
-* @param[in] paramFullName - Pointer to a null-terminated string containing the full parameter name.
-* @param[in] value - Pointer to a null-terminated string containing the parameter value.
-* @param[in] pSource - Pointer to a null-terminated string indicating the source of the change.
-* @param[in] pCurrentTime - Pointer to a null-terminated string containing the current timestamp.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-ProcessRfcSet(cJSON **pRfcStore, BOOL clearDB, char *paramFullName, char *value, char *pSource, char *pCurrentTime);
-
-/**
-* @brief Schedule automatic reboot.
-*
-* This function schedules an automatic device reboot after the specified uptime.
-*
-* @param[in] ConfiguredUpTime - Configured uptime in seconds after which device should reboot.
-* @param[in] bValue - Boolean value to enable or disable auto-reboot.
-*                     \n TRUE: Enable auto-reboot.
-*                     \n FALSE: Disable auto-reboot.
-*
-* @return The status of the operation.
-* @retval ANSC_STATUS_SUCCESS if the operation is successful.
-* @retval ANSC_STATUS_FAILURE if any error is detected during the operation.
-*
-*/
-ANSC_STATUS
-CosaDmlScheduleAutoReboot(int ConfiguredUpTime, BOOL bValue);
-
-/**
-* @brief Set multi-profile XDNS configuration.
-*
-* This function enables or disables multi-profile XDNS (eXtended DNS) configuration.
-*
-* @param[in] bValue - Boolean value to set.
-*                     \n TRUE: Enable multi-profile XDNS.
-*                     \n FALSE: Disable multi-profile XDNS.
-*
-* @return The status of the operation.
-* @retval 1 if successful.
-* @retval 0 if any error occurs.
-*
-*/
-int
-setMultiProfileXdnsConfig(BOOL bValue);
-
-#if defined (FEATURE_SUPPORT_RADIUSGREYLIST)
-/**
-* @brief Set RADIUS grey list enable status.
-*
-* This function enables or disables the RADIUS grey list feature for access control.
-*
-* @param[in] bValue - Boolean value to set.
-*                     \n TRUE: Enable RADIUS grey list.
-*                     \n FALSE: Disable RADIUS grey list.
-*
-* @return The status of the operation.
-* @retval TRUE if the operation is successful.
-* @retval FALSE if any error is detected during the operation.
-*
-*/
+ * @brief Get integer parameter value from Generic RFC object.
+ *
+ * @param[in] hInsContext - The instance handle to the Generic RFC object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
 BOOL
-CosaDmlSetRadiusGreyListEnable
+Generic_GetParamIntValue
+        (
+                ANSC_HANDLE                             hInsContext,
+                char*                                           ParamName,
+                int*                                            pInt
+        );
+
+/**
+ * @brief Set unsigned long parameter value for Generic RFC object.
+ *
+ * @param[in] hInsContext - The instance handle to the Generic RFC object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] ulValue     - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Generic_SetParamUlongValue
     (
-        BOOL        bValue
+        ANSC_HANDLE             hInsContext,
+        char*                   ParamName,
+        ULONG                   ulValue
+    );
+
+/**
+ * @brief Set boolean parameter value for Generic RFC object.
+ *
+ * @param[in] hInsContext - The instance handle to the Generic RFC object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Generic_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Set string parameter value for Generic RFC object.
+ *
+ * @param[in] hInsContext - The instance handle to the Generic RFC object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] strValue    - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Generic_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       strValue
+    );
+
+
+/**
+ * @brief Set integer parameter value for Generic RFC object.
+ *
+ * @param[in] hInsContext - The instance handle to the Generic RFC object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] value       - The integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Generic_SetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         value
+    );
+
+
+typedef BOOL (*GETBOOL_FUNC_PTR)(ANSC_HANDLE, char*, BOOL*);
+/**
+* @brief Check if the provided boolean value is the same as the current parameter value.
+*
+* @param[in] hInsContext  - The instance handle to the object.
+* @param[in] ParamName    - Pointer to the parameter name.
+* @param[in] bValue       - The boolean value to compare.
+* @param[in] getBoolFunc  - Function pointer to retrieve the current boolean parameter value.
+*
+* @return The status of the comparison.
+* @retval TRUE if the provided boolean value is the same as the current parameter value.
+* @retval FALSE if the values are different or operation fails.
+*
+*/
+BOOL IsBoolSame(ANSC_HANDLE hInsContext,char* ParamName, BOOL bValue, GETBOOL_FUNC_PTR getBoolFunc);
+typedef ULONG (*GETSTRING_FUNC_PTR)(ANSC_HANDLE, char*, char*, ULONG*);
+/**
+* @brief Check if the provided string value is the same as the current parameter value.
+*
+* @param[in] hInsContext    - The instance handle to the object.
+* @param[in] ParamName      - Pointer to the parameter name.
+* @param[in] pValue         - Pointer to the string value to compare.
+* @param[in] getStringFunc  - Function pointer to retrieve the current string parameter value.
+*
+* @return The status of the comparison.
+* @retval TRUE if the provided string value is the same as the current parameter value.
+* @retval FALSE if the values are different or operation fails.
+*
+*/
+BOOL IsStringSame(ANSC_HANDLE hInsContext,char* ParamName, char* pValue, GETSTRING_FUNC_PTR getStringFunc);
+typedef BOOL (*GETULONG_FUNC_PTR)(ANSC_HANDLE, char*, ULONG*);
+/**
+* @brief Check if the provided unsigned long value is the same as the current parameter value.
+*
+* @param[in] hInsContext   - The instance handle to the object.
+* @param[in] ParamName     - Pointer to the parameter name.
+* @param[in] ulValue       - The unsigned long value to compare.
+* @param[in] getUlongFunc  - Function pointer to retrieve the current unsigned long parameter value.
+*
+* @return The status of the comparison.
+* @retval TRUE if the provided unsigned long value is the same as the current parameter value.
+* @retval FALSE if the values are different or operation fails.
+*
+*/
+BOOL IsUlongSame(ANSC_HANDLE hInsContext,char* ParamName, ULONG ulValue, GETULONG_FUNC_PTR getUlongFunc);
+typedef BOOL (*GETINT_FUNC_PTR)(ANSC_HANDLE, char*, int*);
+/**
+* @brief Check if the provided integer value is the same as the current parameter value.
+*
+* @param[in] hInsContext - The instance handle to the object.
+* @param[in] ParamName   - Pointer to the parameter name.
+* @param[in] value       - The integer value to compare.
+* @param[in] getIntFunc  - Function pointer to retrieve the current integer parameter value.
+*
+* @return The status of the comparison.
+* @retval TRUE if the provided integer value is the same as the current parameter value.
+* @retval FALSE if the values are different or operation fails.
+*
+*/
+BOOL IsIntSame(ANSC_HANDLE hInsContext,char* ParamName, int value, GETINT_FUNC_PTR getIntFunc);
+
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Control
+
+    *  Control_GetParamUlongValue
+    *  Control_SetParamUlongValue
+***********************************************************************/
+/**
+ * @brief Get unsigned long parameter value from Control object.
+ *
+ * @param[in] hInsContext - The instance handle to the Control object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pValue     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Control_GetParamUlongValue
+    (
+        ANSC_HANDLE 		hInsContext,
+        char*			ParamName,
+        ULONG*			pValue
+    );
+
+/**
+ * @brief Set integer parameter value for Control object.
+ *
+ * @param[in] hInsContext - The instance handle to the Control object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] ulValue     - The integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Control_SetParamIntValue
+    (
+        ANSC_HANDLE 		hInsContext,
+        char*			ParamName,
+        ULONG 			ulValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Control.XconfSelector
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Control.XconfUrl
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Control.XconfRecoveryUrl
+
+    *  Control_GetParamStringValue
+    *  Control_SetParamStringValue
+***********************************************************************/
+/**
+ * @brief Get string parameter value from Control object.
+ *
+ * @param[in] hInsContext  - The instance handle to the Control object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if the parameter is not found or operation fails.
+ *
+ */
+ULONG
+Control_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Set string parameter value for Control object.
+ *
+ * @param[in] hInsContext - The instance handle to the Control object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] pString     - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Control_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+ /***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Identity.DeviceType
+
+    * Identity_GetParamStringValue
+    * Identity_SetParamStringValue
+***********************************************************************/
+/**
+ * @brief Get string parameter value from Identity object.
+ *
+ * @param[in] hInsContext  - The instance handle to the Identity object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if Not Supported
+ *
+ */
+ULONG
+Identity_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Set string parameter value for Identity object.
+ *
+ * @param[in] hInsContext - The instance handle to the Identity object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] pString     - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Identity_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.STAGE.Enable
+
+    * STAGE_GetParamBoolValue
+    * STAGE_SetParamBoolValue
+***********************************************************************/
+/**
+ * @brief Get boolean parameter value from STAGE object.
+ *
+ * @param[in] hInsContext - The instance handle to the STAGE object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter name is supported and a value has been provided
+ *              (the value may be a default if the underlying storage access fails).
+ * @retval FALSE if the parameter name is not supported.
+ *
+ */
+
+BOOL
+STAGE_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+/**
+ * @brief Set boolean parameter value for STAGE object.
+ *
+ * @param[in] hInsContext - The instance handle to the STAGE object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+
+BOOL
+STAGE_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Control.DisableNativeHostapd
+
+    *  Control_GetParamBoolValue
+    *  Control_SetParamBoolValue
+***********************************************************************/
+/**
+ * @brief Get boolean parameter value from Control object.
+ *
+ * @param[in] hInsContext - The instance handle to the Control object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Control_GetParamBoolValue
+        (
+                ANSC_HANDLE         hInsContext,
+                char*               ParamName,
+                BOOL*               pBool
+        );
+
+/**
+ * @brief Set boolean parameter value for Control object.
+ *
+ * @param[in] hInsContext - The instance handle to the Control object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Control_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.UniqueTelemetryId.
+
+    *  UniqueTelemetryId_GetParamBoolValue
+    *  UniqueTelemetryId_GetParamStringValue
+    *  UniqueTelemetryId_GetParamIntValue
+    *  UniqueTelemetryId_SetParamBoolValue
+    *  UniqueTelemetryId_SetParamStringValue
+    *  UniqueTelemetryId_SetParamIntValue
+***********************************************************************/
+/**
+ * @brief Get boolean parameter value from UniqueTelemetryId object.
+ *
+ * @param[in] hInsContext - The instance handle to the UniqueTelemetryId object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+UniqueTelemetryId_GetParamBoolValue
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		BOOL*						pBool
+	);
+
+/**
+ * @brief Get string parameter value from UniqueTelemetryId object.
+ *
+ * @param[in] hInsContext  - The instance handle to the UniqueTelemetryId object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if Not supported
+ *
+ */
+ULONG
+UniqueTelemetryId_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Get integer parameter value from UniqueTelemetryId object.
+ *
+ * @param[in] hInsContext - The instance handle to the UniqueTelemetryId object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+UniqueTelemetryId_GetParamIntValue
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		int*						pInt
+	);
+
+
+/**
+ * @brief Set boolean parameter value for UniqueTelemetryId object.
+ *
+ * @param[in] hInsContext - The instance handle to the UniqueTelemetryId object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+UniqueTelemetryId_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Set string parameter value for UniqueTelemetryId object.
+ *
+ * @param[in] hInsContext - The instance handle to the UniqueTelemetryId object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] strValue    - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+UniqueTelemetryId_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       strValue
+    );
+
+
+/**
+ * @brief Set integer parameter value for UniqueTelemetryId object.
+ *
+ * @param[in] hInsContext - The instance handle to the UniqueTelemetryId object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] value       - The integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+UniqueTelemetryId_SetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         value
+    );
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.ManageableNotification.
+
+    *  ManageableNotification_GetParamBoolValue
+    *  ManageableNotification_SetParamBoolValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from ManageableNotification object.
+ *
+ * @param[in] hInsContext - The instance handle to the ManageableNotification object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+ManageableNotification_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set boolean parameter value for ManageableNotification object.
+ *
+ * @param[in] hInsContext - The instance handle to the ManageableNotification object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+ManageableNotification_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Cron.SelfHeal.Enable
+
+    *  SelfHeal_GetParamBoolValue
+    *  SelfHeal_SetParamBoolValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from SelfHeal object.
+ *
+ * @param[in] hInsContext - The instance handle to the SelfHeal object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+SelfHeal_GetParamBoolValue
+(
+     ANSC_HANDLE                 hInsContext,
+     char*                       ParamName,
+     BOOL*                       pBool
+);
+
+/**
+ * @brief Set boolean parameter value for SelfHeal object.
+ *
+ * @param[in] hInsContext - The instance handle to the SelfHeal object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+SelfHeal_SetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL                        bValue
+);
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Cron.RdkLogger.Enable
+
+    *  RdkLogger_GetParamBoolValue
+    *  RdkLogger_SetParamBoolValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from RdkLogger object.
+ *
+ * @param[in] hInsContext - The instance handle to the RdkLogger object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+RdkLogger_GetParamBoolValue
+(
+     ANSC_HANDLE                 hInsContext,
+     char*                       ParamName,
+     BOOL*                       pBool
+);
+
+/**
+ * @brief Set boolean parameter value for RdkLogger object.
+ *
+ * @param[in] hInsContext - The instance handle to the RdkLogger object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+RdkLogger_SetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL                        bValue
+);
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WebUI.Enable
+
+    *  WebUI_GetParamUlongValue
+    *  WebUI_SetParamUlongValue
+
+***********************************************************************/
+
+/**
+ * @brief Get unsigned long parameter value from WebUI object.
+ *
+ * @param[in] hInsContext - The instance handle to the WebUI object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] puLong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+WebUI_GetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG*                      puLong
+);
+
+/**
+ * @brief Set unsigned long parameter value for WebUI object.
+ *
+ * @param[in] hInsContext - The instance handle to the WebUI object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] uValue      - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+WebUI_SetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG                       uValue
+);
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SWDLDirect.Enable
+
+    *  SWDLDirect_GetParamBoolValue
+    *  SWDLDirect_SetParamBoolValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from SWDLDirect object.
+ *
+ * @param[in] hInsContext - The instance handle to the SWDLDirect object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+SWDLDirect_GetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL*                       pBool
+);
+
+/**
+ * @brief Set boolean parameter value for SWDLDirect object.
+ *
+ * @param[in] hInsContext - The instance handle to the SWDLDirect object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+SWDLDirect_SetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL                        bValue
+);
+
+/***********************************************************************
+
+ APIs for Object:
+
+	Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CognitiveMotionDetection.Enable
+
+    *  CognitiveMotionDetection_GetParamBoolValue
+    *  CognitiveMotionDetection_SetParamBoolValue
+***********************************************************************/
+#ifdef FEATURE_COGNITIVE_WIFIMOTION
+/**
+ * @brief Get boolean parameter value from CognitiveMotionDetection object.
+ *
+ * @param[in] hInsContext - The instance handle to the CognitiveMotionDetection object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+CognitiveMotionDetection_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set boolean parameter value for CognitiveMotionDetection object.
+ *
+ * @param[in] hInsContext - The instance handle to the CognitiveMotionDetection object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+CognitiveMotionDetection_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
     );
 #endif
-#if defined(FEATURE_HOSTAP_AUTHENTICATOR)
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Snmpv3DHKickstart.KickstartTable{i}.
+
+    *  Snmpv3DHKickstart_GetParamBoolValue
+    *  Snmpv3DHKickstart_SetParamBoolValue
+    *  Snmpv3DHKickstart_GetParamUlongValue
+    *  Snmpv3DHKickstart_SetParamUlongValue
+
+***********************************************************************/
 /**
-* @brief Set native hostapd state.
-*
-* This function enables or disables the native hostapd authenticator functionality.
-*
-* @param[in] bValue - Boolean value to set.
-*                     \n TRUE: Enable native hostapd.
-*                     \n FALSE: Disable native hostapd.
-*
-* @return The status of the operation.
-* @retval TRUE if the operation is successful.
-* @retval FALSE if any error is detected during the operation.
-*
-*/
+ * @brief Get boolean parameter value from Snmpv3DHKickstart object.
+ *
+ * @param[in] hInsContext - The instance handle to the Snmpv3DHKickstart object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
 BOOL
-CosaDmlSetNativeHostapdState
+Snmpv3DHKickstart_GetParamBoolValue
+
     (
-        BOOL        bValue
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
     );
-#endif //FEATURE_HOSTAP_AUTHENTICATOR
 
 /**
-* @brief Set DFS (Dynamic Frequency Selection) state.
-*
-* This function enables or disables the Dynamic Frequency Selection feature for
-* WiFi operation in DFS channels.
-*
-* @param[in] bValue - Boolean value to set.
-*                     \n TRUE: Enable DFS.
-*                     \n FALSE: Disable DFS.
-*
-* @return The status of the operation.
-* @retval TRUE if the operation is successful.
-* @retval FALSE if any error is detected during the operation.
-*
-*/
-BOOL CosaDmlSetDFS(BOOL bValue);
+ * @brief Set boolean parameter value for Snmpv3DHKickstart object.
+ *
+ * @param[in] hInsContext - The instance handle to the Snmpv3DHKickstart object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Snmpv3DHKickstart_SetParamBoolValue
+
+(
+ ANSC_HANDLE                 hInsContext,
+ char*                       ParamName,
+ BOOL                        bValue
+ );
 
 /**
-* @brief Set DFS state at boot up.
-*
-* This function configures whether DFS should be enabled or disabled during device boot up initialization.
-*
-* @param[in] bValue - Boolean value to set.
-*                     \n TRUE: Enable DFS at boot up.
-*                     \n FALSE: Disable DFS at boot up.
-*
-* @return The status of the operation.
-* @retval TRUE if the operation is successful.
-* @retval FALSE if any error is detected during the operation.
-*
-*/
-BOOL CosaDmlSetDFSatBootUp(BOOL bValue);
+ * @brief Get unsigned long parameter value from Snmpv3DHKickstart object.
+ *
+ * @param[in] hInsContext - The instance handle to the Snmpv3DHKickstart object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] puLong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Snmpv3DHKickstart_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    );
 
+/**
+ * @brief Set unsigned long parameter value for Snmpv3DHKickstart object.
+ *
+ * @param[in] hInsContext - The instance handle to the Snmpv3DHKickstart object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] uValue      - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+Snmpv3DHKickstart_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Snmpv3DHKickstart.KickstartTable{i}.
+
+    *  KickstartTable_GetEntryCount
+    *  KickstartTable_GetEntry
+    *  KickstartTable_GetParamStringValue
+    *  KickstartTable_SetParamStringValue
+
+***********************************************************************/
+
+/**
+ * @brief Get the number of KickstartTable entries.
+ *
+ * @param[in] hInsContext - The instance handle.
+ *
+ * @return The number of KickstartTable entries.
+ *
+ */
+ULONG
+KickstartTable_GetEntryCount
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+/**
+ * @brief Get a KickstartTable entry by index.
+ *
+ * @param[in] hInsContext  - The instance handle to the parent object.
+ * @param[in] nIndex       - The index of the KickstartTable entry.
+ * @param[out] pInsNumber  - Pointer to store the instance number of the KickstartTable entry.
+ *
+ * @return The handle to the KickstartTable entry.
+ * @retval Non-NULL handle if the entry is found.
+ * @retval NULL if the entry is not found.
+ *
+ */
+ANSC_HANDLE
+KickstartTable_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    );
+
+/**
+ * @brief Get string parameter value from KickstartTable entry.
+ *
+ * @param[in] hInsContext  - The instance handle to the KickstartTable entry.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if Not supported
+ *
+ */
+LONG
+KickstartTable_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Set string parameter value for KickstartTable entry.
+ *
+ * @param[in] hInsContext - The instance handle to the KickstartTable entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] pString     - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+KickstartTable_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+#if !defined (RESOURCE_OPTIMIZATION)
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.VendorConfigFile.{i}.
+
+    *  VendorConfigFile_GetEntryCount
+    *  VendorConfigFile_GetEntry
+    *  VendorConfigFile_GetParamBoolValue
+    *  VendorConfigFile_GetParamIntValue
+    *  VendorConfigFile_GetParamUlongValue
+    *  VendorConfigFile_GetParamStringValue
+    *  VendorConfigFile_SetParamBoolValue
+    *  VendorConfigFile_SetParamIntValue
+    *  VendorConfigFile_SetParamUlongValue
+    *  VendorConfigFile_SetParamStringValue
+    *  VendorConfigFile_Validate
+    *  VendorConfigFile_Commit
+    *  VendorConfigFile_Rollback
+
+***********************************************************************/
+/**
+ * @brief Get the number of VendorConfigFile entries.
+ *
+ * @param[in] hInsContext - The instance handle.
+ *
+ * @return The number of VendorConfigFile entries.
+ *
+ */
+ULONG
+VendorConfigFile_GetEntryCount
+    (
+        ANSC_HANDLE
+    );
+
+/**
+ * @brief Get a VendorConfigFile entry by index.
+ *
+ * @param[in] hInsContext  - The instance handle to the parent object.
+ * @param[in] nIndex       - The index of the VendorConfigFile entry.
+ * @param[out] pInsNumber  - Pointer to store the instance number of the VendorConfigFile entry.
+ *
+ * @return The handle to the VendorConfigFile entry.
+ * @retval Non-NULL handle if the entry is found.
+ * @retval NULL if the entry is not found.
+ *
+ */
+ANSC_HANDLE
+VendorConfigFile_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    );
+
+/**
+ * @brief Get boolean parameter value from VendorConfigFile entry.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+VendorConfigFile_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Get integer parameter value from VendorConfigFile entry.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+VendorConfigFile_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
+    );
+
+/**
+ * @brief Get unsigned long parameter value from VendorConfigFile entry.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+VendorConfigFile_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    );
+
+/**
+ * @brief Get string parameter value from VendorConfigFile entry.
+ *
+ * @param[in] hInsContext  - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if Not suppported
+ *
+ */
+ULONG
+VendorConfigFile_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Set boolean parameter value for VendorConfigFile entry.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+VendorConfigFile_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Set integer parameter value for VendorConfigFile entry.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] value       - The integer value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+VendorConfigFile_SetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         value
+    );
+
+/**
+ * @brief Set unsigned long parameter value for VendorConfigFile entry.
+ *
+ * @param[in] hInsContext  - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[in] uValuepUlong - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+VendorConfigFile_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValuepUlong
+    );
+
+/**
+ * @brief Set string parameter value for VendorConfigFile entry.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] strValue    - Pointer to the string value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+VendorConfigFile_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       strValue
+    );
+
+/**
+ * @brief Validate VendorConfigFile entry parameter values.
+ *
+ * @param[in] hInsContext        - The instance handle to the VendorConfigFile entry.
+ * @param[out] pReturnParamName  - Pointer to a buffer (128 bytes) to store the parameter name if there's a validation.
+ * @param[in,out] puLength       - Pointer to the buffer length.
+ *
+ * @return The validation result.
+ * @retval TRUE if there's no validation.
+ * @retval FALSE if there's validation.
+ *
+ */
+BOOL
+VendorConfigFile_Validate
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       pReturnParamName,
+        ULONG*                      puLength
+    );
+
+/**
+ * @brief Commit VendorConfigFile entry parameter changes.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ *
+ * @return The status of the operation.
+ *
+ */
+ULONG
+VendorConfigFile_Commit
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+/**
+ * @brief Rollback VendorConfigFile entry parameter changes.
+ *
+ * @param[in] hInsContext - The instance handle to the VendorConfigFile entry.
+ *
+ * @return The status of the operation.
+ *
+ */
+ULONG
+VendorConfigFile_Rollback
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+#endif
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.SupportedDataModel.{i}.
+
+    *  SupportedDataModel_GetEntryCount
+    *  SupportedDataModel_GetEntry
+    *  SupportedDataModel_GetParamBoolValue
+    *  SupportedDataModel_GetParamIntValue
+    *  SupportedDataModel_GetParamUlongValue
+    *  SupportedDataModel_GetParamStringValue
+
+***********************************************************************/
+/**
+ * @brief Get the number of SupportedDataModel entries.
+ *
+ * @param[in] hInsContext - The instance handle.
+ *
+ * @return The number of SupportedDataModel entries.
+ *
+ */
+ULONG
+SupportedDataModel_GetEntryCount
+    (
+        ANSC_HANDLE
+    );
+
+/**
+ * @brief Get a SupportedDataModel entry by index.
+ *
+ * @param[in] hInsContext  - The instance handle to the parent object.
+ * @param[in] nIndex       - The index of the SupportedDataModel entry.
+ * @param[out] pInsNumber  - Pointer to store the instance number of the SupportedDataModel entry.
+ *
+ * @return The handle to the SupportedDataModel entry.
+ * @retval Non-NULL handle if the entry is found.
+ * @retval NULL if the entry is not found.
+ *
+ */
+ANSC_HANDLE
+SupportedDataModel_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    );
+
+/**
+ * @brief Get boolean parameter value from SupportedDataModel entry.
+ *
+ * @param[in] hInsContext - The instance handle to the SupportedDataModel entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+SupportedDataModel_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Get integer parameter value from SupportedDataModel entry.
+ *
+ * @param[in] hInsContext - The instance handle to the SupportedDataModel entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+SupportedDataModel_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
+    );
+
+/**
+ * @brief Get unsigned long parameter value from SupportedDataModel entry.
+ *
+ * @param[in] hInsContext - The instance handle to the SupportedDataModel entry.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+SupportedDataModel_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    );
+
+/**
+ * @brief Get string parameter value from SupportedDataModel entry.
+ *
+ * @param[in] hInsContext  - The instance handle to the SupportedDataModel entry.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if not supported.
+ *
+ */
+ULONG
+SupportedDataModel_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.MemoryStatus.
+
+    *  MemoryStatus_GetParamBoolValue
+    *  MemoryStatus_GetParamIntValue
+    *  MemoryStatus_GetParamUlongValue
+    *  MemoryStatus_GetParamStringValue
+    *  MemoryStatus_SetParamUlongValue
+
+***********************************************************************/
+/**
+ * @brief Get boolean parameter value from MemoryStatus object.
+ *
+ * @param[in] hInsContext - The instance handle to the MemoryStatus object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+MemoryStatus_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Get integer parameter value from MemoryStatus object.
+ *
+ * @param[in] hInsContext - The instance handle to the MemoryStatus object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+MemoryStatus_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
+    );
+
+/**
+ * @brief Get unsigned long parameter value from MemoryStatus object.
+ *
+ * @param[in] hInsContext - The instance handle to the MemoryStatus object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+MemoryStatus_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    );
+
+/**
+ * @brief Get string parameter value from MemoryStatus object.
+ *
+ * @param[in] hInsContext  - The instance handle to the MemoryStatus object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if if not supported.
+ *
+ */
+ULONG
+MemoryStatus_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Set unsigned long parameter value for MemoryStatus object.
+ *
+ * @param[in] hInsContext - The instance handle to the MemoryStatus object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] uValue      - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+MemoryStatus_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.ProcessStatus.
+
+    *  ProcessStatus_GetParamBoolValue
+    *  ProcessStatus_GetParamIntValue
+    *  ProcessStatus_GetParamUlongValue
+    *  ProcessStatus_GetParamStringValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from ProcessStatus object.
+ *
+ * @param[in] hInsContext - The instance handle to the ProcessStatus object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+ProcessStatus_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Get integer parameter value from ProcessStatus object.
+ *
+ * @param[in] hInsContext - The instance handle to the ProcessStatus object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pInt       - Pointer to store the integer value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+ProcessStatus_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
+    );
+
+/**
+ * @brief Get unsigned long parameter value from ProcessStatus object.
+ *
+ * @param[in] hInsContext - The instance handle to the ProcessStatus object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+ProcessStatus_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    );
+
+/**
+ * @brief Get string parameter value from ProcessStatus object.
+ *
+ * @param[in] hInsContext  - The instance handle to the ProcessStatus object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[out] pValue      - Pointer to a buffer where the string value will be stored.
+ * @param[in,out] pUlSize  - Pointer to the buffer size; updated with actual size on return. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation.
+ * @retval 0 if the operation is successful.
+ * @retval 1 if the buffer is too small; pUlSize updated with required size.
+ * @retval -1 if not supported.
+ *
+ */
+ULONG
+ProcessStatus_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.ProcessStatus.Process.{i}.
+
+    *  Process_GetEntryCount
+    *  Process_GetEntry
+    *  Process_IsUpdated
+    *  Process_Synchronize
+    *  Process_GetParamBoolValue
+    *  Process_GetParamIntValue
+    *  Process_GetParamUlongValue
+    *  Process_GetParamStringValue
+
+***********************************************************************/
+
+#if !defined (RESOURCE_OPTIMIZATION)
+
+/**
+ * @brief Get the count of process table entries
+ *
+ * Retrieves the total number of process entries currently tracked in the Device.DeviceInfo.ProcessStatus.Process table.
+ * This function is only available when RESOURCE_OPTIMIZATION is not defined.
+ *
+ * @param[in] hInsContext  Instance context handle
+ *
+ * @return The total number of process entries
+ */
+ULONG
+Process_GetEntryCount
+    (
+        ANSC_HANDLE
+    );
+
+/**
+ * @brief Get a specific process table entry by index
+ *
+ * Retrieves a process entry from the Device.DeviceInfo.ProcessStatus.Process table at the specified index position.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] nIndex       Zero-based index of the entry to retrieve
+ * @param[out] pInsNumber  Instance number of the retrieved entry
+ *
+ * @return Handle to the process entry context
+ * @retval Non-NULL handle if found
+ * @retval NULL if not found
+ */
+ANSC_HANDLE
+Process_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    );
+
+/**
+ * @brief Check if the process table has been updated
+ *
+ * Determines whether the process table data needs to be resynchronized.
+ * Returns TRUE if the cached data is stale and needs refreshing.
+ *
+ * @param[in] hInsContext  Instance context handle
+ *
+ * @return Validation result
+ * @retval TRUE if the process table needs update
+ * @retval FALSE otherwise
+ */
+BOOL
+Process_IsUpdated
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+/**
+ * @brief Synchronize the process table with current system state
+ *
+ * Refreshes the process table cache by reading current process information
+ * from the operating system.
+ *
+ * @param[in] hInsContext  Instance context handle
+ *
+ * @return The status of the operation
+ * @retval 0 on success,
+ * @retval error code otherwise
+ */
+ULONG
+Process_Synchronize
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+/**
+ * @brief Get a boolean parameter value from a process entry
+ *
+ * Retrieves a boolean parameter from a Device.DeviceInfo.ProcessStatus.Process
+ * table entry.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the boolean value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+Process_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Get an integer parameter value from a process entry
+ *
+ * Retrieves an integer parameter from a Device.DeviceInfo.ProcessStatus.Process
+ * table entry.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pInt        Pointer to store the integer value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+Process_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
+    );
+
+/**
+ * @brief Get an unsigned long parameter value from a process entry
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pUlong      Pointer to store the unsigned long value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+Process_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    );
+
+/**
+ * @brief Get a string parameter value from a process entry
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pValue      Buffer to store the string value.
+ * @param[in,out] pUlSize  Size of the buffer (input), length of the string (output). Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 if Not supported
+ */
+ULONG
+Process_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+#endif
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.NetworkProperties.
+
+    *  NetworkProperties_GetParamBoolValue
+    *  NetworkProperties_GetParamIntValue
+    *  NetworkProperties_GetParamUlongValue
+    *  NetworkProperties_GetParamStringValue
+
+***********************************************************************/
+/**
+ * @brief Get a boolean parameter from DeviceInfo.NetworkProperties
+ *
+ * Retrieves a boolean network properties parameter from the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the boolean value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+NetworkProperties_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Get an integer parameter from DeviceInfo.NetworkProperties
+ *
+ * Retrieves an integer network properties parameter from the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pInt        Pointer to store the integer value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+NetworkProperties_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pInt
+    );
+
+/**
+ * @brief Get an unsigned long parameter from DeviceInfo.NetworkProperties
+ *
+ * Retrieves an unsigned long network properties parameter from the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pUlong      Pointer to store the unsigned long value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+NetworkProperties_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    );
+
+/**
+ * @brief Get a string parameter from DeviceInfo.NetworkProperties
+ *
+ * Retrieves a string network properties parameter from the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pValue      Buffer to store the string value
+ * @param[in,out] pUlSize  Size of the buffer (input), length of the string (output). Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 if Not supported
+ */
+ULONG
+NetworkProperties_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+#if defined (USE_REMOTE_DEBUGGER)
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKRemoteDebugger.Enable
+
+    *  RDKRemoteDebugger_GetParamBoolValue
+    *  RDKRemoteDebugger_SetParamBoolValue
+***********************************************************************/
+/**
+ * @brief Get RDK Remote Debugger enable status
+ *
+ * Retrieves the enable status of the RDK Remote Debugger feature. This feature
+ * allows remote debugging access to the device when enabled.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the enable status
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RDKRemoteDebugger_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set RDK Remote Debugger enable status
+ *
+ * Enables or disables the RDK Remote Debugger feature on the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] bValue       TRUE to enable, FALSE to disable
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RDKRemoteDebugger_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.InstallPackage
+
+    *  RDKDownloadManager_SetParamStringValue
+
+***********************************************************************/
+/**
+ * @brief Set RDK Download Manager install package parameter
+ *
+ * Sets the package identifier to trigger installation via RDK Download Manager.
+ * The manager will download and install the specified package.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] pString      Package identifier or URL to install
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RDKDownloadManager_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+#endif
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Trigger
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Args
+
+    *  xMemInsight_SetParamBoolValue
+    *  xMemInsight_GetParamBoolValue
+    *  xMemInsight_SetParamStringValue
+    *  xMemInsight_GetParamStringValue
+***********************************************************************/
+
+BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool);
+ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
+BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString);
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.AccountInfo.AccountID
+
+    *  AccountInfo_GetParamStringValue
+    *  AccountInfo_SetParamStringValue
+***********************************************************************/
+/**
+ * @brief Set account information parameter
+ *
+ * Sets account-related information such as AccountID for the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] pString      Account identifier string
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+AccountInfo_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Get account information parameter
+ *
+ * Retrieves account-related information such as AccountID from the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pValue      Buffer to store the account identifier
+ * @param[in,out] pUlSize  Size of the buffer (input), length of the string (output). Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 if Not supported
+ */
+ULONG
+AccountInfo_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_xOpsDeviceMgmt.RPC.
+
+    *  RPC_GetParamUlongValue
+    *  RPC_SetParamUlongValue
+    *  RPC_GetParamStringValue
+    *  RPC_SetParamStringValue
+
+***********************************************************************/
+/**
+ * @brief Get an unsigned long RPC parameter value
+ *
+ * Retrieves an unsigned long parameter from the xOpsDeviceMgmt RPC configuration,
+ * such as BindPort or other numeric RPC settings.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] puLong      Pointer to store the unsigned long value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RPC_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    );
+
+/**
+ * @brief Set an unsigned long RPC parameter value
+ *
+ * Sets an unsigned long parameter in the xOpsDeviceMgmt RPC configuration.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] uValue       Unsigned long value to set
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RPC_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    );
+
+/**
+ * @brief Get a string RPC parameter value
+ *
+ * Retrieves a string parameter from the xOpsDeviceMgmt RPC configuration,
+ * such as server address or other string-based RPC settings.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pValue      Buffer to store the string value
+ * @param[in,out] pulSize  Size of the buffer (input), length of the string (output). Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 if Not supported
+ */
+ULONG
+RPC_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pulSize
+    );
+
+/**
+ * @brief Set a string RPC parameter value
+ *
+ * Sets a string parameter in the xOpsDeviceMgmt RPC configuration.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] pString      String value to set
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RPC_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_SwitchToDibbler.
+
+    *  SwitchToDibbler_GetParamBoolValue
+    *  SwitchToDibbler_SetParamBoolValue
+
+***********************************************************************/
+/**
+ * @brief Get switch to Dibbler DHCPv6 client status
+ *
+ * Retrieves the configuration status for switching to Dibbler DHCPv6 client
+ * instead of the default DHCP client.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the switch status
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+SwitchToDibbler_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set switch to Dibbler DHCPv6 client status
+ *
+ * Enables or disables switching to Dibbler DHCPv6 client on the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] bValue       TRUE to enable Dibbler, FALSE to use default client
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+SwitchToDibbler_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CDLDM.CDLModuleUrl
+
+    *  CDLDM_GetParamStringValue
+    *  CDLDM_SetParamStringValue
+***********************************************************************/
+/**
+ * @brief Set Code Download Manager module URL
+ *
+ * Sets the URL for the CDLDM (Code Download Manager) module download location.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] pString      URL string for the CDL module
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+CDLDM_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Get Code Download Manager module URL
+ *
+ * Retrieves the URL for the CDLDM (Code Download Manager) module download location.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pValue      Buffer to store the URL string
+ * @param[in,out] pUlSize  Size of the buffer (input), length of the string (output). Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 if Not supported
+ */
+ULONG
+CDLDM_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_SwitchToUDHCPC.
+
+    *  SwitchToUDHCPC_GetParamBoolValue
+    *  SwitchToUDHCPC_SetParamBoolValue
+
+***********************************************************************/
+/**
+ * @brief Get switch to udhcpc DHCP client status
+ *
+ * Retrieves the configuration status for switching to udhcpc DHCP client
+ * instead of the default DHCP client.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the switch status
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+SwitchToUDHCPC_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set switch to udhcpc DHCP client status
+ *
+ * Enables or disables switching to udhcpc DHCP client on the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] bValue       TRUE to enable udhcpc, FALSE to use default client
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+SwitchToUDHCPC_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_xOpsDeviceMgmt.ReverseSSH.
+
+    *  ReverseSSH_GetParamStringValue
+    *  ReverseSSH_SetParamStringValue
+
+***********************************************************************/
+
+/**
+ * @brief Get Reverse SSH parameter value
+ *
+ * Retrieves a Reverse SSH configuration parameter such as trigger or connection
+ * string for establishing reverse SSH tunnels for device management.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pValue      Buffer to store the string value.
+ * @param[in,out] pulSize  Size of the buffer (input), length of the string (output). Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 if Not supported
+ */
+ULONG
+ReverseSSH_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pulSize
+    );
+
+/**
+ * @brief Set Reverse SSH parameter value
+ *
+ * Sets a Reverse SSH configuration parameter to enable remote management
+ * via reverse SSH tunnel.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] pString      String value to set
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+    BOOL
+        ReverseSSH_SetParamStringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pString
+            );
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_Syndication.
+
+    *  Syndication_GetParamStringValue
+    *  Syndication_SetParamStringValue
+    *  Syndication_GetParamBoolValue
+    *  Syndication_SetParamBoolValue
+
+***********************************************************************/
+
+/**
+ * @brief Get a boolean syndication parameter value
+ *
+ * Retrieves a boolean parameter from the syndication partner configuration,
+ * such as feature enable flags or status indicators.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the boolean value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+Syndication_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set a boolean syndication parameter value
+ *
+ * Sets a boolean parameter in the syndication partner configuration.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] bValue       Boolean value to set
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+Syndication_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Set a string syndication parameter value
+ *
+ * Sets a string parameter in the syndication partner configuration, such as
+ * partner ID, portal URL, or other configuration strings.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] pString      String value to set
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+Syndication_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Get a string syndication parameter value
+ *
+ * Retrieves a string parameter from the syndication partner configuration.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pValue      Buffer to store the string value.
+ * @param[in,out] pulSize  Size of the buffer (input), length of the string (output). Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 if Not supported
+ */
+ULONG
+Syndication_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pulSize
+    );
+
+/**
+ * @brief Get WAN-side SSH access enable status
+ *
+ * Retrieves the enable status for SSH access from the WAN side of the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the enable status
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+WANsideSSH_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set WAN-side SSH access enable status
+ *
+ * Enables or disables SSH access from the WAN side of the device.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] bValue       TRUE to enable WAN-side SSH, FALSE to disable
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+WANsideSSH_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Get RDKB control parameter value
+ *
+ * Retrieves a boolean control parameter for RDK-B management and configuration.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to retrieve
+ * @param[out] pBool       Pointer to store the boolean value
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RDKB_Control_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Set RDKB control parameter value
+ *
+ * Sets a boolean control parameter for RDK-B management and configuration.
+ *
+ * @param[in] hInsContext  Instance context handle
+ * @param[in] ParamName    Name of the parameter to set
+ * @param[in] bValue       Boolean value to set
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter set successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RDKB_Control_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for RDKB UI Branding configuration.
+ *
+ * @param[in]  hInsContext Instance handle for the RDKB UI Branding context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve.
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter found and retrieved successfully
+ * @retval FALSE otherwise
+ */
+BOOL
+RDKB_UIBranding_GetParamBoolValue
+
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*					ParamName,
+		BOOL*                       		pBool
+	);
+
+/**
+ * @brief Retrieves string parameter values for RDKB UI Branding configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the RDKB UIBranding context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve .
+ * @param[out]    pValue      Buffer to store the retrieved string value. Usually size of 1023 will be used.
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer too small
+ * @retval -1 on error
+ */
+ULONG
+RDKB_UIBranding_GetParamStringValue
+
+	(
+        ANSC_HANDLE 				        hInsContext,
+        char*						ParamName,
+        char*						pValue,
+        ULONG*						pulSize
+	);
+
+/**
+ * @brief Sets string parameter values for RDKB UI Branding configuration.
+ *
+ * @param[in] hInsContext Instance handle for the RDKB_UIBranding context.
+ * @param[in] ParamName   Name of the string parameter to set.
+ * @param[in] pString     String value to set
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully,
+ * @retval FALSE otherwise.
+ */
+BOOL
+RDKB_UIBranding_SetParamStringValue
+
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       		ParamName,
+        char*                       		pString
+    );
+
+/**
+ * @brief Retrieves string parameter values for UI branding footer configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the Footer context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve .
+ * @param[out]    pValue      Buffer to store the retrieved string value.
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 on error
+ */
+ULONG
+Footer_GetParamStringValue
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		char*						pValue,
+		ULONG*						pulSize
+	);
+
+/**
+ * @brief Sets string parameter values for UI branding footer configuration.
+ *
+ * @param[in] hInsContext Instance handle for the Footer context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+Footer_SetParamStringValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Retrieves string parameter values for UI connection status configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the Connection context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+Connection_GetParamStringValue
+
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		char*						pValue,
+		ULONG*						pulSize
+	);
+
+/**
+ * @brief Sets string parameter values for UI connection status configuration.
+ *
+ * @param[in] hInsContext Instance handle for the Connection context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+Connection_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+
+/**
+ * @brief Retrieves string parameter values for network diagnostic tools configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the NetworkDiagnosticTools context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string.  Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+ULONG
+NetworkDiagnosticTools_GetParamStringValue
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		char*						pValue,
+		ULONG*						pulSize
+	);
+
+/**
+ * @brief Sets string parameter values for network diagnostic tools configuration.
+ *
+ * @param[in] hInsContext Instance handle for the NetworkDiagnosticTools context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+NetworkDiagnosticTools_SetParamStringValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for WiFi personalization settings.
+ *
+ * @param[in]  hInsContext Instance handle for the WiFiPersonalization context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+WiFiPersonalization_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Retrieves string parameter values for WiFi personalization settings.
+ *
+ * @param[in]     hInsContext Instance handle for the WiFiPersonalization context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+WiFiPersonalization_GetParamStringValue
+
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		char*						pValue,
+		ULONG*						pulSize
+	);
+
+/**
+ * @brief Sets boolean parameter values for WiFi personalization settings.
+ *
+ * @param[in] hInsContext Instance handle for the WiFiPersonalization context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+WiFiPersonalization_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Sets string parameter values for WiFi personalization settings.
+ *
+ * @param[in] hInsContext Instance handle for the WiFiPersonalization context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+WiFiPersonalization_SetParamStringValue
+
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Retrieves string parameter values for Local UI configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the LocalUI context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+LocalUI_GetParamStringValue
+
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		char*						pValue,
+		ULONG*						pulSize
+	);
+/**
+ * @brief Sets string parameter values for Local UI configuration.
+ *
+ * @param[in] hInsContext Instance handle for the LocalUI context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+LocalUI_SetParamStringValue
+
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for IPv6 subprefix configuration.
+ *
+ * @param[in]  hInsContext Instance handle for the IPv6subPrefix context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6subPrefix_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+/**
+ * @brief Sets boolean parameter values for IPv6 subprefix configuration.
+ *
+ * @param[in] hInsContext Instance handle for the IPv6subPrefix context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6subPrefix_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Retrieves boolean parameter values for IPv6 on LnF (Lost and Found) interface.
+ *
+ * @param[in]  hInsContext Instance handle for the IPv6onLnF context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onLnF_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+/**
+ * @brief Sets boolean parameter values for IPv6 on LnF (Lost and Found) interface.
+ *
+ * @param[in] hInsContext Instance handle for the IPv6onLnF context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onLnF_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Retrieves boolean parameter values for IPv6 on XHS (Xfinity Home Security) interface.
+ *
+ * @param[in]  hInsContext Instance handle for the IPv6onXHS context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onXHS_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+/**
+ * @brief Sets boolean parameter values for IPv6 on XHS (Xfinity Home Security) interface.
+ *
+ * @param[in] hInsContext Instance handle for the IPv6onXHS context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onXHS_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Retrieves boolean parameter values for IPv6 on POD interface.
+ *
+ * @param[in]  hInsContext Instance handle for the IPv6onPOD context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onPOD_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+/**
+ * @brief Sets boolean parameter values for IPv6 on POD interface.
+ *
+ * @param[in] hInsContext Instance handle for the IPv6onPOD context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onPOD_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Retrieves boolean parameter values for IPv6 on MoCA interface.
+ *
+ * @param[in]  hInsContext Instance handle for the IPv6onMoCA context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onMoCA_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+/**
+ * @brief Sets boolean parameter values for IPv6 on MoCA interface.
+ *
+ * @param[in] hInsContext Instance handle for the IPv6onMoCA context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+IPv6onMoCA_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Retrieves boolean parameter values for EvoStream Direct Connect feature.
+ *
+ * @param[in]  hInsContext Instance handle for the EvoStream_DirectConnect context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+EvoStream_DirectConnect_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for EvoStream Direct Connect feature.
+ *
+ * @param[in] hInsContext Instance handle for the EvoStream_DirectConnect context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+EvoStream_DirectConnect_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Retrieves boolean parameter values for Local UI configuration.
+ *
+ * @param[in]  hInsContext Instance handle for the LocalUI context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+LocalUI_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+/**
+ * @brief Sets boolean parameter values for Local UI configuration.
+ *
+ * @param[in] hInsContext Instance handle for the LocalUI context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+LocalUI_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/**
+ * @brief Retrieves string parameter values for help tip configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the HelpTip context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+HelpTip_GetParamStringValue
+
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		char*						pValue,
+		ULONG*						pulSize
+	);
+/**
+ * @brief Sets string parameter values for help tip configuration.
+ *
+ * @param[in] hInsContext Instance handle for the HelpTip context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+HelpTip_SetParamStringValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.
+    *  CloudUI_GetParamStringValue
+    *  CloudUI_SetParamStringValue
+
+***********************************************************************/
+
+/**
+ * @brief Retrieves string parameter values for Cloud UI configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the CloudUI context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pulSize     Input: Size of pValue buffer; Output: Length of retrieved string.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+CloudUI_GetParamStringValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pulSize
+    );
+/**
+ * @brief Sets string parameter values for Cloud UI configuration.
+ *
+ * @param[in] hInsContext Instance handle for the CloudUI context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+CloudUI_SetParamStringValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SyndicationFlowControl
+    *  SyndicationFlowControl_GetParamBoolValue
+    *  SyndicationFlowControl_SetParamBoolValue
+    *  SyndicationFlowControl_GetParamStringValue
+    *  SyndicationFlowControl_SetParamStringValue
+
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for Syndication Flow Control feature.
+ *
+ * @param[in]  hInsContext Instance handle for the SyndicationFlowControl context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+SyndicationFlowControl_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Retrieves string parameter values for Syndication Flow Control feature.
+ *
+ * @param[in]     hInsContext Instance handle for the SyndicationFlowControl context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pUlSize     Input: Size of pValue buffer; Output: Length of retrieved string.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+SyndicationFlowControl_GetParamStringValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Sets boolean parameter values for RFC Feature configuration.
+ *
+ * @param[in] hInsContext Instance handle for the Feature context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+Feature_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Sets boolean parameter values for Syndication Flow Control feature.
+ *
+ * @param[in] hInsContext Instance handle for the SyndicationFlowControl context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+SyndicationFlowControl_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Telemetry.MessageBusSource.Enable
+
+    *  MessageBusSource_GetParamBoolValue
+    *  MessageBusSource_SetParamBoolValue
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for MessageBusSource enable configuration.
+ *
+ * @param[in]  hInsContext Instance handle for the MessageBusSource context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MessageBusSource_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for MessageBusSource enable configuration.
+ *
+ * @param[in] hInsContext Instance handle for the MessageBusSource context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MessageBusSource_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+ *
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.FWUpdate.AutoExcluded
+
+    *  AutoExcluded_GetParamBoolValue
+    *  AutoExcluded_SetParamBoolValue
+    *  AutoExcluded_GetParamStringValue
+    *  AutoExcluded_SetParamStringValue
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for FWUpdate AutoExcluded feature.
+ *
+ * @param[in]  hInsContext Instance handle for the AutoExcluded context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+AutoExcluded_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for FWUpdate AutoExcluded feature.
+ *
+ * @param[in] hInsContext Instance handle for the AutoExcluded context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+AutoExcluded_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Retrieves string parameter values for FWUpdate AutoExcluded feature.
+ *
+ * @param[in]     hInsContext Instance handle for the AutoExcluded context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pUlSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+AutoExcluded_GetParamStringValue
+(
+ ANSC_HANDLE                 hInsContext,
+ char*                       ParamName,
+ char*                       pValue,
+ ULONG*                      pUlSize
+);
+
+/**
+ * @brief Sets string parameter values for FWUpdate AutoExcluded feature.
+ *
+ * @param[in] hInsContext Instance handle for the AutoExcluded context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+AutoExcluded_SetParamStringValue
+(
+ ANSC_HANDLE                 hInsContext,
+ char*                       ParamName,
+ char*                       pString
+);
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.OAUTH.
+    *  OAUTH_GetParamStringValue
+    *  OAUTH_SetParamStringValue
+
+***********************************************************************/
+/**
+ * @brief Retrieves string parameter values for OAUTH configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the OAUTH context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pUlSize     Input: Size of pValue buffer; Output: Length of retrieved string.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+OAUTH_GetParamStringValue
+
+    (
+        ANSC_HANDLE        hInsContext,
+        char*              ParamName,
+        char*              pValue,
+        ULONG*             pUlSize
+    );
+
+/**
+ * @brief Sets string parameter values for OAUTH configuration.
+ *
+ * @param[in] hInsContext Instance handle for the OAUTH context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+OAUTH_SetParamStringValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_EthernetWAN.
+
+    *  EthernetWAN_GetParamStringValue
+
+***********************************************************************/
+
+/**
+ * @brief Retrieves string parameter values for Ethernet WAN configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the EthernetWAN context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pUlSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+EthernetWAN_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+
+/**
+ * @brief Retrieves boolean parameter values for Telemetry configuration.
+ *
+ * @param[in]  hInsContext Instance handle for the Telemetry context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+Telemetry_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for Telemetry configuration.
+ *
+ * @param[in] hInsContext Instance handle for the Telemetry context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+Telemetry_SetParamBoolValue
+    (
+        ANSC_HANDLE hInsContext,
+	char* ParamName,
+	BOOL bValue
+    );
+
+
+/**
+ * @brief Retrieves string parameter values for Telemetry configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the Telemetry context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pUlSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+Telemetry_GetParamStringValue
+    (
+        ANSC_HANDLE hInsContext,
+	char* ParamName,
+	char* pValue,
+        ULONG* pUlSize
+    );
+
+/**
+ * @brief Sets string parameter values for Telemetry configuration.
+ *
+ * @param[in] hInsContext Instance handle for the Telemetry context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+Telemetry_SetParamStringValue
+   (
+        ANSC_HANDLE hInsContext,
+	char* ParamName,
+	char* pString
+   );
+
+
+/**********************************************************************
+
+APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MACsecRequired.Enable
+
+    *  MACsecRequired_GetParamBoolValue
+    *  MACsecRequired_SetParamBoolValue
+
+
+**********************************************************************/
+
+/**
+ * @brief Retrieves boolean parameter values for MACsec required feature enable status.
+ *
+ * @param[in]  hInsContext Instance handle for the MACsecRequired context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MACsecRequired_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for MACsec required feature enable status.
+ *
+ * @param[in] hInsContext Instance handle for the MACsecRequired context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MACsecRequired_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+
+/**********************************************************************
+
+APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_EthernetWAN.MACsec
+
+    *  EthernetWAN_MACsec_GetParamStringValue
+
+**********************************************************************/
+
+/**
+ * @brief Retrieves string parameter values for Ethernet WAN MACsec configuration.
+ *
+ * @param[in]     hInsContext Instance handle for the EthernetWAN_MACsec context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pUlSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+EthernetWAN_MACsec_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+	Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MocaAccountIsolation.Enable
+
+    *  MocaAccountIsolation_GetParamBoolValue
+    *  MocaAccountIsolation_SetParamBoolValue
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for MoCA Account Isolation feature enable status.
+ *
+ * @param[in]  hInsContext Instance handle for the MocaAccountIsolation context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MocaAccountIsolation_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for MoCA Account Isolation feature enable status.
+ *
+ * @param[in] hInsContext Instance handle for the MocaAccountIsolation context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MocaAccountIsolation_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CaptivePortalForNoCableRF.Enable
+
+    *  CaptivePortalForNoCableRF_GetParamBoolValue
+    *  CaptivePortalForNoCableRF_SetParamBoolValue
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for Captive Portal for No Cable RF feature enable status.
+ *
+ * @param[in]  hInsContext Instance handle for the CaptivePortalForNoCableRF context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+CaptivePortalForNoCableRF_GetParamBoolValue
+
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for Captive Portal for No Cable RF feature enable status.
+ *
+ * @param[in] hInsContext Instance handle for the CaptivePortalForNoCableRF context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+CaptivePortalForNoCableRF_SetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+
+/**********************************************************************
+
+APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.BlockLostandFoundInternet.Enable
+
+    *  BlockLostandFoundInternet_GetParamBoolValue
+    *  BlockLostandFoundInternet_SetParamBoolValue
+
+
+**********************************************************************/
+
+/**
+ * @brief Retrieves boolean parameter values for Block Lost and Found Internet feature enable status.
+ *
+ * @param[in]  hInsContext Instance handle for the BlockLostandFoundInternet context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+BlockLostandFoundInternet_GetParamBoolValue
+  (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for Block Lost and Found Internet feature enable status.
+ *
+ * @param[in] hInsContext Instance handle for the BlockLostandFoundInternet context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+BlockLostandFoundInternet_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CredDwnld.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CredDwnld.Use
+
+    *  CredDwnld_GetParamBoolValue
+    *  CredDwnld_SetParamBoolValue
+    *  CredDwnld_GetParamStringValue
+    *  CredDwnld_SetParamStringValue
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for Credential Download feature.
+ *
+ * @param[in]  hInsContext Instance handle for the CredDwnld context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+CredDwnld_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for Credential Download feature.
+ *
+ * @param[in] hInsContext Instance handle for the CredDwnld context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+CredDwnld_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Retrieves string parameter values for Credential Download feature.
+ *
+ * @param[in]     hInsContext Instance handle for the CredDwnld context.
+ * @param[in]     ParamName   Name of the string parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out]    pValue      Buffer to store the retrieved string value (minimum 1 byte, maximum 1024 bytes).
+ * @param[in,out] pUlSize     Input: Size of pValue buffer; Output: Length of retrieved string. Usually size of 1023 will be used.
+ *
+ * @return The status of the operation
+ * @retval 0 on success
+ * @retval 1 if buffer size is insufficient
+ * @retval -1 if parameter not supported.
+ */
+ULONG
+CredDwnld_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+/**
+ * @brief Sets string parameter values for Credential Download feature.
+ *
+ * @param[in] hInsContext Instance handle for the CredDwnld context.
+ * @param[in] ParamName   Name of the string parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] pString     String value to set (minimum 0 bytes, maximum 1024 bytes).
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+CredDwnld_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for Active Measurements RFC feature.
+ *
+ * @param[in]  hInsContext Instance handle for the ActiveMeasurements RFC context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+ActiveMeasurements_RFC_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for Active Measurements RFC feature.
+ *
+ * @param[in] hInsContext Instance handle for the ActiveMeasurements RFC context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+ActiveMeasurements_RFC_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for WPA3 Personal Transition RFC feature.
+ *
+ * @param[in]  hInsContext Instance handle for the WPA3 Personal Transition_RFC context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+WPA3_Personal_Transition_RFC_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for WPA3 Personal Transition RFC feature.
+ *
+ * @param[in] hInsContext Instance handle for the WPA3 Personal Transition RFC context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+WPA3_Personal_Transition_RFC_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for Errors Received RFC feature.
+ *
+ * @param[in]  hInsContext Instance handle for the Errors Received RFC context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+ErrorsReceived_RFC_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for Errors Received RFC feature.
+ *
+ * @param[in] hInsContext Instance handle for the Errors Received RFC context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+ErrorsReceived_RFC_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for Download CA Store RFC feature.
+ *
+ * @param[in]  hInsContext Instance handle for the DLCa Store RFC context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+DLCaStore_RFC_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for Download CA Store RFC feature.
+ *
+ * @param[in] hInsContext Instance handle for the DLCa Store RFC context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+DLCaStore_RFC_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SHORTS.Enable
+
+    *  SHORTS_GetParamBoolValue
+    *  SHORTS_SetParamBoolValue
+
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for SHORTS (Self-Healing On-demand Reboot To Service) feature.
+ *
+ * @param[in]  hInsContext Instance handle for the SHORTS context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+SHORTS_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for SHORTS (Self-Healing On-demand Reboot To Service) feature.
+ *
+ * @param[in] hInsContext Instance handle for the SHORTS context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+SHORTS_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CRL.Enable
+
+    *  EnableOCSPStapling_GetParamBoolValue
+    *  EnableOCSPStapling_SetParamBoolValue
+***********************************************************************/
+/**
+ * @brief Retrieves boolean parameter values for OCSP (Online Certificate Status Protocol) Stapling feature.
+ *
+ * @param[in]  hInsContext Instance handle for the Enable OCSP Stapling context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+EnableOCSPStapling_GetParamBoolValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for OCSP (Online Certificate Status Protocol) Stapling feature.
+ *
+ * @param[in] hInsContext Instance handle for the Enable OCSP Stapling context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+EnableOCSPStapling_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+#if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MAP-T.Enable
+
+    *  MAPT_DeviceInfo_GetParamBoolValue
+    *  MAPT_DeviceInfo_SetParamBoolValue
+***********************************************************************/
+
+
+/**
+ * @brief Retrieves boolean parameter values for MAP-T (Mapping of Address and Port with Translation) feature.
+ *
+ * @param[in]  hInsContext Instance handle for the MAPT DeviceInfo context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MAPT_DeviceInfo_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+/**
+ * @brief Sets boolean parameter values for MAP-T (Mapping of Address and Port with Translation) feature.
+ *
+ * @param[in] hInsContext Instance handle for the MAPT DeviceInfo context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+MAPT_DeviceInfo_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+#endif
+
+/**
+ * @brief Retrieves boolean parameter values for Latency Measurement TCP Setup over IPv4.
+ *
+ * @param[in]  hInsContext Instance handle for the Latency Measure Tcp Setup IPv4 context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+LatencyMeasureTcpSetupIPv4_GetParamBoolValue
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		BOOL*						pBool
+	);
+
+/**
+ * @brief Sets boolean parameter values for Latency Measurement TCP Setup over IPv4.
+ *
+ * @param[in] hInsContext Instance handle for the Latency Measure Tcp Setup IPv4 context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+LatencyMeasureTcpSetupIPv4_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+/**
+ * @brief Retrieves boolean parameter values for Latency Measurement TCP Setup over IPv6.
+ *
+ * @param[in]  hInsContext Instance handle for the Latency Measure Tcp Setup IPv6 context.
+ * @param[in]  ParamName   Name of the boolean parameter to retrieve (minimum 1 byte, maximum 256 bytes).
+ * @param[out] pBool       Pointer to store the retrieved boolean value.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and retrieved successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+LatencyMeasureTcpSetupIPv6_GetParamBoolValue
+	(
+		ANSC_HANDLE 				hInsContext,
+		char*						ParamName,
+		BOOL*						pBool
+	);
+
+/**
+ * @brief Sets boolean parameter values for Latency Measurement TCP Setup over IPv6.
+ *
+ * @param[in] hInsContext Instance handle for the Latency Measure TCP Setup IPv6 context.
+ * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] bValue      Boolean value to set.
+ *
+ * @return The status of the operation
+ * @retval TRUE if parameter is supported and set successfully
+ * @retval FALSE otherwise.
+ */
+BOOL
+LatencyMeasureTcpSetupIPv6_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
 #endif
