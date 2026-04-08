@@ -4,6 +4,9 @@
 #include <stdlib.h>
 
 #include <rbus/rbus.h>
+extern "C" {
+  #include "rbuscore.h"
+}
 #include "pam_register_component.h"
 
 /* -----------------------------------------------------------
