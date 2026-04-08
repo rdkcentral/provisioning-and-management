@@ -11614,6 +11614,17 @@ void Switch_ipv6_mode(char *ifname, int length)
             SwitchToULAIpv6(); //Secondary Wan
             CcspTraceWarning(("%s: Switched to ULA IPv6\n", __FUNCTION__));
 #if defined(WAN_MANAGER_UNIFICATION_ENABLED)
+	    char tmpBuf[32] ={0};
+	    /* Switching from Secondary Wan(brRWAN) to Secondary Wan(brww0) */
+	    commonSyseventGet("remotewan_routeset", tmpBuf, sizeof(tmpBuf));
+	    if (strcmp(tmpBuf,"true") == 0 )
+	    {
+		delRemoteWanIpv6Route();
+		CcspTraceInfo(("%s-%d : Deleted RemoteWAN Default Route \n",__FUNCTION__, __LINE__));
+	    }
+#endif
+
+#if defined(WAN_MANAGER_UNIFICATION_ENABLED)
             addRemoteWanIpv6Route();
 #endif
         }
