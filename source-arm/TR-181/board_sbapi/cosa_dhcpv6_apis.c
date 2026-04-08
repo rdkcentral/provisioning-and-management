@@ -11622,9 +11622,6 @@ void Switch_ipv6_mode(char *ifname, int length)
 		delRemoteWanIpv6Route();
 		CcspTraceInfo(("%s-%d : Deleted RemoteWAN Default Route \n",__FUNCTION__, __LINE__));
 	    }
-#endif
-
-#if defined(WAN_MANAGER_UNIFICATION_ENABLED)
             addRemoteWanIpv6Route();
 #endif
         }
