@@ -1722,7 +1722,7 @@ rbusError_t devCtrlRbusInit()
         //Subscribe WAN Status Event
 	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
-
+/*
 	// Initialize RDK Remote Debugger profile category from syscfg
 	if (syscfg_get(NULL, "RDKRemoteDebuggerProfileCategory", RRDProfileCategory, sizeof(RRDProfileCategory)) != 0) {
 		// If not found in syscfg, default to "all"
@@ -1732,7 +1732,7 @@ rbusError_t devCtrlRbusInit()
 	} else {
 		CcspTraceInfo(("[%s]: Loaded profile category from syscfg: %s\n", __FUNCTION__, RRDProfileCategory));
 	}
-
+*/
 	return rc;
 }
 #endif
