@@ -928,19 +928,35 @@ rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t proper
                         
                         // Check if category is "all" or specific category
                         if (strlen(RRDProfileCategory) == 0 || strcmp(RRDProfileCategory, "all") == 0) {
-                            // Return complete JSON
-                            result_str = cJSON_Print(json);
+                            // Return just the category names as an array
+                            cJSON *categories = cJSON_CreateArray();
+                            cJSON *item = NULL;
+                            cJSON_ArrayForEach(item, json) {
+                                if (item->string) {
+                                    cJSON_AddItemToArray(categories, cJSON_CreateString(item->string));
+                                }
+                            }
+                            result_str = cJSON_Print(categories);
+                            cJSON_Delete(categories);
                         } else {
-                            // Return specific category
+                            // Return specific category issue types
                             cJSON *category = cJSON_GetObjectItem(json, RRDProfileCategory);
                             if (category) {
-                                cJSON *filtered = cJSON_CreateObject();
-                                cJSON_AddItemToObject(filtered, RRDProfileCategory, cJSON_Duplicate(category, 1));
-                                result_str = cJSON_Print(filtered);
-                                cJSON_Delete(filtered);
+                                // Extract just the keys/issue types from this category
+                                cJSON *issueTypes = cJSON_CreateArray();
+                                cJSON *issue = NULL;
+                                cJSON_ArrayForEach(issue, category) {
+                                    if (issue->string) {
+                                        cJSON_AddItemToArray(issueTypes, cJSON_CreateString(issue->string));
+                                    }
+                                }
+                                cJSON *result = cJSON_CreateObject();
+                                cJSON_AddItemToObject(result, RRDProfileCategory, issueTypes);
+                                result_str = cJSON_Print(result);
+                                cJSON_Delete(result);
                             } else {
-                                // Category not found, return empty object
-                                result_str = cJSON_Print(cJSON_CreateObject());
+                                // Category not found, return empty array
+                                result_str = cJSON_Print(cJSON_CreateArray());
                             }
                         }
                         
@@ -1706,7 +1722,7 @@ rbusError_t devCtrlRbusInit()
         //Subscribe WAN Status Event
 	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
-/*
+
 	// Initialize RDK Remote Debugger profile category from syscfg
 	if (syscfg_get(NULL, "RDKRemoteDebuggerProfileCategory", RRDProfileCategory, sizeof(RRDProfileCategory)) != 0) {
 		// If not found in syscfg, default to "all"
@@ -1716,7 +1732,7 @@ rbusError_t devCtrlRbusInit()
 	} else {
 		CcspTraceInfo(("[%s]: Loaded profile category from syscfg: %s\n", __FUNCTION__, RRDProfileCategory));
 	}
-*/
+
 	return rc;
 }
 #endif
