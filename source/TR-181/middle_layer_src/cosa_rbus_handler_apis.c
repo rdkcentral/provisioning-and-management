@@ -29,6 +29,7 @@
 #include "cosa_dhcpv6_apis.h"
 #include "syscfg/syscfg.h"
 #include "secure_wrapper.h"
+#include <cjson/cJSON.h>
 
 #if defined (RBUS_WAN_IP)
 #include "cosa_deviceinfo_dml.h"
@@ -905,30 +906,66 @@ rbusError_t RRDProfile_GetDataHandler(rbusHandle_t handle, rbusProperty_t proper
     }
 
     if(strcmp(propertyName, RRD_GET_PROFILE_EVENT) == 0) {
-        // Read RDK Remote Debugger profile data from JSON file directly
-        // This is an RBus handler, so we use native RBus types and methods
         const char *filename = "/etc/rrd/remote_debugger.json";
         
         FILE *fp = fopen(filename, "rb");
         if (fp) {
-            // Read and process JSON file similar to Device_DeviceInfo implementation
+            // Read JSON file
             fseek(fp, 0L, SEEK_END);
             long fileSz = ftell(fp);
             rewind(fp);
             
-            if (fileSz > 0 && (size_t)fileSz < sizeof(RRDProfileData)) {
-                size_t bytesRead = fread(RRDProfileData, 1U, (size_t)fileSz, fp);
-                RRDProfileData[bytesRead] = '\0';
-                
-                rbusValue_t value;
-                rbusValue_Init(&value);
-                rbusValue_SetString(value, RRDProfileData);
-                rbusProperty_SetValue(property, value);
-                rbusValue_Release(value);
+            if (fileSz > 0 && fileSz < 32768) {
+                char *jsonBuffer = malloc(fileSz + 1);
+                if (jsonBuffer) {
+                    size_t bytesRead = fread(jsonBuffer, 1U, (size_t)fileSz, fp);
+                    jsonBuffer[bytesRead] = '\0';
+                    
+                    // Parse JSON and filter by category
+                    cJSON *json = cJSON_Parse(jsonBuffer);
+                    if (json) {
+                        char *result_str = NULL;
+                        
+                        // Check if category is "all" or specific category
+                        if (strlen(RRDProfileCategory) == 0 || strcmp(RRDProfileCategory, "all") == 0) {
+                            // Return complete JSON
+                            result_str = cJSON_Print(json);
+                        } else {
+                            // Return specific category
+                            cJSON *category = cJSON_GetObjectItem(json, RRDProfileCategory);
+                            if (category) {
+                                cJSON *filtered = cJSON_CreateObject();
+                                cJSON_AddItemToObject(filtered, RRDProfileCategory, cJSON_Duplicate(category, 1));
+                                result_str = cJSON_Print(filtered);
+                                cJSON_Delete(filtered);
+                            } else {
+                                // Category not found, return empty object
+                                result_str = cJSON_Print(cJSON_CreateObject());
+                            }
+                        }
+                        
+                        if (result_str) {
+                            rbusValue_t value;
+                            rbusValue_Init(&value);
+                            rbusValue_SetString(value, result_str);
+                            rbusProperty_SetValue(property, value);
+                            rbusValue_Release(value);
+                            free(result_str);
+                        }
+                        
+                        cJSON_Delete(json);
+                    } else {
+                        CcspTraceError(("[%s]: Failed to parse JSON from %s\n", __FUNCTION__, filename));
+                    }
+                    
+                    free(jsonBuffer);
+                } else {
+                    CcspTraceError(("[%s]: Failed to allocate memory for JSON buffer\n", __FUNCTION__));
+                }
             }
             fclose(fp);
         } else {
-            CcspTraceError(("[%s]: Unable to read profile file\n", __FUNCTION__));
+            CcspTraceError(("[%s]: Unable to read profile file from %s\n", __FUNCTION__, filename));
             return RBUS_ERROR_BUS_ERROR;
         }
     }
@@ -1669,6 +1706,17 @@ rbusError_t devCtrlRbusInit()
         //Subscribe WAN Status Event
 	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
+
+	// Initialize RDK Remote Debugger profile category from syscfg
+	if (syscfg_get(NULL, "RDKRemoteDebuggerProfileCategory", RRDProfileCategory, sizeof(RRDProfileCategory)) != 0) {
+		// If not found in syscfg, default to "all"
+		strncpy(RRDProfileCategory, "all", sizeof(RRDProfileCategory) - 1);
+		RRDProfileCategory[sizeof(RRDProfileCategory) - 1] = '\0';
+		CcspTraceInfo(("[%s]: No stored profile category found, defaulting to 'all'\n", __FUNCTION__));
+	} else {
+		CcspTraceInfo(("[%s]: Loaded profile category from syscfg: %s\n", __FUNCTION__, RRDProfileCategory));
+	}
+
 	return rc;
 }
 #endif
