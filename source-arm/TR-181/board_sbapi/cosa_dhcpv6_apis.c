@@ -11590,7 +11590,7 @@ void Switch_ipv6_mode(char *ifname, int length)
         char hotspot_wan_ifname[32] = {0};
         getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
         getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
-	CcspTraceWarning((" %s :MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__,ifname, hotspot_wan_ifname));
+	    CcspTraceWarning((" %s :MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__,ifname, hotspot_wan_ifname));
         if((strncmp(ifname, mesh_wan_ifname,length ) == 0) || (strncmp(ifname, hotspot_wan_ifname,length ) == 0))
 #else
         char default_wan_ifname[64];
@@ -11600,7 +11600,7 @@ void Switch_ipv6_mode(char *ifname, int length)
 #endif
         {
 #ifdef MONITOR_IPV6_NETLINK
-	    pthread_t MonitorIpv6_tid;
+            pthread_t MonitorIpv6_tid;
             char *hotspotIfname_copy = strdup(hotspot_wan_ifname); // pass to thread
 
             if (pthread_create(&MonitorIpv6_tid, NULL, monitor_ipv6_assignments, (void *)hotspotIfname_copy) != 0) {
@@ -11610,18 +11610,17 @@ void Switch_ipv6_mode(char *ifname, int length)
                 pthread_detach(MonitorIpv6_tid); // thread will run independently
             }
 #endif
-
             SwitchToULAIpv6(); //Secondary Wan
             CcspTraceWarning(("%s: Switched to ULA IPv6\n", __FUNCTION__));
 #if defined(WAN_MANAGER_UNIFICATION_ENABLED)
-	    char tmpBuf[32] ={0};
-	    /* Switching from Secondary Wan(brRWAN) to Secondary Wan(brww0) */
-	    commonSyseventGet("remotewan_routeset", tmpBuf, sizeof(tmpBuf));
-	    if (strcmp(tmpBuf,"true") == 0 )
-	    {
-		delRemoteWanIpv6Route();
-		CcspTraceInfo(("%s-%d : Deleted RemoteWAN Default Route \n",__FUNCTION__, __LINE__));
-	    }
+	        char tmpBuf[32] ={0};
+	        /* Switching from Secondary Wan(brRWAN) to Secondary Wan(brww0) */
+	        commonSyseventGet("remotewan_routeset", tmpBuf, sizeof(tmpBuf));
+	        if (strcmp(tmpBuf,"true") == 0 )
+	        {
+		        delRemoteWanIpv6Route();
+		        CcspTraceInfo(("%s-%d : Deleted RemoteWAN Default Route \n",__FUNCTION__, __LINE__));
+	        }
             addRemoteWanIpv6Route();
 #endif
         }
