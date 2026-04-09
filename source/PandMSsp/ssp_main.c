@@ -42,6 +42,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "pam_register_component.h"
+
 #include <syscfg/syscfg.h>
 #include "ssp_global.h"
 #include "stdlib.h"
@@ -695,6 +697,9 @@ if(id != 0)
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
+    
+    pam_checkAndPublishWifiReady(rbusHandle);
+    pam_checkAndPublishWanReady(rbusHandle);
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
