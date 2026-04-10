@@ -116,8 +116,11 @@ do
 	fi
 
 	# Checking PSM's PID
+	# PSM now runs as a oneshot service: it exits after initialising the SQLite
+	# database.  If the ready flag exists the exit was intentional — do not
+	# treat the missing PID as a crash.
 	PSM_PID=`pidof PsmSsp`
-	if [ "$PSM_PID" = "" ]; then
+	if [ "$PSM_PID" = "" ] && [ ! -f /tmp/psm_sqlite_ready ]; then
                 if [ -d /tmp/.uploadCoredumps.lock.d ];then
                     while [ ! -f /tmp/crash_reboot ]
                     do
