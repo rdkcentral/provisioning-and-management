@@ -5844,7 +5844,7 @@ CpuFreq_GetParamIntValue
     return FALSE;
 }
 
-BOOL
+ANSC_STATUS
 CpuFreq_GetParamStringValue
     (
         ANSC_HANDLE  hInsContext,
@@ -5861,26 +5861,37 @@ CpuFreq_GetParamStringValue
         if (fp == NULL)
         {
             CcspTraceError(("%s: v_secure_popen failed for devmem\n", __FUNCTION__));
-            snprintf(pValue, *pUlSize, "0x00000000");
-            return TRUE;
+            return ANSC_STATUS_FAILURE;
         }
         char line[32] = {0};
-        if (fgets(line, sizeof(line), fp) != NULL)
-        {
-            /* devmem output is already a hex string like "0x96000000"; trim newline */
-            line[strcspn(line, "\r\n")] = '\0';
-            snprintf(pValue, *pUlSize, "%s", line);
-        }
-        else
+        if (fgets(line, sizeof(line), fp) == NULL)
         {
             CcspTraceError(("%s: devmem read returned no output\n", __FUNCTION__));
-            snprintf(pValue, *pUlSize, "0x00000000");
+            v_secure_pclose(fp);
+            return ANSC_STATUS_FAILURE;
         }
         v_secure_pclose(fp);
-        return TRUE;
+
+        /* devmem output is already a hex string like "0x96000000"; trim newline */
+        line[strcspn(line, "\r\n")] = '\0';
+        size_t needed = strlen(line) + 1;
+        if (*pUlSize < (ULONG)needed)
+        {
+            *pUlSize = (ULONG)needed;
+            CcspTraceWarning(("%s: buffer too small for CurrentRegValue, required=%lu\n",
+                              __FUNCTION__, (unsigned long)needed));
+            return ANSC_STATUS_FAILURE;
+        }
+        errno_t rc = strcpy_s(pValue, *pUlSize, line);
+        if (rc != EOK)
+        {
+            ERR_CHK(rc);
+            return ANSC_STATUS_FAILURE;
+        }
+        return ANSC_STATUS_SUCCESS;
     }
 
-    return FALSE;
+    return ANSC_STATUS_FAILURE;
 }
 
 BOOL

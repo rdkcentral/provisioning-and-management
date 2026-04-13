@@ -2217,9 +2217,9 @@ BOOL CpuFreq_GetParamIntValue(ANSC_HANDLE hInsContext, char *ParamName, int *pIn
 * @param[out]   pValue       Buffer to receive the string value.
 * @param[inout] pUlSize      Buffer size; updated if buffer is too small.
 *
-* @return TRUE if parameter name is recognised, FALSE otherwise.
+* @return ANSC_STATUS_SUCCESS on success, ANSC_STATUS_FAILURE otherwise.
 */
-BOOL CpuFreq_GetParamStringValue(ANSC_HANDLE hInsContext, char *ParamName, char *pValue, ULONG *pUlSize);
+ANSC_STATUS CpuFreq_GetParamStringValue(ANSC_HANDLE hInsContext, char *ParamName, char *pValue, ULONG *pUlSize);
 
 /**
 * @brief Set integer parameter for CpuFreq DML object.
