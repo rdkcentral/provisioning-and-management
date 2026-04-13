@@ -697,8 +697,9 @@ if(id != 0)
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
-    
+    CcspTraceInfo(("WifiReadyEvent-Initialized"));
     pam_checkAndPublishWifiReady(bus_handle);
+    CcspTraceInfo(("WanReadyEvent-Initialized"));
     pam_checkAndPublishWanReady(bus_handle);
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
