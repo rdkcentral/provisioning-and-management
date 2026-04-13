@@ -4,9 +4,7 @@
 #include <stdbool.h>
 #include <rbus/rbus.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 /**
  * @brief Check WiFi dependencies and publish wifi_ready_to_go
@@ -37,8 +35,6 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle);
  */
 void pam_checkAndPublishWanReady(rbusHandle_t handle);
 
-#ifdef __cplusplus
-}
-#endif
+
 
 #endif /* _PAM_REGISTER_COMPONENT_H_ */

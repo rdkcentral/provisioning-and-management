@@ -33,7 +33,7 @@ libCcspPandM_middle_layer_src_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/includ
                                             -I$(top_srcdir)/source-arm/TR-181/board_include \
                                             -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
                                             -I$(top_srcdir)/source-arm/TR-181/board_ml \
-                                            -I${PKG_CONFIG_SYSROOT_DIR}$(includedir)
+                                            -I${PKG_CONFIG_SYSROOT_DIR}$(includedir)/rbus -I${PKG_CONFIG_SYSROOT_DIR}$(includedir)/rtmessage
 
 libCcspPandM_middle_layer_src_la_SOURCES = \
     array_helpers.c \
