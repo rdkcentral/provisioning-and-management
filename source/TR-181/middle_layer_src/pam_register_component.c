@@ -32,12 +32,17 @@ static const int WAN_DEPS_COUNT = sizeof(WAN_DEPS) / sizeof(WAN_DEPS[0]);
  * ----------------------------------------------------------- */
 static bool isComponentRegisteredInRbus(const char* name)
 {
+    CcspTraceInfo(("[PAM] Checking RBUS registration for %s\n", name));
+
     int count = 0;
     char** components = NULL;
 
     rbusCoreError_t rc = rbus_discoverRegisteredComponents(&count, &components);
     if(rc != RBUSCORE_SUCCESS || components == NULL)
+    {
+        CcspTraceInfo(("[PAM] RBUS discovery failed for %s\n", name));
         return false;
+    }
 
     bool found = false;
 
@@ -45,6 +50,7 @@ static bool isComponentRegisteredInRbus(const char* name)
     {
         if(components[i] && strcmp(components[i], name) == 0)
         {
+            CcspTraceInfo(("[PAM] Found component %s in RBUS\n", name));
             found = true;
         }
         free(components[i]);
@@ -60,15 +66,21 @@ static bool isComponentRegisteredInRbus(const char* name)
  * ----------------------------------------------------------- */
 static bool areAllDepsUp(const char** deps, int dep_count)
 {
+    CcspTraceInfo(("[PAM] Checking all dependencies...\n"));
+
     for(int i = 0; i < dep_count; i++)
     {
         if(!isComponentRegisteredInRbus(deps[i]))
         {
             printf("[PAM] Dependency %s is NOT up\n", deps[i]);
+            CcspTraceInfo(("[PAM] Dependency %s is NOT up\n", deps[i]));
             return false;
         }
         printf("[PAM] Dependency %s is UP\n", deps[i]);
+        CcspTraceInfo(("[PAM] Dependency %s is UP\n", deps[i]));
     }
+
+    CcspTraceInfo(("[PAM] All dependencies are UP\n"));
     return true;
 }
 
@@ -78,6 +90,8 @@ static bool areAllDepsUp(const char** deps, int dep_count)
  * ----------------------------------------------------------- */
 static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
 {
+    CcspTraceInfo(("[PAM] Preparing to publish event %s\n", eventName));
+
     rbusError_t rc;
 
     rbusValue_t newVal, oldVal;
@@ -98,6 +112,7 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
     event.type = RBUS_EVENT_VALUE_CHANGED;
 
     printf("[PAM] Publishing ready event %s\n", eventName);
+    CcspTraceInfo(("[PAM] Publishing ready event %s\n", eventName));
 
     rc = rbusEvent_Publish(g_hRbus, &event);
 
@@ -108,6 +123,11 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
     if(rc != RBUS_ERROR_SUCCESS)
     {
         printf("[PAM] rbusEvent_Publish %s FAILED rc=%d\n", eventName, rc);
+        CcspTraceInfo(("[PAM] rbusEvent_Publish %s FAILED rc=%d\n", eventName, rc));
+    }
+    else
+    {
+        CcspTraceInfo(("[PAM] Successfully published event %s\n", eventName));
     }
 }
 
@@ -117,9 +137,16 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
  * ----------------------------------------------------------- */
 void pam_checkAndPublishWifiReady(rbusHandle_t handle)
 {
+    CcspTraceInfo(("[PAM] Checking WiFi readiness\n"));
+
     if(areAllDepsUp(WIFI_DEPS, WIFI_DEPS_COUNT))
     {
+        CcspTraceInfo(("[PAM] WiFi dependencies satisfied\n"));
         publishReadyEvent(handle, "wifi_ready_to_go");
+    }
+    else
+    {
+        CcspTraceInfo(("[PAM] WiFi dependencies NOT satisfied\n"));
     }
 }
 
@@ -129,8 +156,15 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
  * ----------------------------------------------------------- */
 void pam_checkAndPublishWanReady(rbusHandle_t handle)
 {
+    CcspTraceInfo(("[PAM] Checking WAN readiness\n"));
+
     if(areAllDepsUp(WAN_DEPS, WAN_DEPS_COUNT))
     {
+        CcspTraceInfo(("[PAM] WAN dependencies satisfied\n"));
         publishReadyEvent(handle, "wan_ready_to_go");
+    }
+    else
+    {
+        CcspTraceInfo(("[PAM] WAN dependencies NOT satisfied\n"));
     }
 }
