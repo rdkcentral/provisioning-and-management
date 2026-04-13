@@ -100,6 +100,12 @@
 #include "ansc_string_util.h"
 #include "fw_download_check.h"
 
+#define CPUFREQ_SYSCFG_KEY      "cpufreq_reduction_percent"
+#define CPUFREQ_SCRIPT          "/lib/rdk/lower_cpufreq.sh"
+#define CPUFREQ_DEVMEM_ADDR     "0xF04800F0"
+#define CPUFREQ_REDUCTION_MIN   0
+#define CPUFREQ_REDUCTION_MAX   10
+
 #define DEVICE_PROPERTIES    "/etc/device.properties"
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
 #define BOOTSTRAP_INFO_FILE		"/opt/secure/bootstrap.json"
@@ -5796,4 +5802,134 @@ BOOL CosaDmlSetDFSatBootUp(BOOL bValue)
 
     CcspTraceError(("%s - %d - WiFi Component notification Failed\n", __FUNCTION__, __LINE__));
     return FALSE;
+}
+
+/***********************************************************************
+
+    CpuFreq DML handlers
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CpuFreq.ReductionPercent  (rw)
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CpuFreq.CurrentRegValue   (ro)
+
+    syscfg key : cpufreq_reduction_percent
+    script     : /lib/rdk/lower_cpufreq.sh <value>
+    register   : 0xF04800F0  (read via devmem)
+
+***********************************************************************/
+
+BOOL
+CpuFreq_GetParamIntValue
+    (
+        ANSC_HANDLE  hInsContext,
+        char        *ParamName,
+        int         *pInt
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "ReductionPercent") == 0)
+    {
+        char buf[8] = {0};
+        if (syscfg_get(NULL, CPUFREQ_SYSCFG_KEY, buf, sizeof(buf)) == 0 && buf[0] != '\0')
+        {
+            *pInt = atoi(buf);
+        }
+        else
+        {
+            *pInt = 0;
+        }
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "CurrentRegValue") == 0)
+    {
+        FILE *fp = v_secure_popen("r", "devmem " CPUFREQ_DEVMEM_ADDR " 32");
+        if (fp == NULL)
+        {
+            CcspTraceError(("%s: v_secure_popen failed for devmem\n", __FUNCTION__));
+            *pInt = 0;
+            return TRUE;
+        }
+        char line[32] = {0};
+        if (fgets(line, sizeof(line), fp) != NULL)
+        {
+            *pInt = (int)strtoul(line, NULL, 0);
+        }
+        else
+        {
+            CcspTraceError(("%s: devmem read returned no output\n", __FUNCTION__));
+            *pInt = 0;
+        }
+        v_secure_pclose(fp);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+BOOL
+CpuFreq_SetParamIntValue
+    (
+        ANSC_HANDLE  hInsContext,
+        char        *ParamName,
+        int          iValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "ReductionPercent") == 0)
+    {
+        if (iValue < CPUFREQ_REDUCTION_MIN || iValue > CPUFREQ_REDUCTION_MAX)
+        {
+            CcspTraceError(("%s: value %d out of range [%d,%d]\n",
+                            __FUNCTION__, iValue,
+                            CPUFREQ_REDUCTION_MIN, CPUFREQ_REDUCTION_MAX));
+            return FALSE;
+        }
+
+        char buf[8] = {0};
+        snprintf(buf, sizeof(buf), "%d", iValue);
+
+        if (syscfg_set_commit(NULL, CPUFREQ_SYSCFG_KEY, buf) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_commit failed for key %s\n",
+                            __FUNCTION__, CPUFREQ_SYSCFG_KEY));
+            return FALSE;
+        }
+
+        if (v_secure_system(CPUFREQ_SCRIPT " %d", iValue) != 0)
+        {
+            CcspTraceError(("%s: v_secure_system failed invoking %s\n",
+                            __FUNCTION__, CPUFREQ_SCRIPT));
+            /* syscfg already persisted; do not roll back */
+        }
+
+        CcspTraceInfo(("%s: ReductionPercent set to %d\n", __FUNCTION__, iValue));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+void
+CpuFreq_RestoreFromSyscfg(void)
+{
+    char buf[8] = {0};
+    int  val    = 0;
+
+    if (syscfg_get(NULL, CPUFREQ_SYSCFG_KEY, buf, sizeof(buf)) == 0 && buf[0] != '\0')
+    {
+        val = atoi(buf);
+    }
+
+    if (val > 0)
+    {
+        CcspTraceInfo(("%s: restoring cpufreq reduction %d%% from syscfg\n",
+                       __FUNCTION__, val));
+        if (v_secure_system(CPUFREQ_SCRIPT " %d", val) != 0)
+        {
+            CcspTraceError(("%s: v_secure_system failed invoking %s\n",
+                            __FUNCTION__, CPUFREQ_SCRIPT));
+        }
+    }
 }

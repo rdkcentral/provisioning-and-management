@@ -2193,4 +2193,39 @@ BOOL CosaDmlSetDFS(BOOL bValue);
 */
 BOOL CosaDmlSetDFSatBootUp(BOOL bValue);
 
+/**
+* @brief Get integer parameter for CpuFreq DML object.
+*
+* Handles ReductionPercent (from syscfg) and CurrentRegValue (live devmem read).
+*
+* @param[in]  hInsContext  Instance context handle (unused).
+* @param[in]  ParamName    Parameter name string.
+* @param[out] pInt         Buffer to receive the integer value.
+*
+* @return TRUE if parameter name is recognised, FALSE otherwise.
+*/
+BOOL CpuFreq_GetParamIntValue(ANSC_HANDLE hInsContext, char *ParamName, int *pInt);
+
+/**
+* @brief Set integer parameter for CpuFreq DML object.
+*
+* Validates value in [0, 10], invokes /lib/rdk/lower_cpufreq.sh, and
+* persists the value via syscfg key cpufreq_reduction_percent.
+*
+* @param[in] hInsContext  Instance context handle (unused).
+* @param[in] ParamName    Parameter name string.
+* @param[in] iValue       New integer value to set.
+*
+* @return TRUE if the value was accepted and applied, FALSE otherwise.
+*/
+BOOL CpuFreq_SetParamIntValue(ANSC_HANDLE hInsContext, char *ParamName, int iValue);
+
+/**
+* @brief Restore persisted CpuFreq reduction at component init time.
+*
+* Reads cpufreq_reduction_percent from syscfg and, if > 0, invokes
+* /lib/rdk/lower_cpufreq.sh to apply the last-set value.
+*/
+void CpuFreq_RestoreFromSyscfg(void);
+
 #endif
