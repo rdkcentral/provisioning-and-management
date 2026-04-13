@@ -2196,7 +2196,7 @@ BOOL CosaDmlSetDFSatBootUp(BOOL bValue);
 /**
 * @brief Get integer parameter for CpuFreq DML object.
 *
-* Handles ReductionPercent (from syscfg) and CurrentRegValue (live devmem read).
+* Handles ReductionPercent (from syscfg).
 *
 * @param[in]  hInsContext  Instance context handle (unused).
 * @param[in]  ParamName    Parameter name string.
@@ -2205,6 +2205,21 @@ BOOL CosaDmlSetDFSatBootUp(BOOL bValue);
 * @return TRUE if parameter name is recognised, FALSE otherwise.
 */
 BOOL CpuFreq_GetParamIntValue(ANSC_HANDLE hInsContext, char *ParamName, int *pInt);
+
+/**
+* @brief Get string parameter for CpuFreq DML object.
+*
+* Handles CurrentRegValue: reads the raw 32-bit SoC register via devmem
+* and returns it as a hex string (e.g. "0x96000000").
+*
+* @param[in]    hInsContext  Instance context handle (unused).
+* @param[in]    ParamName    Parameter name string.
+* @param[out]   pValue       Buffer to receive the string value.
+* @param[inout] pUlSize      Buffer size; updated if buffer is too small.
+*
+* @return TRUE if parameter name is recognised, FALSE otherwise.
+*/
+BOOL CpuFreq_GetParamStringValue(ANSC_HANDLE hInsContext, char *ParamName, char *pValue, ULONG *pUlSize);
 
 /**
 * @brief Set integer parameter for CpuFreq DML object.

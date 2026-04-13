@@ -5808,8 +5808,8 @@ BOOL CosaDmlSetDFSatBootUp(BOOL bValue)
 
     CpuFreq DML handlers
 
-    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CpuFreq.ReductionPercent  (rw)
-    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CpuFreq.CurrentRegValue   (ro)
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CpuFreq.ReductionPercent  (rw, int)
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CpuFreq.CurrentRegValue   (ro, string — hex)
 
     syscfg key : cpufreq_reduction_percent
     script     : /lib/rdk/lower_cpufreq.sh <value>
@@ -5841,24 +5841,40 @@ CpuFreq_GetParamIntValue
         return TRUE;
     }
 
+    return FALSE;
+}
+
+BOOL
+CpuFreq_GetParamStringValue
+    (
+        ANSC_HANDLE  hInsContext,
+        char        *ParamName,
+        char        *pValue,
+        ULONG       *pUlSize
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
     if (strcmp(ParamName, "CurrentRegValue") == 0)
     {
         FILE *fp = v_secure_popen("r", "devmem " CPUFREQ_DEVMEM_ADDR " 32");
         if (fp == NULL)
         {
             CcspTraceError(("%s: v_secure_popen failed for devmem\n", __FUNCTION__));
-            *pInt = 0;
+            snprintf(pValue, *pUlSize, "0x00000000");
             return TRUE;
         }
         char line[32] = {0};
         if (fgets(line, sizeof(line), fp) != NULL)
         {
-            *pInt = (int)strtoul(line, NULL, 0);
+            /* devmem output is already a hex string like "0x96000000"; trim newline */
+            line[strcspn(line, "\r\n")] = '\0';
+            snprintf(pValue, *pUlSize, "%s", line);
         }
         else
         {
             CcspTraceError(("%s: devmem read returned no output\n", __FUNCTION__));
-            *pInt = 0;
+            snprintf(pValue, *pUlSize, "0x00000000");
         }
         v_secure_pclose(fp);
         return TRUE;
