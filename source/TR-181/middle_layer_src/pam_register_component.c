@@ -6,6 +6,7 @@
 #include <rbus/rbus.h>
 #include "rbuscore.h"
 #include "pam_register_component.h"
+#include "ccsp_trace.h"
 
 /* -----------------------------------------------------------
  *  HARD-CODED DEPENDENCIES (REPLACING deviceprofiles.xml)
