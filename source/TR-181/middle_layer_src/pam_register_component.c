@@ -15,15 +15,15 @@
 
 /* WiFi component dependencies */
 static const char* WIFI_DEPS[] = {
-    "com.cisco.spvtg.ccsp.psm",
     "com.cisco.spvtg.ccsp.pam",
+    "com.cisco.spvtg.ccsp.psm",
 };
 static const int WIFI_DEPS_COUNT = sizeof(WIFI_DEPS) / sizeof(WIFI_DEPS[0]);
 
 /* WAN Manager component dependencies */
 static const char* WAN_DEPS[] = {
-    "com.cisco.spvtg.ccsp.psm",
     "com.cisco.spvtg.ccsp.pam",
+    "com.cisco.spvtg.ccsp.psm",
     "com.cisco.spvtg.ccsp.ledmanager",
 };
 static const int WAN_DEPS_COUNT = sizeof(WAN_DEPS) / sizeof(WAN_DEPS[0]);
@@ -142,7 +142,7 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
     CcspTraceInfo(("[PAM] Checking WiFi readiness\n"));
 
     int maxRetries = 10;
-    int retryInterval = 2; // seconds
+    int retryInterval = 60; // seconds
 
     for(int retry = 0; retry < maxRetries; retry++)
     {
