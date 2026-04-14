@@ -7,6 +7,7 @@
 #include "rbuscore.h"
 #include "pam_register_component.h"
 #include "ccsp_trace.h"
+#include <unistd.h>
 
 /* -----------------------------------------------------------
  *  HARD-CODED DEPENDENCIES (REPLACING deviceprofiles.xml)
@@ -140,17 +141,24 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
 {
     CcspTraceInfo(("[PAM] Checking WiFi readiness\n"));
 
-    if(areAllDepsUp(WIFI_DEPS, WIFI_DEPS_COUNT))
-    {
-        CcspTraceInfo(("[PAM] WiFi dependencies satisfied\n"));
-        publishReadyEvent(handle, "wifi_ready_to_go");
-    }
-    else
-    {
-        CcspTraceInfo(("[PAM] WiFi dependencies NOT satisfied\n"));
-    }
-}
+    int maxRetries = 10;
+    int retryInterval = 2; // seconds
 
+    for(int retry = 0; retry < maxRetries; retry++)
+    {
+        if(areAllDepsUp(WIFI_DEPS, WIFI_DEPS_COUNT))
+        {
+            CcspTraceInfo(("[PAM] WiFi dependencies satisfied\n"));
+            publishReadyEvent(handle, "wifi_ready_to_go");
+            return;
+        }
+
+        CcspTraceInfo(("[PAM] WiFi deps not ready, retry %d/%d\n", retry+1, maxRetries));
+        sleep(retryInterval);
+    }
+
+    CcspTraceInfo(("[PAM] WiFi dependencies NOT satisfied after retries\n"));
+}
 
 /* -----------------------------------------------------------
  *  PUBLIC API: CHECK AND PUBLISH WAN READY
@@ -159,13 +167,21 @@ void pam_checkAndPublishWanReady(rbusHandle_t handle)
 {
     CcspTraceInfo(("[PAM] Checking WAN readiness\n"));
 
-    if(areAllDepsUp(WAN_DEPS, WAN_DEPS_COUNT))
+    int maxRetries = 10;
+    int retryInterval = 2; // seconds
+
+    for(int retry = 0; retry < maxRetries; retry++)
     {
-        CcspTraceInfo(("[PAM] WAN dependencies satisfied\n"));
-        publishReadyEvent(handle, "wan_ready_to_go");
+        if(areAllDepsUp(WAN_DEPS, WAN_DEPS_COUNT))
+        {
+            CcspTraceInfo(("[PAM] WAN dependencies satisfied\n"));
+            publishReadyEvent(handle, "wan_ready_to_go");
+            return;
+        }
+
+        CcspTraceInfo(("[PAM] WAN deps not ready, retry %d/%d\n", retry+1, maxRetries));
+        sleep(retryInterval);
     }
-    else
-    {
-        CcspTraceInfo(("[PAM] WAN dependencies NOT satisfied\n"));
-    }
+
+    CcspTraceInfo(("[PAM] WAN dependencies NOT satisfied after retries\n"));
 }
