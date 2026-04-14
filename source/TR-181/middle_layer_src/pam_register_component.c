@@ -88,7 +88,7 @@ static bool areAllDepsUp(const char** deps, int dep_count)
 
 
 /* -----------------------------------------------------------
- *  PUBLISH READY EVENT (EXACT CODE FROM YOUR MENTOR)
+ *  PUBLISH READY EVENT
  * ----------------------------------------------------------- */
 static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
 {
