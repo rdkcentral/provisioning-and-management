@@ -2,12 +2,18 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <rbus/rbus.h>
 #include "rbuscore.h"
+
 #include "pam_register_component.h"
 #include "ccsp_trace.h"
-#include <unistd.h>
+#include "ccsp_base_api.h"
+/* IMPORTANT: Needed for CCSP_MESSAGE_BUS_INFO */
+#include "ccsp_message_bus.h"
+#include "ansc_platform.h"
+
 
 /* -----------------------------------------------------------
  *  HARD-CODED DEPENDENCIES (REPLACING deviceprofiles.xml)
@@ -78,6 +84,7 @@ static bool areAllDepsUp(const char** deps, int dep_count)
             CcspTraceInfo(("[PAM] Dependency %s is NOT up\n", deps[i]));
             return false;
         }
+
         printf("[PAM] Dependency %s is UP\n", deps[i]);
         CcspTraceInfo(("[PAM] Dependency %s is UP\n", deps[i]));
     }
@@ -88,10 +95,35 @@ static bool areAllDepsUp(const char** deps, int dep_count)
 
 
 /* -----------------------------------------------------------
+ *  GET REAL RBUS HANDLE FROM CCSP BUS HANDLE
+ * ----------------------------------------------------------- */
+extern ANSC_HANDLE bus_handle;
+
+static rbusHandle_t getRbusHandle()
+{
+    CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+
+    if(!bus_info)
+    {
+        CcspTraceInfo(("[PAM] bus_info is NULL\n"));
+        return NULL;
+    }
+
+    return (rbusHandle_t)bus_info->rbus_handle;
+}
+
+
+/* -----------------------------------------------------------
  *  PUBLISH READY EVENT
  * ----------------------------------------------------------- */
 static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
 {
+    if(!g_hRbus)
+    {
+        CcspTraceInfo(("[PAM] Invalid RBUS handle, cannot publish %s\n", eventName));
+        return;
+    }
+
     CcspTraceInfo(("[PAM] Preparing to publish event %s\n", eventName));
 
     rbusError_t rc;
@@ -102,6 +134,7 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
 
     rbusValue_Init(&newVal);
     rbusValue_Init(&oldVal);
+
     rbusValue_SetBoolean(newVal, true);
     rbusValue_SetBoolean(oldVal, false);
 
@@ -139,17 +172,18 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
  * ----------------------------------------------------------- */
 void pam_checkAndPublishWifiReady(rbusHandle_t handle)
 {
+    (void)handle;
     CcspTraceInfo(("[PAM] Checking WiFi readiness\n"));
 
     int maxRetries = 10;
-    int retryInterval = 2; // seconds
+    int retryInterval = 2;
 
     for(int retry = 0; retry < maxRetries; retry++)
     {
         if(areAllDepsUp(WIFI_DEPS, WIFI_DEPS_COUNT))
         {
             CcspTraceInfo(("[PAM] WiFi dependencies satisfied\n"));
-            publishReadyEvent(handle, "wifi_ready_to_go");
+            publishReadyEvent(getRbusHandle(), "wifi_ready_to_go");
             return;
         }
 
@@ -160,22 +194,24 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
     CcspTraceInfo(("[PAM] WiFi dependencies NOT satisfied after retries\n"));
 }
 
+
 /* -----------------------------------------------------------
  *  PUBLIC API: CHECK AND PUBLISH WAN READY
  * ----------------------------------------------------------- */
 void pam_checkAndPublishWanReady(rbusHandle_t handle)
 {
+    (void)handle;
     CcspTraceInfo(("[PAM] Checking WAN readiness\n"));
 
     int maxRetries = 10;
-    int retryInterval = 2; // seconds
+    int retryInterval = 2;
 
     for(int retry = 0; retry < maxRetries; retry++)
     {
         if(areAllDepsUp(WAN_DEPS, WAN_DEPS_COUNT))
         {
             CcspTraceInfo(("[PAM] WAN dependencies satisfied\n"));
-            publishReadyEvent(handle, "wan_ready_to_go");
+            publishReadyEvent(getRbusHandle(), "wan_ready_to_go");
             return;
         }
 
