@@ -43,6 +43,7 @@ static bool isComponentRegisteredInRbus(const char* name)
     rbusCoreError_t rc = rbus_discoverRegisteredComponents(&count, &components);
     if(rc != RBUSCORE_SUCCESS || components == NULL)
     {
+        CcspTraceInfo(("[PAM] RBUS discovery failed\n"));
         return false;
     }
 
@@ -52,6 +53,7 @@ static bool isComponentRegisteredInRbus(const char* name)
     {
         if(components[i] && strcmp(components[i], name) == 0)
         {
+            CcspTraceInfo(("[PAM] Found component %s\n", name));
             found = true;
         }
         free(components[i]);
@@ -64,17 +66,20 @@ static bool isComponentRegisteredInRbus(const char* name)
 /* ----------------------------------------------------------- */
 static bool areAllDepsUp(const char** deps, int dep_count)
 {
+    CcspTraceInfo(("[PAM] Checking all dependencies...\n"));
+
     for(int i = 0; i < dep_count; i++)
     {
         if(!isComponentRegisteredInRbus(deps[i]))
         {
-            CcspTraceInfo(("[PAM] Dependency %s is NOT up\n", deps[i]));
+            CcspTraceInfo(("[PAM] ❌ Dependency %s is NOT up\n", deps[i]));
             return false;
         }
 
-        CcspTraceInfo(("[PAM] Dependency %s is UP\n", deps[i]));
+        CcspTraceInfo(("[PAM] ✅ Dependency %s is UP\n", deps[i]));
     }
 
+    CcspTraceInfo(("[PAM] ✅ All dependencies are UP\n"));
     return true;
 }
 
@@ -89,15 +94,16 @@ static rbusHandle_t getRbusHandle()
 
     if(!bus_info)
     {
-        CcspTraceInfo(("[PAM] bus_info NULL\n"));
+        CcspTraceInfo(("[PAM] ❌ bus_info NULL\n"));
         return NULL;
     }
 
+    CcspTraceInfo(("[PAM] ✅ Got RBUS handle: %p\n", bus_info->rbus_handle));
     return (rbusHandle_t)bus_info->rbus_handle;
 }
 
 /* -----------------------------------------------------------
- *  EVENT GET HANDLER (REQUIRED)
+ *  EVENT GET HANDLER
  * ----------------------------------------------------------- */
 static rbusError_t eventGetHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
 {
@@ -115,15 +121,19 @@ static rbusError_t eventGetHandler(rbusHandle_t handle, rbusProperty_t property,
 }
 
 /* -----------------------------------------------------------
- *  REGISTER EVENTS (CR STYLE)
+ *  REGISTER EVENTS
  * ----------------------------------------------------------- */
 static void registerPamEvents(rbusHandle_t handle)
 {
+    CcspTraceInfo(("[PAM] >>> Enter registerPamEvents\n"));
+
     if(!handle)
     {
-        CcspTraceInfo(("[PAM] Invalid RBUS handle for registration\n"));
+        CcspTraceInfo(("[PAM] ❌ RBUS handle NULL, cannot register\n"));
         return;
     }
+
+    CcspTraceInfo(("[PAM] Registering events on handle %p\n", handle));
 
     rbusDataElement_t dataElements[2] =
     {
@@ -135,12 +145,14 @@ static void registerPamEvents(rbusHandle_t handle)
 
     if(rc != RBUS_ERROR_SUCCESS)
     {
-        CcspTraceInfo(("[PAM] Event registration failed rc=%d\n", rc));
+        CcspTraceInfo(("[PAM] ❌ Event registration FAILED rc=%d\n", rc));
     }
     else
     {
-        CcspTraceInfo(("[PAM] Events registered successfully\n"));
+        CcspTraceInfo(("[PAM] ✅ Event registration SUCCESS\n"));
     }
+
+    CcspTraceInfo(("[PAM] <<< Exit registerPamEvents\n"));
 }
 
 /* -----------------------------------------------------------
@@ -150,9 +162,11 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
 {
     if(!g_hRbus)
     {
-        CcspTraceInfo(("[PAM] Invalid handle, cannot publish %s\n", eventName));
+        CcspTraceInfo(("[PAM] ❌ Invalid handle, cannot publish %s\n", eventName));
         return;
     }
+
+    CcspTraceInfo(("[PAM] Publishing using handle %p\n", g_hRbus));
 
     rbusError_t rc;
 
@@ -184,11 +198,11 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
 
     if(rc != RBUS_ERROR_SUCCESS)
     {
-        CcspTraceInfo(("[PAM] Publish FAILED %s rc=%d\n", eventName, rc));
+        CcspTraceInfo(("[PAM] ❌ Publish FAILED %s rc=%d\n", eventName, rc));
     }
     else
     {
-        CcspTraceInfo(("[PAM] Publish SUCCESS %s\n", eventName));
+        CcspTraceInfo(("[PAM] ✅ Publish SUCCESS %s\n", eventName));
     }
 }
 
@@ -203,10 +217,17 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
 
     rbusHandle_t rbusHandle = getRbusHandle();
 
+    CcspTraceInfo(("[PAM] eventsRegistered = %d\n", eventsRegistered));
+
     if(!eventsRegistered)
     {
+        CcspTraceInfo(("[PAM] First-time registration\n"));
         registerPamEvents(rbusHandle);
         eventsRegistered = true;
+    }
+    else
+    {
+        CcspTraceInfo(("[PAM] Events already registered\n"));
     }
 
     for(int retry = 0; retry < 10; retry++)
@@ -217,6 +238,7 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
             return;
         }
 
+        CcspTraceInfo(("[PAM] WiFi retry %d/10\n", retry+1));
         sleep(2);
     }
 }
@@ -232,12 +254,14 @@ void pam_checkAndPublishWanReady(rbusHandle_t handle)
 
     rbusHandle_t rbusHandle = getRbusHandle();
 
+    CcspTraceInfo(("[PAM] eventsRegistered(WAN) = %d\n", eventsRegistered));
+
     if(!eventsRegistered)
     {
+        CcspTraceInfo(("[PAM] First-time WAN registration\n"));
         registerPamEvents(rbusHandle);
         eventsRegistered = true;
     }
-
 
     for(int retry = 0; retry < 10; retry++)
     {
@@ -247,6 +271,7 @@ void pam_checkAndPublishWanReady(rbusHandle_t handle)
             return;
         }
 
+        CcspTraceInfo(("[PAM] WAN retry %d/10\n", retry+1));
         sleep(2);
     }
 }
