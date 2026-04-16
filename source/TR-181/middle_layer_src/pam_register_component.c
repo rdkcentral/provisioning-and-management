@@ -14,9 +14,13 @@
 #include "ansc_platform.h"
 
 /* -----------------------------------------------------------
+ *  GLOBAL FLAG (AVOID DUPLICATE REGISTRATION)
+ * ----------------------------------------------------------- */
+static bool g_eventsRegistered = false;
+
+/* -----------------------------------------------------------
  *  HARD-CODED DEPENDENCIES
  * ----------------------------------------------------------- */
-
 static const char* WIFI_DEPS[] = {
     "eRT.com.cisco.spvtg.ccsp.psm",
     "eRT.com.cisco.spvtg.ccsp.pam",
@@ -121,6 +125,28 @@ static rbusError_t eventGetHandler(rbusHandle_t handle, rbusProperty_t property,
 }
 
 /* -----------------------------------------------------------
+ *  EVENT SUB HANDLER 
+ * ----------------------------------------------------------- */
+static rbusError_t eventSubHandler(
+    rbusHandle_t handle,
+    rbusEventSubAction_t action,
+    const char* eventName,
+    rbusFilter_t filter,
+    int32_t interval,
+    bool* autoPublish)
+{
+    (void)handle;
+    (void)filter;
+    (void)interval;
+
+    CcspTraceInfo(("[PAM] subHandler called for %s action=%d\n", eventName, action));
+
+    if(autoPublish)
+        *autoPublish = false;
+
+    return RBUS_ERROR_SUCCESS;
+}
+/* -----------------------------------------------------------
  *  REGISTER EVENTS
  * ----------------------------------------------------------- */
 static void registerPamEvents(rbusHandle_t handle)
@@ -137,8 +163,11 @@ static void registerPamEvents(rbusHandle_t handle)
 
     rbusDataElement_t dataElements[2] =
     {
-        { "wifi_ready_to_go", RBUS_ELEMENT_TYPE_EVENT, { eventGetHandler, NULL, NULL, NULL, NULL, NULL } },
-        { "wan_ready_to_go",  RBUS_ELEMENT_TYPE_EVENT, { eventGetHandler, NULL, NULL, NULL, NULL, NULL } }
+        { "wifi_ready_to_go", RBUS_ELEMENT_TYPE_EVENT,
+            { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } },
+
+        { "wan_ready_to_go", RBUS_ELEMENT_TYPE_EVENT,
+            { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } }
     };
 
     rbusError_t rc = rbus_regDataElements(handle, 2, dataElements);
@@ -213,21 +242,15 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
 {
     (void)handle;
 
-    static bool eventsRegistered = false;
-
     rbusHandle_t rbusHandle = getRbusHandle();
 
-    CcspTraceInfo(("[PAM] eventsRegistered = %d\n", eventsRegistered));
+    CcspTraceInfo(("[PAM] g_eventsRegistered = %d\n", g_eventsRegistered));
 
-    if(!eventsRegistered)
+    if(!g_eventsRegistered)
     {
         CcspTraceInfo(("[PAM] First-time registration\n"));
         registerPamEvents(rbusHandle);
-        eventsRegistered = true;
-    }
-    else
-    {
-        CcspTraceInfo(("[PAM] Events already registered\n"));
+        g_eventsRegistered = true;
     }
 
     for(int retry = 0; retry < 10; retry++)
@@ -250,17 +273,12 @@ void pam_checkAndPublishWanReady(rbusHandle_t handle)
 {
     (void)handle;
 
-    static bool eventsRegistered = false;
-
     rbusHandle_t rbusHandle = getRbusHandle();
 
-    CcspTraceInfo(("[PAM] eventsRegistered(WAN) = %d\n", eventsRegistered));
-
-    if(!eventsRegistered)
+    if(!g_eventsRegistered)
     {
-        CcspTraceInfo(("[PAM] First-time WAN registration\n"));
         registerPamEvents(rbusHandle);
-        eventsRegistered = true;
+        g_eventsRegistered = true;
     }
 
     for(int retry = 0; retry < 10; retry++)
