@@ -25559,7 +25559,50 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
 
 }
 
-// TODO: Formattings and comments
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.
+
+    *  MEMSWAP_GetParamBoolValue
+    *  MEMSWAP_SetParamBoolValue
+    *  MEMSWAP_GetParamUlongValue
+    *  MEMSWAP_SetParamUlongValue
+    *  Tunables_GetParamUlongValue
+    *  Tunables_SetParamUlongValue
+
+***********************************************************************/
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MEMSWAP_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
 BOOL
 MEMSWAP_GetParamBoolValue
     (
@@ -25643,6 +25686,36 @@ MEMSWAP_SetParamBoolValue
     return FALSE;
 }
 
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        MEMSWAP_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      puLong
+            );
+
+    description:
+
+        This function is called to retrieve ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      puLong
+                The buffer of returned ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
 BOOL
 MEMSWAP_GetParamUlongValue
     (
@@ -25681,6 +25754,36 @@ MEMSWAP_GetParamUlongValue
     return FALSE;
 }
 
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        MEMSWAP_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue
+                The updated ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
 BOOL
 MEMSWAP_SetParamUlongValue
     (
@@ -25720,12 +25823,42 @@ MEMSWAP_SetParamUlongValue
     return FALSE;
 }
 
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Tunables_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      puLong
+            );
+
+    description:
+
+        This function is called to retrieve ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      puLong
+                The buffer of returned ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
 BOOL
 Tunables_GetParamUlongValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
-        ULONG*                      pValue
+        ULONG*                      puLong
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
@@ -25734,7 +25867,7 @@ Tunables_GetParamUlongValue
         char value[8] = {0};
         if( syscfg_get(NULL, "MemorySwapTunablesSwappiness", value, sizeof(value)) == 0 )
         {
-            *pValue = atol(value);
+            *puLong = atol(value);
             return TRUE;
         }
         else        {
@@ -25746,7 +25879,7 @@ Tunables_GetParamUlongValue
         char value[8] = {0};
         if( syscfg_get(NULL, "MemorySwapTunablesWatermarkScaleFactor", value, sizeof(value)) == 0 )
         {
-            *pValue = atol(value);
+            *puLong = atol(value);
             return TRUE;
         }
         else        {
@@ -25758,7 +25891,7 @@ Tunables_GetParamUlongValue
         char value[8] = {0};
         if( syscfg_get(NULL, "MemorySwapTunablesPageCluster", value, sizeof(value)) == 0 )
         {
-            *pValue = atol(value);
+            *puLong = atol(value);
             return TRUE;
         }
         else        {
@@ -25769,6 +25902,36 @@ Tunables_GetParamUlongValue
     return FALSE;
 }
 
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Tunables_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue
+                The updated ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
 BOOL
 Tunables_SetParamUlongValue
     (
