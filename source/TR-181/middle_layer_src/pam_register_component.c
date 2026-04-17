@@ -13,6 +13,9 @@
 #include "ccsp_message_bus.h"
 #include "ansc_platform.h"
 
+#define WIFI_COMPONENT "eRT.com.cisco.spvtg.ccsp.wifi"
+#define WAN_COMPONENT  "eRT.com.cisco.spvtg.ccsp.wanmanager"
+
 /* -----------------------------------------------------------
  *  GLOBAL FLAG (AVOID DUPLICATE REGISTRATION)
  * ----------------------------------------------------------- */
@@ -225,13 +228,13 @@ static void publishReadyEvent(rbusHandle_t g_hRbus, const char* eventName)
     rbusValue_Release(oldVal);
     rbusObject_Release(data);
 
-    if(rc != RBUS_ERROR_SUCCESS)
+    if(rc == RBUS_ERROR_SUCCESS || rc == RBUS_ERROR_NOSUBSCRIBERS)
     {
-        CcspTraceInfo(("[PAM] Publish FAILED %s rc=%d\n", eventName, rc));
+        CcspTraceInfo(("[PAM] Publish SUCCESS %s (rc=%d, subscribers=%s)\n",eventName, rc,rc == RBUS_ERROR_NOSUBSCRIBERS ? "none" : "yes"));
     }
     else
     {
-        CcspTraceInfo(("[PAM] Publish SUCCESS %s\n", eventName));
+        CcspTraceInfo(("[PAM] Publish FAILED %s rc=%d\n", eventName, rc));
     }
 }
 
@@ -255,6 +258,16 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
 
     for(int retry = 0; retry < 10; retry++)
     {
+        /* 🔍 Check WiFi component */
+        if(!isComponentRegisteredInRbus(WIFI_COMPONENT))
+        {
+            CcspTraceInfo(("[PAM] WiFi component NOT ready\n"));
+            sleep(2);
+            continue;
+        }
+        CcspTraceInfo(("[PAM] WiFi component is UP\n"));
+
+        /* 🔍 Check dependencies */
         if(areAllDepsUp(WIFI_DEPS, WIFI_DEPS_COUNT))
         {
             publishReadyEvent(rbusHandle, "wifi_ready_to_go");
@@ -265,7 +278,6 @@ void pam_checkAndPublishWifiReady(rbusHandle_t handle)
         sleep(2);
     }
 }
-
 /* -----------------------------------------------------------
  *  WAN READY
  * ----------------------------------------------------------- */
@@ -283,6 +295,16 @@ void pam_checkAndPublishWanReady(rbusHandle_t handle)
 
     for(int retry = 0; retry < 10; retry++)
     {
+        /* 🔍 Check WAN component */
+        if(!isComponentRegisteredInRbus(WAN_COMPONENT))
+        {
+            CcspTraceInfo(("[PAM] WAN component NOT ready\n"));
+            sleep(2);
+            continue;
+        }
+        CcspTraceInfo(("[PAM] WAN component is UP\n"));
+
+        /* 🔍 Check dependencies */
         if(areAllDepsUp(WAN_DEPS, WAN_DEPS_COUNT))
         {
             publishReadyEvent(rbusHandle, "wan_ready_to_go");
