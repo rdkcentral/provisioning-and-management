@@ -9876,8 +9876,7 @@ dhcpv6s_dbg_thrd(void * in)
             memset(msg, 0, sizeof(msg));
             read(v6_srvr_fifo_file_dscrptr, msg, sizeof(msg));
 #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
-#if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || \
-    defined(_ONESTACK_PRODUCT_REQ_)
+#if !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)) || (defined(_ONESTACK_PRODUCT_REQ_) && !(defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION)))
 #ifdef _ONESTACK_PRODUCT_REQ_
     if (!(isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION)))
 #endif
