@@ -75,6 +75,9 @@
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
 
+#define CR_PAM_COMPONENT_ID "eRT.com.cisco.spvtg.ccsp.pam"
+rbusHandle_t g_pamRbusHandle = NULL;
+
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
 // Since there is no evidence of P&M APIs being hung, increasing the timeout period to one more minute.
@@ -697,10 +700,22 @@ if(id != 0)
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
+    
+    rbusError_t rbusRc = rbus_open(&g_pamRbusHandle, CR_PAM_COMPONENT_ID);
+
+    if(rbusRc != RBUS_ERROR_SUCCESS)
+    {
+        CcspTraceError(("PAM: rbus_open failed: %d\n", rbusRc));
+    }
+    else
+    {
+        CcspTraceInfo(("PAM: rbus_open success handle=%p\n", g_pamRbusHandle));
+    }
+    registerPamEvents(g_pamRbusHandle);
     CcspTraceInfo(("WifiReadyEvent-Initialized"));
-    pam_checkAndPublishWifiReady(bus_handle);
+    pam_checkAndPublishWifiReady(g_pamRbusHandle);
     CcspTraceInfo(("WanReadyEvent-Initialized"));
-    pam_checkAndPublishWanReady(bus_handle);
+    pam_checkAndPublishWanReady(g_pamRbusHandle);
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
