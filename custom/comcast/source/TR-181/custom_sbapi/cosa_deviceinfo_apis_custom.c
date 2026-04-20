@@ -177,6 +177,11 @@ CosaDmlDiGetCMMacAddress
         s_get_interface_mac("eth0", pValue, 18);
         *pulSize = AnscSizeOfString(pValue);
         return ANSC_STATUS_SUCCESS;
+#elif PON_GATEWAY
+    platform_hal_GetBaseMacAddress(pValue);
+    *pulSize = AnscSizeOfString(pValue);
+    CcspTraceInfo(("=====> %s:%d: platform_hal_GetBaseMacAddress returned MAC = %s ===> \n", __func__, __LINE__, pValue));
+    return ANSC_STATUS_SUCCESS;
 #else
 	return Local_CosaDmlGetParamValueByPathName("Device.X_CISCO_COM_CableModem.MACAddress", pValue, pulSize);
 #endif
