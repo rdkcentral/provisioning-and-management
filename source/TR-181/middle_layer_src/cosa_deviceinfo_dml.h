@@ -5012,7 +5012,7 @@ APIs for Object:
 /**
  * @brief Retrieves boolean parameter values for MEMSWAP object.
  *
- * @param[in]  hInsContext - Instance handle for the MEMSWAP object.
+ * @param[in]  hInsContext - Instance handle for the MEMSWAP context.
  * @param[in]  ParamName   - Pointer to the parameter name
  * @param[out] pBool       - Pointer to store the boolean value.
  *
@@ -5029,10 +5029,10 @@ MEMSWAP_GetParamBoolValue
     );
 
 /**
- * @brief Sets boolean parameter values for MACsec required feature enable status.
+ * @brief Sets boolean parameter values for the MEMSWAP object.
  *
- * @param[in] hInsContext Instance handle for the MACsecRequired context.
- * @param[in] ParamName   Name of the boolean parameter to set (minimum 1 byte, maximum 256 bytes).
+ * @param[in] hInsContext Instance handle for the MEMSWAP context.
+ * @param[in] ParamName   Pointer to the parameter name.
  * @param[in] bValue      Boolean value to set.
  *
  * @return The status of the operation
@@ -5047,6 +5047,18 @@ MEMSWAP_SetParamBoolValue
         BOOL                        bValue
     );
 
+/**
+ * @brief Get unsigned long parameter value from MEMSWAP object.
+ *
+ * @param[in] hInsContext - The instance handle to the MEMSWAP object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
 BOOL
 MEMSWAP_GetParamUlongValue
     (
@@ -5055,6 +5067,18 @@ MEMSWAP_GetParamUlongValue
         ULONG*                      pValue
     );
 
+/**
+ * @brief Set unsigned long parameter value for MEMSWAP object.
+ *
+ * @param[in] hInsContext  - The instance handle to the MEMSWAP object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[in] uValuepUlong - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
 BOOL
 MEMSWAP_SetParamUlongValue
     (
@@ -5063,6 +5087,18 @@ MEMSWAP_SetParamUlongValue
         ULONG                       value
     );
 
+/**
+ * @brief Get unsigned long parameter value from TUNABLES object.
+ *
+ * @param[in] hInsContext - The instance handle to the TUNABLES object.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pValue     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
 BOOL
 Tunables_GetParamUlongValue
     (
@@ -5071,6 +5107,18 @@ Tunables_GetParamUlongValue
         ULONG*                      pValue
     );
 
+/**
+ * @brief Set unsigned long parameter value for TUNABLES object.
+ *
+ * @param[in] hInsContext  - The instance handle to the TUNABLES object.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[in] uValue       - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
 BOOL
 Tunables_SetParamUlongValue
     (
