@@ -25752,6 +25752,23 @@ MEMSWAP_SetParamUlongValue
             CcspTraceWarning(("StatsInterval value should be between 10 minutes and 2 hours\n"));
             return FALSE;
         }
+
+        // To prevent irregular intervals at the top of the hour, we only allow values that divide
+        // evenly into 1 hour (10, 12, 15, 20, 30) or represent clean hour blocks (60, 120).
+        switch (uValue) {
+            case 10:
+            case 12:
+            case 15:
+            case 20:
+            case 30:
+            case 60:
+            case 120:
+                break;
+            default:
+                CcspTraceWarning(("StatsInterval value should be a factor of 60 (e.g. 10, 12, 15, 20, 30, 60)\n"));
+                return FALSE; // Invalid (e.g. 25, 45, 122, etc)
+        }
+
         if (syscfg_set_u_commit(NULL, "MemorySwapStatsIntervalMinutes", uValue) != 0)
         {
             CcspTraceError(("syscfg_set failed for MemorySwapStatsIntervalMinutes\n"));
