@@ -25553,7 +25553,7 @@ MEMSWAP_GetParamBoolValue
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "Enable") == 0)
     {
-        char value[8] = {};
+        char value[8] = {0};
         if( syscfg_get(NULL, "MemorySwapEnable", value, sizeof(value)) == 0 )
         {
             *pBool = (strcmp(value, "true") == 0) ? TRUE : FALSE;
