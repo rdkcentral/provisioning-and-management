@@ -701,21 +701,21 @@ if(id != 0)
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
     
-    rbusError_t rbusRc = rbus_open(&g_pamRbusHandle, CR_PAM_COMPONENT_ID);
+   rbusError_t rbusRc = rbus_open(&g_pamRbusHandle, "CR-PAM");
 
     if(rbusRc != RBUS_ERROR_SUCCESS)
     {
-        CcspTraceError(("PAM: rbus_open failed: %d\n", rbusRc));
+        CcspTraceError(("PAM: rbus_open failed: rc=%d\n", rbusRc));
     }
     else
     {
         CcspTraceInfo(("PAM: rbus_open success handle=%p\n", g_pamRbusHandle));
     }
+
+    /*Register events */
+    CcspTraceInfo(("PAM: Calling registerPamEvents()\n"));
     registerPamEvents(g_pamRbusHandle);
-    CcspTraceInfo(("WifiReadyEvent-Initialized"));
-    pam_checkAndPublishWifiReady(g_pamRbusHandle);
-    CcspTraceInfo(("WanReadyEvent-Initialized"));
-    pam_checkAndPublishWanReady(g_pamRbusHandle);
+    CcspTraceInfo(("PAM: registerPamEvents() completed\n"));
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };

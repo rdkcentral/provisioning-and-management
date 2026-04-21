@@ -3,38 +3,30 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 #include <rbus/rbus.h>
 #include "rbuscore.h"
 
 #include "pam_register_component.h"
 #include "ccsp_trace.h"
-#include "ccsp_base_api.h"
-#include "ccsp_message_bus.h"
-#include "ansc_platform.h"
-
-#define WIFI_COMPONENT "eRT.com.cisco.spvtg.ccsp.wifi"
-#define WAN_COMPONENT  "eRT.com.cisco.spvtg.ccsp.wanmanager"
-
-#define MAX_RETRY 30
-#define RETRY_DELAY 2
-
-
 
 /* ----------------------------------------------------------- */
-/* DEPENDENCIES */
-static const char* WIFI_DEPS[] = {
-    "eRT.com.cisco.spvtg.ccsp.psm",
-    "eRT.com.cisco.spvtg.ccsp.pam",
-};
-static const int WIFI_DEPS_COUNT = sizeof(WIFI_DEPS) / sizeof(WIFI_DEPS[0]);
+#define MAX_COMPONENTS 10
+#define MAX_DEPS       10
 
-static const char* WAN_DEPS[] = {
-    "eRT.com.cisco.spvtg.ccsp.psm",
-    "eRT.com.cisco.spvtg.ccsp.pam",
-    "eRT.com.cisco.spvtg.ccsp.ethagent",
-};
-static const int WAN_DEPS_COUNT = sizeof(WAN_DEPS) / sizeof(WAN_DEPS[0]);
+typedef struct {
+    char* name;
+    char* deps[MAX_DEPS];
+    int depCount;
+    char* eventName;
+    rbusHandle_t handle;
+} PamComponent_t;
+
+static PamComponent_t g_components[MAX_COMPONENTS];
+static int g_componentCount = 0;
 
 /* ----------------------------------------------------------- */
 /* RBUS COMPONENT CHECK */
@@ -43,8 +35,7 @@ static bool isComponentRegisteredInRbus(const char* name)
     int count = 0;
     char** components = NULL;
 
-    rbusCoreError_t rc = rbus_discoverRegisteredComponents(&count, &components);
-    if(rc != RBUSCORE_SUCCESS || components == NULL)
+    if(rbus_discoverRegisteredComponents(&count, &components) != RBUSCORE_SUCCESS)
         return false;
 
     bool found = false;
@@ -62,17 +53,120 @@ static bool isComponentRegisteredInRbus(const char* name)
 }
 
 /* ----------------------------------------------------------- */
-/* DEP CHECK */
-static bool areAllDepsUp(const char** deps, int dep_count)
+/* XML PARSE */
+static void parseDeviceProfile()
 {
-    for(int i = 0; i < dep_count; i++)
+    const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";  // correct path
+
+    CcspTraceInfo(("[PAM] Parsing XML: %s\n", fileName));
+
+    xmlDocPtr doc = xmlParseFile(fileName);
+    if(!doc)
     {
-        if(!isComponentRegisteredInRbus(deps[i]))
-            return false;
+        CcspTraceError(("[PAM] Failed to parse XML %s\n", fileName));
+        return;
     }
-    return true;
+
+    xmlNodePtr root = xmlDocGetRootElement(doc);
+
+    for(xmlNodePtr comps = root->children; comps; comps = comps->next)
+    {
+        if(comps->type != XML_ELEMENT_NODE || xmlStrcmp(comps->name, (xmlChar*)"components"))
+            continue;
+
+        for(xmlNodePtr comp = comps->children; comp; comp = comp->next)
+        {
+            if(comp->type != XML_ELEMENT_NODE || xmlStrcmp(comp->name, (xmlChar*)"component"))
+                continue;
+
+            if(g_componentCount >= MAX_COMPONENTS)
+                break;
+
+            PamComponent_t* c = &g_components[g_componentCount];
+            memset(c, 0, sizeof(PamComponent_t));
+
+            for(xmlNodePtr field = comp->children; field; field = field->next)
+            {
+                if(field->type != XML_ELEMENT_NODE)
+                    continue;
+
+                if(!xmlStrcmp(field->name, (xmlChar*)"name"))
+                {
+                    xmlChar* val = xmlNodeGetContent(field);
+                    c->name = strdup((char*)val);
+                    xmlFree(val);
+                }
+                else if(!xmlStrcmp(field->name, (xmlChar*)"event"))
+                {
+                    xmlChar* val = xmlNodeGetContent(field);
+                    c->eventName = strdup((char*)val);
+                    xmlFree(val);
+                }
+                else if(!xmlStrcmp(field->name, (xmlChar*)"dependencies"))
+                {
+                    for(xmlNodePtr dep = field->children; dep; dep = dep->next)
+                    {
+                        if(dep->type == XML_ELEMENT_NODE &&
+                           !xmlStrcmp(dep->name, (xmlChar*)"dependency"))
+                        {
+                            if(c->depCount < MAX_DEPS)
+                            {
+                                xmlChar* val = xmlNodeGetContent(dep);
+                                c->deps[c->depCount++] = strdup((char*)val);
+                                xmlFree(val);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(c->name)
+            {
+                CcspTraceInfo(("[PAM] Loaded comp=%s deps=%d event=%s\n",
+                    c->name,
+                    c->depCount,
+                    c->eventName ? c->eventName : "NONE"));
+
+                g_componentCount++;
+            }
+        }
+    }
+
+    CcspTraceInfo(("[PAM] Total components loaded: %d\n", g_componentCount));
+
+    xmlFreeDoc(doc);
 }
 
+/* ----------------------------------------------------------- */
+/* EVENT PUBLISH */
+static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
+{
+    rbusValue_t newVal, oldVal;
+    rbusEvent_t event = {0};
+    rbusObject_t data;
+
+    rbusValue_Init(&newVal);
+    rbusValue_Init(&oldVal);
+
+    rbusValue_SetBoolean(newVal, true);
+    rbusValue_SetBoolean(oldVal, false);
+
+    rbusObject_Init(&data, NULL);
+    rbusObject_SetValue(data, "value", newVal);
+    rbusObject_SetValue(data, "oldValue", oldVal);
+
+    event.name = eventName;
+    event.data = data;
+    event.type = RBUS_EVENT_VALUE_CHANGED;
+
+    rbusError_t rc = rbusEvent_Publish(handle, &event);
+
+    rbusValue_Release(newVal);
+    rbusValue_Release(oldVal);
+    rbusObject_Release(data);
+
+    CcspTraceInfo(("[PAM] Publish %s rc=%d\n", eventName, rc));
+}
 /* ----------------------------------------------------------- */
 /* EVENT GET HANDLER */
 static rbusError_t eventGetHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
@@ -116,14 +210,9 @@ static rbusError_t eventSubHandler(
 /* REGISTER EVENTS */
 void registerPamEvents(rbusHandle_t handle)
 {
-    if(!handle)
-    {
-        CcspTraceInfo(("[PAM] Cannot register events, handle NULL\n"));
-        return;
-    }
+    CcspTraceInfo(("[PAM] registerPamEvents start\n"));
 
-    CcspTraceInfo(("[PAM] Registering RBUS events\n"));
-
+    /* old RBUS registration (required) */
     rbusDataElement_t dataElements[2] =
     {
         { "wifi_ready_to_go", RBUS_ELEMENT_TYPE_EVENT,
@@ -133,110 +222,86 @@ void registerPamEvents(rbusHandle_t handle)
             { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } }
     };
 
-    rbusError_t rc = rbus_regDataElements(handle, 2, dataElements);
+    rbus_regDataElements(handle, 2, dataElements);
 
-    CcspTraceInfo(("[PAM] Event registration rc=%d\n", rc));
+    CcspTraceInfo(("PAM: Starting dependency monitoring threads...\n"));
+    pam_startDependencyMonitoring(handle);
 }
-
 /* ----------------------------------------------------------- */
-/* PUBLISH EVENT */
-static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
+/* THREAD */
+static void* monitorComponentReady(void* arg)
 {
-    rbusValue_t newVal, oldVal;
-    rbusEvent_t event = {0};
-    rbusObject_t data;
+    PamComponent_t* comp = (PamComponent_t*)arg;
 
-    rbusValue_Init(&newVal);
-    rbusValue_Init(&oldVal);
+    CcspTraceInfo(("[PAM] Thread started for %s\n", comp->name));
 
-    rbusValue_SetBoolean(newVal, true);
-    rbusValue_SetBoolean(oldVal, false);
-
-    rbusObject_Init(&data, NULL);
-    rbusObject_SetValue(data, "value", newVal);
-    rbusObject_SetValue(data, "oldValue", oldVal);
-
-    event.name = eventName;
-    event.data = data;
-    event.type = RBUS_EVENT_VALUE_CHANGED;
-
-    rbusError_t rc = rbusEvent_Publish(handle, &event);
-
-    rbusValue_Release(newVal);
-    rbusValue_Release(oldVal);
-    rbusObject_Release(data);
-
-    CcspTraceInfo(("[PAM] Publish %s rc=%d (%s)\n",
-        eventName,
-        rc,
-        rc == RBUS_ERROR_NOSUBSCRIBERS ? "NO SUBSCRIBERS" : "DELIVERED"));
-}
-
-/* ----------------------------------------------------------- */
-/* WIFI */
-void pam_checkAndPublishWifiReady(rbusHandle_t handle)
-{
-    rbusHandle_t rbusHandle = handle;
-
-    if(!rbusHandle)
+    while(1)
     {
-        CcspTraceError(("[PAM] Invalid RBUS handle\n"));
-        return;
-    }
-    
-    for(int retry = 0; retry < MAX_RETRY; retry++)
-    {
-        if(!isComponentRegisteredInRbus(WIFI_COMPONENT))
+        bool ready = true;
+
+        /* STEP 1: check component itself */
+        if(!isComponentRegisteredInRbus(comp->name))
         {
-            CcspTraceInfo(("[PAM] WiFi NOT ready\n"));
-            sleep(RETRY_DELAY);
-            continue;
+            CcspTraceInfo(("[PAM] %s NOT ready\n", comp->name));
+            ready = false;
         }
 
-        if(!areAllDepsUp(WIFI_DEPS, WIFI_DEPS_COUNT))
+        /* STEP 2: check dependencies */
+        for(int i = 0; i < comp->depCount && ready; i++)
         {
-            sleep(RETRY_DELAY);
-            continue;
+            if(!isComponentRegisteredInRbus(comp->deps[i]))
+            {
+                CcspTraceInfo(("[PAM] %s waiting for dep: %s\n",
+                    comp->name, comp->deps[i]));
+                ready = false;
+                break;
+            }
         }
 
-        publishReadyEvent(rbusHandle, "wifi_ready_to_go");
-        return;
+        if(ready)
+        {
+            CcspTraceInfo(("[PAM] %s + deps READY\n", comp->name));
+
+            if(comp->eventName)
+                publishReadyEvent(comp->handle, comp->eventName);
+
+            break;
+        }
+
+        sleep(1);
     }
 
-    CcspTraceInfo(("[PAM] WiFi READY EVENT TIMEOUT\n"));
+    CcspTraceInfo(("[PAM] Thread exiting for %s\n", comp->name));
+    return NULL;
 }
 
 /* ----------------------------------------------------------- */
-/* WAN */
-void pam_checkAndPublishWanReady(rbusHandle_t handle)
+/* START MONITORING */
+void pam_startDependencyMonitoring(rbusHandle_t handle)
 {
-    rbusHandle_t rbusHandle = handle;
-
-    if(!rbusHandle)
+    if(!handle)
     {
         CcspTraceError(("[PAM] Invalid RBUS handle\n"));
         return;
     }
 
-  
-    for(int retry = 0; retry < MAX_RETRY; retry++)
+    CcspTraceInfo(("[PAM] Starting dependency monitoring...\n"));
+
+    parseDeviceProfile();
+
+    for(int i = 0; i < g_componentCount; i++)
     {
-        if(!isComponentRegisteredInRbus(WAN_COMPONENT))
-        {
-            CcspTraceInfo(("[PAM] WAN NOT ready\n"));
-            sleep(RETRY_DELAY);
-            continue;
-        }
+        PamComponent_t* comp = &g_components[i];
 
-        if(!areAllDepsUp(WAN_DEPS, WAN_DEPS_COUNT))
+        if(comp->eventName) // only event-based components
         {
-            sleep(RETRY_DELAY);
-            continue;
-        }
+            comp->handle = handle;
 
-        publishReadyEvent(rbusHandle, "wan_ready_to_go");
-        return;
+            pthread_t tid;
+            pthread_create(&tid, NULL, monitorComponentReady, comp);
+            pthread_detach(tid);
+
+            CcspTraceInfo(("[PAM] Thread created for %s\n", comp->name));
+        }
     }
-
-    CcspTraceInfo(("[PAM] WAN READY EVENT TIMEOUT\n"));
 }
