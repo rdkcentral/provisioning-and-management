@@ -75,7 +75,7 @@
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
 
-#define CR_PAM_COMPONENT_ID "eRT.com.cisco.spvtg.ccsp.pam"
+#define CR_PAM_COMPONENT_ID "CR-PAM"
 rbusHandle_t g_pamRbusHandle = NULL;
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
