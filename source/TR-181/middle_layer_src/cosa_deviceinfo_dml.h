@@ -5072,7 +5072,7 @@ MEMSWAP_GetParamUlongValue
  *
  * @param[in] hInsContext  - The instance handle to the MEMSWAP object.
  * @param[in] ParamName    - Pointer to the parameter name.
- * @param[in] uValuepUlong - The unsigned long value to set.
+ * @param[in] uValue       - The unsigned long value to set.
  *
  * @return The status of the operation.
  * @retval TRUE if the parameter is set successfully.
@@ -5084,7 +5084,7 @@ MEMSWAP_SetParamUlongValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
-        ULONG                       value
+        ULONG                       uValue
     );
 
 /**
