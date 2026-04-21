@@ -25554,14 +25554,14 @@ MEMSWAP_GetParamBoolValue
     if (strcmp(ParamName, "Enable") == 0)
     {
         char value[8] = {0};
-        if( syscfg_get(NULL, "MemorySwapEnable", value, sizeof(value)) == 0 )
+        if(syscfg_get(NULL, "MemorySwapEnable", value, sizeof(value)) == 0)
         {
             *pBool = (strcmp(value, "true") == 0) ? TRUE : FALSE;
             return TRUE;
         }
         else
         {
-            CcspTraceError(("syscfg_get failed for MemorySwapEnable\n"));
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapEnable\n", __FUNCTION__));
             return FALSE;
         }
     }
@@ -25616,7 +25616,7 @@ MEMSWAP_SetParamBoolValue
     {
         if (syscfg_set_commit(NULL, "MemorySwapEnable", bValue ? "true" : "false") != 0)
         {
-            CcspTraceError(("syscfg_set failed for MemorySwapEnable\n"));
+            CcspTraceError(("%s: syscfg_set failed for MemorySwapEnable\n", __FUNCTION__));
             return FALSE;
         }
         return TRUE;
@@ -25667,26 +25667,27 @@ MEMSWAP_GetParamUlongValue
     if (strcmp(ParamName, "DiskSize") == 0)
     {
         char value[8] = {0};
-        if( syscfg_get(NULL, "MemorySwapDiskSizeMB", value, sizeof(value)) == 0 )
+        if(syscfg_get(NULL, "MemorySwapDiskSizeMB", value, sizeof(value)) == 0)
         {
             *puLong = atol(value);
             return TRUE;
         }
         else
         {
-            CcspTraceError(("syscfg_get failed for MemorySwapDiskSizeMB\n"));
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapDiskSizeMB\n", __FUNCTION__));
             return FALSE;
         }
     } else if (strcmp(ParamName, "StatsInterval") == 0)
     {
         char value[8] = {0};
-        if( syscfg_get(NULL, "MemorySwapStatsIntervalMinutes", value, sizeof(value)) == 0 )
+        if(syscfg_get(NULL, "MemorySwapStatsIntervalMinutes", value, sizeof(value)) == 0)
         {
             *puLong = atol(value);
             return TRUE;
         }
-        else        {
-            CcspTraceError(("syscfg_get failed for MemorySwapStatsIntervalMinutes\n"));
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapStatsIntervalMinutes\n", __FUNCTION__));
             return FALSE;
         }
     }
@@ -25742,7 +25743,7 @@ MEMSWAP_SetParamUlongValue
 
         if (syscfg_set_u_commit(NULL, "MemorySwapDiskSizeMB", uValue) != 0)
         {
-            CcspTraceError(("syscfg_set failed for MemorySwapDiskSizeMB\n"));
+            CcspTraceError(("%s: syscfg_set failed for MemorySwapDiskSizeMB\n", __FUNCTION__));
             return FALSE;
         }
 
@@ -25765,13 +25766,13 @@ MEMSWAP_SetParamUlongValue
             case 120:
                 break;
             default:
-                CcspTraceWarning(("StatsInterval value should be a factor of 60 (e.g. 10, 12, 15, 20, 30, 60)\n"));
+                CcspTraceWarning(("StatsInterval value should divide evenly into 60 or be a clean hour block up to 2 hours\n"));
                 return FALSE; // Invalid (e.g. 25, 45, 122, etc)
         }
 
         if (syscfg_set_u_commit(NULL, "MemorySwapStatsIntervalMinutes", uValue) != 0)
         {
-            CcspTraceError(("syscfg_set failed for MemorySwapStatsIntervalMinutes\n"));
+            CcspTraceError(("%s: syscfg_set failed for MemorySwapStatsIntervalMinutes\n", __FUNCTION__));
             return FALSE;
         }
         return TRUE;
@@ -25821,37 +25822,39 @@ Tunables_GetParamUlongValue
     if (strcmp(ParamName, "Swappiness") == 0)
     {
         char value[8] = {0};
-        if( syscfg_get(NULL, "MemorySwapTunablesSwappiness", value, sizeof(value)) == 0 )
+        if(syscfg_get(NULL, "MemorySwapTunablesSwappiness", value, sizeof(value)) == 0)
         {
             *puLong = atol(value);
             return TRUE;
         }
         else        {
-            CcspTraceError(("syscfg_get failed for MemorySwapTunablesSwappiness\n"));
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapTunablesSwappiness\n", __FUNCTION__));
             return FALSE;
         }
     } else if (strcmp(ParamName, "WatermarkScaleFactor") == 0)
     {
         char value[8] = {0};
-        if( syscfg_get(NULL, "MemorySwapTunablesWatermarkScaleFactor", value, sizeof(value)) == 0 )
+        if(syscfg_get(NULL, "MemorySwapTunablesWatermarkScaleFactor", value, sizeof(value)) == 0)
         {
             *puLong = atol(value);
             return TRUE;
         }
-        else        {
-            CcspTraceError(("syscfg_get failed for MemorySwapTunablesWatermarkScaleFactor\n"));
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapTunablesWatermarkScaleFactor\n", __FUNCTION__));
             return FALSE;
         }
     } else if (strcmp(ParamName, "PageCluster") == 0)
     {
         char value[8] = {0};
-        if( syscfg_get(NULL, "MemorySwapTunablesPageCluster", value, sizeof(value)) == 0 )
+        if(syscfg_get(NULL, "MemorySwapTunablesPageCluster", value, sizeof(value)) == 0)
         {
             *puLong = atol(value);
             return TRUE;
         }
-        else        {
-            CcspTraceError(("syscfg_get failed for MemorySwapTunablesPageCluster\n"));
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapTunablesPageCluster\n", __FUNCTION__));
             return FALSE;
         }
     }
@@ -25906,7 +25909,7 @@ Tunables_SetParamUlongValue
         }
         if (syscfg_set_u_commit(NULL, "MemorySwapTunablesSwappiness", uValue) != 0)
         {
-            CcspTraceError(("syscfg_set failed for MemorySwapTunablesSwappiness\n"));
+            CcspTraceError(("%s: syscfg_set failed for MemorySwapTunablesSwappiness\n", __FUNCTION__));
             return FALSE;
         }
         return TRUE;
@@ -25918,7 +25921,7 @@ Tunables_SetParamUlongValue
         }
         if (syscfg_set_u_commit(NULL, "MemorySwapTunablesWatermarkScaleFactor", uValue) != 0)
         {
-            CcspTraceError(("syscfg_set failed for MemorySwapTunablesWatermarkScaleFactor\n"));
+            CcspTraceError(("%s: syscfg_set failed for MemorySwapTunablesWatermarkScaleFactor\n", __FUNCTION__));
             return FALSE;
         }
         return TRUE;
@@ -25930,7 +25933,7 @@ Tunables_SetParamUlongValue
         }
         if (syscfg_set_u_commit(NULL, "MemorySwapTunablesPageCluster", uValue) != 0)
         {
-            CcspTraceError(("syscfg_set failed for MemorySwapTunablesPageCluster\n"));
+            CcspTraceError(("%s: syscfg_set failed for MemorySwapTunablesPageCluster\n", __FUNCTION__));
             return FALSE;
         }
         return TRUE;
