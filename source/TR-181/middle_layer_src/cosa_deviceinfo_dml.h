@@ -5052,7 +5052,7 @@ MEMSWAP_SetParamBoolValue
  *
  * @param[in] hInsContext - The instance handle to the MEMSWAP object.
  * @param[in] ParamName   - Pointer to the parameter name.
- * @param[out] pUlong     - Pointer to store the unsigned long value.
+ * @param[out] pValue     - Pointer to store the unsigned long value.
  *
  * @return The status of the operation.
  * @retval TRUE if the parameter is found and retrieved successfully.

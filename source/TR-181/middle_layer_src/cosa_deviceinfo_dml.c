@@ -25734,6 +25734,11 @@ MEMSWAP_SetParamUlongValue
 {
     UNREFERENCED_PARAMETER(hInsContext);
 
+    if (IsUlongSame(hInsContext, ParamName, uValue, MEMSWAP_GetParamUlongValue))
+    {
+        return TRUE;
+    }
+
     if (strcmp(ParamName, "DiskSize") == 0)
     {
         if (uValue < 50 || uValue > 1024 ) {
@@ -25900,6 +25905,11 @@ Tunables_SetParamUlongValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
+
+    if (IsUlongSame(hInsContext, ParamName, uValue, Tunables_GetParamUlongValue))
+    {
+        return TRUE;
+    }
 
     if (strcmp(ParamName, "Swappiness") == 0)
     {
