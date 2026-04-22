@@ -715,7 +715,7 @@ if(id != 0)
     /*Register events */
     CcspTraceInfo(("PAM: Calling registerPamEvents()\n"));
     registerPamEvents(g_pamRbusHandle);
-    CcspTraceInfo(("PAM: registerPamEvents() completed\n"));
+    
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
