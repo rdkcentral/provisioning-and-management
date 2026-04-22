@@ -72,6 +72,7 @@
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
+#include "rdk_otlp_instrumentation.h"
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
@@ -667,6 +668,12 @@ if(id != 0)
 #endif
 
    t2_init("CcspPandM");
+
+#if defined (USE_REMOTE_DEBUGGER)
+   rdk_otlp_init("CcspPandM", "1.0.0");
+   CcspTraceInfo(("[OTEL] OpenTelemetry tracing initialized for CcspPandM\n"));
+#endif
+
    ret = cmd_dispatch('e');
    if(ret != 0)
    {
