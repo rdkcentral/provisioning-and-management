@@ -35,15 +35,26 @@ static bool isComponentRegisteredInRbus(const char* name)
     int count = 0;
     char** components = NULL;
 
-    if(rbus_discoverRegisteredComponents(&count, &components) != RBUSCORE_SUCCESS)
+    if(!name)
+    {
+        CcspTraceError(("[PAM] NULL component name passed to RBUS check\n"));
         return false;
+    }
+
+    if(rbus_discoverRegisteredComponents(&count, &components) != RBUSCORE_SUCCESS)
+    {
+        CcspTraceError(("[PAM] rbus_discoverRegisteredComponents failed\n"));
+        return false;
+    }
 
     bool found = false;
 
     for(int i = 0; i < count; i++)
     {
         if(components[i] && strcmp(components[i], name) == 0)
+        {
             found = true;
+        }
 
         free(components[i]);
     }
@@ -56,9 +67,19 @@ static bool isComponentRegisteredInRbus(const char* name)
 /* XML PARSE */
 static void parseDeviceProfile()
 {
-    const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";  // correct path
+    const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";
 
     CcspTraceInfo(("[PAM] Parsing XML: %s\n", fileName));
+    if(access(fileName, F_OK) != 0)
+    {
+        CcspTraceError(("[PAM] XML file NOT FOUND at path: %s\n", fileName));
+        return;
+    }
+    else
+    {
+        CcspTraceInfo(("[PAM] XML file FOUND\n"));
+    }
+
 
     xmlDocPtr doc = xmlParseFile(fileName);
     if(!doc)
@@ -69,10 +90,21 @@ static void parseDeviceProfile()
 
     xmlNodePtr root = xmlDocGetRootElement(doc);
 
+    if(!root)
+    {
+        CcspTraceError(("[PAM] XML root is NULL\n"));
+        xmlFreeDoc(doc);
+        return;
+    }
+
+    CcspTraceInfo(("[PAM] XML root node: %s\n", root->name));
+
     for(xmlNodePtr comps = root->children; comps; comps = comps->next)
     {
         if(comps->type != XML_ELEMENT_NODE || xmlStrcmp(comps->name, (xmlChar*)"components"))
             continue;
+
+        CcspTraceInfo(("[PAM] Found <components> section\n"));
 
         for(xmlNodePtr comp = comps->children; comp; comp = comp->next)
         {
@@ -80,7 +112,10 @@ static void parseDeviceProfile()
                 continue;
 
             if(g_componentCount >= MAX_COMPONENTS)
+            {
+                CcspTraceError(("[PAM] Max component limit reached\n"));
                 break;
+            }
 
             PamComponent_t* c = &g_components[g_componentCount];
             memset(c, 0, sizeof(PamComponent_t));
@@ -94,12 +129,14 @@ static void parseDeviceProfile()
                 {
                     xmlChar* val = xmlNodeGetContent(field);
                     c->name = strdup((char*)val);
+                    CcspTraceInfo(("[PAM] Parsed name: %s\n", c->name));
                     xmlFree(val);
                 }
                 else if(!xmlStrcmp(field->name, (xmlChar*)"event"))
                 {
                     xmlChar* val = xmlNodeGetContent(field);
                     c->eventName = strdup((char*)val);
+                    CcspTraceInfo(("[PAM] Parsed event: %s\n", c->eventName));
                     xmlFree(val);
                 }
                 else if(!xmlStrcmp(field->name, (xmlChar*)"dependencies"))
@@ -112,7 +149,12 @@ static void parseDeviceProfile()
                             if(c->depCount < MAX_DEPS)
                             {
                                 xmlChar* val = xmlNodeGetContent(dep);
-                                c->deps[c->depCount++] = strdup((char*)val);
+                                c->deps[c->depCount] = strdup((char*)val);
+
+                                CcspTraceInfo(("[PAM] Parsed dep[%d]: %s\n",
+                                    c->depCount, c->deps[c->depCount]));
+
+                                c->depCount++;
                                 xmlFree(val);
                             }
                         }
@@ -129,6 +171,10 @@ static void parseDeviceProfile()
 
                 g_componentCount++;
             }
+            else
+            {
+                CcspTraceError(("[PAM] Skipping component with NULL name\n"));
+            }
         }
     }
 
@@ -141,6 +187,14 @@ static void parseDeviceProfile()
 /* EVENT PUBLISH */
 static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
 {
+    if(!eventName)
+    {
+        CcspTraceError(("[PAM] Cannot publish NULL event\n"));
+        return;
+    }
+
+    CcspTraceInfo(("[PAM] Publishing event: %s\n", eventName));
+
     rbusValue_t newVal, oldVal;
     rbusEvent_t event = {0};
     rbusObject_t data;
@@ -161,14 +215,15 @@ static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
 
     rbusError_t rc = rbusEvent_Publish(handle, &event);
 
+    CcspTraceInfo(("[PAM] Publish result for %s rc=%d\n", eventName, rc));
+
     rbusValue_Release(newVal);
     rbusValue_Release(oldVal);
     rbusObject_Release(data);
-
-    CcspTraceInfo(("[PAM] Publish %s rc=%d\n", eventName, rc));
 }
+
 /* ----------------------------------------------------------- */
-/* EVENT GET HANDLER */
+/* EVENT HANDLERS */
 static rbusError_t eventGetHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
 {
     (void)handle;
@@ -184,8 +239,6 @@ static rbusError_t eventGetHandler(rbusHandle_t handle, rbusProperty_t property,
     return RBUS_ERROR_SUCCESS;
 }
 
-/* ----------------------------------------------------------- */
-/* EVENT SUB HANDLER */
 static rbusError_t eventSubHandler(
     rbusHandle_t handle,
     rbusEventSubAction_t action,
@@ -198,7 +251,7 @@ static rbusError_t eventSubHandler(
     (void)filter;
     (void)interval;
 
-    CcspTraceInfo(("[PAM] subHandler called for %s action=%d\n", eventName, action));
+    CcspTraceInfo(("[PAM] Subscription action=%d for event=%s\n", action, eventName));
 
     if(autoPublish)
         *autoPublish = false;
@@ -212,7 +265,6 @@ void registerPamEvents(rbusHandle_t handle)
 {
     CcspTraceInfo(("[PAM] registerPamEvents start\n"));
 
-    /* old RBUS registration (required) */
     rbusDataElement_t dataElements[2] =
     {
         { "wifi_ready_to_go", RBUS_ELEMENT_TYPE_EVENT,
@@ -222,16 +274,26 @@ void registerPamEvents(rbusHandle_t handle)
             { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } }
     };
 
-    rbus_regDataElements(handle, 2, dataElements);
+    rbusError_t rc = rbus_regDataElements(handle, 2, dataElements);
 
-    CcspTraceInfo(("PAM: Starting dependency monitoring threads...\n"));
+    CcspTraceInfo(("[PAM] Event registration rc=%d\n", rc));
+    CcspTraceInfo(("PAM: registerPamEvents() completed\n"));
+
+    CcspTraceInfo(("[PAM] Starting dependency monitoring threads...\n"));
     pam_startDependencyMonitoring(handle);
 }
+
 /* ----------------------------------------------------------- */
 /* THREAD */
 static void* monitorComponentReady(void* arg)
 {
     PamComponent_t* comp = (PamComponent_t*)arg;
+
+    if(!comp || !comp->name)
+    {
+        CcspTraceError(("[PAM] Invalid component in thread\n"));
+        return NULL;
+    }
 
     CcspTraceInfo(("[PAM] Thread started for %s\n", comp->name));
 
@@ -239,14 +301,12 @@ static void* monitorComponentReady(void* arg)
     {
         bool ready = true;
 
-        /* STEP 1: check component itself */
         if(!isComponentRegisteredInRbus(comp->name))
         {
             CcspTraceInfo(("[PAM] %s NOT ready\n", comp->name));
             ready = false;
         }
 
-        /* STEP 2: check dependencies */
         for(int i = 0; i < comp->depCount && ready; i++)
         {
             if(!isComponentRegisteredInRbus(comp->deps[i]))
@@ -268,7 +328,7 @@ static void* monitorComponentReady(void* arg)
             break;
         }
 
-        sleep(1);
+        sleep(2);
     }
 
     CcspTraceInfo(("[PAM] Thread exiting for %s\n", comp->name));
@@ -293,7 +353,7 @@ void pam_startDependencyMonitoring(rbusHandle_t handle)
     {
         PamComponent_t* comp = &g_components[i];
 
-        if(comp->eventName) // only event-based components
+        if(comp->eventName)
         {
             comp->handle = handle;
 
