@@ -506,8 +506,8 @@ CosaDml_CGreIfSetCfg(ULONG ins, COSA_DML_CGRE_IF *greIf)
         return ANSC_STATUS_SUCCESS;
     }
 
-    memset(rec, 0, sizeof(rec));
-    memset(val, 0, sizeof(val));
+    memset(rec, '\0', sizeof(rec));
+    memset(val, '\0', sizeof(val));
   
     if ((greIf->ChangeFlag & COSA_DML_CGRE_CF_ENABLE) && greIf->Enable == TRUE) {
         snprintf(rec, sizeof(rec), CGRE_PARAM_ENABLE, ins);
