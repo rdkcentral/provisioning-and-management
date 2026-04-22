@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <libxml/xmlerror.h>
 
 #include <rbus/rbus.h>
 #include "rbuscore.h"
@@ -70,6 +71,7 @@ static void parseDeviceProfile()
     const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";
 
     CcspTraceInfo(("[PAM] Parsing XML: %s\n", fileName));
+
     if(access(fileName, F_OK) != 0)
     {
         CcspTraceError(("[PAM] XML file NOT FOUND at path: %s\n", fileName));
@@ -80,11 +82,22 @@ static void parseDeviceProfile()
         CcspTraceInfo(("[PAM] XML file FOUND\n"));
     }
 
+    /* INIT PARSER */
+    xmlInitParser();
 
     xmlDocPtr doc = xmlParseFile(fileName);
     if(!doc)
     {
-        CcspTraceError(("[PAM] Failed to parse XML %s\n", fileName));
+        const xmlError* err = xmlGetLastError();
+        if(err)
+        {
+            CcspTraceError(("[PAM] XML parse error: %s (line %d)\n",
+                err->message, err->line));
+        }
+        else
+        {
+            CcspTraceError(("[PAM] Unknown XML parse error for %s\n", fileName));
+        }
         return;
     }
 
@@ -97,7 +110,7 @@ static void parseDeviceProfile()
         return;
     }
 
-    CcspTraceInfo(("[PAM] XML root node: %s\n", root->name));
+    CcspTraceInfo(("[PAM] XML root node: %s\n", (char*)root->name));
 
     for(xmlNodePtr comps = root->children; comps; comps = comps->next)
     {
