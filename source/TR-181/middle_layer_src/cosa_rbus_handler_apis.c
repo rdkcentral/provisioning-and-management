@@ -74,6 +74,7 @@ static token_t sysevent_token = 0;
 char RRDIssueType[256];
 char RRDWebCfgData[256];
 bool RRD_BoolValue;
+#include "rdk_otlp_instrumentation.h"
 #endif
 /***********************************************************************
 
@@ -685,6 +686,9 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
 
     CcspTraceInfo(("Enter %s \n", __FUNCTION__));
 
+    rdk_otlp_start_child_span("RRD_ctx", "PaM_RRD_SetStringHandler");
+    CcspTraceInfo(("[%s]: [OTEL] Started child span for PaM_RRD_SetStringHandler\n", __FUNCTION__));
+
     propertyName = rbusProperty_GetName(property);
     if(propertyName)
     {
@@ -693,6 +697,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
     else
     {
         CcspTraceError(("[%s]: Invalid property name\n", __FUNCTION__));
+        rdk_otlp_finish_child_span();
         return RBUS_ERROR_INVALID_INPUT;
     }
     if(strcmp(propertyName, RRD_SET_ISSUE_EVENT) == 0)
@@ -702,6 +707,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         if(rbusValue_GetType(value) != RBUS_STRING)
         {
             CcspTraceError(("[%s]: Invalid gettype name\n", __FUNCTION__));
+            rdk_otlp_finish_child_span();
             return RBUS_ERROR_INVALID_INPUT;
         }
         strncpy(prev_val, RRDIssueType, sizeof(prev_val)-1);
@@ -710,6 +716,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         if(strlen(str) > 255)
         {
             CcspTraceError(("[%s]: Invalid string length\n", __FUNCTION__));
+            rdk_otlp_finish_child_span();
             return RBUS_ERROR_INVALID_INPUT;
         }
 
@@ -718,6 +725,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         if(syscfg_set_commit(NULL, "RemoteDebuggerIssueType", RRDIssueType) != 0)
         {
             CcspTraceError(("[%s]: RemotedebuggerIssueType as %s syscfg_set Failed!!!\n",__FUNCTION__,RRDIssueType));
+            rdk_otlp_finish_child_span();
             return RBUS_ERROR_BUS_ERROR;
         }
 
@@ -733,6 +741,8 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         }
     }
 
+    rdk_otlp_finish_child_span();
+    CcspTraceInfo(("[%s]: [OTEL] Stopping child span for PaM_RRD_SetStringHandler\n", __FUNCTION__));
     CcspTraceInfo(("Exit %s \n", __FUNCTION__));
 
     return RBUS_ERROR_SUCCESS;
