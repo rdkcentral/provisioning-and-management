@@ -70,7 +70,7 @@ static bool isComponentRegisteredInRbus(const char* name)
 /* XML PARSE */
 static void parseDeviceProfile()
 {
-    const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";
+    const char* fileName = "/tmp/cr-deviceprofile.xml";
 
     CcspTraceInfo(("[PAM] Parsing XML: %s\n", fileName));
     CcspTraceInfo(("[PAM] Running as UID=%d GID=%d\n", getuid(), getgid()));
@@ -93,6 +93,9 @@ static void parseDeviceProfile()
     {
         CcspTraceError(("[PAM] fopen failed for %s errno=%d (%s)\n",fileName, errno, strerror(errno)));
         return;
+    }
+    else{
+        CcspTraceInfo(("[PAM] fopen SUCCESS\n"));
     }
 
     fseek(fp, 0, SEEK_END);
@@ -126,6 +129,7 @@ static void parseDeviceProfile()
     }
 
     xmlDocPtr doc = xmlReadMemory(xmlBuf, (int)fileSize, fileName, NULL, 0);
+    
     free(xmlBuf);
 
     if(!doc)
@@ -142,6 +146,7 @@ static void parseDeviceProfile()
         }
         return;
     }
+    CcspTraceInfo(("[PAM] XML parsed into memory successfully\n"));
 
     xmlNodePtr root = xmlDocGetRootElement(doc);
 
