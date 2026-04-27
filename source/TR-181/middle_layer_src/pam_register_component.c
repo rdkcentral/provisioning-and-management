@@ -85,7 +85,47 @@ static void parseDeviceProfile()
     /* INIT PARSER */
     xmlInitParser();
 
-    xmlDocPtr doc = xmlParseFile(fileName);
+    /* Read file into memory to avoid libxml2 entity loader permission issues */
+    FILE* fp = fopen(fileName, "rb");
+    if(!fp)
+    {
+        CcspTraceError(("[PAM] fopen failed for %s\n", fileName));
+        return;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long fileSize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if(fileSize <= 0)
+    {
+        CcspTraceError(("[PAM] File is empty or ftell failed: %s\n", fileName));
+        fclose(fp);
+        return;
+    }
+
+    char* xmlBuf = (char*)malloc((size_t)fileSize);
+    if(!xmlBuf)
+    {
+        CcspTraceError(("[PAM] malloc failed for XML buffer\n"));
+        fclose(fp);
+        return;
+    }
+
+    size_t bytesRead = fread(xmlBuf, 1, (size_t)fileSize, fp);
+    fclose(fp);
+
+    if((long)bytesRead != fileSize)
+    {
+        CcspTraceError(("[PAM] fread read %zu of %ld bytes from %s\n",
+            bytesRead, fileSize, fileName));
+        free(xmlBuf);
+        return;
+    }
+
+    xmlDocPtr doc = xmlReadMemory(xmlBuf, (int)fileSize, fileName, NULL, 0);
+    free(xmlBuf);
+
     if(!doc)
     {
         const xmlError* err = xmlGetLastError();
