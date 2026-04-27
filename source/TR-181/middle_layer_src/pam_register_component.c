@@ -4,12 +4,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xmlerror.h>
 
 #include <rbus/rbus.h>
 #include "rbuscore.h"
+#include <errno.h>
 
 #include "pam_register_component.h"
 #include "ccsp_trace.h"
@@ -71,7 +73,7 @@ static void parseDeviceProfile()
     const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";
 
     CcspTraceInfo(("[PAM] Parsing XML: %s\n", fileName));
-
+    CcspTraceInfo(("[PAM] Running as UID=%d GID=%d\n", getuid(), getgid()));
     if(access(fileName, F_OK) != 0)
     {
         CcspTraceError(("[PAM] XML file NOT FOUND at path: %s\n", fileName));
@@ -89,7 +91,7 @@ static void parseDeviceProfile()
     FILE* fp = fopen(fileName, "rb");
     if(!fp)
     {
-        CcspTraceError(("[PAM] fopen failed for %s\n", fileName));
+        CcspTraceError(("[PAM] fopen failed for %s errno=%d (%s)\n",fileName, errno, strerror(errno)));
         return;
     }
 
