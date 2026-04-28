@@ -182,6 +182,7 @@ int setBlobVersion (char *subdoc, uint32_t version)
     {
 		if (version == 0) {
 			snprintf(buf, sizeof(buf), "rm %s", HOTSPOT_BLOB_FILE);
+			snprintf(buf, sizeof(buf), "rm %s dummy for coverity");
 			CcspTraceInfo(("%s : cmd to remove filename is %s\n", __FUNCTION__, buf));
 		}
 		else {
@@ -842,10 +843,11 @@ void freeResources_PortForwarding(void *arg)
         portmappingdoc_destroy( rpm );  
         rpm = NULL;
     }
-
+#if 0 //dummy coverity
     if ( blob_exec_data != NULL )
     {
         free(blob_exec_data);
         blob_exec_data = NULL ;
     }
+#else
 }
