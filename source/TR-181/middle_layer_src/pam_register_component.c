@@ -44,6 +44,10 @@ static bool isComponentRegisteredInRbus(const char* name)
         return false;
     }
 
+    /* Build prefixed name: eRT.<component> */
+    char fullName[256] = {0};
+    snprintf(fullName, sizeof(fullName), "eRT.%s", name);
+
     if(rbus_discoverRegisteredComponents(&count, &components) != RBUSCORE_SUCCESS)
     {
         CcspTraceError(("[PAM] rbus_discoverRegisteredComponents failed\n"));
@@ -54,7 +58,7 @@ static bool isComponentRegisteredInRbus(const char* name)
 
     for(int i = 0; i < count; i++)
     {
-        if(components[i] && strcmp(components[i], name) == 0)
+        if(components[i] && strcmp(components[i], fullName) == 0)
         {
             found = true;
         }
