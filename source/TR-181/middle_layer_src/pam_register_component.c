@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+
+
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xmlerror.h>
@@ -16,7 +18,16 @@
 #include "pam_register_component.h"
 #include "ccsp_trace.h"
 
-/* ----------------------------------------------------------- */
+#define CCSP_ETHWAN_ENABLE "/nvram/ETHWAN_ENABLE"
+#define CCSP_CR_ETHWAN_DEVICE_PROFILE_XML_FILE "/usr/ccsp/cr-ethwan-deviceprofile.xml"
+#define CCSP_CR_DEVICE_PROFILE_XML_FILE "/usr/ccsp/cr-deviceprofile.xml"
+
+#if defined(_SCER11BEL_PRODUCT_REQ_)
+#define CCSP_USE_ETHWAN_PROFILE 1
+#else
+#define CCSP_USE_ETHWAN_PROFILE 0
+#endif
+
 #define MAX_COMPONENTS 10
 #define MAX_DEPS       10
 
@@ -74,13 +85,29 @@ static bool isComponentRegisteredInRbus(const char* name)
 /* XML PARSE */
 static void parseDeviceProfile()
 {
-    const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";
+    const char* fileName = NULL;
+    char fullPath[256] = {0};
 
-    CcspTraceInfo(("[PAM] Parsing XML: %s\n", fileName));
-    CcspTraceInfo(("[PAM] Running as UID=%d GID=%d\n", getuid(), getgid()));
-    if(access(fileName, F_OK) != 0)
+    /* --- NEW LOGIC (same as CR) --- */
+    if(CCSP_USE_ETHWAN_PROFILE || (access(CCSP_ETHWAN_ENABLE, F_OK) == 0))
     {
-        CcspTraceError(("[PAM] XML file NOT FOUND at path: %s\n", fileName));
+        fileName = CCSP_CR_ETHWAN_DEVICE_PROFILE_XML_FILE;
+        CcspTraceInfo(("[PAM] Using ETHWAN device profile: %s\n", fileName));
+    }
+    else
+    {
+        fileName = CCSP_CR_DEVICE_PROFILE_XML_FILE;
+        CcspTraceInfo(("[PAM] Using DEFAULT device profile: %s\n", fileName));
+    }
+
+    snprintf(fullPath, sizeof(fullPath), "/usr/ccsp/%s", fileName);
+
+    CcspTraceInfo(("[PAM] Parsing XML: %s\n", fullPath));
+    CcspTraceInfo(("[PAM] Running as UID=%d GID=%d\n", getuid(), getgid()));
+
+    if(access(fullPath, F_OK) != 0)
+    {
+        CcspTraceError(("[PAM] XML file NOT FOUND at path: %s\n", fullPath));
         return;
     }
     else
@@ -92,10 +119,10 @@ static void parseDeviceProfile()
     xmlInitParser();
 
     /* Read file into memory to avoid libxml2 entity loader permission issues */
-    FILE* fp = fopen(fileName, "rb");
+    FILE* fp = fopen(fullPath, "rb");
     if(!fp)
     {
-        CcspTraceError(("[PAM] fopen failed for %s errno=%d (%s)\n",fileName, errno, strerror(errno)));
+        CcspTraceError(("[PAM] fopen failed for %s errno=%d (%s)\n", fullPath, errno, strerror(errno)));
         return;
     }
     else{
@@ -108,7 +135,7 @@ static void parseDeviceProfile()
 
     if(fileSize <= 0)
     {
-        CcspTraceError(("[PAM] File is empty or ftell failed: %s\n", fileName));
+        CcspTraceError(("[PAM] File is empty or ftell failed: %s\n", fullPath));
         fclose(fp);
         return;
     }
@@ -127,12 +154,12 @@ static void parseDeviceProfile()
     if((long)bytesRead != fileSize)
     {
         CcspTraceError(("[PAM] fread read %zu of %ld bytes from %s\n",
-            bytesRead, fileSize, fileName));
+            bytesRead, fileSize, fullPath));
         free(xmlBuf);
         return;
     }
 
-    xmlDocPtr doc = xmlReadMemory(xmlBuf, (int)fileSize, fileName, NULL, 0);
+    xmlDocPtr doc = xmlReadMemory(xmlBuf, (int)fileSize, fullPath, NULL, 0);
     
     free(xmlBuf);
 
@@ -146,7 +173,7 @@ static void parseDeviceProfile()
         }
         else
         {
-            CcspTraceError(("[PAM] Unknown XML parse error for %s\n", fileName));
+            CcspTraceError(("[PAM] Unknown XML parse error for %s\n", fullPath));
         }
         return;
     }
@@ -163,6 +190,7 @@ static void parseDeviceProfile()
 
     CcspTraceInfo(("[PAM] XML root node: %s\n", (char*)root->name));
 
+    /* ---- REST OF YOUR CODE EXACTLY SAME ---- */
     for(xmlNodePtr comps = root->children; comps; comps = comps->next)
     {
         if(comps->type != XML_ELEMENT_NODE || xmlStrcmp(comps->name, (xmlChar*)"components"))
@@ -257,11 +285,17 @@ static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
         return;
     }
 
-    int retries = 5;   // total ~10 seconds (5 * 2 sec)
+    const int timeoutSec = 15;   
+    const int intervalSec = 1;   
 
-    while(retries--)
+    time_t startTime = time(NULL);
+    int attempt = 0;
+
+    while(1)
     {
-        CcspTraceInfo(("[PAM] Publishing event: %s (retry=%d)\n", eventName, retries));
+        attempt++;
+
+        CcspTraceInfo(("[PAM] Publishing event: %s (attempt=%d)\n", eventName, attempt));
 
         rbusValue_t newVal, oldVal;
         rbusEvent_t event = {0};
@@ -297,12 +331,20 @@ static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
 
         if(rc == RBUS_ERROR_NOSUBSCRIBERS)
         {
+            if(time(NULL) - startTime >= timeoutSec)
+            {
+                CcspTraceError(("[PAM] Timeout reached, no subscribers for %s\n", eventName));
+                break;
+            }
+
             CcspTraceInfo(("[PAM] No subscribers yet, retrying...\n"));
-            sleep(2);
+            sleep(intervalSec);
             continue;
         }
 
-        break; // other errors → stop
+        
+        CcspTraceError(("[PAM] Publish failed with rc=%d, stopping\n", rc));
+        break;
     }
 }
 
