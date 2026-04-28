@@ -311,7 +311,7 @@ CosaDmlDiGetRouterIPv6Address
 	ipv6_addr_info_t * p_v6addr = NULL;
     int  v6addr_num = 0, i, l_iIpV6AddrLen;
 
-#if defined(_RDKB_GLOBAL_PRODUCT_REQ_) && !defined(_SCXF11BFL_PRODUCT_REQ_)
+#if defined(_RDKB_GLOBAL_PRODUCT_REQ_)
     char            acLANIPv6GUASupport[8] = {0};
     unsigned char   IsLANIPv6GUASupported  = FALSE;
 
@@ -325,13 +325,20 @@ CosaDmlDiGetRouterIPv6Address
     {
         CosaUtilGetIpv6AddrInfo("brlan0", &p_v6addr, &v6addr_num);
     }
+#if defined(_SCXF11BFL_PRODUCT_REQ_) 
+    else
+    {
+        CosaUtilGetIpv6AddrInfo("veip0.0", &p_v6addr, &v6addr_num);
+    }
+#else
     else
     {
         CosaUtilGetIpv6AddrInfo("erouter0", &p_v6addr, &v6addr_num);
     }
+#endif
 #elif defined(_HUB4_PRODUCT_REQ_)
 	CosaUtilGetIpv6AddrInfo("brlan0", &p_v6addr, &v6addr_num);
-#elif defined(_WNXL11BWL_PRODUCT_REQ_) || defined(_SCXF11BFL_PRODUCT_REQ_)
+#elif defined(_WNXL11BWL_PRODUCT_REQ_) 
         char wan_interface[32] = {0};
         commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
         CosaUtilGetIpv6AddrInfo(wan_interface, &p_v6addr, &v6addr_num);
