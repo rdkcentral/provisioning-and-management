@@ -257,33 +257,53 @@ static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
         return;
     }
 
-    CcspTraceInfo(("[PAM] Publishing event: %s\n", eventName));
+    int retries = 5;   // total ~10 seconds (5 * 2 sec)
 
-    rbusValue_t newVal, oldVal;
-    rbusEvent_t event = {0};
-    rbusObject_t data;
+    while(retries--)
+    {
+        CcspTraceInfo(("[PAM] Publishing event: %s (retry=%d)\n", eventName, retries));
 
-    rbusValue_Init(&newVal);
-    rbusValue_Init(&oldVal);
+        rbusValue_t newVal, oldVal;
+        rbusEvent_t event = {0};
+        rbusObject_t data;
 
-    rbusValue_SetBoolean(newVal, true);
-    rbusValue_SetBoolean(oldVal, false);
+        rbusValue_Init(&newVal);
+        rbusValue_Init(&oldVal);
 
-    rbusObject_Init(&data, NULL);
-    rbusObject_SetValue(data, "value", newVal);
-    rbusObject_SetValue(data, "oldValue", oldVal);
+        rbusValue_SetBoolean(newVal, true);
+        rbusValue_SetBoolean(oldVal, false);
 
-    event.name = eventName;
-    event.data = data;
-    event.type = RBUS_EVENT_VALUE_CHANGED;
+        rbusObject_Init(&data, NULL);
+        rbusObject_SetValue(data, "value", newVal);
+        rbusObject_SetValue(data, "oldValue", oldVal);
 
-    rbusError_t rc = rbusEvent_Publish(handle, &event);
+        event.name = eventName;
+        event.data = data;
+        event.type = RBUS_EVENT_VALUE_CHANGED;
 
-    CcspTraceInfo(("[PAM] Publish result for %s rc=%d\n", eventName, rc));
+        rbusError_t rc = rbusEvent_Publish(handle, &event);
 
-    rbusValue_Release(newVal);
-    rbusValue_Release(oldVal);
-    rbusObject_Release(data);
+        CcspTraceInfo(("[PAM] Publish result for %s rc=%d\n", eventName, rc));
+
+        rbusValue_Release(newVal);
+        rbusValue_Release(oldVal);
+        rbusObject_Release(data);
+
+        if(rc == RBUS_ERROR_SUCCESS)
+        {
+            CcspTraceInfo(("[PAM] Event delivered successfully\n"));
+            break;
+        }
+
+        if(rc == RBUS_ERROR_NOSUBSCRIBERS)
+        {
+            CcspTraceInfo(("[PAM] No subscribers yet, retrying...\n"));
+            sleep(2);
+            continue;
+        }
+
+        break; // other errors → stop
+    }
 }
 
 /* ----------------------------------------------------------- */
