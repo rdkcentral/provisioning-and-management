@@ -70,7 +70,7 @@ static bool isComponentRegisteredInRbus(const char* name)
 /* XML PARSE */
 static void parseDeviceProfile()
 {
-    const char* fileName = "/tmp/cr-deviceprofile.xml";
+    const char* fileName = "/usr/ccsp/cr-deviceprofile.xml";
 
     CcspTraceInfo(("[PAM] Parsing XML: %s\n", fileName));
     CcspTraceInfo(("[PAM] Running as UID=%d GID=%d\n", getuid(), getgid()));
