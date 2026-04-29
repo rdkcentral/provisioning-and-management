@@ -12870,8 +12870,10 @@ PeriodicFWCheck_SetParamBoolValue
 {
         CcspTraceInfo(("DEBUG_PFW: ENTERED setter PeriodicFWCheck_SetParamBoolValue api \n"));
         if (IsBoolSame(hInsContext, ParamName, bValue, PeriodicFWCheck_GetParamBoolValue))
+		{
             CcspTraceInfo(("DEBUG_PFW: Return at isBoolSame \n"));
             return TRUE;
+		}
 
         if (strcmp(ParamName, "Enable") == 0)
         {
