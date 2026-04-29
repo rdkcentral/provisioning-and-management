@@ -86,9 +86,7 @@ static bool isComponentRegisteredInRbus(const char* name)
 static void parseDeviceProfile()
 {
     const char* fileName = NULL;
-    char fullPath[256] = {0};
 
-    /* --- NEW LOGIC (same as CR) --- */
     if(CCSP_USE_ETHWAN_PROFILE || (access(CCSP_ETHWAN_ENABLE, F_OK) == 0))
     {
         fileName = CCSP_CR_ETHWAN_DEVICE_PROFILE_XML_FILE;
@@ -100,7 +98,7 @@ static void parseDeviceProfile()
         CcspTraceInfo(("[PAM] Using DEFAULT device profile: %s\n", fileName));
     }
 
-    snprintf(fullPath, sizeof(fullPath), "/usr/ccsp/%s", fileName);
+    const char* fullPath = fileName;
 
     CcspTraceInfo(("[PAM] Parsing XML: %s\n", fullPath));
     CcspTraceInfo(("[PAM] Running as UID=%d GID=%d\n", getuid(), getgid()));
@@ -115,17 +113,15 @@ static void parseDeviceProfile()
         CcspTraceInfo(("[PAM] XML file FOUND\n"));
     }
 
-    /* INIT PARSER */
     xmlInitParser();
-
-    /* Read file into memory to avoid libxml2 entity loader permission issues */
     FILE* fp = fopen(fullPath, "rb");
     if(!fp)
     {
         CcspTraceError(("[PAM] fopen failed for %s errno=%d (%s)\n", fullPath, errno, strerror(errno)));
         return;
     }
-    else{
+    else
+    {
         CcspTraceInfo(("[PAM] fopen SUCCESS\n"));
     }
 
@@ -160,7 +156,7 @@ static void parseDeviceProfile()
     }
 
     xmlDocPtr doc = xmlReadMemory(xmlBuf, (int)fileSize, fullPath, NULL, 0);
-    
+
     free(xmlBuf);
 
     if(!doc)
@@ -190,7 +186,7 @@ static void parseDeviceProfile()
 
     CcspTraceInfo(("[PAM] XML root node: %s\n", (char*)root->name));
 
-    /* ---- REST OF YOUR CODE EXACTLY SAME ---- */
+    
     for(xmlNodePtr comps = root->children; comps; comps = comps->next)
     {
         if(comps->type != XML_ELEMENT_NODE || xmlStrcmp(comps->name, (xmlChar*)"components"))
