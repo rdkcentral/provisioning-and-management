@@ -24583,8 +24583,7 @@ Generic_SetParamBoolValue
 
    char * requestorStr = getRequestorString();
    char * currentTime = getTime();
-    if (g_currentParamFullName &&
-        strstr(g_currentParamFullName, "PeriodicFWCheck"))
+    if (g_currentParamFullName && strstr(g_currentParamFullName, "PeriodicFWCheck"))
     {
         AnscTraceWarning(("DEBUG_GEN: PFW_HIT FullParam=%s Value=%d Req=%s\n", g_currentParamFullName, bValue, requestorStr ? requestorStr : "NULL"));
     }
