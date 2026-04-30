@@ -42,6 +42,7 @@ typedef struct {
 static PamComponent_t g_components[MAX_COMPONENTS];
 static int g_componentCount = 0;
 
+static bool isSystemReady = false;
 /* ----------------------------------------------------------- */
 /* RBUS COMPONENT CHECK */
 static bool isComponentRegisteredInRbus(const char* name)
@@ -80,7 +81,21 @@ static bool isComponentRegisteredInRbus(const char* name)
 
     return found;
 }
+static bool areAllComponentsReady()
+{
+    for(int i = 0; i < g_componentCount; i++)
+    {
+        if(!isComponentRegisteredInRbus(g_components[i].name))
+            return false;
 
+        for(int j = 0; j < g_components[i].depCount; j++)
+        {
+            if(!isComponentRegisteredInRbus(g_components[i].deps[j]))
+                return false;
+        }
+    }
+    return true;
+}
 /* ----------------------------------------------------------- */
 /* XML PARSE */
 static void parseDeviceProfile()
@@ -346,6 +361,33 @@ static void publishReadyEvent(rbusHandle_t handle, const char* eventName)
 
 /* ----------------------------------------------------------- */
 /* EVENT HANDLERS */
+static rbusError_t systemReadyGetHandler(
+    rbusHandle_t handle,
+    rbusProperty_t property,
+    rbusGetHandlerOptions_t* opts)
+{
+    (void)handle;
+    (void)opts;
+
+    const char* name = rbusProperty_GetName(property);
+
+    if(strcmp(name, "Device.CR.SystemReady") == 0)
+    {
+        rbusValue_t value;
+        rbusValue_Init(&value);
+
+        rbusValue_SetBoolean(value, isSystemReady);
+
+        rbusProperty_SetValue(property, value);
+        rbusValue_Release(value);
+
+        CcspTraceInfo(("[PAM] GET Device.CR.SystemReady = %d\n", isSystemReady));
+
+        return RBUS_ERROR_SUCCESS;
+    }
+
+    return RBUS_ERROR_ELEMENT_DOES_NOT_EXIST;
+}
 static rbusError_t eventGetHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t* opts)
 {
     (void)handle;
@@ -387,16 +429,20 @@ void registerPamEvents(rbusHandle_t handle)
 {
     CcspTraceInfo(("[PAM] registerPamEvents start\n"));
 
-    rbusDataElement_t dataElements[2] =
+    rbusDataElement_t dataElements[3] =
     {
         { "wifi_ready_to_go", RBUS_ELEMENT_TYPE_EVENT,
             { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } },
 
         { "wan_ready_to_go", RBUS_ELEMENT_TYPE_EVENT,
-            { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } }
+            { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } },
+
+        
+        { "Device.CR.SystemReady", RBUS_ELEMENT_TYPE_PROPERTY,
+            { systemReadyGetHandler, NULL, NULL, NULL, NULL, NULL } }
     };
 
-    rbusError_t rc = rbus_regDataElements(handle, 2, dataElements);
+    rbusError_t rc = rbus_regDataElements(handle, 3, dataElements);
 
     CcspTraceInfo(("[PAM] Event registration rc=%d\n", rc));
     CcspTraceInfo(("PAM: registerPamEvents() completed\n"));
@@ -447,6 +493,13 @@ static void* monitorComponentReady(void* arg)
             if(comp->eventName)
                 publishReadyEvent(comp->handle, comp->eventName);
 
+            if(!isSystemReady && areAllComponentsReady())
+            {
+                isSystemReady = true;
+                CcspTraceInfo(("[PAM] ALL components ready → Device.CR.SystemReady = TRUE\n"));
+            }
+
+
             break;
         }
 
@@ -473,17 +526,14 @@ void pam_startDependencyMonitoring(rbusHandle_t handle)
 
     for(int i = 0; i < g_componentCount; i++)
     {
-        PamComponent_t* comp = &g_components[i];
+        PamComponent_t* comp = &g_components[i];  
+        comp->handle = handle;
 
-        if(comp->eventName)
-        {
-            comp->handle = handle;
+        pthread_t tid;
+        pthread_create(&tid, NULL, monitorComponentReady, comp);
+        pthread_detach(tid);
 
-            pthread_t tid;
-            pthread_create(&tid, NULL, monitorComponentReady, comp);
-            pthread_detach(tid);
-
-            CcspTraceInfo(("[PAM] Thread created for %s\n", comp->name));
-        }
+        CcspTraceInfo(("[PAM] Thread created for %s\n", comp->name));
+        
     }
 }
