@@ -450,63 +450,11 @@ void registerPamEvents(rbusHandle_t handle)
     CcspTraceInfo(("[PAM] Starting dependency monitoring threads...\n"));
     pam_startDependencyMonitoring(handle);
 }
-
 /* ----------------------------------------------------------- */
-/* THREAD */
-static void* monitorComponentReady(void* arg)
-{
-    PamComponent_t* comp = (PamComponent_t*)arg;
-
-    if(!comp || !comp->name)
-    {
-        CcspTraceError(("[PAM] Invalid component in thread\n"));
-        return NULL;
-    }
-
-    CcspTraceInfo(("[PAM] Thread started for %s\n", comp->name));
-
-    while(1)
-    {
-        bool ready = true;
-
-        if(!isComponentRegisteredInRbus(comp->name))
-        {
-            CcspTraceInfo(("[PAM] %s NOT ready\n", comp->name));
-            ready = false;
-        }
-
-        for(int i = 0; i < comp->depCount && ready; i++)
-        {
-            if(!isComponentRegisteredInRbus(comp->deps[i]))
-            {
-                CcspTraceInfo(("[PAM] %s waiting for dep: %s\n",
-                    comp->name, comp->deps[i]));
-                ready = false;
-                break;
-            }
-        }
-
-        if(ready)
-        {
-            CcspTraceInfo(("[PAM] %s + deps READY\n", comp->name));
-
-            if(comp->eventName)
-                publishReadyEvent(comp->handle, comp->eventName);
-
-            break;
-        }
-
-        sleep(2);
-    }
-
-    CcspTraceInfo(("[PAM] Thread exiting for %s\n", comp->name));
-    return NULL;
-}
-/* ----------------------------------------------------------- */
-/* SYSTEM READY THREAD */
+/* SYSTEM READY + EVENT PUBLISH */
 static void* monitorSystemReady(void* arg)
 {
-    (void)arg;
+    rbusHandle_t handle = (rbusHandle_t)arg;
 
     CcspTraceInfo(("[PAM] SystemReady monitor thread started\n"));
 
@@ -518,6 +466,40 @@ static void* monitorSystemReady(void* arg)
 
             CcspTraceInfo(("[PAM] ALL components ready → Device.CR.SystemReady = TRUE\n"));
 
+            
+            for(int i = 0; i < g_componentCount; i++)
+            {
+                PamComponent_t* comp = &g_components[i];
+
+                if(comp->eventName)
+                {
+                    comp->handle = handle;
+                    bool ready = true;
+
+                    if(!isComponentRegisteredInRbus(comp->name))
+                        ready = false;
+
+                    for(int j = 0; j < comp->depCount && ready; j++)
+                    {
+                        if(!isComponentRegisteredInRbus(comp->deps[j]))
+                            ready = false;
+                    }
+
+                    if(ready)
+                    {
+                        CcspTraceInfo(("[PAM] Publishing event after SystemReady: %s\n",
+                            comp->eventName));
+
+                        publishReadyEvent(handle, comp->eventName);
+                    }
+                    else
+                    {
+                        CcspTraceError(("[PAM] Unexpected: %s not ready even after SystemReady\n",
+                            comp->name));
+                    }
+                }
+            }
+
             break;
         }
 
@@ -527,6 +509,7 @@ static void* monitorSystemReady(void* arg)
     CcspTraceInfo(("[PAM] SystemReady thread exiting\n"));
     return NULL;
 }
+
 /* ----------------------------------------------------------- */
 /* START MONITORING */
 void pam_startDependencyMonitoring(rbusHandle_t handle)
@@ -537,24 +520,12 @@ void pam_startDependencyMonitoring(rbusHandle_t handle)
         return;
     }
 
-    CcspTraceInfo(("[PAM] Starting dependency monitoring...\n"));
+    CcspTraceInfo(("[PAM] Starting dependency monitoring (SINGLE THREAD MODE)...\n"));
 
     parseDeviceProfile();
+
+  
     pthread_t sysTid;
-    pthread_create(&sysTid, NULL, monitorSystemReady, NULL);
+    pthread_create(&sysTid, NULL, monitorSystemReady, handle);
     pthread_detach(sysTid);
-
-    for(int i = 0; i < g_componentCount; i++)
-    {
-        PamComponent_t* comp = &g_components[i]; 
-        if(comp->eventName){  
-            comp->handle = handle;
-
-            pthread_t tid;
-            pthread_create(&tid, NULL, monitorComponentReady, comp);
-            pthread_detach(tid);
-
-            CcspTraceInfo(("[PAM] Thread created for %s\n", comp->name));
-        }
-    }
 }
