@@ -1528,6 +1528,116 @@ rbusError_t devCtrlRbusInit()
         //Subscribe WAN Status Event
 	Cosa_Rbus_Handler_SubscribeWanStatusEvent();
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
+
+	initWanStatePublisher();
+
 	return rc;
 }
 #endif
+
+/*----------------------------------------------------------------------------*/
+/* WAN State RBUS Publisher - subscribes to sysevent wan_to_lan_operational_mode */
+/* and publishes Device.X_RDK_WanManager.WanState                              */
+/*----------------------------------------------------------------------------*/
+
+static char g_wan_state[64] = "Unknown";
+
+static const char* translateWanOperationalMode(const char *mode)
+{
+    if (mode == NULL) return "Unknown";
+    if (strstr(mode, "serviceable") || strstr(mode, "Serviceable"))
+        return "Serviceable";
+    if (strstr(mode, "manageable") || strstr(mode, "Manageable"))
+        return "Manageable";
+    return "Unknown";
+}
+
+void publishWanState(const char *state)
+{
+    rbusEvent_t event = {0};
+    rbusObject_t data;
+    rbusValue_t value;
+
+    rbusValue_Init(&value);
+    rbusValue_SetString(value, state);
+    rbusObject_Init(&data, NULL);
+    rbusObject_SetValue(data, "value", value);
+
+    event.name = WAN_STATE_RBUS_EVENT;
+    event.data = data;
+    event.type = RBUS_EVENT_GENERAL;
+
+    rbusError_t rc = rbusEvent_Publish(handle, &event);
+    if (rc != RBUS_ERROR_SUCCESS) {
+        CcspTraceError(("Failed to publish %s: %d - %s\n", WAN_STATE_RBUS_EVENT, rc, rbusError_ToString(rc)));
+    } else {
+        CcspTraceInfo(("Published %s = %s\n", WAN_STATE_RBUS_EVENT, state));
+    }
+
+    rbusValue_Release(value);
+    rbusObject_Release(data);
+}
+
+static rbusError_t getWanStateHandler(rbusHandle_t rbus_handle, rbusProperty_t property, rbusGetHandlerOptions_t *opts)
+{
+    (void)rbus_handle;
+    (void)opts;
+    rbusValue_t value;
+    rbusValue_Init(&value);
+    rbusValue_SetString(value, g_wan_state);
+    rbusProperty_SetValue(property, value);
+    rbusValue_Release(value);
+    return RBUS_ERROR_SUCCESS;
+}
+
+static void *wanStateSyseventListener(void *arg)
+{
+    (void)arg;
+    int fd = -1;
+    token_t token = 0;
+    char name[64] = {0};
+    char val[64] = {0};
+    int namelen = sizeof(name);
+    int vallen = sizeof(val);
+    async_id_t async_id;
+
+    fd = sysevent_open("127.0.0.1", SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, "pam_wan_state", &token);
+    if (fd < 0) {
+        CcspTraceError(("Failed to open sysevent for wan_to_lan_operational_mode\n"));
+        return NULL;
+    }
+
+    sysevent_setnotification(fd, token, "wan_to_lan_operational_mode", &async_id);
+
+    while (1) {
+        namelen = sizeof(name);
+        vallen = sizeof(val);
+        int rc = sysevent_getnotification(fd, token, name, &namelen, val, &vallen, &async_id);
+        if (rc == 0 && strcmp(name, "wan_to_lan_operational_mode") == 0) {
+            const char *translated = translateWanOperationalMode(val);
+            snprintf(g_wan_state, sizeof(g_wan_state), "%s", translated);
+            publishWanState(g_wan_state);
+        }
+    }
+    return NULL;
+}
+
+void initWanStatePublisher(void)
+{
+    /* Register the WAN state RBUS element */
+    rbusDataElement_t wanStateElement = {
+        WAN_STATE_RBUS_EVENT, RBUS_ELEMENT_TYPE_EVENT,
+        {getWanStateHandler, NULL, NULL, NULL, NULL, NULL}
+    };
+    rbusError_t rc = rbus_regDataElements(handle, 1, &wanStateElement);
+    if (rc != RBUS_ERROR_SUCCESS) {
+        CcspTraceError(("Failed to register %s: %d\n", WAN_STATE_RBUS_EVENT, rc));
+        return;
+    }
+
+    /* Start sysevent listener thread */
+    pthread_t tid;
+    pthread_create(&tid, NULL, wanStateSyseventListener, NULL);
+    pthread_detach(tid);
+    CcspTraceInfo(("WAN state publisher initialized\n"));
+}

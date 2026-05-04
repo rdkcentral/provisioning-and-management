@@ -40,6 +40,7 @@
 #endif /*RBUS_WAN_IP*/
 
 #define WANMGR_CURRENT_STATUS_TR181	"Device.X_RDK_WanManager.CurrentStatus"
+#define WAN_STATE_RBUS_EVENT "Device.X_RDK_WanManager.WanState"
 
 #define  ARRAY_SZ(x) (sizeof(x) / sizeof((x)[0]))
 #if defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED)
@@ -477,6 +478,9 @@ rbusError_t eventWANIPSubHandler(rbusHandle_t handle, rbusEventSubAction_t actio
  * @retval RBUS error code on failure.
  */
 rbusError_t eventWANIPv6SubHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char *eventName, rbusFilter_t filter, int32_t interval, bool *autoPublish);
+
+void initWanStatePublisher(void);
+void publishWanState(const char *state);
 
 #endif
 #endif
