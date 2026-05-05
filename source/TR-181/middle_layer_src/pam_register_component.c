@@ -56,7 +56,6 @@ static bool isComponentRegisteredInRbus(const char* name)
         return false;
     }
 
-    /* Build prefixed name: eRT.<component> */
     char fullName[256] = {0};
     snprintf(fullName, sizeof(fullName), "eRT.%s", name);
 
@@ -70,7 +69,11 @@ static bool isComponentRegisteredInRbus(const char* name)
 
     for(int i = 0; i < count; i++)
     {
-        if(components[i] && strcmp(components[i], fullName) == 0)
+        if(!components[i])
+            continue;
+
+        if(strcmp(components[i], fullName) == 0 ||
+           strcmp(components[i], name) == 0)
         {
             found = true;
         }
@@ -91,7 +94,17 @@ static bool isComponentInList(const char* name, char** list, int count)
 
     for(int i = 0; i < count; i++)
     {
-        if(list[i] && strcmp(list[i], fullName) == 0)
+        if(!list[i])
+            continue;
+
+        /* Match with eRT prefix */
+        if(strcmp(list[i], fullName) == 0)
+        {
+            return true;
+        }
+
+        /* Match without prefix (CR case) */
+        if(strcmp(list[i], name) == 0)
         {
             return true;
         }
