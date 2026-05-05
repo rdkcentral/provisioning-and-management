@@ -10,12 +10,6 @@
 /* Register PAM RBUS events */
 void registerPamEvents(rbusHandle_t handle);
 
-/* Check WiFi readiness */
-void pam_checkAndPublishWifiReady(rbusHandle_t handle);
-
-/* Check WAN readiness */
-void pam_checkAndPublishWanReady(rbusHandle_t handle);
-
 /* Start monitoring component dependencies */
 void pam_startDependencyMonitoring(rbusHandle_t handle);
 
