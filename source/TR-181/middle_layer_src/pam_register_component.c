@@ -85,15 +85,35 @@ static bool areAllComponentsReady()
 {
     for(int i = 0; i < g_componentCount; i++)
     {
-        if(!isComponentRegisteredInRbus(g_components[i].name))
+        const char* comp = g_components[i].name;
+
+        if(!isComponentRegisteredInRbus(comp))
+        {
+            CcspTraceInfo(("[PAM] Component NOT ready: %s\n", comp));
             return false;
+        }
+        else
+        {
+            CcspTraceInfo(("[PAM] Component ready: %s\n", comp));
+        }
 
         for(int j = 0; j < g_components[i].depCount; j++)
         {
-            if(!isComponentRegisteredInRbus(g_components[i].deps[j]))
+            const char* dep = g_components[i].deps[j];
+
+            if(!isComponentRegisteredInRbus(dep))
+            {
+                CcspTraceInfo(("[PAM] Dependency NOT ready: %s (for %s)\n", dep, comp));
                 return false;
+            }
+            else
+            {
+                CcspTraceInfo(("[PAM] Dependency ready: %s (for %s)\n", dep, comp));
+            }
         }
     }
+
+    CcspTraceInfo(("[PAM] All components + dependencies READY\n"));
     return true;
 }
 /* ----------------------------------------------------------- */
