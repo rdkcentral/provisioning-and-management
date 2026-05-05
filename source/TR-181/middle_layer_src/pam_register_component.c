@@ -81,16 +81,43 @@ static bool isComponentRegisteredInRbus(const char* name)
 
     return found;
 }
+static bool isComponentInList(const char* name, char** list, int count)
+{
+    if(!name || !list)
+        return false;
+
+    char fullName[256] = {0};
+    snprintf(fullName, sizeof(fullName), "eRT.%s", name);
+
+    for(int i = 0; i < count; i++)
+    {
+        if(list[i] && strcmp(list[i], fullName) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 static bool areAllComponentsReady()
 {
+    int count = 0;
+    char** components = NULL;
+
+    if(rbus_discoverRegisteredComponents(&count, &components) != RBUSCORE_SUCCESS)
+    {
+        CcspTraceError(("[PAM] Failed to fetch RBUS components\n"));
+        return false;
+    }
+
     for(int i = 0; i < g_componentCount; i++)
     {
         const char* comp = g_components[i].name;
 
-        if(!isComponentRegisteredInRbus(comp))
+        if(!isComponentInList(comp, components, count))
         {
             CcspTraceInfo(("[PAM] Component NOT ready: %s\n", comp));
-            return false;
+            
+            goto cleanup_and_return_false;
         }
         else
         {
@@ -101,10 +128,11 @@ static bool areAllComponentsReady()
         {
             const char* dep = g_components[i].deps[j];
 
-            if(!isComponentRegisteredInRbus(dep))
+            if(!isComponentInList(dep, components, count))
             {
                 CcspTraceInfo(("[PAM] Dependency NOT ready: %s (for %s)\n", dep, comp));
-                return false;
+                
+                goto cleanup_and_return_false;
             }
             else
             {
@@ -114,7 +142,21 @@ static bool areAllComponentsReady()
     }
 
     CcspTraceInfo(("[PAM] All components + dependencies READY\n"));
+
+    /* cleanup */
+    for(int i = 0; i < count; i++)
+        free(components[i]);
+    free(components);
+
     return true;
+
+cleanup_and_return_false:
+
+    for(int i = 0; i < count; i++)
+        free(components[i]);
+    free(components);
+
+    return false;
 }
 /* ----------------------------------------------------------- */
 /* XML PARSE */
