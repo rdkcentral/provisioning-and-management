@@ -1993,6 +1993,29 @@
 <?endif?>
                         </parameters>
                     <objects>
+                        <object>
+                            <name>CpuFreq</name>
+                            <objectType>object</objectType>
+                            <functions>
+                                <func_GetParamIntValue>CpuFreq_GetParamIntValue</func_GetParamIntValue>
+                                <func_SetParamIntValue>CpuFreq_SetParamIntValue</func_SetParamIntValue>
+                                <func_GetParamStringValue>CpuFreq_GetParamStringValue</func_GetParamStringValue>
+                            </functions>
+                            <parameters>
+                                <parameter>
+                                    <name>ReductionPercent</name>
+                                    <type>int</type>
+                                    <syntax>int</syntax>
+                                    <writable>true</writable>
+                                </parameter>
+                                <parameter>
+                                    <name>CurrentRegValue</name>
+                                    <type>string(12)</type>
+                                    <syntax>string</syntax>
+                                    <writable>false</writable>
+                                </parameter>
+                            </parameters>
+                        </object>
 <?ifdef MTA_TR104SUPPORT & !BCI?>
                     <object>
                         <name>TR104</name>

@@ -182,6 +182,7 @@ CosaDeviceInfoInitialize
     CosaDmlDiGetEnableMoCAforXi5Flag( pMyObject , &pMyObject->bEnableMoCAforXi5 );
 #endif
     CosaDmlDiInit(NULL, NULL);
+    CpuFreq_RestoreFromSyscfg();
 #ifndef NO_WIFI_FEATURE_SUPPORT
     CosaDmlDiGetXfinityWiFiEnable(&pMyObject->bxfinitywifiEnable);
 	CosaDmlDiGetCloudCapable(&pMyObject->bCloudCapable);
