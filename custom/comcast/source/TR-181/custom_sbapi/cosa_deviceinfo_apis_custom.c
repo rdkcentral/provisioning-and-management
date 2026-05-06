@@ -332,7 +332,9 @@ CosaDmlDiGetRouterIPv6Address
     }
     else
     {
-        CosaUtilGetIpv6AddrInfo("erouter0", &p_v6addr, &v6addr_num);
+        char wan_interface[32] = {0};
+        commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+        CosaUtilGetIpv6AddrInfo(wan_interface, &p_v6addr, &v6addr_num);
     }
 #elif defined(_HUB4_PRODUCT_REQ_)
 	CosaUtilGetIpv6AddrInfo("brlan0", &p_v6addr, &v6addr_num);
