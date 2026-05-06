@@ -177,6 +177,11 @@ CosaDmlDiGetCMMacAddress
         s_get_interface_mac("eth0", pValue, 18);
         *pulSize = AnscSizeOfString(pValue);
         return ANSC_STATUS_SUCCESS;
+#elif PON_GATEWAY
+    platform_hal_GetBaseMacAddress(pValue);
+    *pulSize = AnscSizeOfString(pValue);
+    CcspTraceInfo(("=====> %s:%d: platform_hal_GetBaseMacAddress returned MAC = %s ===> \n", __func__, __LINE__, pValue));
+    return ANSC_STATUS_SUCCESS;
 #else
 	return Local_CosaDmlGetParamValueByPathName("Device.X_CISCO_COM_CableModem.MACAddress", pValue, pulSize);
 #endif
@@ -327,7 +332,9 @@ CosaDmlDiGetRouterIPv6Address
     }
     else
     {
-        CosaUtilGetIpv6AddrInfo("erouter0", &p_v6addr, &v6addr_num);
+        char wan_interface[32] = {0};
+        commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+        CosaUtilGetIpv6AddrInfo(wan_interface, &p_v6addr, &v6addr_num);
     }
 #elif defined(_HUB4_PRODUCT_REQ_)
 	CosaUtilGetIpv6AddrInfo("brlan0", &p_v6addr, &v6addr_num);
