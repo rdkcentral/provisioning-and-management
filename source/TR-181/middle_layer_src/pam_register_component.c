@@ -56,7 +56,6 @@ static bool isComponentRegisteredInRbus(const char* name)
         return false;
     }
 
-    /* Build prefixed name: eRT.<component> */
     char fullName[256] = {0};
     snprintf(fullName, sizeof(fullName), "eRT.%s", name);
 
@@ -70,7 +69,11 @@ static bool isComponentRegisteredInRbus(const char* name)
 
     for(int i = 0; i < count; i++)
     {
-        if(components[i] && strcmp(components[i], fullName) == 0)
+        if(!components[i])
+            continue;
+
+        if(strcmp(components[i], fullName) == 0 ||
+           strcmp(components[i], name) == 0)
         {
             found = true;
         }
@@ -443,7 +446,7 @@ static rbusError_t systemReadyGetHandler(
 
     const char* name = rbusProperty_GetName(property);
 
-    if(strcmp(name, "Device.CR_PAM.SystemReady") == 0)
+    if(strcmp(name, "Device.CR.SystemReady") == 0)
     {
         rbusValue_t value;
         rbusValue_Init(&value);
@@ -453,7 +456,7 @@ static rbusError_t systemReadyGetHandler(
         rbusProperty_SetValue(property, value);
         rbusValue_Release(value);
 
-        CcspTraceInfo(("[PAM] GET Device.CR_PAM.SystemReady = %d\n", isSystemReady));
+        CcspTraceInfo(("[PAM] GET Device.CR.SystemReady = %d\n", isSystemReady));
 
         return RBUS_ERROR_SUCCESS;
     }
@@ -510,7 +513,7 @@ void registerPamEvents(rbusHandle_t handle)
             { eventGetHandler, NULL, NULL, NULL, eventSubHandler, NULL } },
 
         
-        { "Device.CR_PAM.SystemReady", RBUS_ELEMENT_TYPE_PROPERTY,
+        { "Device.CR.SystemReady", RBUS_ELEMENT_TYPE_PROPERTY,
             { systemReadyGetHandler, NULL, NULL, NULL, NULL, NULL } }
     };
 
@@ -536,7 +539,7 @@ static void* monitorSystemReady(void* arg)
         {
             isSystemReady = true;
 
-            CcspTraceInfo(("[PAM] ALL components ready → Device.CR_PAM.SystemReady = TRUE\n"));
+            CcspTraceInfo(("[PAM] ALL components ready → Device.CR.SystemReady = TRUE\n"));
 
             
             for(int i = 0; i < g_componentCount; i++)
