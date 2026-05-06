@@ -12750,25 +12750,34 @@ PeriodicFWCheck_SetParamBoolValue
         BOOL                        bValue
     )
 {
-	    if (IsBoolSame(hInsContext, ParamName, bValue, PeriodicFWCheck_GetParamBoolValue))
-	        return TRUE;
-
- 	    if (strcmp(ParamName, "Enable") == 0)
+        CcspTraceInfo(("DEBUG_PFW: ENTERED setter PeriodicFWCheck_SetParamBoolValue api \n"));
+        if (IsBoolSame(hInsContext, ParamName, bValue, PeriodicFWCheck_GetParamBoolValue))
 		{
-			/* collect value */
-			if( bValue == TRUE)
-			{
-					syscfg_set_commit(NULL, "PeriodicFWCheck_Enable", "true");
-					v_secure_system("/etc/firmwareSched.sh &");
-			}
-			else
-			{
-					syscfg_set_commit(NULL, "PeriodicFWCheck_Enable", "false");
-					v_secure_system("sh /etc/firmwareSched.sh RemoveCronJob");
-					v_secure_system("killall -9 firmwareSched.sh");
-			}
-			return TRUE;
-		}	
+            CcspTraceInfo(("DEBUG_PFW: Return at isBoolSame \n"));
+            return TRUE;
+		}
+
+        if (strcmp(ParamName, "Enable") == 0)
+        {
+            /* collect value */
+            CcspTraceInfo(("DEBUG_PFW: PeriodicFWCheck Enable called, value=%d\n", bValue));
+            if( bValue == TRUE)
+            {
+                    syscfg_set_commit(NULL, "PeriodicFWCheck_Enable", "true");
+                    CcspTraceInfo(("DEBUG_PFW: Triggering firmwareSched via PandM\n"));
+                    v_secure_system("/etc/firmwareSched.sh &");
+            }
+            else
+            {
+                    syscfg_set_commit(NULL, "PeriodicFWCheck_Enable", "false");
+                    CcspTraceInfo(("DEBUG_PFW: Triggering firmwareSched with removecronjob arg\n"));
+                    v_secure_system("sh /etc/firmwareSched.sh RemoveCronJob");
+                    v_secure_system("killall -9 firmwareSched.sh");
+            }
+            CcspTraceInfo(("DEBUG_PFW: Return at Enable end\n"));
+            return TRUE;
+        }
+    CcspTraceInfo(("DEBUG_PFW: Return at last \n"));
     return FALSE;
 }
 
@@ -24446,17 +24455,28 @@ Generic_SetParamBoolValue
         BOOL                        bValue
     )
 {
+
+   AnscTraceWarning(("DEBUG_GEN: ENTER Generic_SetParamBoolValue\n"));
+   AnscTraceWarning(("DEBUG_GEN: ParamName=%s bValue=%d\n",ParamName ? ParamName : "NULL", bValue));
+   AnscTraceWarning(("DEBUG_GEN: FullParamName=%s\n",g_currentParamFullName ? g_currentParamFullName : "NULL"));
+   AnscTraceWarning(("DEBUG_GEN: clearDB=%d\n", g_clearDB));
     UNREFERENCED_PARAMETER(hInsContext);
    AnscTraceWarning(("Generic_SetParamBoolValue: param = %s\n", ParamName));
    PCOSA_DATAMODEL_DEVICEINFO      pMyObject = (PCOSA_DATAMODEL_DEVICEINFO)g_pCosaBEManager->hDeviceInfo;
+   AnscTraceWarning(("DEBUG_GEN: CALL ProcessRfcSet Param=%s Value=%s\n", g_currentParamFullName ? g_currentParamFullName : "NULL", bValue ? "true" : "false"));
 
    char * requestorStr = getRequestorString();
    char * currentTime = getTime();
+    if (g_currentParamFullName && strstr(g_currentParamFullName, "PeriodicFWCheck"))
+    {
+        AnscTraceWarning(("DEBUG_GEN: PFW_HIT FullParam=%s Value=%d Req=%s\n", g_currentParamFullName, bValue, requestorStr ? requestorStr : "NULL"));
+    }
 
    if ( bValue == TRUE)
       ProcessRfcSet(&pMyObject->pRfcStore, g_clearDB, g_currentParamFullName, "true", requestorStr, currentTime);
    else
       ProcessRfcSet(&pMyObject->pRfcStore, g_clearDB, g_currentParamFullName, "false", requestorStr, currentTime);
+   AnscTraceWarning(("DEBUG_GEN: EXIT Param=%s Value=%d\n", g_currentParamFullName ? g_currentParamFullName : "NULL", bValue));
    return TRUE;
 }
 
