@@ -215,6 +215,25 @@ CosaDmlGatewayV4GetPortScanProtect
 *
 */
 ULONG
+CosaDmlGatewayNFTSetEnable
+    (
+        BOOL pBool
+    );
+
+ULONG
+CosaDmlGatewayNFTGetEnable
+    (
+        BOOL *pBool
+    );
+
+ULONG
+CosaDmlGatewayNFTGetStatus
+    (
+        ULONG *puLong
+    );
+
+
+ULONG
 CosaDmlGatewayV4GetIPFloodDetect
     (
         BOOL *pBool
