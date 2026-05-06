@@ -40,6 +40,7 @@
 #endif /*RBUS_WAN_IP*/
 
 #define WANMGR_CURRENT_STATUS_TR181	"Device.X_RDK_WanManager.CurrentStatus"
+#define WANMGR_WAN_STATE_EVENT	"Device.X_RDK_WanManager.WanState"
 
 #define  ARRAY_SZ(x) (sizeof(x) / sizeof((x)[0]))
 #if defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED)
@@ -91,7 +92,9 @@ rbusError_t setUlongHandler(rbusHandle_t handle, rbusProperty_t prop, rbusSetHan
  * @retval RBUS error code on failure.
  */
 rbusError_t eventDevctrlSubHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char* eventName, rbusFilter_t filter, int32_t interval, bool* autoPublish);
-
+rbusError_t getWanStateHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t *opts);
+rbusError_t eventWanStateSubHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char* eventName, rbusFilter_t filter, int32_t interval, bool* autoPublish);
+void publishWanStateEvent(const char *wanState);
 /**
  * @brief Initializes network mode for device control.
  *

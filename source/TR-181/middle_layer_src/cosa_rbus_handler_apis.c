@@ -29,6 +29,8 @@
 #include "cosa_dhcpv6_apis.h"
 #include "syscfg/syscfg.h"
 #include "secure_wrapper.h"
+#include "utapi/utapi.h"
+#include "utapi/utapi_util.h"
 
 #if defined (RBUS_WAN_IP)
 #include "cosa_deviceinfo_dml.h"
@@ -117,6 +119,7 @@ rbusDataElement_t devCtrlRbusDataElements[] = {
     {RRD_WEBCFG_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDWebCfg_GetStringHandler, RRDWebCfg_SetStringHandler, NULL, NULL, NULL, NULL}},
     {RDM_DOWNLOAD_EVENT,RBUS_ELEMENT_TYPE_EVENT, {NULL, RRD_SetBoolHandler, NULL, NULL, NULL, NULL}},
 #endif  
+{WANMGR_WAN_STATE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {getWanStateHandler, NULL, NULL, NULL, eventWanStateSubHandler, NULL}},
 };
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -314,7 +317,133 @@ rbusError_t eventDevctrlSubHandler(rbusHandle_t handle, rbusEventSubAction_t act
 	return RBUS_ERROR_SUCCESS;
 }
 
+/***********************************************************************
 
+  WAN State get handler and event subscribe handler:
+
+ ***********************************************************************/
+unsigned int gWanStateSubscribersCount = 0;
+
+rbusError_t getWanStateHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t *opts)
+{
+    (void)handle;
+    (void)opts;
+
+    char const* name = rbusProperty_GetName(property);
+    (void)name;
+
+    int fd = -1;
+    token_t token = 0;
+    char evtValue[64] = {0};
+    snprintf(evtValue, sizeof(evtValue), "Unknown");
+
+    fd = s_sysevent_connect(&token);
+    if (fd > 0)
+    {
+        char evtValue[64] = {0};
+        if (0 == sysevent_get(fd, token, "wan_to_lan_operational_mode", evtValue, sizeof(evtValue)) && evtValue[0] != '\0')
+        {
+            CcspTraceInfo(("%s: wan_to_lan_operational_mode = %s\n", __FUNCTION__, evtValue));
+        }
+        else
+        {
+            CcspTraceWarning(("%s: sysevent_get failed or empty for wan_to_lan_operational_mode\n", __FUNCTION__));
+            snprintf(evtValue, sizeof(evtValue), "Unknown");
+        }
+        CcspTraceError(("%s: s_sysevent_connect failed\n", __FUNCTION__));
+    }
+
+    rbusValue_t value;
+    rbusValue_Init(&value);
+    rbusValue_SetString(value, evtValue);
+    rbusProperty_SetValue(property, value);
+    rbusValue_Release(value);
+
+    return RBUS_ERROR_SUCCESS;
+}
+
+rbusError_t eventWanStateSubHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char *eventName, rbusFilter_t filter, int32_t interval, bool *autoPublish)
+{
+    (void)handle;
+    (void)filter;
+    (void)interval;
+
+    *autoPublish = false;
+
+    if (strcmp(eventName, WANMGR_WAN_STATE_EVENT) == 0)
+    {
+        if (action == RBUS_EVENT_ACTION_SUBSCRIBE)
+        {
+            gWanStateSubscribersCount += 1;
+        }
+        else
+        {
+            if (gWanStateSubscribersCount > 0)
+            {
+                gWanStateSubscribersCount -= 1;
+            }
+        }
+        CcspTraceInfo(("WanState subscribers count changed, new value=%d\n", gWanStateSubscribersCount));
+    }
+    else
+    {
+        CcspTraceWarning(("eventWanStateSubHandler: unexpected eventName %s\n", eventName));
+    }
+    return RBUS_ERROR_SUCCESS;
+}
+/*******************************************************************************
+
+  publishWanStateEvent(): Publish WAN state.
+
+ ********************************************************************************/
+void publishWanStateEvent(const char *wanState)
+{
+    if (handle == NULL || gWanStateSubscribersCount == 0)
+    {
+        CcspTraceWarning(("%s: Skipping publish (handle=%p, subscribers=%d)\n",
+                    __FUNCTION__, (void*)handle, gWanStateSubscribersCount));
+        return;
+    }
+
+    char wan_state[64] = {0};
+    snprintf(wan_state, sizeof(wan_state), "Unknown");
+    rbusEvent_t event = {0};
+    rbusObject_t data;
+    rbusValue_t value;
+    rbusValue_Init(&value);
+
+    if (wanState != NULL)
+    {
+        if (strcasestr(wanState, "serviceable"))
+            snprintf(wan_state, sizeof(wan_state), "%s", "Serviceable");
+        else if (strcasestr(wanState, "manageable"))
+            snprintf(wan_state, sizeof(wan_state), "%s", "Manageable");
+        else
+            snprintf(wan_state, sizeof(wan_state), "%s", "Unknown");
+    }
+
+    rbusValue_SetString(value, wan_state);
+    rbusObject_Init(&data, NULL);
+    rbusObject_SetValue(data, "value", value);
+
+    event.name = WANMGR_WAN_STATE_EVENT;
+    event.data = data;
+    event.type = RBUS_EVENT_GENERAL;
+
+    rbusError_t rc = rbusEvent_Publish(handle, &event);
+    if (rc != RBUS_ERROR_SUCCESS)
+    {
+        CcspTraceError(("%s: rbusEvent_Publish failed for %s, rc=%d\n",
+                    __FUNCTION__, WANMGR_WAN_STATE_EVENT, rc));
+    }
+    else
+    {
+        CcspTraceInfo(("%s: Published WanState event with value: %s\n", __FUNCTION__, wan_state));
+    }
+
+    rbusValue_Release(value);
+    rbusObject_Release(data);
+}
 /*******************************************************************************
 
   initNetMode(): Initialize deviceControl_Net_Mode struct with default values
