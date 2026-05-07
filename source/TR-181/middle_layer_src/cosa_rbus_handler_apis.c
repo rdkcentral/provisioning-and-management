@@ -329,26 +329,35 @@ rbusError_t getWanStateHandler(rbusHandle_t handle, rbusProperty_t property, rbu
     (void)handle;
     (void)opts;
 
-    char const* name = rbusProperty_GetName(property);
-    (void)name;
-
     int fd = -1;
     token_t token = 0;
+    errno_t  rc = -1;
+    int ind =-1;
     char evtValue[64] = {0};
     snprintf(evtValue, sizeof(evtValue), "Unknown");
 
     fd = s_sysevent_connect(&token);
     if (fd > 0)
     {
-        char evtValue[64] = {0};
-        if (0 == sysevent_get(fd, token, "wan_to_lan_operational_mode", evtValue, sizeof(evtValue)) && evtValue[0] != '\0')
+        char wan_state[64] = {0};
+        if (0 == sysevent_get(fd, token, "wan_to_lan_operational_mode", wan_state, sizeof(wan_state)) && wan_state[0] != '\0')
         {
-            CcspTraceInfo(("%s: wan_to_lan_operational_mode = %s\n", __FUNCTION__, evtValue));
+            CcspTraceInfo(("%s: wan_to_lan_operational_mode = %s\n", __FUNCTION__, wan_state));
+            rc = strcasecmp_s(wan_state, strlen(wanOptMode) + 1, "manageable", &ind);
+            if (rc == EOK && ind == 0)
+                snprintf(evtValue, sizeof(evtValue), "%s", "Manageable");
+            else
+            {
+                rc = strcasecmp_s(wanOptMode, strlen(wanOptMode) + 1, "serviceable", &ind);
+                if (rc == EOK && ind == 0)
+                    snprintf(evtValue, sizeof(evtValue), "%s", "Serviceable");
+                else
+                    snprintf(evtValue, sizeof(evtValue), "%s", "Unknown");
+            }
         }
         else
         {
             CcspTraceWarning(("%s: sysevent_get failed or empty for wan_to_lan_operational_mode\n", __FUNCTION__));
-            snprintf(evtValue, sizeof(evtValue), "Unknown");
         }
         CcspTraceError(("%s: s_sysevent_connect failed\n", __FUNCTION__));
     }
@@ -396,8 +405,10 @@ rbusError_t eventWanStateSubHandler(rbusHandle_t handle, rbusEventSubAction_t ac
   publishWanStateEvent(): Publish WAN state.
 
  ********************************************************************************/
-void publishWanStateEvent(const char *wanState)
+void publishWanStateEvent(const char *wanOptMode)
 {
+    errno_t  rc = -1;
+    int ind = -1;
     if (handle == NULL || gWanStateSubscribersCount == 0)
     {
         CcspTraceWarning(("%s: Skipping publish (handle=%p, subscribers=%d)\n",
@@ -412,16 +423,23 @@ void publishWanStateEvent(const char *wanState)
     rbusValue_t value;
     rbusValue_Init(&value);
 
-    if (wanState != NULL)
+    if (wanOptMode != NULL)
     {
-        if (strcasestr(wanState, "serviceable"))
-            snprintf(wan_state, sizeof(wan_state), "%s", "Serviceable");
-        else if (strcasestr(wanState, "manageable"))
+        int ind = -1;
+        errno_t rc;
+
+        rc = strcasecmp_s(wanOptMode, strlen(wanOptMode) + 1, "manageable", &ind);
+        if (rc == EOK && ind == 0)
             snprintf(wan_state, sizeof(wan_state), "%s", "Manageable");
         else
-            snprintf(wan_state, sizeof(wan_state), "%s", "Unknown");
+        {
+            rc = strcasecmp_s(wanOptMode, strlen(wanOptMode) + 1, "serviceable", &ind);
+            if (rc == EOK && ind == 0)
+                snprintf(wan_state, sizeof(wan_state), "%s", "Serviceable");
+            else
+                snprintf(wan_state, sizeof(wan_state), "%s", "Unknown");
+        }
     }
-
     rbusValue_SetString(value, wan_state);
     rbusObject_Init(&data, NULL);
     rbusObject_SetValue(data, "value", value);
