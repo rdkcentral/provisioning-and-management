@@ -103,7 +103,13 @@
         },
         "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
-        }
+        },
+         "CGM4331COM" : {
+            "Device.X_RDK_WebConfig.URL" : "https://cpe-config.red.xdp.comcast.net/api/v1/device/{mac}/config"
+        },
+         "CGM4981COM" : {
+            "Device.X_RDK_WebConfig.URL" : "https://cpe-config.staging.xdp.comcast.net/api/v1/device/{mac}/config"
+       }
       },
       "no_apply_system_default" : {
          "WNXL11BWL" : {
