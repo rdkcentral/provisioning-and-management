@@ -75,7 +75,7 @@
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
 
-#define CR_PAM_COMPONENT_ID "CR-PAM"
+#define CR_COMPONENT_ID "com.cisco.spvtg.ccsp.CR"
 rbusHandle_t g_pamRbusHandle = NULL;
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
@@ -701,7 +701,7 @@ if(id != 0)
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
     
-   rbusError_t rbusRc = rbus_open(&g_pamRbusHandle, "CR-PAM");
+   rbusError_t rbusRc = rbus_open(&g_pamRbusHandle, CR_COMPONENT_ID);
 
     if(rbusRc != RBUS_ERROR_SUCCESS)
     {
