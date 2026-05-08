@@ -134,22 +134,22 @@ do
 	fi
 
 	# Checking CR's PID
-	CR_PID=`pidof CcspCrSsp`
-	if [ "$CR_PID" = "" ]; then
-                if [ -d /tmp/.uploadCoredumps.lock.d ];then
-                    while [ ! -f /tmp/crash_reboot ]
-                    do
-                        sleep 2
-                    done
-                    if [ -f /tmp/crash_reboot ];then rm -rf /tmp/crash_reboot; fi
-                fi
-		if [ "$rebootNeededCR" -eq 0 ]; then
-		echo_t "RDKB_PROCESS_CRASHED : CR_process is not running, need to reboot the unit"
-		rebootNeeded=1
-		rebootNeededCR=1
-		#/rdklogger/backupLogs.sh
-		fi
-	fi
+	# CR_PID=`pidof CcspCrSsp`
+	# if [ "$CR_PID" = "" ]; then
+    #             if [ -d /tmp/.uploadCoredumps.lock.d ];then
+    #                 while [ ! -f /tmp/crash_reboot ]
+    #                 do
+    #                     sleep 2
+    #                 done
+    #                 if [ -f /tmp/crash_reboot ];then rm -rf /tmp/crash_reboot; fi
+    #             fi
+	# 	if [ "$rebootNeededCR" -eq 0 ]; then
+	# 	echo_t "RDKB_PROCESS_CRASHED : CR_process is not running, need to reboot the unit"
+	# 	rebootNeeded=1
+	# 	rebootNeededCR=1
+	# 	#/rdklogger/backupLogs.sh
+	# 	fi
+	# fi
 
 if [ "$VOICE_SUPPORTED" != "false" ]; then
 	# Checking MTA's PID
