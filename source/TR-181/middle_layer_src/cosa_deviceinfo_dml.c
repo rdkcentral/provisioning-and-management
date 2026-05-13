@@ -11586,7 +11586,7 @@ Feature_SetParamBoolValue
         {
             if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
             {
-                CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+                CcspTraceError(("OneToOneNAT is not supported in current system settings \n"));
                 t2_event_d("OneToOneNAT_NotSupported", 1);
                 return FALSE;
             }
