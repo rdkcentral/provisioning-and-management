@@ -11582,11 +11582,14 @@ Feature_SetParamBoolValue
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-        if(!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+        if (bValue)
         {
-            CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
-            t2_event_d("OneToOneNAT_NotSupported", 1);
-            return FALSE;
+            if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+            {
+                CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+                t2_event_d("OneToOneNAT_NotSupported", 1);
+                return FALSE;
+            }
         }
 #endif
         BOOL bNatEnable = FALSE;

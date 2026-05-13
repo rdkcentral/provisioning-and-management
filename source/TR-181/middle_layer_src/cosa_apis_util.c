@@ -1870,7 +1870,13 @@ ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode)
 #if defined(_ONESTACK_PRODUCT_REQ_)
 static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {
-    /* TODO: MAP-T and True Static IP are mutually exclusive */
+#if defined(FEATURE_SUPPORT_MAPT_NAT46) || defined(FEATURE_MAPT)
+    if (CosaGetParamValueBool("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MAP-T.Enable"))
+    {
+        return TRUE;
+    }
+#endif
+    AnscTraceWarning(("TrueStatic: No conflicting features found, enable allowed\n"));
     return FALSE;
 }
 
