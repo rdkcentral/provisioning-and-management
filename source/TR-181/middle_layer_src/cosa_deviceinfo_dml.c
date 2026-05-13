@@ -22329,10 +22329,21 @@ UPnPRefactor_SetParamBoolValue
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 #if defined(_ONESTACK_PRODUCT_REQ_)
+/*
+ * Only True Static IP is checked here. Other TSIP-family features
+ * (OneToOneNAT, Firewall TrueStaticIpEnable, Static Routing) are all
+ * dependent on True Static IP being active — they are functionally
+ * inert without it. A single TSIP check is therefore considered sufficient.
+ */
 static BOOL IsMAPTConflictingFeaturesEnabled(void)
 {
-    // TODO: Add check to see if any conflicting feature of MAP-T 
-    //       like Static Routing, 1-1 NAT, etc are enabled
+    if (g_GetParamValueBool(g_pDslhDmlAgent, "Device.X_CISCO_COM_TrueStaticIP.Enable"))
+    {
+        CcspTraceInfo(("%s: MAP-T enable rejected, True Static IP is active\n", __FUNCTION__));
+        return TRUE;
+    }
+
+    CcspTraceInfo(("%s: No conflicting features found, MAP-T enable allowed\n", __FUNCTION__));
     return FALSE;
 }
 #endif
