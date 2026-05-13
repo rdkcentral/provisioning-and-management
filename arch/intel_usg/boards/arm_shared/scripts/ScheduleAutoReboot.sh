@@ -36,30 +36,26 @@ count=0
 rcnt=0
 
 #Only one process should schedule cron at a time
-while : ; do
-    if [ $count -lt $MAX_RETRY_COUNT ]; then
-        if [ -f $FILE_LOCK ]; then
-            echo_t "[ScheduleAutoReboot.sh]:another instance is running"
-            sleep 1;
-            count=$((count+1))
-            echo_t "Retry count = $count"
-            continue;
-        else
-            # Creating lock to allow one process at a time
-            touch $FILE_LOCK
-            break;
-        fi
+exec 200>"$FILE_LOCK"
+while ! flock -n 200; do
+    if [ "$count" -lt "$MAX_RETRY_COUNT" ]; then
+        echo_t "[ScheduleAutoReboot.sh]: another instance is running"
+        sleep 1
+        count=$((count + 1))
+        echo_t "Retry count = $count"
     else
         echo_t "[ScheduleAutoReboot.sh]: Exiting, another instance is running and max retry reached"
         exit 1
     fi
 done
 
+echo_t "[ScheduleAutoReboot.sh]: lock acquired, running script"
+trap 'flock -u 200' EXIT
+
 if [ "$2" == "0" ]
 then
         echo_t "[ScheduleAutoReboot.sh]: **************** if > $2"
         Removecron
-        rm -f $FILE_LOCK
         echo_t "[ScheduleAutoReboot.sh]: **************** checking pidof AutoReboot.sh"
         pid=$(pidof AutoReboot.sh)
         if [ -n "$pid" ]; then
@@ -196,4 +192,3 @@ then
 	 ScheduleCron
 	 echo_t "[ScheduleAutoReboot.sh] Auto Reboot cron job scheduled"
 fi
-rm -f $FILE_LOCK
