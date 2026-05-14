@@ -1078,6 +1078,8 @@ EvtDispterEventListen(void)
                    CcspTraceInfo(("%s:wan_to_lan_operational_mode is not in Manageable mode\n",__FUNCTION__));
                    t2_event_d("Lan2WanOperationalModeServiceable_Lan2WanAllowed", 1);
                 }
+                /* Publish WAN state change via RBus */
+                publishWanStateEvent(value_str);
                 sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
             }
         } else {

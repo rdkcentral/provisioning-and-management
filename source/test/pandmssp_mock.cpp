@@ -22,6 +22,16 @@
 #ifndef PANDMSSP_FIXTURE_G_MOCK
 #define PANDMSSP_FIXTURE_G_MOCK
 
+extern "C" {
+    #include <telemetry_busmessage_sender.h>
+    T2ERROR t2_event_d(const char *marker, int value)
+    {
+        (void)marker;
+        (void)value;
+        return T2ERROR_SUCCESS;
+    }
+}
+
 PCOSA_BACKEND_MANAGER_OBJECT g_pCosaBEManager = NULL;
 
 rbusHandlerMock * g_rbusHandlerMock = nullptr;
