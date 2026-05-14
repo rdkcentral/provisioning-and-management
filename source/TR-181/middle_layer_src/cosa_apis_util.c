@@ -1876,7 +1876,7 @@ static BOOL IsTSIPConflictingFeaturesEnabled(void)
         return TRUE;
     }
 #endif
-    AnscTraceWarning(("TrueStatic: No conflicting features found, enable allowed\n"));
+    CcspTraceInfo(("TrueStatic: No conflicting features found, enable allowed\n"));
     return FALSE;
 }
 
