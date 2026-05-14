@@ -2142,7 +2142,7 @@ LanMngm_SetParamUlongValue
 
     if (CosaDmlDcGetDeviceMode(NULL, &deviceMode) != ANSC_STATUS_SUCCESS)
             return FALSE;
-    
+
     if (!(deviceMode-1)) 
         return FALSE;
 
@@ -2188,6 +2188,8 @@ LanMngm_SetParamUlongValue
                 CcspTraceError(("Basic BridgeMode Not Supported\n"));
                 return FALSE;
             }
+            t2_event_d("BasicBridgeMode_Supported", 1);
+            CcspTraceInfo(("Basic BridgeMode Supported\n"));
         }
 #endif
 
