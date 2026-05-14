@@ -765,12 +765,18 @@ ULONG CosaDmlGetBitsNumFromNetMask(char * Address)
     struct in_addr addr = {0};
     ULONG ulAddr = 0;
     ULONG bits = 0;
- #if defined (_CBR_PRODUCT_REQ_)
+ #if defined (_CBR_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
     ULONG mul = 0;
  #endif   
     if ( inet_aton(Address, &addr) ){
         ulAddr = addr.s_addr;
-#if defined (_CBR_PRODUCT_REQ_)
+#if defined (_CBR_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
+        /* On little-endian, inet_aton stores in network byte order so the raw
+         * ULONG value has its octets reversed. Detect which octets are populated
+         * and scale ulAddr to full 32-bit network order, recording the shift in
+         * mul, so the correction formula below yields the correct prefix length.
+         * e.g. /30 mask 255.255.255.252: addr.s_addr=0xFCFFFFFF on little-endian
+         *   -> mul=1, raw bits=6, corrected bits = 32-(8*1-6) = 30 */
         if((ulAddr > 0xffffff) && (ulAddr <= 0xffffffff))
         {
            mul = 1;
@@ -796,7 +802,7 @@ ULONG CosaDmlGetBitsNumFromNetMask(char * Address)
             ulAddr = ulAddr<<1;
         }
     }
-#if defined (_CBR_PRODUCT_REQ_)
+#if defined (_CBR_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
     bits = 32 - (8*mul - bits);
 #endif
     return bits;
@@ -805,7 +811,7 @@ ULONG CosaDmlGetBitsNumFromNetMask(char * Address)
 void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
 {
     PCOSA_DML_RIPD_CONF pConf = &CosaDmlRIPCurrentConfig;
-    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
     FILE * pFile              = NULL;
     #endif
     FILE * fp                 = fopen(COSA_RIPD_CUR_CONF, "w+");
@@ -816,7 +822,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
     AnscTraceWarning(("CosaDmlGenerateRipdConfigFile -- starts.\n"));
 
     bTrueStaticIP  = g_GetParamValueBool(g_pDslhDmlAgent, "Device.X_CISCO_COM_TrueStaticIP.Enable");
-    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+    #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 	commonSyseventSet("ripd_conf-status","empty");
     #endif
     if (fp)
@@ -835,7 +841,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
             fprintf(fp, " key %lu\n", pConf->If1KeyID);
             fprintf(fp, "  key-string %s\n", pConf->If1Md5KeyValue);
 	}
-        #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)	
+        #if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 	if (( pConf->If1Md5KeyValue == NULL )  || (_ansc_strlen(pConf->If1Md5KeyValue) == 0 )){
             AnscTraceWarning(("Static IP: MD5 Key Values are Empty"));
 	}
@@ -857,7 +863,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
                     fprintf(fp, " ip rip authentication mode text\n");
                     fprintf(fp, " ip rip authentication string %s\n",pConf->If1SimplePassword);
                 }
-	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 		else {
 		    AnscTraceWarning(("Static IP: Unknown RIP Authentication Mode\n"));
 		}
@@ -882,7 +888,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
                     fprintf(fp, " ip rip authentication mode text\n");
                     fprintf(fp, " ip rip authentication string %s\n",pConf->If1SimplePassword);
                 }
-	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 		else {
 		    AnscTraceWarning(("Static IP: Unknown RIP Authentication Mode\n"));
 		}
@@ -1046,7 +1052,7 @@ void CosaDmlGenerateRipdConfigFile(ANSC_HANDLE  hContext )
         fclose(fp);
 
     }
-	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+	#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_ONESTACK_PRODUCT_REQ_)
 	pFile=fopen("/tmp/pam_ripd_config_completed","a+");
 	    if(pFile)
 	    {

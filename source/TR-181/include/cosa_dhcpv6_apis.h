@@ -125,7 +125,7 @@
 #define COSA_DML_WANIface_ADDR_VLDTM_SYSEVENT_NAME     "tr_%s_dhcpv6_client_addr_vldtm"
 #endif
 
-#if defined (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined (INTEL_PUMA7)
+#if defined (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined (INTEL_PUMA7) || defined(_ONESTACK_PRODUCT_REQ_)
 #define COSA_DML_DHCPV6S_ADDR_SYSEVENT_NAME      "ipv6_"COSA_DML_DHCPV6_SERVER_IFNAME"-addr"
 #else
 #define COSA_DML_DHCPV6S_ADDR_SYSEVENT_NAME      "tr_"COSA_DML_DHCPV6_SERVER_IFNAME"_dhcpv6_server_v6addr"
@@ -1357,7 +1357,7 @@ CosaDmlDhcpv6sGetIAPDPrefixes
         ULONG*                      pSize
      );
 
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
+#if defined (CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
 /**
 * @brief Get IAPD prefixes (alternative implementation).
 *

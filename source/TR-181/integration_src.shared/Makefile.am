@@ -32,3 +32,6 @@ libCcspPandM_integration_src_shared_la_CPPFLAGS = -I$(top_srcdir)/source/TR-181/
 
 libCcspPandM_integration_src_shared_la_SOURCES = cosa_ethernet_apis_multilan.c cosa_ip_apis_multilan.c cosa_x_cisco_com_multilan_apis.c
 libCcspPandM_integration_src_shared_la_LDFLAGS = -lccsp_common
+if ONESTACK_PRODUCT_REQ
+libCcspPandM_integration_src_shared_la_LDFLAGS += -ldevicemode -lonestack_syscfg -lonestack_log -lrdkb_feature_mode_gate
+endif

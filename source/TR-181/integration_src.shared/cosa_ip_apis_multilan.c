@@ -78,8 +78,9 @@
 #include "linux/sockios.h"
 #include <sys/ioctl.h>
 #include "safec_lib_common.h"
-
-
+#ifdef _ONESTACK_PRODUCT_REQ_
+#include <rdkb_feature_mode_gate.h>
+#endif
 /**********************************************************************
                             HELPER FUNCTIONS
 **********************************************************************/
@@ -2393,7 +2394,11 @@ CosaDmlIpIfMlanGetV6Addr2
     }
     return  ANSC_STATUS_SUCCESS;
 #else
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
     int                             iReturnValue    = CCSP_SUCCESS;
     char                            pParamPath[64]  = {0};
     unsigned int                    RecordType      = 0;
@@ -2476,14 +2481,21 @@ CosaDmlIpIfMlanGetV6Addr2
 
     }
     return  ANSC_STATUS_SUCCESS;
-#else
+    }
+#endif
+#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
     /*
      *  No IPv6 support for Multi-LAN at the moment
      *  It should not have got here at all!
      */
     return  ANSC_STATUS_UNAPPLICABLE;    
-
+    }
 #endif
+    return  ANSC_STATUS_SUCCESS;
 #endif
         
 }
@@ -2685,7 +2697,11 @@ CosaDmlIpIfMlanGetV6Prefix2
 
     return  ANSC_STATUS_SUCCESS; 
 #else
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
+    #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
     int                             iReturnValue    = CCSP_SUCCESS;
     char                            pParamPath[64]  = {0};
     unsigned int                    RecordType      = 0;
@@ -2771,14 +2787,21 @@ CosaDmlIpIfMlanGetV6Prefix2
     }
 
     return  ANSC_STATUS_SUCCESS; 
-#else
+    }
+#endif
+#if !defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
     /*
      *  No IPv6 support for Multi-LAN at the moment
      *  It should not have got here at all!
      */
     return  ANSC_STATUS_UNAPPLICABLE;    
-
+    }
 #endif
+    return  ANSC_STATUS_SUCCESS; 
 #endif
 }
 

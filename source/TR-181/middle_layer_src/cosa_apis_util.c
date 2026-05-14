@@ -76,6 +76,11 @@
 #include "safec_lib_common.h"
 #include "cosa_drg_common.h"
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#include <telemetry_busmessage_sender.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1404,14 +1409,18 @@ CosaUtilGetFullPathNameByKeyword
                 break;
             }
 
-        AnscFreeMemory(pTableStringToken);
+        if(NULL != pTableStringToken)
+        {
+            AnscFreeMemory(pTableStringToken);
+            pTableStringToken = NULL;  /* CID 348164 fix - Double free prevention */
+        }
     }
 
     // Free remaining tokens in the token chain
-    while (pTableStringToken)
+    while ((pTableStringToken = AnscTcUnlinkToken(pTableListTokenChain)) != NULL)
     {
         AnscFreeMemory(pTableStringToken);
-        pTableStringToken = AnscTcUnlinkToken(pTableListTokenChain);
+        pTableStringToken = NULL;  /* CID 348164 fix - Double free prevention */
     }
 
     if ( pTableListTokenChain )
@@ -1858,6 +1867,34 @@ ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode)
 
 }
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+static BOOL IsTSIPConflictingFeaturesEnabled(void)
+{
+    /* TODO: MAP-T and True Static IP are mutually exclusive */
+    return FALSE;
+}
+
+ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
+{
+    if (!bEnable)
+        return ANSC_STATUS_SUCCESS;
+
+    if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+    {
+        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
+        t2_event_d("TrueStatic_NotSupported", 1);
+        return ANSC_STATUS_FAILURE;
+    }
+    if (IsTSIPConflictingFeaturesEnabled())
+    {
+        AnscTraceWarning(("TrueStatic enable rejected, MAP-T active\n"));
+        t2_event_d("TrueStatic_NotSupported", 1);
+        return ANSC_STATUS_FAILURE;
+    }
+    return ANSC_STATUS_SUCCESS;
+}
+#endif /* _ONESTACK_PRODUCT_REQ_ */
+
 /*caller must free(*pp_info)*/
 #define _PROCNET_IFINET6  "/proc/net/if_inet6"
 #define MAX_INET6_PROC_CHARS 200
@@ -1873,9 +1910,11 @@ typedef struct v6sample {
            char prefix_v6[40];
 }ifv6Details;
 
-int getIpv6Scope(int scope_v6)
+/* CID 745997 fix - Overflowed Integer Argument */
+int getIpv6Scope(unsigned int scope_v6)
 {
-    int scopeToReturn = scope_v6 & IPV6_ADDR_SCOPE_MASK;
+    /* CID 745997 fix - Overflowed Integer Argument */
+    unsigned int scopeToReturn = scope_v6 & IPV6_ADDR_SCOPE_MASK;
 
             if(scopeToReturn == 0)
                 return IPV6_ADDR_SCOPE_GLOBAL;                          
@@ -1999,8 +2038,9 @@ int CosaUtilGetIpv6AddrInfo (char * ifname, ipv6_addr_info_t ** pp_info, int * p
             strncpy(p_ai->v6addr, v6Details.address6, sizeof(p_ai->v6addr));
 
             // Get the scope of IPv6
+            /* CID 745997 - Overflowed Integer Argument - getIpv6Scope definition is fixed */
             p_ai->scope = getIpv6Scope(v6Details.scopeofipv6);
-            CcspTraceInfo(("%s,Interface scope is : %d\n",__FUNCTION__,v6Details.scopeofipv6));           
+            CcspTraceInfo(("%s,Interface scope is : %u\n",__FUNCTION__,v6Details.scopeofipv6));
  
             memset(p_ai->v6pre, 0, sizeof(p_ai->v6pre));
             /*CID: 64940 - Array Compared against null - fixed*/

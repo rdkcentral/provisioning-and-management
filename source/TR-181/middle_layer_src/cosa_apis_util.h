@@ -819,4 +819,16 @@ int get_if_hwaddr(const char *ifname, char *mac, size_t size);
  */
 ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode);
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/**
+ * @brief Gate check for True Static IP feature in the current device mode.
+ *
+ * @param[in] bEnable  TRUE if the caller intends to enable/use TSIP.
+ *
+ * @return ANSC_STATUS_SUCCESS if the operation is allowed.
+ * @return ANSC_STATUS_FAILURE if the operation should be rejected.
+ */
+ANSC_STATUS CheckTSIPModeGate(BOOL bEnable);
+#endif /* _ONESTACK_PRODUCT_REQ_ */
+
 #endif

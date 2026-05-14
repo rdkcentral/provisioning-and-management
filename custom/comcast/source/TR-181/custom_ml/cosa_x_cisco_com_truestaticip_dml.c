@@ -191,6 +191,10 @@ TrueStaticIP_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pTSIP->Enabled        = bValue;
         pTSIP->bIPInfoChanged = TRUE;
@@ -575,6 +579,10 @@ Subnet_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pSubnet->Enabled        = bValue;
         return TRUE;
@@ -750,6 +758,10 @@ PortManagement_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pCfg->Enabled = bValue;
         return TRUE;
@@ -1088,6 +1100,10 @@ Rule_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
+#if defined(_ONESTACK_PRODUCT_REQ_)
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
+            return FALSE;
+#endif
         /* save update to backup */
         pRule->Enabled = bValue;
         return TRUE;

@@ -882,6 +882,8 @@ CosaDmlHostsGetHosts
     if (!hosts)
         return ANSC_STATUS_FAILURE;
 
+    /* CID 340106 - String not null terminated - Fix is added in lan-manager-lite
+    as the API lm_get_all_hosts is from lmlite code lm_api.c */
     if(LM_RET_SUCCESS == lm_get_all_hosts(hosts))
     {
         *pulCount = hosts->count;
@@ -903,7 +905,7 @@ CosaDmlHostsGetHosts
             pHost = Hosts_AddHostByPhysAddress(str);
             if(pHost == NULL)
                 continue;
-            /* CID 340106 String not null terminated : fix */
+            /* CID 340106 fix - String not null terminated */
             plmHost->AssociatedDevice[LM_GEN_STR_SIZE - 1] = '\0';
             _get_host_info(plmHost, pHost);
         }

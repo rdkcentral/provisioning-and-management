@@ -78,7 +78,9 @@
     #include <ccsp_syslog.h>
 #endif
 #include "safec_lib_common.h"
-
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include "devicemode.h"
+#endif
 
 void* ResetFailedAttepmts(void* arg)
 {
@@ -117,7 +119,7 @@ void* ResetFailedAttepmts(void* arg)
     return NULL;
 }
 
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
 void* RestoreFailedAttempts(void* arg)
 {
         PCOSA_DML_USER  pEntry = (PCOSA_DML_USER)arg;
@@ -644,6 +646,13 @@ User_GetParamUlongValue
         *puLong = pUser->NumOfRestoreFailedAttempt;
         return TRUE;
     }
+#elif defined(_ONESTACK_PRODUCT_REQ_)
+    if (is_devicemode_business() && (strcmp(ParamName, "NumOfRestoreFailedAttempt") == 0))
+    {
+        /* collect value */
+        *puLong = pUser->NumOfRestoreFailedAttempt;
+        return TRUE;
+    }
 #endif
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1093,6 +1102,21 @@ User_SetParamUlongValue
     }
     #if defined(_COSA_FOR_BCI_)
     if (strcmp(ParamName, "NumOfRestoreFailedAttempt") == 0)
+    {
+       /* save update to backup */
+       pUser->NumOfRestoreFailedAttempt   =  uValue;
+       int MaxRestoreRetry = 3;
+
+       if( MaxRestoreRetry == pUser->NumOfRestoreFailedAttempt )
+       {
+           pthread_t restoreattempt;
+           pthread_create(&restoreattempt, NULL, &RestoreFailedAttempts, (void *)pUser);
+	   CcspTraceWarning(("WebUI Restore:  Num of invalid Restoreattempt is %d, Restore from UI  is locked out for 5 Mins \n", pUser->NumOfRestoreFailedAttempt));
+       }
+        return TRUE;
+    }
+    #elif defined(_ONESTACK_PRODUCT_REQ_)
+    if (is_devicemode_business() && (strcmp(ParamName, "NumOfRestoreFailedAttempt") == 0))
     {
        /* save update to backup */
        pUser->NumOfRestoreFailedAttempt   =  uValue;

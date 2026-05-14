@@ -73,7 +73,9 @@
 #include "ansc_string_util.h"
 #include "safec_lib_common.h"
 #include "cosa_drg_common.h"
-
+#ifdef _ONESTACK_PRODUCT_REQ_
+#include <rdkb_feature_mode_gate.h>
+#endif
 #define MIN 60
 #define HOURS 3600
 #define DAYS 86400
@@ -4598,14 +4600,34 @@ Pool1_GetParamStringValue
      #elif defined (MULTILAN_FEATURE)
         pString = (PUCHAR)pPool->Cfg.Interface;
      #else
-        pString = CosaUtilGetFullPathNameByKeyword
+     #if defined(_ONESTACK_PRODUCT_REQ_)
+        if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+        {
+            pString = CosaUtilGetFullPathNameByKeyword
+                (
+                    (PUCHAR)"Device.IP.Interface.",
+                    (PUCHAR)"Name",
+                    (PUCHAR)pPool->Cfg.Interface /* When brlan0 works ,change to "brlan0"*/
+                );
+        }
+        else
+        {
+            pString = CosaUtilGetFullPathNameByKeyword
+                (
+                    (PUCHAR)"Device.IP.Interface.",
+                    (PUCHAR)"Name",
+                    (PUCHAR)"brlan0" /* When brlan0 works ,change to "brlan0"*/
+                );		
+        }
+     #else
+	pString = CosaUtilGetFullPathNameByKeyword
                     (
                         (PUCHAR)"Device.IP.Interface.",
                         (PUCHAR)"Name",
                         (PUCHAR)"brlan0" /* When brlan0 works ,change to "brlan0"*/
-                    );
+                    ); 
+     #endif		
      #endif
-     
         if ( pString )
         {
             if ( AnscSizeOfString((const char*)pString) < *pUlSize)
@@ -4691,11 +4713,14 @@ Pool1_GetParamStringValue
     if (strcmp(ParamName, "IAPDPrefixes") == 0)
     {
         /* collect value */
-#ifdef CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION
+#if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) || defined(_ONESTACK_PRODUCT_REQ_)
+    #if defined(_ONESTACK_PRODUCT_REQ_)
+    if (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
+    #endif
+    {
 	        return CosaDmlDhcpv6sGetIAPDPrefixes2(&pPool->Cfg, pValue, pUlSize);
-#else
+    }
 #endif
-
         return  update_pValue(pValue,pUlSize, (char*)pPool->Info.IAPDPrefixes);
     }
 
