@@ -248,7 +248,7 @@
       {
         "name": "common-library",
         "repo": "https://github.com/rdkcentral/common-library.git",
-        "branch": "develop",
+        "branch": "sprint/native_build_test",
         "header_paths": [
           { "source": "source/ccsp/include", "destination": "$HOME/usr/include/rdkb" },
           { "source": "source/ccsp/components/include", "destination": "$HOME/usr/include/rdkb" },
@@ -311,7 +311,7 @@
       {
         "name": "Utopia",
         "repo": "https://github.com/rdkcentral/utopia.git",
-        "branch": "develop",
+        "branch": "sprint/native_build_test",
         "header_paths": [
           { "source": "source/include/sysevent", "destination": "$HOME/usr/include/rdkb/sysevent" },
           { "source": "source/include/syscfg", "destination": "$HOME/usr/include/rdkb/syscfg" },
