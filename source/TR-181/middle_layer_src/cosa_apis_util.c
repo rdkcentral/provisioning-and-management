@@ -1887,7 +1887,7 @@ ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
 
     if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
     {
-        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
+        AnscTraceWarning(("TrueStatic enable rejected, not supported in current system settings\n"));
         t2_event_d("TrueStatic_NotSupported", 1);
         return ANSC_STATUS_FAILURE;
     }
