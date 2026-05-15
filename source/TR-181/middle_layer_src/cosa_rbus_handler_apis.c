@@ -1493,7 +1493,7 @@ rbusError_t devCtrlRbusInit()
 		rc = RBUS_ERROR_NOT_INITIALIZED;
 		return rc;
 	}
-#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP) || defined(RBUS_BUILD_FLAG_ENABLE)
+#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
 	// Register data elements
 	rc = rbus_regDataElements(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
 #endif
