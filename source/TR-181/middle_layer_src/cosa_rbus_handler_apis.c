@@ -52,7 +52,7 @@ unsigned int gSubscribersCount_IPv6 = 0;
 #endif /*SPEED_BOOST_SUPPORTED*/
 
 rbusHandle_t handle;
-
+static char g_wanState[64] = "Unknown";
 #define NUM_OF_RBUS_PARAMS sizeof(devCtrlRbusDataElements)/sizeof(devCtrlRbusDataElements[0])
 
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED)
@@ -116,7 +116,8 @@ rbusDataElement_t devCtrlRbusDataElements[] = {
     {RRD_SET_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRD_GetStringHandler, RRD_SetStringHandler, NULL, NULL, NULL, NULL}},
     {RRD_WEBCFG_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDWebCfg_GetStringHandler, RRDWebCfg_SetStringHandler, NULL, NULL, NULL, NULL}},
     {RDM_DOWNLOAD_EVENT,RBUS_ELEMENT_TYPE_EVENT, {NULL, RRD_SetBoolHandler, NULL, NULL, NULL, NULL}},
-#endif  
+#endif 
+{WANMGR_WAN_STATE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {getWanStateHandler, NULL, NULL, NULL, eventWanStateSubHandler, NULL}},
 };
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -313,7 +314,6 @@ rbusError_t eventDevctrlSubHandler(rbusHandle_t handle, rbusEventSubAction_t act
 	}
 	return RBUS_ERROR_SUCCESS;
 }
-
 
 /*******************************************************************************
 
@@ -1531,3 +1531,103 @@ rbusError_t devCtrlRbusInit()
 	return rc;
 }
 #endif
+/***********************************************************************
+
+  WAN State get handler and event subscribe handler:
+
+ ***********************************************************************/
+unsigned int gWanStateSubscribersCount = 0;
+
+rbusError_t getWanStateHandler(rbusHandle_t handle, rbusProperty_t property, rbusGetHandlerOptions_t *opts)
+{
+    (void)handle;
+    (void)opts;
+
+    rbusValue_t value;
+    rbusValue_Init(&value);
+    rbusValue_SetString(value, g_wanState);
+    rbusProperty_SetValue(property, value);
+    rbusValue_Release(value);
+
+    return RBUS_ERROR_SUCCESS;
+}
+
+rbusError_t eventWanStateSubHandler(rbusHandle_t handle, rbusEventSubAction_t action, const char *eventName, rbusFilter_t filter, int32_t interval, bool *autoPublish)
+{
+    (void)handle;
+    (void)filter;
+    (void)interval;
+
+    *autoPublish = false;
+
+    if (strcmp(eventName, WANMGR_WAN_STATE_EVENT) == 0)
+    {
+        if (action == RBUS_EVENT_ACTION_SUBSCRIBE)
+        {
+            gWanStateSubscribersCount += 1;
+        }
+        else
+        {
+            if (gWanStateSubscribersCount > 0)
+            {
+                gWanStateSubscribersCount -= 1;
+            }
+        }
+        CcspTraceInfo(("WanState subscribers count changed, new value=%d\n", gWanStateSubscribersCount));
+    }
+    else
+    {
+        CcspTraceWarning(("eventWanStateSubHandler: unexpected eventName %s\n", eventName));
+    }
+    return RBUS_ERROR_SUCCESS;
+}
+/*******************************************************************************
+
+  publishWanStateEvent(): Publish WAN state.
+
+ ********************************************************************************/
+void publishWanStateEvent(const char *wanOptMode)
+{
+    if (wanOptMode != NULL && wanOptMode[0] != '\0')
+    {
+        snprintf(g_wanState, sizeof(g_wanState), "%s", wanOptMode);
+    }
+    else
+    {
+        snprintf(g_wanState, sizeof(g_wanState), "%s", "Unknown");
+    }
+
+    if (handle == NULL || gWanStateSubscribersCount == 0)
+    {
+        CcspTraceWarning(("%s: Skipping publish (handle=%p, subscribers=%d)\n",
+                    __FUNCTION__, (void*)handle, gWanStateSubscribersCount));
+        return;
+    }
+
+    rbusEvent_t event = {0};
+    rbusObject_t data;
+    rbusValue_t value;
+    rbusValue_Init(&value);
+
+    rbusValue_SetString(value, g_wanState);
+    rbusObject_Init(&data, NULL);
+    rbusObject_SetValue(data, "value", value);
+
+    event.name = WANMGR_WAN_STATE_EVENT;
+    event.data = data;
+    event.type = RBUS_EVENT_GENERAL;
+
+    rbusError_t ret = rbusEvent_Publish(handle, &event);
+    if (ret != RBUS_ERROR_SUCCESS)
+    {
+        CcspTraceError(("%s: rbusEvent_Publish failed for %s, ret=%d\n",
+                    __FUNCTION__, WANMGR_WAN_STATE_EVENT, ret));
+    }
+    else
+    {
+        CcspTraceInfo(("%s: Published WanState event with value: %s\n", __FUNCTION__, g_wanState));
+    }
+
+    rbusValue_Release(value);
+    rbusObject_Release(data);
+}
