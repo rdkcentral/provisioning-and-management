@@ -174,7 +174,7 @@
       {
         "name": "hotspot",
         "repo": "https://github.com/rdkcentral/hotspot.git",
-        "branch": "develop",
+        "branch": "sprint/native_build_test",
         "header_paths": [
           { "source": "source/HotspotApi", "destination": "$HOME/usr/include/rdkb" },
           { "source": "source/hotspotfd/include", "destination": "$HOME/usr/include/rdkb" }
