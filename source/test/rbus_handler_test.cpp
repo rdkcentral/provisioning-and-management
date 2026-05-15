@@ -37,6 +37,8 @@ extern SyseventMock * g_syseventMock;
 extern unsigned int gSubscribersCount;
 extern unsigned int gSubscribersCount_IPv4;
 extern unsigned int gSubscribersCount_IPv6;
+extern unsigned int gWanStateSubscribersCount;
+extern rbusHandle_t handle;
 
 TEST (eventDevctrlSubHandler1, eventDevctrlSubHandler_Test1)
 {
@@ -506,4 +508,242 @@ TEST_F (PandMSSPTestFixture, devCtrlRbusInit_Test6)
 
     rbusError_t ret = devCtrlRbusInit();
     EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+}
+
+/***********************************************************************
+
+  Unit Tests for getWanStateHandler
+
+ ***********************************************************************/
+
+TEST_F (PandMSSPTestFixture, getWanStateHandler_ReturnsDefaultState)
+{
+    rbusHandle_t testHandle = NULL;
+    rbusProperty_t property;
+    rbusProperty_Init(&property, WANMGR_WAN_STATE_EVENT, NULL);
+
+    rbusError_t ret = getWanStateHandler(testHandle, property, NULL);
+    EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+
+    rbusProperty_Release(property);
+}
+
+TEST_F (PandMSSPTestFixture, getWanStateHandler_ReturnsUpdatedState)
+{
+    /* Set WAN state by calling publishWanStateEvent with no subscribers to
+       update the cached g_wanState without actually publishing */
+    rbusHandle_t savedHandle = handle;
+    handle = NULL;
+    gWanStateSubscribersCount = 0;
+    publishWanStateEvent("Manageable");
+    handle = savedHandle;
+
+    rbusProperty_t property;
+    rbusProperty_Init(&property, WANMGR_WAN_STATE_EVENT, NULL);
+
+    rbusError_t ret = getWanStateHandler(NULL, property, NULL);
+    EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+
+    rbusProperty_Release(property);
+}
+
+TEST_F (PandMSSPTestFixture, getWanStateHandler_ReturnsUnknownForNullInput)
+{
+    /* publishWanStateEvent with NULL should set state to "Unknown" */
+    rbusHandle_t savedHandle = handle;
+    handle = NULL;
+    gWanStateSubscribersCount = 0;
+    publishWanStateEvent(NULL);
+    handle = savedHandle;
+
+    rbusProperty_t property;
+    rbusProperty_Init(&property, WANMGR_WAN_STATE_EVENT, NULL);
+
+    rbusError_t ret = getWanStateHandler(NULL, property, NULL);
+    EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+
+    rbusProperty_Release(property);
+}
+
+/***********************************************************************
+
+  Unit Tests for eventWanStateSubHandler
+
+ ***********************************************************************/
+
+TEST (eventWanStateSubHandlerTest1, eventWanStateSubHandler_Subscribe)
+{
+    rbusHandle_t testHandle = NULL;
+    rbusEventSubAction_t action = RBUS_EVENT_ACTION_SUBSCRIBE;
+    const char *eventName = WANMGR_WAN_STATE_EVENT;
+    rbusFilter_t filter = NULL;
+    int32_t interval = 1000;
+    bool autoPublish = true;
+    gWanStateSubscribersCount = 0;
+
+    rbusError_t ret = eventWanStateSubHandler(testHandle, action, eventName, filter, interval, &autoPublish);
+    EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+    EXPECT_FALSE(autoPublish);
+    EXPECT_EQ(gWanStateSubscribersCount, 1u);
+}
+
+TEST (eventWanStateSubHandlerTest2, eventWanStateSubHandler_Unsubscribe)
+{
+    rbusHandle_t testHandle = NULL;
+    rbusEventSubAction_t action = RBUS_EVENT_ACTION_UNSUBSCRIBE;
+    const char *eventName = WANMGR_WAN_STATE_EVENT;
+    rbusFilter_t filter = NULL;
+    int32_t interval = 1000;
+    bool autoPublish = true;
+    gWanStateSubscribersCount = 1;
+
+    rbusError_t ret = eventWanStateSubHandler(testHandle, action, eventName, filter, interval, &autoPublish);
+    EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+    EXPECT_FALSE(autoPublish);
+    EXPECT_EQ(gWanStateSubscribersCount, 0u);
+}
+
+TEST (eventWanStateSubHandlerTest3, eventWanStateSubHandler_UnsubscribeAtZero)
+{
+    rbusHandle_t testHandle = NULL;
+    rbusEventSubAction_t action = RBUS_EVENT_ACTION_UNSUBSCRIBE;
+    const char *eventName = WANMGR_WAN_STATE_EVENT;
+    rbusFilter_t filter = NULL;
+    int32_t interval = 1000;
+    bool autoPublish = true;
+    gWanStateSubscribersCount = 0;
+
+    rbusError_t ret = eventWanStateSubHandler(testHandle, action, eventName, filter, interval, &autoPublish);
+    EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+    EXPECT_FALSE(autoPublish);
+    EXPECT_EQ(gWanStateSubscribersCount, 0u);
+}
+
+TEST (eventWanStateSubHandlerTest4, eventWanStateSubHandler_MultipleSubscribes)
+{
+    rbusHandle_t testHandle = NULL;
+    const char *eventName = WANMGR_WAN_STATE_EVENT;
+    rbusFilter_t filter = NULL;
+    int32_t interval = 1000;
+    bool autoPublish = true;
+    gWanStateSubscribersCount = 0;
+
+    eventWanStateSubHandler(testHandle, RBUS_EVENT_ACTION_SUBSCRIBE, eventName, filter, interval, &autoPublish);
+    EXPECT_EQ(gWanStateSubscribersCount, 1u);
+
+    eventWanStateSubHandler(testHandle, RBUS_EVENT_ACTION_SUBSCRIBE, eventName, filter, interval, &autoPublish);
+    EXPECT_EQ(gWanStateSubscribersCount, 2u);
+
+    eventWanStateSubHandler(testHandle, RBUS_EVENT_ACTION_UNSUBSCRIBE, eventName, filter, interval, &autoPublish);
+    EXPECT_EQ(gWanStateSubscribersCount, 1u);
+}
+
+TEST (eventWanStateSubHandlerTest5, eventWanStateSubHandler_UnexpectedEventName)
+{
+    rbusHandle_t testHandle = NULL;
+    rbusEventSubAction_t action = RBUS_EVENT_ACTION_SUBSCRIBE;
+    const char *eventName = "Device.Some.Other.Event";
+    rbusFilter_t filter = NULL;
+    int32_t interval = 1000;
+    bool autoPublish = true;
+    gWanStateSubscribersCount = 0;
+
+    rbusError_t ret = eventWanStateSubHandler(testHandle, action, eventName, filter, interval, &autoPublish);
+    EXPECT_EQ(ret, RBUS_ERROR_SUCCESS);
+    EXPECT_FALSE(autoPublish);
+    EXPECT_EQ(gWanStateSubscribersCount, 0u);
+}
+
+/***********************************************************************
+
+  Unit Tests for publishWanStateEvent
+
+ ***********************************************************************/
+
+TEST_F (PandMSSPTestFixture, publishWanStateEvent_NullHandle)
+{
+    rbusHandle_t savedHandle = handle;
+    handle = NULL;
+    gWanStateSubscribersCount = 1;
+
+    /* rbusEvent_Publish should NOT be called when handle is NULL */
+    EXPECT_CALL(*g_rbusMock, rbusEvent_Publish(_, _))
+        .Times(0);
+
+    publishWanStateEvent("Manageable");
+
+    handle = savedHandle;
+}
+
+TEST_F (PandMSSPTestFixture, publishWanStateEvent_ZeroSubscribers)
+{
+    handle = (rbusHandle_t)0x1;
+    gWanStateSubscribersCount = 0;
+
+    /* rbusEvent_Publish should NOT be called when there are no subscribers */
+    EXPECT_CALL(*g_rbusMock, rbusEvent_Publish(_, _))
+        .Times(0);
+
+    publishWanStateEvent("Serviceable");
+
+    handle = NULL;
+}
+
+TEST_F (PandMSSPTestFixture, publishWanStateEvent_NullInput)
+{
+    rbusHandle_t savedHandle = handle;
+    handle = NULL;
+    gWanStateSubscribersCount = 0;
+
+    /* Should not crash with NULL input; sets state to "Unknown" internally */
+    EXPECT_CALL(*g_rbusMock, rbusEvent_Publish(_, _))
+        .Times(0);
+
+    publishWanStateEvent(NULL);
+
+    handle = savedHandle;
+}
+
+TEST_F (PandMSSPTestFixture, publishWanStateEvent_EmptyString)
+{
+    rbusHandle_t savedHandle = handle;
+    handle = NULL;
+    gWanStateSubscribersCount = 0;
+
+    /* Should not crash with empty string; sets state to "Unknown" internally */
+    EXPECT_CALL(*g_rbusMock, rbusEvent_Publish(_, _))
+        .Times(0);
+
+    publishWanStateEvent("");
+
+    handle = savedHandle;
+}
+
+TEST_F (PandMSSPTestFixture, publishWanStateEvent_SuccessfulPublish)
+{
+    handle = (rbusHandle_t)0x1;  /* Non-NULL fake handle */
+    gWanStateSubscribersCount = 1;
+
+    EXPECT_CALL(*g_rbusMock, rbusEvent_Publish(_, _))
+        .Times(1)
+        .WillOnce(Return(RBUS_ERROR_SUCCESS));
+
+    publishWanStateEvent("Manageable");
+
+    handle = NULL;
+}
+
+TEST_F (PandMSSPTestFixture, publishWanStateEvent_PublishFailure)
+{
+    handle = (rbusHandle_t)0x1;  /* Non-NULL fake handle */
+    gWanStateSubscribersCount = 1;
+
+    EXPECT_CALL(*g_rbusMock, rbusEvent_Publish(_, _))
+        .Times(1)
+        .WillOnce(Return(RBUS_ERROR_BUS_ERROR));
+
+    /* Should not crash even when publish fails */
+    publishWanStateEvent("Serviceable");
+
+    handle = NULL;
 }
