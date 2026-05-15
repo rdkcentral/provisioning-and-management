@@ -116,7 +116,7 @@ rbusDataElement_t devCtrlRbusDataElements[] = {
     {RRD_SET_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRD_GetStringHandler, RRD_SetStringHandler, NULL, NULL, NULL, NULL}},
     {RRD_WEBCFG_ISSUE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {RRDWebCfg_GetStringHandler, RRDWebCfg_SetStringHandler, NULL, NULL, NULL, NULL}},
     {RDM_DOWNLOAD_EVENT,RBUS_ELEMENT_TYPE_EVENT, {NULL, RRD_SetBoolHandler, NULL, NULL, NULL, NULL}},
-#endif  
+#endif 
 {WANMGR_WAN_STATE_EVENT, RBUS_ELEMENT_TYPE_EVENT, {getWanStateHandler, NULL, NULL, NULL, eventWanStateSubHandler, NULL}},
 };
 
@@ -1493,7 +1493,7 @@ rbusError_t devCtrlRbusInit()
 		rc = RBUS_ERROR_NOT_INITIALIZED;
 		return rc;
 	}
-#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
+#if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP) || defined(RBUS_BUILD_FLAG_ENABLE)
 	// Register data elements
 	rc = rbus_regDataElements(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
 #endif
