@@ -4567,12 +4567,62 @@ void poolValueFill(FILE *fp, const char* prefixValue, const char* PrefixRangeBeg
 {
 	int resStart = 0;
     int resStop = 0;
+    char adjustedPrefixRangeBegin[64] = {0};
     CcspTraceDebug(("DEBUG LOG : Inside poolValueFill"));
 
-    size_t len_prefix_begin = strlen((const char *)PrefixRangeBegin) + 1;
+    /*
+     * RFC 7084 WAA-7 / RFC 9096: When the WAN interface does not receive a global IPv6 address
+     * via SLAAC or DHCPv6, the WAN Manager may derive one from the delegated prefix (IAPD).
+     * If that address falls within the DHCPv6 server pool, exclude it so LAN clients are never
+     * offered the WAN-side address, avoiding duplicate address assignment.
+     */
+    strncpy(adjustedPrefixRangeBegin, PrefixRangeBegin, sizeof(adjustedPrefixRangeBegin) - 1);
+
+    char wan6Addr[128] = {0};
+    commonSyseventGet("wan6_ipaddr", wan6Addr, sizeof(wan6Addr));
+    if (wan6Addr[0] != '\0')
+    {
+        /* Strip /prefix_len (e.g. "/128") from wan6_ipaddr if present */
+        char *slash = strchr(wan6Addr, '/');
+        if (slash)
+            *slash = '\0';
+
+        /* Build the first pool address: prefixValue + PrefixRangeBegin */
+        char firstPoolAddr[128] = {0};
+        snprintf(firstPoolAddr, sizeof(firstPoolAddr), "%s%s", prefixValue, PrefixRangeBegin);
+
+        /* Compare using inet_pton to normalize both addresses to binary form.
+         * Simple string comparison fails because PrefixRangeBegin can be ":0:0:0:0001"
+         * while wan6_ipaddr may be in compressed notation (e.g. "2001:db8::1"). */
+        struct in6_addr wanBin, poolBin;
+        if (inet_pton(AF_INET6, wan6Addr, &wanBin) == 1 &&
+            inet_pton(AF_INET6, firstPoolAddr, &poolBin) == 1 &&
+            memcmp(&wanBin, &poolBin, sizeof(struct in6_addr)) == 0)
+        {
+            /* Increment the last group of PrefixRangeBegin to exclude the WAN address.
+             * Find the last ':' and parse the trailing host value. */
+            char tempBegin[64] = {0};
+            strncpy(tempBegin, PrefixRangeBegin, sizeof(tempBegin) - 1);
+            char *lastColon = strrchr(tempBegin, ':');
+            if (lastColon != NULL)
+            {
+                unsigned long hostPart = strtoul(lastColon + 1, NULL, 16);
+                hostPart++;
+                /* Rebuild adjustedPrefixRangeBegin with the incremented host part */
+                size_t prefixPartLen = (size_t)(lastColon - tempBegin + 1); /* includes the ':' */
+                snprintf(adjustedPrefixRangeBegin, sizeof(adjustedPrefixRangeBegin),
+                         "%.*s%04lx", (int)prefixPartLen, tempBegin, hostPart);
+                CcspTraceInfo(("poolValueFill: WAN address %s matches first pool address %s, "
+                               "advancing PrefixRangeBegin to %s\n",
+                               wan6Addr, firstPoolAddr, adjustedPrefixRangeBegin));
+            }
+        }
+    }
+
+    size_t len_prefix_begin = strlen(adjustedPrefixRangeBegin) + 1;
     char* prefix_begin = (char *) malloc(len_prefix_begin);
     if(prefix_begin != NULL){
-        strncpy(prefix_begin,(const char*) PrefixRangeBegin, len_prefix_begin);
+        strncpy(prefix_begin, adjustedPrefixRangeBegin, len_prefix_begin);
         resStart = processConcatIP(prefixValue, prefix_begin);
     }
     else{
@@ -4590,7 +4640,7 @@ void poolValueFill(FILE *fp, const char* prefixValue, const char* PrefixRangeBeg
 
     if(resStart == 1 && resStop == 1){
         CcspTraceDebug(("Valid IPv6 Address for RangeBegin and RangeEnd\n"));
-        int erVal = fprintf(fp, "       pool %s%s - %s%s\n", prefixValue, PrefixRangeBegin, prefixValue, PrefixRangeEnd );
+        int erVal = fprintf(fp, "       pool %s%s - %s%s\n", prefixValue, adjustedPrefixRangeBegin, prefixValue, PrefixRangeEnd );
         if(erVal < 0){
             CcspTraceInfo(("PoolValueFill : Unable to write to server file"));
         }
