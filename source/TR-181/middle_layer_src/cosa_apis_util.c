@@ -1871,9 +1871,14 @@ ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode)
 static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {
 #if defined(FEATURE_SUPPORT_MAPT_NAT46) || defined(FEATURE_MAPT)
-    if (CosaGetParamValueBool("Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MAP-T.Enable"))
+    char mapt_enable[8] = {0};
+    if (0 == syscfg_get(NULL, "MAPT_Enable", mapt_enable, sizeof(mapt_enable)))
     {
-        return TRUE;
+        if (strcmp(mapt_enable, "true") == 0)
+        {
+            CcspTraceInfo(("TrueStatic: enable rejected, MAP-T is active\n"));
+            return TRUE;
+        }
     }
 #endif
     CcspTraceInfo(("TrueStatic: No conflicting features found, enable allowed\n"));
