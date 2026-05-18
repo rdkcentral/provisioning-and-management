@@ -115,6 +115,7 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
+#include "cosa_x_cisco_com_truestaticip_internal.h"
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -22337,7 +22338,8 @@ UPnPRefactor_SetParamBoolValue
  */
 static BOOL IsMAPTConflictingFeaturesEnabled(void)
 {
-    if (g_GetParamValueBool(g_pDslhDmlAgent, "Device.X_CISCO_COM_TrueStaticIP.Enable"))
+    PCOSA_DATAMODEL_TSIP pTSIP = (PCOSA_DATAMODEL_TSIP)g_pCosaBEManager->hTSIP;
+    if (pTSIP && pTSIP->TSIPCfg.Enabled)
     {
         CcspTraceInfo(("%s: MAP-T enable rejected, True Static IP is active\n", __FUNCTION__));
         return TRUE;
