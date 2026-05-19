@@ -73,6 +73,11 @@
 #include "syscfg/syscfg.h"
 #include "safec_lib_common.h"
 
+#ifdef _CPU_FREQ_SUPPORT_
+#include <cpufreq_rbus_handler_apis.h>
+#include <cpufreq_apis.h>
+#endif
+
 /**********************************************************************
 
     caller:     owner of the object
@@ -165,6 +170,10 @@ CosaDeviceInfoInitialize
     CosaDmlDiGetEnableMoCAforXi5Flag( pMyObject , &pMyObject->bEnableMoCAforXi5 );
 #endif
     CosaDmlDiInit(NULL, NULL);
+#ifdef _CPU_FREQ_SUPPORT_
+    CpuFreq_Rbus_Init();
+    CpuFreq_RestoreFromSyscfg();
+#endif
 #ifndef NO_WIFI_FEATURE_SUPPORT
     CosaDmlDiGetXfinityWiFiEnable(&pMyObject->bxfinitywifiEnable);
 	CosaDmlDiGetCloudCapable(&pMyObject->bCloudCapable);

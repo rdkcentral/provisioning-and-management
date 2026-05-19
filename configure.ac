@@ -162,6 +162,18 @@ AC_ARG_ENABLE([hotspotsupport],
              [echo "hotspot support is disabled"])
 AM_CONDITIONAL(FEATURE_HOTSPOT_SUPPORT, test "x$HOTSPOT_SUPPORT_ENABLED" = xtrue)
 
+AC_ARG_ENABLE([cpufreqsupport],
+             AS_HELP_STRING([--enable-cpufreqsupport],[enable CPU frequency reduction feature support (default is no)]),
+             [
+              case "${enableval}" in
+               yes) CPU_FREQ_SUPPORT=true;;
+               no)  CPU_FREQ_SUPPORT=false;;
+               *) AC_MSG_ERROR([bad value ${enableval} for --enable-cpufreqsupport]);;
+              esac
+             ],
+             [echo "cpu freq support is disabled"])
+AM_CONDITIONAL(CPU_FREQ_SUPPORT, test "x$CPU_FREQ_SUPPORT" = xtrue)
+
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 
