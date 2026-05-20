@@ -2182,7 +2182,7 @@ LanMngm_SetParamUlongValue
 #ifdef _ONESTACK_PRODUCT_REQ_
         if (COSA_DML_LanMode_FullBridgeStatic == uValuepUlong)
         {
-            if (isFeatureSupportedInCurrentMode(FEATURE_BASIC_BRIDGE_MODE))
+            if (true == isFeatureSupportedInCurrentMode(FEATURE_BASIC_BRIDGE_MODE))
             {
                 t2_event_d("BasicBridgeMode_Supported", 1);
                 CcspTraceInfo(("Basic BridgeMode Supported\n"));
