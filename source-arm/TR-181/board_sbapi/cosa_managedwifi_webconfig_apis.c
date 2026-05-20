@@ -1073,6 +1073,7 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
             CcspTraceError(("%s:%d, Hotspot is disabled\n",__FUNCTION__,__LINE__));
             snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128, "Hotspot is disabled\n");
             pErrRetVal->ErrorCode = HOTSPOT_DISABLED;
+            sCurrAmenityBridgeDetails.bIsAmenityEnabled = false;
             return pErrRetVal;
         }
 
@@ -3048,9 +3049,9 @@ int rollbackTunnelLanconfig(void)
         for (int iCount = 0; iCount < sBackupAmenityBridgeDetails.iBridgeCount; iCount++)
         {
             CcspTraceInfo(("%s:%d, Backup config Vlan=%d \n", __FUNCTION__, __LINE__, sBackupAmenityBridgeDetails.pBridgeInfoStruct[iCount].iVlanId));
-            CcspTraceInfo(("%s:%d, Current config Vlan=%d \n", __FUNCTION__, __LINE__, sCurrAmenityBridgeDetails.pBridgeInfoStruct[iCount].iVlanId));
             if (sBackupAmenityBridgeDetails.bIsAmenityEnabled && sCurrAmenityBridgeDetails.bIsAmenityEnabled)
             {
+                CcspTraceInfo(("%s:%d, Current config Vlan=%d \n", __FUNCTION__, __LINE__, sCurrAmenityBridgeDetails.pBridgeInfoStruct[iCount].iVlanId));
                 //Check for VlanId change
                 if (sCurrAmenityBridgeDetails.pBridgeInfoStruct[iCount].iVlanId != sBackupAmenityBridgeDetails.pBridgeInfoStruct[iCount].iVlanId)
                 {
