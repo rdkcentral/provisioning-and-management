@@ -1871,8 +1871,8 @@ ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode)
 static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {
 #if defined(FEATURE_SUPPORT_MAPT_NAT46) || defined(FEATURE_MAPT)
-    #define BUFLEN_8 8
-    char mapt_enable[BUFLEN_8] = {0};
+    #define MAPTBUFLEN_8 8
+    char mapt_enable[MAPTBUFLEN_8] = {0};
     if (0 == syscfg_get(NULL, "MAPT_Enable", mapt_enable, sizeof(mapt_enable)))
     {
         if (strcmp(mapt_enable, "true") == 0)
