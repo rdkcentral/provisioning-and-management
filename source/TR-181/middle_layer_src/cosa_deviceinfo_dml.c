@@ -22333,7 +22333,7 @@ UPnPRefactor_SetParamBoolValue
 /*
  * Only True Static IP is checked here. Other TSIP-family features
  * (OneToOneNAT, Firewall TrueStaticIpEnable, Static Routing) are all
- * dependent on True Static IP being active — they are functionally
+ * dependent on True Static IP being active - they are functionally
  * inert without it. A single TSIP check is therefore considered sufficient.
  */
 static BOOL IsMAPTConflictingFeaturesEnabled(void)
