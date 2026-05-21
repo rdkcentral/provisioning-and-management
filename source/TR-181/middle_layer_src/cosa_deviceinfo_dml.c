@@ -115,6 +115,8 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
+#include "cosa_x_cisco_com_truestaticip_internal.h"
+#include "cosa_apis_util.h"
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -11582,9 +11584,9 @@ Feature_SetParamBoolValue
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-        if(!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
         {
-            CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+            CcspTraceError(("OneToOneNAT is not supported in current system settings \n"));
             t2_event_d("OneToOneNAT_NotSupported", 1);
             return FALSE;
         }
@@ -22329,10 +22331,22 @@ UPnPRefactor_SetParamBoolValue
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 #if defined(_ONESTACK_PRODUCT_REQ_)
+/*
+ * Only True Static IP is checked here. Other TSIP-family features
+ * (OneToOneNAT, Firewall TrueStaticIpEnable, Static Routing) are all
+ * dependent on True Static IP being active - they are functionally
+ * inert without it. A single TSIP check is therefore considered sufficient.
+ */
 static BOOL IsMAPTConflictingFeaturesEnabled(void)
 {
-    // TODO: Add check to see if any conflicting feature of MAP-T 
-    //       like Static Routing, 1-1 NAT, etc are enabled
+    PCOSA_DATAMODEL_TSIP pTSIP = (PCOSA_DATAMODEL_TSIP)g_pCosaBEManager->hTSIP;
+    if (pTSIP && pTSIP->TSIPCfg.Enabled)
+    {
+        CcspTraceInfo(("%s: MAP-T enable rejected, True Static IP is active\n", __FUNCTION__));
+        return TRUE;
+    }
+
+    CcspTraceInfo(("%s: No conflicting features found, MAP-T enable allowed\n", __FUNCTION__));
     return FALSE;
 }
 #endif
