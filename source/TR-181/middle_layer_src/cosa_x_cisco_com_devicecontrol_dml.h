@@ -312,7 +312,65 @@ X_CISCO_COM_DeviceControl_Rollback
     (
         ANSC_HANDLE                 hInsContext
     );
+#if defined (_COSA_QCA_ARM_)
+ULONG
+X_IPQ_McProxy_GetEntryCount
+    (
+        ANSC_HANDLE                 hInsContext
+    );
 
+ANSC_HANDLE
+X_IPQ_McProxy_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    );
+
+BOOL
+X_IPQ_McProxy_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+BOOL
+X_IPQ_McProxy_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+BOOL
+X_IPQ_McProxy_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+BOOL
+X_IPQ_McProxy_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+ULONG
+X_IPQ_McProxy_Validate
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+ULONG
+X_IPQ_McProxy_Commit
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+#endif
 /**
  * @brief Gets the number of LAN management entries in Device.X_CISCO_COM_DeviceControl.LanManagementEntry table.
  *
