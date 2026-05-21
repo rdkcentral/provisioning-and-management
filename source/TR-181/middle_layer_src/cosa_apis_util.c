@@ -490,14 +490,15 @@ CosaUtilGetLowerLayers
             }
 #if !defined (NO_MOCA_FEATURE_SUPPORT)
             else if (strcmp(pTableStringToken->Name, "Device.MoCA.Interface.") == 0)
-            {
+    {
 
-                parameterValStruct_t varStruct;
-                  ulNumOfEntries = 0;
-                rc = strcpy_s(ucEntryParamName, sizeof(ucEntryParamName), "Device.MoCA.InterfaceNumberOfEntries");
-                ERR_CHK(rc);
-                varStruct.parameterName = ucEntryParamName;
-                varStruct.parameterValue = ucEntryNameValue;
+        parameterValStruct_t varStruct;
+          ulNumOfEntries = 0;
+            /* CID: Array compared against 0*/
+            strncpy(ucEntryParamName, "Device.MoCA.InterfaceNumberOfEntries", sizeof(ucEntryParamName)-1);
+            ucEntryParamName[sizeof(ucEntryParamName)-1] = '\0';
+        varStruct.parameterName = ucEntryParamName;
+        varStruct.parameterValue = ucEntryNameValue;
 
                 ulEntryNameLen = sizeof(ucEntryNameValue);
                 if (COSAGetParamValueByPathName(g_MessageBusHandle,&varStruct,&ulEntryNameLen))
