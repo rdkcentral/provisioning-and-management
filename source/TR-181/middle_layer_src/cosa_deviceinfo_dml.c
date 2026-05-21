@@ -115,6 +115,7 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
+#include "cosa_apis_util.h"
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -11582,9 +11583,9 @@ Feature_SetParamBoolValue
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-        if(!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
         {
-            CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+            CcspTraceError(("OneToOneNAT is not supported in current system settings \n"));
             t2_event_d("OneToOneNAT_NotSupported", 1);
             return FALSE;
         }
