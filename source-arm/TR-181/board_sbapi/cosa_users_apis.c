@@ -726,7 +726,7 @@ CosaDmlUserResetPassword
    UNREFERENCED_PARAMETER(bValue);
    CcspTraceWarning(("%s, Entered Reset function\n",__FUNCTION__)); 
    char defPassword[10];
-#if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_)  || defined(_PLATFORM_BANANAPI_R4_) || defined(LIBRDKCONFIG_BUILD) || (defined(_COSA_FOR_BCI_) &&  defined(LIBRDKCONFIG_BUILD))
+#if defined(_HUB4_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_) || defined(_PLATFORM_BANANAPI_R4_) || defined(LIBRDKCONFIG_BUILD) || (defined(_COSA_FOR_BCI_) && defined(LIBRDKCONFIG_BUILD)) || defined(_PLATFORM_IPQ_)
    errno_t safec_rc = -1;
 #endif
    if(!strcmp(pEntry->Username,"admin"))
