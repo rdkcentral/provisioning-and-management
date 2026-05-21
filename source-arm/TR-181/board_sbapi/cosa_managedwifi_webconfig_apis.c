@@ -1064,7 +1064,8 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
         pErrRetVal->ErrorCode = BLOB_EXEC_FAILURE;
         return pErrRetVal;
     }
-
+    
+    CcspTraceInfo(("%s:%d, Entry \n",__FUNCTION__, __LINE__));
     sCurrAmenityBridgeDetails.bIsAmenityEnabled = bIsAmenityEnabled;
     if (bIsAmenityEnabled)
     {
