@@ -1826,12 +1826,8 @@ ULONG COSADmlGetCpuUsage()
     ULONG                       UsedTime = 0;
     ULONG                       IdleTime = 0;
     double                      CPUUsage = 0;
-    int                         CPUNum;
 
     AnscZeroMemory(time, sizeof(time));
-
-    CPUNum = sysconf(_SC_NPROCESSORS_ONLN);
-    CcspTraceWarning(("There are %d cpus!\n", CPUNum));
         
     if ( !(fp = fopen("/proc/stat", "r")) )
     {   
@@ -1875,7 +1871,7 @@ ULONG COSADmlGetCpuUsage()
          CcspTraceWarning(("To avoid division by zero error crash\n"));
     } 
     else {
-         CPUUsage = (UsedTime *100 / (UsedTime + IdleTime)) / CPUNum ;
+         CPUUsage = (UsedTime *100 / (UsedTime + IdleTime));
     }    
 
     if( !CPUUsage )
