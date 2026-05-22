@@ -5127,4 +5127,44 @@ Tunables_SetParamUlongValue
         ULONG                       uValue
     );
 
+/**
+ * @brief Get int* parameter value for PollInterval object.
+ *
+ * @param[in] hInsContext  - The instance handle to the PollIntervalobject.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[in] pInt         - Pointer to Poll interval value
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+CPUMEMLog_GetParamIntValue
+(
+    ANSC_HANDLE hInsContext,
+    char* ParamName,
+    int* pInt
+);
+
+/**
+ * @brief Set int parameter value for PollInterval object.
+ *
+ * @param[in] hInsContext  - The instance handle to the PollIntervalobject.
+ * @param[in] ParamName    - Pointer to the parameter name.
+ * @param[in] value       - The int value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ *
+ */
+BOOL
+CPUMEMLog_SetParamIntValue
+(
+    ANSC_HANDLE hInsContext,
+    char* ParamName,
+    int value
+);
+
 #endif

@@ -25966,3 +25966,112 @@ Tunables_SetParamUlongValue
     return FALSE;
 }
 
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+	BOOL
+	    CPUMEMLog_GetParamIntValue
+	    (
+		ANSC_HANDLE hInsContext,
+                 char* ParamName,
+		int* pInt
+	    )
+
+    description:
+
+        This function is called to get INT parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                int*                        pInt
+                Buffer of int returned value
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+CPUMEMLog_GetParamIntValue
+(
+    ANSC_HANDLE hInsContext,
+    char* ParamName,
+    int* pInt
+)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "PollInterval") == 0)
+    {
+        char buf[16] = {0};
+
+        syscfg_get(NULL, "CPUMEMLog_PollInterval", buf, sizeof(buf));
+        *pInt = atoi(buf);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+	BOOL
+             CPUMEMLog_SetParamIntValue
+             (
+		 ANSC_HANDLE hInsContext,
+	         char* ParamName,
+	         int value
+	     )
+
+    description:
+
+        This function is called to set INT parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                int                        value
+                The updated int value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+CPUMEMLog_SetParamIntValue
+(
+    ANSC_HANDLE hInsContext,
+    char* ParamName,
+    int value
+)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "PollInterval") == 0)
+    {
+        if (value < 1 || value > 1440)
+        {
+            CcspTraceWarning(("Invalid PollInterval value: %d. Value should be between 1 min and 1440 mins(24 hours) \n", value));
+            return FALSE;
+        }
+
+        char buf[16] = {0};
+
+        snprintf(buf, sizeof(buf), "%d", value);
+
+        syscfg_set_commit(NULL, "CPUMEMLog_PollInterval", buf);
+
+        return TRUE;
+    }
+    return FALSE;
+}
+
+

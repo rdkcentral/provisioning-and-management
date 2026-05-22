@@ -2341,6 +2341,22 @@
                         </object>
 <?endif?>
                         <object>
+                           <name>CPUMEMLog</name>
+                           <objectType>object</objectType>
+                            <functions>
+			      <func_GetParamIntValue>CPUMEMLog_GetParamIntValue</func_GetParamIntValue>
+                              <func_SetParamIntValue>CPUMEMLog_SetParamIntValue</func_SetParamIntValue>
+                           </functions>
+                           <parameters>
+                            <parameter>
+                              <name>PollInterval</name>
+                              <type>int</type>
+                              <syntax>int</syntax>
+                              <writable>true</writable>
+                            </parameter>
+                           </parameters>
+                        </object>
+			<object>
                             <name>CredDwnld</name>
                             <objectType>object</objectType>
                             <functions>
