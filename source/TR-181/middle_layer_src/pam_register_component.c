@@ -28,7 +28,7 @@
 #define CCSP_USE_ETHWAN_PROFILE 0
 #endif
 
-#define MAX_COMPONENTS 20
+#define MAX_COMPONENTS 25
 #define MAX_DEPS       10
 
 typedef struct {
@@ -45,45 +45,6 @@ static int g_componentCount = 0;
 static bool isSystemReady = false;
 /* ----------------------------------------------------------- */
 /* RBUS COMPONENT CHECK */
-static bool isComponentRegisteredInRbus(const char* name)
-{
-    int count = 0;
-    char** components = NULL;
-
-    if(!name)
-    {
-        CcspTraceError(("[PAM] NULL component name passed to RBUS check\n"));
-        return false;
-    }
-
-    char fullName[256] = {0};
-    snprintf(fullName, sizeof(fullName), "eRT.%s", name);
-
-    if(rbus_discoverRegisteredComponents(&count, &components) != RBUSCORE_SUCCESS)
-    {
-        CcspTraceError(("[PAM] rbus_discoverRegisteredComponents failed\n"));
-        return false;
-    }
-
-    bool found = false;
-
-    for(int i = 0; i < count; i++)
-    {
-        if(!components[i])
-            continue;
-
-        if(strcmp(components[i], fullName) == 0 ||
-           strcmp(components[i], name) == 0)
-        {
-            found = true;
-        }
-
-        free(components[i]);
-    }
-    free(components);
-
-    return found;
-}
 static bool isComponentInList(const char* name, char** list, int count)
 {
     if(!name || !list)
@@ -541,7 +502,6 @@ static void* monitorSystemReady(void* arg)
 
             CcspTraceInfo(("[PAM] ALL components ready → Device.CR.SystemReady = TRUE\n"));
 
-            
             for(int i = 0; i < g_componentCount; i++)
             {
                 PamComponent_t* comp = &g_components[i];
@@ -549,29 +509,11 @@ static void* monitorSystemReady(void* arg)
                 if(comp->eventName)
                 {
                     comp->handle = handle;
-                    bool ready = true;
 
-                    if(!isComponentRegisteredInRbus(comp->name))
-                        ready = false;
+                    CcspTraceInfo(("[PAM] Publishing event after SystemReady: %s\n",
+                        comp->eventName));
 
-                    for(int j = 0; j < comp->depCount && ready; j++)
-                    {
-                        if(!isComponentRegisteredInRbus(comp->deps[j]))
-                            ready = false;
-                    }
-
-                    if(ready)
-                    {
-                        CcspTraceInfo(("[PAM] Publishing event after SystemReady: %s\n",
-                            comp->eventName));
-
-                        publishReadyEvent(handle, comp->eventName);
-                    }
-                    else
-                    {
-                        CcspTraceError(("[PAM] Unexpected: %s not ready even after SystemReady\n",
-                            comp->name));
-                    }
+                    publishReadyEvent(handle, comp->eventName);
                 }
             }
 
