@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<!--
+   Copyright [2014] [Cisco Systems, Inc.]
+
+   Licensed under the Apache License, Version 2.0 (the \"License\");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an \"AS IS\" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<deviceProfile>
+    <!-- Different CR must have different names -->
+    <name>com.cisco.spvtg.ccsp.CR</name>
+    <version>1</version>
+    <deviceName>VideoScape EP1.0</deviceName>
+    <components>
+	<component>
+		<name>com.cisco.spvtg.ccsp.CR</name> <version>1</version>
+	</component>
+	<component>
+		<name>com.cisco.spvtg.ccsp.psm</name> <version>1</version>
+	</component>
+	<component>
+		<name>com.cisco.spvtg.ccsp.mta</name> <version>1</version>
+	</component> 
+	<component>
+		<name>com.cisco.spvtg.ccsp.cm</name> <version>1</version>
+	</component>	 
+	<component>
+		<name>com.cisco.spvtg.ccsp.pam</name> <version>1</version>
+	</component>
+	<!-- <component>
+		<name>com.cisco.spvtg.ccsp.tr069pa</name> <version>1</version>
+	</component> -->
+	<component>
+		<name>com.cisco.spvtg.ccsp.tdm</name> <version>1</version>
+	</component>
+
+	<!--<component>
+		<name>com.cisco.spvtg.ccsp.wecb</name> <version>1</version>
+	</component> -->
+
+	<component>
+		<name>com.cisco.spvtg.ccsp.wifi</name> <version>1</version>
+                <dependencies>
+                        <dependency>com.cisco.spvtg.ccsp.psm</dependency>
+                        <dependency>com.cisco.spvtg.ccsp.pam</dependency>
+                </dependencies>
+                <event>wifi_ready_to_go</event>
+	</component>
+
+	<component>
+		<name>com.cisco.spvtg.ccsp.lmlite</name> <version>1</version>
+	</component>
+    <!--
+        <component>
+	        <name>com.cisco.spvtg.ccsp.ssd</name> <version>1</version>
+	    </component>
+        <component>
+	        <name>com.cisco.spvtg.ccsp.fu</name> <version>1</version>
+	    </component>
+	-->
+
+    </components>    
+</deviceProfile>
