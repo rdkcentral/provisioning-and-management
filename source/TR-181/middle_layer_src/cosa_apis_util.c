@@ -1870,7 +1870,18 @@ ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode)
 #if defined(_ONESTACK_PRODUCT_REQ_)
 static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {
-    /* TODO: MAP-T and True Static IP are mutually exclusive */
+#if defined(FEATURE_SUPPORT_MAPT_NAT46) || defined(FEATURE_MAPT)
+    char mapt_enable[8] = {0};
+    if (0 == syscfg_get(NULL, "MAPT_Enable", mapt_enable, sizeof(mapt_enable)))
+    {
+        if (strcmp(mapt_enable, "true") == 0)
+        {
+            CcspTraceInfo(("TrueStatic: enable rejected, MAP-T is active\n"));
+            return TRUE;
+        }
+    }
+#endif
+    CcspTraceInfo(("TrueStatic: No conflicting features found, enable allowed\n"));
     return FALSE;
 }
 
@@ -1881,7 +1892,7 @@ ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
 
     if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
     {
-        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
+        AnscTraceWarning(("TrueStatic enable rejected, not supported in current system settings\n"));
         t2_event_d("TrueStatic_NotSupported", 1);
         return ANSC_STATUS_FAILURE;
     }
@@ -1910,9 +1921,11 @@ typedef struct v6sample {
            char prefix_v6[40];
 }ifv6Details;
 
-int getIpv6Scope(int scope_v6)
+/* CID 745997 fix - Overflowed Integer Argument */
+int getIpv6Scope(unsigned int scope_v6)
 {
-    int scopeToReturn = scope_v6 & IPV6_ADDR_SCOPE_MASK;
+    /* CID 745997 fix - Overflowed Integer Argument */
+    unsigned int scopeToReturn = scope_v6 & IPV6_ADDR_SCOPE_MASK;
 
             if(scopeToReturn == 0)
                 return IPV6_ADDR_SCOPE_GLOBAL;                          
@@ -2036,8 +2049,9 @@ int CosaUtilGetIpv6AddrInfo (char * ifname, ipv6_addr_info_t ** pp_info, int * p
             strncpy(p_ai->v6addr, v6Details.address6, sizeof(p_ai->v6addr));
 
             // Get the scope of IPv6
+            /* CID 745997 - Overflowed Integer Argument - getIpv6Scope definition is fixed */
             p_ai->scope = getIpv6Scope(v6Details.scopeofipv6);
-            CcspTraceInfo(("%s,Interface scope is : %d\n",__FUNCTION__,v6Details.scopeofipv6));           
+            CcspTraceInfo(("%s,Interface scope is : %u\n",__FUNCTION__,v6Details.scopeofipv6));
  
             memset(p_ai->v6pre, 0, sizeof(p_ai->v6pre));
             /*CID: 64940 - Array Compared against null - fixed*/
