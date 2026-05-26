@@ -33,9 +33,9 @@
 
 #if defined(_COSA_BCM_MIPS_)
 #define DEVICE_MAC                   "Device.DPoE.Mac_address"
-#elif defined(_HUB4_PRODUCT_REQ_) || defined(_WNXL11BWL_PRODUCT_REQ_) || defined(_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#elif defined(_HUB4_PRODUCT_REQ_) || defined(_WNXL11BWL_PRODUCT_REQ_) || defined(_SCER11BEL_PRODUCT_REQ_)
 #define DEVICE_MAC                   "Device.DeviceInfo.X_COMCAST-COM_WAN_MAC"
-#elif defined(_XER5_PRODUCT_REQ_) //Retrieve ETHWAN or Base MAC for XER5 using below TR-181
+#elif defined(_XER5_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) //Retrieve ETHWAN or Base MAC for XER5 and XF10 using below TR-181
 #define DEVICE_MAC                   "Device.DeviceInfo.X_COMCAST-COM_CM_MAC"
 #else
 #define DEVICE_MAC                   "Device.X_CISCO_COM_CableModem.MACAddress"
