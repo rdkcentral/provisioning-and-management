@@ -1870,7 +1870,18 @@ ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode)
 #if defined(_ONESTACK_PRODUCT_REQ_)
 static BOOL IsTSIPConflictingFeaturesEnabled(void)
 {
-    /* TODO: MAP-T and True Static IP are mutually exclusive */
+#if defined(FEATURE_SUPPORT_MAPT_NAT46) || defined(FEATURE_MAPT)
+    char mapt_enable[8] = {0};
+    if (0 == syscfg_get(NULL, "MAPT_Enable", mapt_enable, sizeof(mapt_enable)))
+    {
+        if (strcmp(mapt_enable, "true") == 0)
+        {
+            CcspTraceInfo(("TrueStatic: enable rejected, MAP-T is active\n"));
+            return TRUE;
+        }
+    }
+#endif
+    CcspTraceInfo(("TrueStatic: No conflicting features found, enable allowed\n"));
     return FALSE;
 }
 
@@ -1881,7 +1892,7 @@ ANSC_STATUS CheckTSIPModeGate(BOOL bEnable)
 
     if (!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
     {
-        AnscTraceWarning(("TrueStatic enable rejected, unsupported mode\n"));
+        AnscTraceWarning(("TrueStatic enable rejected, not supported in current system settings\n"));
         t2_event_d("TrueStatic_NotSupported", 1);
         return ANSC_STATUS_FAILURE;
     }
