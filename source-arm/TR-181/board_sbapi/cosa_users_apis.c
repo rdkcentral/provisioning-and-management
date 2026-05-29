@@ -77,10 +77,6 @@
 #include "rdkconfig.h"
 #endif
 
-#if defined(_ONESTACK_PRODUCT_REQ_)
-#include <rdkb_feature_mode_gate.h>
-#endif
-
 #define SIZE_OF_HASHPASSWORD  32
 /* Changing SNO as 256 bytes from 64 bytes due to HAL layer access more than 64 byets*/
 static char SerialNumber[256] = {'\0'};
@@ -620,12 +616,7 @@ user_validatepwd
        ERR_CHK(safec_rc);
     }
    }
-#if (defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)) && defined(LIBRDKCONFIG_BUILD)
-  #if defined(_ONESTACK_PRODUCT_REQ_)
-  if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
-  #endif
-  {
-   if(!strcmp(pEntry->Username,"cusadmin"))
+   if(pEntry->bEnabled && !strcmp(pEntry->Username,"cusadmin"))
    {
 
    syscfg_get( NULL, "hash_password_2",fromDB, sizeof(fromDB));
@@ -660,8 +651,6 @@ user_validatepwd
        ERR_CHK(safec_rc);
     }
    }
-  }
-#endif
 
    CcspTraceWarning(("%s, Comparison result: %s\n",__FUNCTION__,hashpassword));
    return ANSC_STATUS_SUCCESS ;
@@ -704,12 +693,7 @@ user_hashandsavepwd
       return ANSC_STATUS_SUCCESS;
    }
 
-#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
-  #if defined(_ONESTACK_PRODUCT_REQ_)
-  if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
-  #endif
-  {
-   if (strcmp(pEntry->Username, "cusadmin") == 0)
+   if (pEntry->bEnabled && strcmp(pEntry->Username, "cusadmin") == 0)
    {
       if (syscfg_set(NULL, "hash_password_2", setHash) != 0)
       {
@@ -724,8 +708,6 @@ user_hashandsavepwd
       syscfg_commit();
       return ANSC_STATUS_SUCCESS;
    }
-  }
-#endif
 
    CcspTraceWarning(("%s, Returning failure\n",__FUNCTION__));
    return ANSC_STATUS_FAILURE;
@@ -774,14 +756,7 @@ CosaDmlUserResetPassword
         }
 #endif
    } 
-#if (defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)) && defined(LIBRDKCONFIG_BUILD)
-  #if defined(_ONESTACK_PRODUCT_REQ_)
-   else if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
-  {
-   if(!strcmp(pEntry->Username,"cusadmin"))
-  #else
-   else if(!strcmp(pEntry->Username,"cusadmin"))
-  #endif
+   else if(pEntry->bEnabled && !strcmp(pEntry->Username,"cusadmin"))
    {
         uint8_t *defpwdbuf=NULL;
         size_t defpwdsize;
@@ -802,10 +777,6 @@ CosaDmlUserResetPassword
             CcspTraceWarning(("%s, Memory deallocation for cosa value failed \n",__FUNCTION__));
         }
    }
-#if defined(_ONESTACK_PRODUCT_REQ_)
-  }
-#endif
-#endif
    else
    {
      return ANSC_STATUS_FAILURE;
@@ -820,20 +791,13 @@ CosaDmlUserResetPassword
      }
      return ANSC_STATUS_SUCCESS;
    }
-#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
-  #if defined(_ONESTACK_PRODUCT_REQ_)
-  if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
-  #endif
-  {
-   if(!strcmp(pEntry->Username,"cusadmin"))
+   if(pEntry->bEnabled && !strcmp(pEntry->Username,"cusadmin"))
    {
      user_hashandsavepwd(NULL,defPassword,pEntry);
      memset_s(defPassword, sizeof(defPassword), 0, sizeof(defPassword));
      CcspTraceWarning(("%s, Returning Success\n",__FUNCTION__));
      return ANSC_STATUS_SUCCESS;
    }
-  }
-#endif
    CcspTraceWarning(("%s, Returning Failure\n",__FUNCTION__));
    return ANSC_STATUS_FAILURE;
 } 
