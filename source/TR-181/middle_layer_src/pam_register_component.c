@@ -403,7 +403,6 @@ static rbusError_t systemReadyGetHandler(
     rbusGetHandlerOptions_t* opts)
 {
     (void)handle;
-    (void)opts;
 
     const char* name = rbusProperty_GetName(property);
 
@@ -417,7 +416,8 @@ static rbusError_t systemReadyGetHandler(
         rbusProperty_SetValue(property, value);
         rbusValue_Release(value);
 
-        CcspTraceInfo(("[PAM] GET Device.CR.SystemReady = %d\n", isSystemReady));
+        const char* caller = (opts && opts->requestingComponent) ? opts->requestingComponent : "unknown";
+        CcspTraceInfo(("[PAM] GET Device.CR.SystemReady = %d caller=%s\n", isSystemReady, caller));
 
         return RBUS_ERROR_SUCCESS;
     }
