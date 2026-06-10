@@ -518,7 +518,11 @@ bool IsPortOverlapWithPFPorts(int mgmtport)
     memset(query,0, sizeof(query));
     memset(namespace,0, sizeof(namespace));
     syscfg_get( NULL, "SinglePortForwardCount", pfcount, sizeof(pfcount));
-    long spfcount = strtol(pfcount, NULL, PORT_BASE);
+    char *endptr = NULL;
+    long spfcount = strtol(pfcount, &endptr, PORT_BASE);
+    if (endptr == pfcount || *endptr != '\0' || spfcount < 0) {
+        spfcount = 0;
+    }
     CcspTraceInfo(("%s %d- SPF count=%ld \n",__FUNCTION__,__LINE__,spfcount));
     for (long idx=1 ; idx<=spfcount; idx++) {
       namespace[0] = '\0';
