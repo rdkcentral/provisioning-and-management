@@ -14366,6 +14366,216 @@ SWDLDirect_SetParamBoolValue
     caller:     owner of this object
 
     prototype:
+
+        BOOL
+        RDKLogSuppressor_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char value[8] = {0};
+        if (syscfg_get(NULL, "RDKLogSuppressorEnable", value, sizeof(value)) == 0)
+        {
+            *pBool = (strcmp(value, "true") == 0) ? TRUE : FALSE;
+        }
+        else
+        {
+            CcspTraceError(("%s syscfg_get failed for RDKLogSuppressorEnable\n", __FUNCTION__));
+            *pBool = FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RDKLogSuppressor_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, RDKLogSuppressor_GetParamBoolValue))
+        return TRUE;
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if (syscfg_set_commit(NULL, "RDKLogSuppressorEnable", bValue ? "true" : "false") != 0)
+        {
+            CcspTraceError(("%s syscfg_set_commit failed for RDKLogSuppressorEnable\n", __FUNCTION__));
+            return FALSE;
+        }
+        CcspTraceInfo(("RDKLogSuppressor RFC Enable updated. Reboot required to apply.\n"));
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RDKLogSuppressor_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      puLong
+            );
+
+    description:
+
+        This function is called to retrieve ULONG parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      puLong
+                The buffer of returned ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "MaxPatternLength") == 0)
+    {
+        char buf[10] = {0};
+        syscfg_get(NULL, "RDKLogSuppressorMaxPatternLength", buf, sizeof(buf));
+        *puLong = atoi(buf);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RDKLogSuppressor_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set ULONG parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue
+                The updated ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "MaxPatternLength") == 0)
+    {
+        if (syscfg_set_u_commit(NULL, "RDKLogSuppressorMaxPatternLength", uValue) != 0)
+        {
+            return FALSE;
+        }
+        CcspTraceInfo(("RDKLogSuppressor RFC MaxPatternLength updated. Reboot required to apply.\n"));
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
         BOOL
         CognitiveMotionDetection_GetParamBoolValue
             (
