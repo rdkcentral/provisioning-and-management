@@ -498,10 +498,11 @@ bool IsPortOverlapWithPFPorts(int mgmtport)
           }
 
 	  if ((start_port >= PORT_MIN) && (start_port <= PORT_MAX) && (size > 0)) {
-             long end_port = start_port + size - 1;
-
-             if (end_port > PORT_MAX) {
+             long end_port;
+             if (size > ((long)PORT_MAX - start_port + 1)) {
                 end_port = PORT_MAX;
+             } else {
+                end_port = start_port + size - 1;
              }
 
              if ((mgmtport >= start_port) && (mgmtport <= end_port)) {
