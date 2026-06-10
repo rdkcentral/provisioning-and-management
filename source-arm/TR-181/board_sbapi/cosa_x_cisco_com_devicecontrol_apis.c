@@ -451,7 +451,7 @@ bool IsPortOverlapWithPFPorts(int mgmtport)
        char edport[16] = {0};
        char portrange[32] = {0};
        rc = syscfg_get(namespace, "external_port_range", portrange, sizeof(portrange));
-       if((rc == 0) && (portrange[0] != '\0'))) {
+        if ((rc == 0) && (portrange[0] != '\0')) {
           if (sscanf(portrange, "%15s %15s", sdport, edport) == 2) {
               char *endptr = NULL;
 
