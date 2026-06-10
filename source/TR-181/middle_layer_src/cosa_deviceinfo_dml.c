@@ -67,6 +67,7 @@
 **************************************************************************/
 
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <syscfg/syscfg.h>
@@ -14402,15 +14403,34 @@ RDKLogSuppressor_GetParamBoolValue
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "Enable") == 0)
     {
-        char value[8] = {0};
-        if (syscfg_get(NULL, "RDKLogSuppressorEnable", value, sizeof(value)) == 0)
+        /* Read from nvram override if it exists, else /etc default */
+        const char *cfg = (access("/nvram/rdk_log_suppressor.ini", F_OK) == 0)
+                          ? "/nvram/rdk_log_suppressor.ini"
+                          : "/etc/rdk_log_suppressor.ini";
+        FILE *fp = fopen(cfg, "r");
+        *pBool = FALSE;
+        if (fp)
         {
-            *pBool = (strcmp(value, "true") == 0) ? TRUE : FALSE;
+            char line[256];
+            while (fgets(line, sizeof(line), fp) != NULL)
+            {
+                char *eq = strchr(line, '=');
+                if (!eq) continue;
+                /* Exact key match: trim trailing whitespace before '=' */
+                int klen = (int)(eq - line);
+                while (klen > 0 && (line[klen-1] == ' ' || line[klen-1] == '\t')) klen--;
+                if (klen != (int)strlen("FEATURE.RDKLogSuppressor.Enable")) continue;
+                if (strncmp(line, "FEATURE.RDKLogSuppressor.Enable", (size_t)klen) != 0) continue;
+                eq++;
+                while (*eq == ' ' || *eq == '\t') eq++;
+                *pBool = (strncmp(eq, "true", 4) == 0) ? TRUE : FALSE;
+                break;
+            }
+            fclose(fp);
         }
         else
         {
-            CcspTraceError(("%s syscfg_get failed for RDKLogSuppressorEnable\n", __FUNCTION__));
-            *pBool = FALSE;
+            CcspTraceError(("%s failed to open config file %s\n", __FUNCTION__, cfg));
         }
         return TRUE;
     }
@@ -14460,12 +14480,21 @@ RDKLogSuppressor_SetParamBoolValue
 
     if (strcmp(ParamName, "Enable") == 0)
     {
-        if (syscfg_set_commit(NULL, "RDKLogSuppressorEnable", bValue ? "true" : "false") != 0)
+        /* Read current MaxPatternLength to preserve it in the rewrite */
+        ULONG curMax = 10;
+        RDKLogSuppressor_GetParamUlongValue(hInsContext, "MaxPatternLength", &curMax);
+
+        FILE *fp = fopen("/nvram/rdk_log_suppressor.ini", "w");
+        if (!fp)
         {
-            CcspTraceError(("%s syscfg_set_commit failed for RDKLogSuppressorEnable\n", __FUNCTION__));
+            CcspTraceError(("%s failed to open /nvram/rdk_log_suppressor.ini for write\n", __FUNCTION__));
             return FALSE;
         }
-        CcspTraceInfo(("RDKLogSuppressor RFC Enable updated. Reboot required to apply.\n"));
+        fprintf(fp, "FEATURE.RDKLogSuppressor.Enable = %s\n", bValue ? "true" : "false");
+        fprintf(fp, "FEATURE.RDKLogSuppressor.MaxPatternLength = %lu\n", (unsigned long)curMax);
+        fclose(fp);
+        CcspTraceInfo(("RDKLogSuppressor RFC Enable updated to %s. Reboot required to apply.\n",
+                       bValue ? "true" : "false"));
         return TRUE;
     }
     return FALSE;
@@ -14512,9 +14541,30 @@ RDKLogSuppressor_GetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "MaxPatternLength") == 0)
     {
-        char buf[10] = {0};
-        syscfg_get(NULL, "RDKLogSuppressorMaxPatternLength", buf, sizeof(buf));
-        *puLong = atoi(buf);
+        /* Read from nvram override if it exists, else /etc default */
+        const char *cfg = (access("/nvram/rdk_log_suppressor.ini", F_OK) == 0)
+                          ? "/nvram/rdk_log_suppressor.ini"
+                          : "/etc/rdk_log_suppressor.ini";
+        FILE *fp = fopen(cfg, "r");
+        *puLong = 10; /* default */
+        if (fp)
+        {
+            char line[256];
+            while (fgets(line, sizeof(line), fp) != NULL)
+            {
+                char *eq = strchr(line, '=');
+                if (!eq) continue;
+                int klen = (int)(eq - line);
+                while (klen > 0 && (line[klen-1] == ' ' || line[klen-1] == '\t')) klen--;
+                if (klen != (int)strlen("FEATURE.RDKLogSuppressor.MaxPatternLength")) continue;
+                if (strncmp(line, "FEATURE.RDKLogSuppressor.MaxPatternLength", (size_t)klen) != 0) continue;
+                eq++;
+                while (*eq == ' ' || *eq == '\t') eq++;
+                *puLong = (ULONG)atoi(eq);
+                break;
+            }
+            fclose(fp);
+        }
         return TRUE;
     }
     return FALSE;
@@ -14561,11 +14611,21 @@ RDKLogSuppressor_SetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "MaxPatternLength") == 0)
     {
-        if (syscfg_set_u_commit(NULL, "RDKLogSuppressorMaxPatternLength", uValue) != 0)
+        /* Read current Enable value to preserve it in the rewrite */
+        BOOL curEnable = FALSE;
+        RDKLogSuppressor_GetParamBoolValue(hInsContext, "Enable", &curEnable);
+
+        FILE *fp = fopen("/nvram/rdk_log_suppressor.ini", "w");
+        if (!fp)
         {
+            CcspTraceError(("%s failed to open /nvram/rdk_log_suppressor.ini for write\n", __FUNCTION__));
             return FALSE;
         }
-        CcspTraceInfo(("RDKLogSuppressor RFC MaxPatternLength updated. Reboot required to apply.\n"));
+        fprintf(fp, "FEATURE.RDKLogSuppressor.Enable = %s\n", curEnable ? "true" : "false");
+        fprintf(fp, "FEATURE.RDKLogSuppressor.MaxPatternLength = %lu\n", (unsigned long)uValue);
+        fclose(fp);
+        CcspTraceInfo(("RDKLogSuppressor RFC MaxPatternLength updated to %lu. Reboot required to apply.\n",
+                       (unsigned long)uValue));
         return TRUE;
     }
     return FALSE;
