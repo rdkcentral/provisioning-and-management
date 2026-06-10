@@ -14611,6 +14611,14 @@ RDKLogSuppressor_SetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "MaxPatternLength") == 0)
     {
+        /* AC-5: Reject values outside valid range [1, 20] */
+        if (uValue < 1 || uValue > 20)
+        {
+            CcspTraceError(("%s MaxPatternLength value %lu is out of range [1-20], rejecting\n",
+                            __FUNCTION__, (unsigned long)uValue));
+            return FALSE;
+        }
+
         /* Read current Enable value to preserve it in the rewrite */
         BOOL curEnable = FALSE;
         RDKLogSuppressor_GetParamBoolValue(hInsContext, "Enable", &curEnable);
