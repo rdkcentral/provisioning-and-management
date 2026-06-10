@@ -428,7 +428,11 @@ bool IsPortOverlapWithPFPorts(int mgmtport)
     char namespace[32] = {0};
 
     syscfg_get( NULL, "PortRangeForwardCount", pfcount, sizeof(pfcount));
-    long pfr_count = strtol(pfcount, NULL, PORT_BASE);
+    char *endptr = NULL;
+    long pfr_count = strtol(pfcount, &endptr, PORT_BASE);
+    if (endptr == pfcount || *endptr != '\0' || pfr_count < 0) {
+        pfr_count = 0;
+    }
     CcspTraceInfo(("%s %d - PortRangeForwardCount=%ld\n",__FUNCTION__,__LINE__,pfr_count));
     for (long idx=1 ; idx<=pfr_count; idx++) {
        namespace[0] = '\0';
