@@ -16803,7 +16803,7 @@ Xconf_SetParamBoolValue
     /* check the parameter name and set the corresponding value */
     if ((strcmp(ParamName, "xconfCheckNow") == 0) || (strcmp(ParamName, "xconfCheckNowReboot") == 0))
     {
-        AnscTraceWarning(("Triggering firmware download check from TR181\n"));
+        AnscTraceWarning(("%s:%d - Triggering firmware download check from TR181\n",__FUNCTION__, __LINE__));
         if( TRUE == bValue )
         {
             /* RDKB-29712 : Firmware Download scripts will not trigger download
@@ -16910,10 +16910,10 @@ Xconf_SetParamBoolValue
                     int killStatus = -1;
 
 		    AnscStrLower(acBoxType);
-                    CcspTraceInfo(("Xconf trigger: BOX_TYPE=%s\n", acBoxType));
+                    CcspTraceInfo(("%s:%d - Xconf trigger: [BOX_TYPE=%s]\n",__FUNCTION__, __LINE__, acBoxType));
 
 		    snprintf(acFwDwldScriptName, sizeof(acFwDwldScriptName), "%s_firmwareDwnld.sh",acBoxType);
-                    CcspTraceInfo(("Xconf trigger: firmware script file=%s path=/etc/%s\n", acFwDwldScriptName, acFwDwldScriptName));
+                    CcspTraceInfo(("Xconf trigger: firmware script file=%s [path=/etc/%s]\n", acFwDwldScriptName, acFwDwldScriptName));
 
             	    pidofStatus = v_secure_system("pidof %s", acFwDwldScriptName);
                     CcspTraceInfo(("Xconf trigger: v_secure_system('pidof %s') status=%d\n", acFwDwldScriptName, pidofStatus));
@@ -16927,7 +16927,7 @@ Xconf_SetParamBoolValue
                     status = v_secure_system("/etc/%s &", acFwDwldScriptName);
                     CcspTraceInfo(("Xconf trigger: v_secure_system('/etc/%s &') status=%d\n", acFwDwldScriptName, status));
 
-                    CcspTraceInfo(("Xconf firmware download script:%s \n",(status == 0) ? "sucessfully started" : "failed to start"));
+                    CcspTraceInfo(("%s:%d - Xconf firmware download script:%s \n",__FUNCTION__, __LINE__, (status == 0) ? "sucessfully started" : "failed to start"));
 		}
 #else
 #if defined(INTEL_PUMA7) || defined(_COSA_BCM_ARM_) || defined(_COSA_QCA_ARM_)
