@@ -16906,17 +16906,26 @@ Xconf_SetParamBoolValue
                     ( acBoxType[0] != '\0' ) )
 		{
                     char acFwDwldScriptName[512] = {0};
+                    int pidofStatus = -1;
+                    int killStatus = -1;
 
 		    AnscStrLower(acBoxType);
+                    CcspTraceInfo(("Xconf trigger: BOX_TYPE=%s\n", acBoxType));
 
 		    snprintf(acFwDwldScriptName, sizeof(acFwDwldScriptName), "%s_firmwareDwnld.sh",acBoxType);
+                    CcspTraceInfo(("Xconf trigger: firmware script file=%s path=/etc/%s\n", acFwDwldScriptName, acFwDwldScriptName));
 
-            	    if ( 0 == v_secure_system("pidof %s", acFwDwldScriptName) )  
+            	    pidofStatus = v_secure_system("pidof %s", acFwDwldScriptName);
+                    CcspTraceInfo(("Xconf trigger: v_secure_system('pidof %s') status=%d\n", acFwDwldScriptName, pidofStatus));
+
+            	    if ( 0 == pidofStatus )  
 		    {
-                       v_secure_system ("kill -9 `pidof %s `", acFwDwldScriptName);
+                       killStatus = v_secure_system ("kill -9 `pidof %s `", acFwDwldScriptName);
+                       CcspTraceInfo(("Xconf trigger: v_secure_system('kill -9 pidof %s') status=%d\n", acFwDwldScriptName, killStatus));
                     }
 
                     status = v_secure_system("/etc/%s &", acFwDwldScriptName);
+                    CcspTraceInfo(("Xconf trigger: v_secure_system('/etc/%s &') status=%d\n", acFwDwldScriptName, status));
 
                     CcspTraceInfo(("Xconf firmware download script:%s \n",(status == 0) ? "sucessfully started" : "failed to start"));
 		}
