@@ -917,10 +917,13 @@ IPIF_getEntry_for_Ipv6Addr
     char namespace[256] = {0};
     int  need_write = 0;
     errno_t safec_rc = -1;
-#if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
     char sysEventName[256] = {0};
-#endif    
+    char wan_ifname[64] = {0};
     AnscTraceFlow(("%s...\n", __FUNCTION__));
+
+    /* Resolve WAN interface name dynamically; fall back to erouter0 */
+    if (commonSyseventGet("current_wan_ifname", wan_ifname, sizeof(wan_ifname)) != 0 || wan_ifname[0] == '\0')
+        snprintf(wan_ifname, sizeof(wan_ifname), "erouter0");
 
     CosaUtilGetIpv6AddrInfo((char *)g_ipif_names[ulIndex], &p_v6addr, &v6addr_num);
     _obtain_ra_info(&p_ra, &ra_num);
@@ -966,36 +969,34 @@ IPIF_getEntry_for_Ipv6Addr
                 }
             }
             
-            commonSyseventGet(COSA_DML_DHCPV6C_ADDR_SYSEVENT_NAME, dhcpv6_addr, sizeof(dhcpv6_addr));
+            memset(sysEventName, 0, sizeof(sysEventName));
+            snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_SYSEVENT_NAME, (char *)g_ipif_names[ulIndex]);
+            commonSyseventGet(sysEventName, dhcpv6_addr, sizeof(dhcpv6_addr));
+
             if (!strncmp(p_v6addr->v6addr, dhcpv6_addr, sizeof(p_v6addr->v6addr))){
                 p_dml_v6addr->Origin = COSA_DML_IP6_ORIGIN_DHCPv6;
 
-               if ( _ansc_strstr(g_ipif_names[ulIndex], "erouter0" )  ){
-                   if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_IAID_SYSEVENT_NAME, out, sizeof(out)) )
+               if ( _ansc_strstr(g_ipif_names[ulIndex], wan_ifname) ) {
+                   memset(sysEventName, 0, sizeof(sysEventName));
+                   snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_IAID_SYSEVENT_NAME, wan_ifname);
+                   if (!commonSyseventGet(sysEventName, out, sizeof(out)))
                         g_ipif_be_bufs[ulIndex].Info.iana_iaid = atoi(out);
                    else
-                        g_ipif_be_bufs[ulIndex].Info.iana_iaid  = 0;
+                        g_ipif_be_bufs[ulIndex].Info.iana_iaid = 0;
 
-                   if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_T1_SYSEVENT_NAME, out, sizeof(out)) )
+                   memset(sysEventName, 0, sizeof(sysEventName));
+                   snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_T1_SYSEVENT_NAME, wan_ifname);
+                   if (!commonSyseventGet(sysEventName, out, sizeof(out)))
                         g_ipif_be_bufs[ulIndex].Info.iana_t1 = atoi(out);
                    else
-                        g_ipif_be_bufs[ulIndex].Info.iana_t1  = 0;
+                        g_ipif_be_bufs[ulIndex].Info.iana_t1 = 0;
 
-                   if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_T2_SYSEVENT_NAME, out, sizeof(out)) )
+                   memset(sysEventName, 0, sizeof(sysEventName));
+                   snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_T2_SYSEVENT_NAME, wan_ifname);
+                   if (!commonSyseventGet(sysEventName, out, sizeof(out)))
                         g_ipif_be_bufs[ulIndex].Info.iana_t2 = atoi(out);
                    else
-                        g_ipif_be_bufs[ulIndex].Info.iana_t2  = 0;
-
-                   /*if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_PRETM_SYSEVENT_NAME, out, sizeof(out)) )
-                        p_dml_v6addr->iana_pretm = atoi(out);
-                   else
-                        p_dml_v6addr->iana_pretm = 0;
-
-                   if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_VLDTM_SYSEVENT_NAME, out, sizeof(out)) )
-                        p_dml_v6addr->iana_vldtm = atoi(out);
-                   else
-                        p_dml_v6addr->iana_vldtm = 0;*/
-
+                        g_ipif_be_bufs[ulIndex].Info.iana_t2 = 0;
                }
             }
 
@@ -1086,38 +1087,21 @@ IPIF_getEntry_for_Ipv6Addr
                                p_v6addr, ulIndex);
         }
 	
-	#ifdef _HUB4_PRODUCT_REQ_
-	    if ( _ansc_strstr(g_ipif_names[ulIndex], "brlan0" )  ) {
-	#else
-	    if ( _ansc_strstr(g_ipif_names[ulIndex], "erouter0" )  ) {
-	#endif
-            #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
-                memset( sysEventName, 0, sizeof(sysEventName));
-                snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_PRETM_SYSEVENT_NAME, (char *)g_ipif_names[ulIndex]);
-                if (!commonSyseventGet(sysEventName, out, sizeof(out)) )
-            #else		    
-	        if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_PRETM_SYSEVENT_NAME, out, sizeof(out)) )
-	    #endif
-		{
-			p_dml_v6addr->iana_pretm = atoi(out);
-		}
-		else {
-			p_dml_v6addr->iana_pretm = 0;
-		}
-           #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
-                memset( sysEventName, 0, sizeof(sysEventName));
-                snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_VLDTM_SYSEVENT_NAME, (char *)g_ipif_names[ulIndex]);
-                if (!commonSyseventGet(sysEventName, out, sizeof(out)) )
-           #else
-		if (!commonSyseventGet(COSA_DML_DHCPV6C_ADDR_VLDTM_SYSEVENT_NAME, out, sizeof(out)) ) 
-	   #endif
-		{
-			p_dml_v6addr->iana_vldtm = atoi(out);
-		}
-		else {
-			p_dml_v6addr->iana_vldtm = 0;
-		}
-	  }
+        if ( _ansc_strstr(g_ipif_names[ulIndex], wan_ifname) ) {
+            memset(sysEventName, 0, sizeof(sysEventName));
+            snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_PRETM_SYSEVENT_NAME, wan_ifname);
+            if (!commonSyseventGet(sysEventName, out, sizeof(out)))
+                p_dml_v6addr->iana_pretm = atoi(out);
+            else
+                p_dml_v6addr->iana_pretm = 0;
+
+            memset(sysEventName, 0, sizeof(sysEventName));
+            snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_VLDTM_SYSEVENT_NAME, wan_ifname);
+            if (!commonSyseventGet(sysEventName, out, sizeof(out)))
+                p_dml_v6addr->iana_vldtm = atoi(out);
+            else
+                p_dml_v6addr->iana_vldtm = 0;
+        }
 
         p_dml_v6addr->bAnycast = FALSE;
 
