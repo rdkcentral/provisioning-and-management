@@ -47,5 +47,5 @@ libCcspPandM_comcast_ml_la_SOURCES = \
 libCcspPandM_comcast_ml_la_LDFLAGS = -lccsp_common
 
 if ONESTACK_PRODUCT_REQ
-libCcspPandM_comcast_ml_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lrdkb_feature_mode_gate -ltelemetry_msgsender
+libCcspPandM_comcast_ml_la_LIBADD = -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lrdkb_feature_mode_gate -ltelemetry_msgsender
 endif
