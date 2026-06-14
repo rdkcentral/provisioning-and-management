@@ -154,7 +154,9 @@ libCcspPandM_middle_layer_src_la_LDFLAGS += -lnet
 endif
 
 if ONESTACK_PRODUCT_REQ
-libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -Wl,--whole-archive -lrdkb_feature_mode_gate -ldevicemode -Wl,--no-whole-archive
+libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -Wl,--whole-archive
+libCcspPandM_middle_layer_src_la_LIBADD = -lrdkb_feature_mode_gate -ldevicemode
+libCcspPandM_middle_layer_src_la_LDFLAGS += -Wl,--no-whole-archive
 endif
 
 if CPU_FREQ_SUPPORT

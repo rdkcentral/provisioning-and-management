@@ -120,5 +120,7 @@ libCcspPandM_board_sbapi_la_LDFLAGS += -lHotspotApi
 endif
 
 if ONESTACK_PRODUCT_REQ
-libCcspPandM_board_sbapi_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir)  -Wl,--whole-archive -ldevicemode -lrdkb_feature_mode_gate -Wl,--no-whole-archive
+libCcspPandM_board_sbapi_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir)  -Wl,--whole-archive
+libCcspPandM_board_sbapi_la_LIBADD =-ldevicemode -lrdkb_feature_mode_gate
+libCcspPandM_board_sbapi_la_LDFLAGS += -Wl,--no-whole-archive
 endif
