@@ -36,4 +36,5 @@ if ONESTACK_PRODUCT_REQ
 libCcspPandM_integration_src_shared_la_LDFLAGS += -Wl,--whole-archive
 libCcspPandM_integration_src_shared_la_LIBADD = -ldevicemode -lonestack_syscfg -lonestack_log -lrdkb_feature_mode_gate
 libCcspPandM_integration_src_shared_la_LDFLAGS += -Wl,--no-whole-archive
+libCcspPandM_integration_src_shared_la_LDFLAGS += -Wl,--no-undefined -Wl,--no-allow-shlib-undefined
 endif
