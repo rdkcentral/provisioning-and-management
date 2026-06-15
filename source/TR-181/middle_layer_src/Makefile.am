@@ -153,12 +153,12 @@ if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_middle_layer_src_la_LDFLAGS += -lnet
 endif
 
-if ONESTACK_PRODUCT_REQ
-libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -Wl,--whole-archive
-libCcspPandM_middle_layer_src_la_LIBADD = -lrdkb_feature_mode_gate -ldevicemode
-libCcspPandM_middle_layer_src_la_LDFLAGS += -Wl,--no-whole-archive
-libCcspPandM_middle_layer_src_la_LDFLAGS += -Wl,--no-undefined -Wl,--no-allow-shlib-undefined
-endif
+#if ONESTACK_PRODUCT_REQ
+#libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -Wl,--whole-archive
+#libCcspPandM_middle_layer_src_la_LIBADD = -lrdkb_feature_mode_gate -ldevicemode
+#libCcspPandM_middle_layer_src_la_LDFLAGS += -Wl,--no-whole-archive
+#libCcspPandM_middle_layer_src_la_LDFLAGS += -Wl,--no-undefined -Wl,--no-allow-shlib-undefined
+#endif
 
 if CPU_FREQ_SUPPORT
 libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lcpufreq
