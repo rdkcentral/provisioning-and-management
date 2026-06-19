@@ -583,7 +583,7 @@ if(id != 0)
            {
                CcspTraceError(("Argument missing after -subsys\n"));
            }
-           CcspTraceWarning(("\nSubsystem is %s\n", g_Subsystem));
+           CcspTraceInfo(("Subsystem is %s\n", g_Subsystem));
         }
         else if ( strcmp(argv[idx], "-c" ) == 0 )
         {
