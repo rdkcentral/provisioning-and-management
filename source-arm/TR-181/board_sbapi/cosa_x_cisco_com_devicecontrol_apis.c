@@ -584,11 +584,17 @@ void* WebServRestart( void *arg )
     UNREFERENCED_PARAMETER(arg);
 
     pthread_detach(pthread_self());
-    if (v_secure_system("/bin/sh /etc/webgui.sh") != 0) {
-        fprintf(stderr, "%s: fail to restart lighttpd\n", __FUNCTION__);
-        return NULL;
-    }
-
+    #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+        if (v_secure_system("/bin/systemctl restart CcspWebUI.service") != 0) {
+            fprintf(stderr, "%s: fail to restart CcspWebUI.service\n", __FUNCTION__);
+            return NULL;
+        }
+    #else
+        if (v_secure_system("/bin/sh /etc/webgui.sh") != 0) {
+            fprintf(stderr, "%s: fail to restart webgui.sh\n", __FUNCTION__);
+            return NULL;
+        }
+    #endif
     v_secure_system("sysevent set firewall-restart");
 
     return NULL;
@@ -4942,7 +4948,11 @@ static void configBridgeMode(int bEnable) {
 #if defined (_XB7_PRODUCT_REQ_) && defined (_COSA_BCM_ARM_)
         g_SetParamValueBool(brpdm, bEnable);
         if (brmode[0] == '0') {
-            v_secure_system("/bin/sh /etc/webgui.sh &");
+            #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+                v_secure_system("/bin/systemctl restart CcspWebUI.service");
+            #else
+                v_secure_system("/bin/sh /etc/webgui.sh &");
+            #endif
         }
 #elif (!defined _XF3_PRODUCT_REQ_)
         g_SetParamValueBool(brpdm, bEnable);
@@ -4950,9 +4960,13 @@ static void configBridgeMode(int bEnable) {
 	  *  webgui.sh will be triggeed from Gwprovapp after bridge is started.
 	  */
         if (brmode[0] == '0')
-	{
-           v_secure_system("/bin/sh /etc/webgui.sh &");
-	}
+	    {
+            #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+                v_secure_system("/bin/systemctl restart CcspWebUI.service");
+            #else
+                v_secure_system("/bin/sh /etc/webgui.sh &");
+            #endif
+	    }
 #elif defined( _XF3_PRODUCT_REQ_)
         g_SetParamValueBool(brpdm, (bEnable>0?true:false));
 #endif
