@@ -2082,6 +2082,18 @@ void* restoreAllDBs(void* arg)
         /* run addition clean up to fix /nvram/secure corruption issue where encryption key didn't get clean up */
         // v_secure_system("/bin/dd if=/dev/zero of=/dev/mmcblk0p7 count=32768");  /* wipe out /nvram mount partition */
 #endif
+
+#if defined(_XER2_PRODUCT_REQ_)
+        v_secure_system("sync;find /nvram /nvram2 /data ! \\( -path '/nvram/.partner_ID' -o -regex '.*/Q[[:xdigit:]]\\{8\\}$' -o -path '/nvram/.apply_partner_defaults' \\) -mindepth 1 | xargs rm -r; sync");
+        v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
+        v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
+        v_secure_system("mkdir -p /nvram/secure/data/ && touch $_/syscfg.db");
+        v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
+        v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
+        v_secure_system("echo \"factory_reset=y\" >> /nvram/secure/data/syscfg.db");
+        v_secure_system("sync");
+#endif /* _XER2_PRODUCT_REQ_ */
+
 #if defined (_COSA_BCM_ARM_) && !defined (_HUB4_PRODUCT_REQ_)
 	/* Clear cable modem's dynamic nonvol settings */
 	v_secure_system("latticecli -n \"set Cm.ResetNonvolNoReboot 1\"");
@@ -2703,7 +2715,7 @@ CosaDmlDcSetFactoryReset
 		CcspTraceWarning(("FactoryReset:%d  case is both WIFI and Router removing DB\n",__LINE__));
 		v_secure_system("rm -f /nvram/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
 		v_secure_system("rm -f /opt/secure/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
-#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
 /* clean up BRCM nvram */
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
