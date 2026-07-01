@@ -702,7 +702,9 @@ if(id != 0)
     {
         if (!strncmp(value, "true", 4))
         {
-            v_secure_system("systemctl start systemd-cognitive_wifimotion.service");
+            /* Start WFM in background to avoid blocking PandM init.
+             * WFM has After=onewifi.service and will start once onewifi is active.*/
+            v_secure_system("systemctl start systemd-cognitive_wifimotion.service &");
         }
     }
 #endif
