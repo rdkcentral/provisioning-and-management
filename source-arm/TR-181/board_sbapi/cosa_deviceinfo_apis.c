@@ -2661,7 +2661,6 @@ CosaDmlDiGetSyndicationDeviceMode
     {
         // If syscfg read fails, default to "residential"
         snprintf(pValue, size, "residential");
-        CcspTraceWarning(("%s - Failed to get devicemode from syscfg, defaulting to 'residential'\n", __FUNCTION__));
         return ANSC_STATUS_SUCCESS;
     }
     
