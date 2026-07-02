@@ -224,8 +224,13 @@ X_CISCO_COM_DeviceControl_GetParamBoolValue
 
     if (strcmp(ParamName, "IGMPProxyEnable") == 0)
     {
-        if (CosaDmlDcGetIGMPProxyEnable(NULL, pBool) != ANSC_STATUS_SUCCESS)
-            return FALSE;
+#ifndef DISABLE_IGMPPROXY
+         if (CosaDmlDcGetIGMPProxyEnable(NULL, pBool) != ANSC_STATUS_SUCCESS)
+             return FALSE;
+#else
+       CcspTraceWarning(("rdkb igmpproxy service is disabled\n"));
+       *pBool = FALSE;
+#endif
         return TRUE;
     }
 
@@ -899,10 +904,14 @@ X_CISCO_COM_DeviceControl_SetParamBoolValue
 
     if (strcmp(ParamName, "IGMPProxyEnable") == 0)
     {
+#ifndef DISABLE_IGMPPROXY
         retStatus = CosaDmlDcSetIGMPProxyEnable(NULL, bValue);
         if (retStatus != ANSC_STATUS_SUCCESS)
             return FALSE;
 
+#else
+        CcspTraceWarning(("rdkb igmpproxy service is disabled\n"));
+#endif
         return TRUE;
     }
 
@@ -2182,7 +2191,12 @@ LanMngm_SetParamUlongValue
 #ifdef _ONESTACK_PRODUCT_REQ_
         if (COSA_DML_LanMode_FullBridgeStatic == uValuepUlong)
         {
-            if (false == isFeatureSupportedInCurrentMode(FEATURE_BASIC_BRIDGE_MODE))
+            if (true == isFeatureSupportedInCurrentMode(FEATURE_BASIC_BRIDGE_MODE))
+            {
+                t2_event_d("BasicBridgeMode_Supported", 1);
+                CcspTraceInfo(("Basic BridgeMode Supported\n"));
+            }
+            else
             {
                 t2_event_d("BasicBridgeMode_NotSupported", 1);
                 CcspTraceError(("Basic BridgeMode Not Supported\n"));
