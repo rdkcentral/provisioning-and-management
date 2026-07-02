@@ -2300,7 +2300,7 @@ LanMngm_Validate
     lanSubnetMask = htonl(pLanMngm->LanSubnetMask.Value);
 
     /* Convert to network byte order and check subnetmask */
-#if defined(_BCI_FEATURE_REQ)
+#if defined(_BCI_FEATURE_REQ) || defined(_ONESTACK_PRODUCT_REQ_)
      if(lanSubnetMask != 0xFF000000 &&  //8
        lanSubnetMask != 0xFF800000 &&  //9
        lanSubnetMask != 0xFFC00000 &&  //10
