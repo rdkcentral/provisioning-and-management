@@ -1015,8 +1015,8 @@ DeviceInfo_GetParamStringValue
         (strcmp(ParamName, "X_CISCO_COM_FirmwareName") == 0) ||
         (strcmp(ParamName, "X_RDK_FirmwareName") == 0))
     {
-        if (*pulSize <= 64) {
-            *pulSize = 64 + 1;
+        if (*pulSize <= 96) {
+            *pulSize = 96 + 1;
             return 1;
         }
 
