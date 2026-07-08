@@ -76,6 +76,7 @@
 
 #ifdef _ONESTACK_PRODUCT_REQ_
 #include <rdkb_feature_mode_gate.h>
+#include "devicemode.h"
 #endif
 static int ifWanRestart = 0;
 
@@ -2300,7 +2301,20 @@ LanMngm_Validate
     lanSubnetMask = htonl(pLanMngm->LanSubnetMask.Value);
 
     /* Convert to network byte order and check subnetmask */
-#if defined(_BCI_FEATURE_REQ)
+#if defined(_BCI_FEATURE_REQ) || defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(_ONESTACK_PRODUCT_REQ_) && !defined(_BCI_FEATURE_REQ)
+    /* XB10-2798: residential mode — restrict to 5 standard masks */
+    if(!is_devicemode_business() &&
+       (lanSubnetMask != 0xFFFFFF00 && lanSubnetMask != 0xFFFF0000 &&
+        lanSubnetMask != 0xFF000000 && lanSubnetMask != 0xFFFFFF80 &&
+        lanSubnetMask != 0xFFFFFFFC))
+    {
+        CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Modified LanSubnetMask doesn't meet the conditions,reverting back to old value  ...\n"));
+        goto RET_ERR;
+    }
+    /* business mode — reuse the BCI full-range check below */
+    if(is_devicemode_business())
+#endif
      if(lanSubnetMask != 0xFF000000 &&  //8
        lanSubnetMask != 0xFF800000 &&  //9
        lanSubnetMask != 0xFFC00000 &&  //10
@@ -2326,26 +2340,6 @@ LanMngm_Validate
        /* Fix RDKB-36186, allowing all business device to set /30 /31 */
        && lanSubnetMask != 0xFFFFFFFC  //30
        && lanSubnetMask != 0xFFFFFFFE) //31
-#elif defined(_ONESTACK_PRODUCT_REQ_)
-    /* Business mode: allow full range /8-/31 (like BCI).
-     * Residential mode: restrict to 5 standard masks. */
-    if( (isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION) &&
-         (lanSubnetMask != 0xFF000000 && lanSubnetMask != 0xFF800000 &&
-          lanSubnetMask != 0xFFC00000 && lanSubnetMask != 0xFFE00000 &&
-          lanSubnetMask != 0xFFF00000 && lanSubnetMask != 0xFFF80000 &&
-          lanSubnetMask != 0xFFFC0000 && lanSubnetMask != 0xFFFE0000 &&
-          lanSubnetMask != 0xFFFF0000 && lanSubnetMask != 0xFFFF8000 &&
-          lanSubnetMask != 0xFFFFC000 && lanSubnetMask != 0xFFFFE000 &&
-          lanSubnetMask != 0xFFFFF000 && lanSubnetMask != 0xFFFFF800 &&
-          lanSubnetMask != 0xFFFFFC00 && lanSubnetMask != 0xFFFFFE00 &&
-          lanSubnetMask != 0xFFFFFF00 && lanSubnetMask != 0xFFFFFF80 &&
-          lanSubnetMask != 0xFFFFFFC0 && lanSubnetMask != 0xFFFFFFE0 &&
-          lanSubnetMask != 0xFFFFFFF0 && lanSubnetMask != 0xFFFFFFF8 &&
-          lanSubnetMask != 0xFFFFFFFC && lanSubnetMask != 0xFFFFFFFE)) ||
-        (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION) &&
-         (lanSubnetMask != 0xFFFFFF00 && lanSubnetMask != 0xFFFF0000 &&
-          lanSubnetMask != 0xFF000000 && lanSubnetMask != 0xFFFFFF80 &&
-          lanSubnetMask != 0xFFFFFFFC)) )
 #else
     /* Subnet mask MUST accept ONLY the following IP addresses for non-BCI devices.
      * 255.255.255.0, 255.255.0.0, 255.0.0.0, 255.255.255.128, 255.255.255.252
