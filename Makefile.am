@@ -39,7 +39,7 @@ libtr181_la_LDFLAGS = -lsecure_wrapper -lwebconfig_framework -lhal_moca -lapi_dh
 
 if ONESTACK_PRODUCT_REQ
 libtr181_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir)
-libtr181_la_LIBADD += -ldevicemode -lonestack_syscfg -lonestack_log -lrdkb_feature_mode_gate
+libtr181_la_LIBADD += -ldevicemode -lrdkb_feature_mode_gate
 endif
 
 #libtr181_la_LDFLAGS += -Wl,--no-undefined -Wl,--no-allow-shlib-undefined
