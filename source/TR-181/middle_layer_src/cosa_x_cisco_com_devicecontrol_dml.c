@@ -76,6 +76,7 @@
 
 #ifdef _ONESTACK_PRODUCT_REQ_
 #include <rdkb_feature_mode_gate.h>
+#include "devicemode.h"
 #endif
 static int ifWanRestart = 0;
 
@@ -2286,7 +2287,22 @@ LanMngm_Validate
     lanSubnetMask = htonl(pLanMngm->LanSubnetMask.Value);
 
     /* Convert to network byte order and check subnetmask */
-#if defined(_BCI_FEATURE_REQ)
+#if defined(_BCI_FEATURE_REQ) || defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+    /* XB10-2798: residential mode - restrict to 5 standard masks */
+    const bool isBusiness = is_devicemode_business();
+
+    if(!isBusiness &&
+       (lanSubnetMask != 0xFFFFFF00 && lanSubnetMask != 0xFFFF0000 &&
+        lanSubnetMask != 0xFF000000 && lanSubnetMask != 0xFFFFFF80 &&
+        lanSubnetMask != 0xFFFFFFFC))
+    {
+        CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Modified LanSubnetMask doesn't meet the conditions,reverting back to old value  ...\n"));
+        goto RET_ERR;
+    }
+    /* business mode - reuse the BCI full-range check below */
+    if(isBusiness)
+#endif
      if(lanSubnetMask != 0xFF000000 &&  //8
        lanSubnetMask != 0xFF800000 &&  //9
        lanSubnetMask != 0xFFC00000 &&  //10
@@ -2326,6 +2342,7 @@ LanMngm_Validate
         CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Modified LanSubnetMask doesn't meet the conditions,reverting back to old value  ...\n"));
         goto RET_ERR;
     }
+
 #if defined (WIFI_MANAGE_SUPPORTED)
     uiLanIpInHex = ntohl (pLanMngm->LanIPAddress.Value);
     CcspTraceWarning(("%s:%d- Lan Ip in hex : %08X\n", __FUNCTION__,__LINE__, uiLanIpInHex));
