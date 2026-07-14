@@ -14156,6 +14156,13 @@ SelfHeal_SetParamBoolValue
     }
     return FALSE;
 }
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        ULONG
         SelfHeal_GetParamStringValue
             (
                 ANSC_HANDLE                 hInsContext,
@@ -14455,6 +14462,14 @@ SelfHeal_SetParamUlongValue
 
     return FALSE;
 }
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RdkLogger_GetParamBoolValue
             (
                 ANSC_HANDLE                 hInsContext,
                 char*                       ParamName,
