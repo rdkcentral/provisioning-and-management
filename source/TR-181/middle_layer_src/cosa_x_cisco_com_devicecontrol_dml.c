@@ -2303,10 +2303,22 @@ LanMngm_Validate
     /* Convert to network byte order and check subnetmask */
 #if defined(_BCI_FEATURE_REQ) || defined(_ONESTACK_PRODUCT_REQ_)
 #if defined(_ONESTACK_PRODUCT_REQ_)
-	/* business mode - the LanSubnetMAsk full-range check */
+    /* Residential mode: restrict to standard masks only */
+    if (!is_devicemode_business() &&
+        lanSubnetMask != 0xFFFFFF00 &&
+        lanSubnetMask != 0xFFFF0000 &&
+        lanSubnetMask != 0xFF000000 &&
+        lanSubnetMask != 0xFFFFFF80 &&
+        lanSubnetMask != 0xFFFFFFFC)
+    {
+        CcspTraceWarning(("RDKB_LAN_CONFIG_CHANGED: Modified LanSubnetMask doesn't meet the conditions,reverting back to old value  ...\n"));
+        goto RET_ERR;
+    }
+
+    /* Business mode: allow full /8-/31 range (existing whitelist below) */
     if (is_devicemode_business())
 #endif
-     if(lanSubnetMask != 0xFF000000 &&  //8
+    if(lanSubnetMask != 0xFF000000 &&  //8
        lanSubnetMask != 0xFF800000 &&  //9
        lanSubnetMask != 0xFFC00000 &&  //10
        lanSubnetMask != 0xFFE00000 &&  //11
