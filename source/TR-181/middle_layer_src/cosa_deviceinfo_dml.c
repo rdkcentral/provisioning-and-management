@@ -484,7 +484,7 @@ static unsigned long long GetAvailableSpace_tmp()
 
 static void UpdateSettingsFile( char param[64], char value[10] )
 {
-    CcspTraceInfo(("\nUpdateSettingsFile\n"));
+    CcspTraceInfo(("UpdateSettingsFile\n"));
     errno_t          rc                  = -1;
 
     FILE* fp = fopen( "/tmp/.hwselftest_settings", "r");
@@ -14502,7 +14502,9 @@ CognitiveMotionDetection_SetParamBoolValue
 
         if (bValue == TRUE)
         {
-            v_secure_system("systemctl start systemd-cognitive_wifimotion.service");
+            /* Start WFM in background to avoid blocking PandM init.
+             * WFM has After=onewifi.service and will start once onewifi is active.*/
+            v_secure_system("systemctl start systemd-cognitive_wifimotion.service &");
         }
         else
         {
@@ -22948,7 +22950,7 @@ HwHealthTestPTREnable_SetParamBoolValue
                    ERR_CHK(rc);
                    return FALSE;
                 }
-                CcspTraceInfo(("\nExecuting command: %s\n", cmd));
+                CcspTraceInfo(("Executing command: %s\n", cmd));
                 v_secure_system("/usr/bin/hwselftest_cronjobscheduler.sh true &");
             }
             else
@@ -23104,12 +23106,12 @@ HwHealthTestPTRFrequency_SetParamUlongValue
             //Read the PTR enable param
             if (IsBoolSame(hInsContext, "enable", true, HwHealthTestPTREnable_GetParamBoolValue))
             {
-                CcspTraceInfo(("\n\nExecuting the command: /usr/bin/hwselftest_cronjobscheduler.sh true frequencyUpdate"));
+                CcspTraceInfo(("Executing the command: /usr/bin/hwselftest_cronjobscheduler.sh true frequencyUpdate\n"));
                 v_secure_system("/usr/bin/hwselftest_cronjobscheduler.sh true frequencyUpdate");
             }
             else
             {
-                CcspTraceInfo(("\n\nExecuting the command: /usr/bin/hwselftest_cronjobscheduler.sh false"));
+                CcspTraceInfo(("Executing the command: /usr/bin/hwselftest_cronjobscheduler.sh false\n"));
                 v_secure_system("/usr/bin/hwselftest_cronjobscheduler.sh false" );
             }
             return TRUE;
