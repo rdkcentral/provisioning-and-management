@@ -14047,6 +14047,21 @@ SelfHeal_GetParamBoolValue
         }
         return TRUE;
     }
+    if (strcmp(ParamName, "DualProcessDetectEnable") == 0)
+    {
+        char value[8] = {'\0'};
+        if (syscfg_get(NULL, "SelfHealDualProcDetectEnable", value, sizeof(value)) == 0
+            && value[0] != '\0')
+        {
+            *pBool = (strncmp(value, "false", sizeof(value)) == 0) ? FALSE : TRUE;
+        }
+        else
+        {
+            /* Default: enabled */
+            *pBool = TRUE;
+        }
+        return TRUE;
+    }
     return FALSE;
 }
 
@@ -14126,6 +14141,326 @@ SelfHeal_SetParamBoolValue
         CcspTraceInfo(("SelfHeal Cron RFC updated. Reboot required to apply mode change\n"));
         return TRUE;
     }
+    if (strcmp(ParamName, "DualProcessDetectEnable") == 0)
+    {
+        if (syscfg_set_commit(NULL, "SelfHealDualProcDetectEnable",
+                              (bValue == TRUE) ? "true" : "false") != 0)
+        {
+            CcspTraceError(("[%s] syscfg_set_commit failed for SelfHealDualProcDetectEnable\n",
+                             __FUNCTION__));
+            return FALSE;
+        }
+        CcspTraceInfo(("%s: SelfHealDualProcDetectEnable set to %s\n",
+                        __FUNCTION__, (bValue == TRUE) ? "true" : "false"));
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        ULONG
+        SelfHeal_GetParamStringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pValue,
+                ULONG*                      pUlSize
+            );
+
+    description:
+
+        This function is called to retrieve string parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                char*                       pValue,
+                The string value buffer;
+
+                ULONG*                      pUlSize,
+                The buffer size;
+
+    return:     0 if succeeded, 1 if buffer too small, -1 on error.
+
+**********************************************************************/
+ULONG
+SelfHeal_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    errno_t rc  = -1;
+    int     ret = 0;
+
+    /* Default exclusion list used when RFC value has not been explicitly configured.
+     * These are known benign multi-instance processes on RDKB devices.
+     * The list is comma-separated and matches the process basenames as seen in ps output. */
+    static const char DUAL_PROC_EXCLUDE_DEFAULT[] =
+        "sleep,dropbear,sh,ash,ssh,stunnel";
+
+    if (strcmp(ParamName, "DualProcessExcludeList") == 0)
+    {
+        char buf[512] = {'\0'};
+        ret = syscfg_get(NULL, "SelfHealDualProcExcludeList", buf, sizeof(buf));
+        if (ret == 0 && buf[0] != '\0')
+        {
+            size_t bufLen = strlen(buf);
+            rc = strcpy_s(pValue, *pUlSize, buf);
+            if (rc != EOK)
+            {
+                ERR_CHK(rc);
+                if (rc == ERANGE)
+                {
+                    *pUlSize = bufLen + 1;
+                    if (*pUlSize > 0)
+                    {
+                        pValue[0] = '\0';
+                    }
+                    CcspTraceWarning(("%s: Buffer too small for SelfHealDualProcExcludeList, required=%lu\n",
+                                      __FUNCTION__, (unsigned long)(bufLen + 1)));
+                    return 1;
+                }
+                CcspTraceError(("%s: strcpy_s failed for SelfHealDualProcExcludeList, rc=%d\n",
+                                 __FUNCTION__, rc));
+                return -1;
+            }
+            CcspTraceInfo(("%s: SelfHealDualProcExcludeList retrieved: %s\n", __FUNCTION__, buf));
+            return 0;
+        }
+        else
+        {
+            /* Key not yet set in syscfg — return the built-in default list */
+            size_t defLen = strlen(DUAL_PROC_EXCLUDE_DEFAULT);
+            rc = strcpy_s(pValue, *pUlSize, DUAL_PROC_EXCLUDE_DEFAULT);
+            if (rc != EOK)
+            {
+                ERR_CHK(rc);
+                if (rc == ERANGE)
+                {
+                    *pUlSize = defLen + 1;
+                    if (*pUlSize > 0)
+                    {
+                        pValue[0] = '\0';
+                    }
+                    CcspTraceWarning(("%s: Buffer too small for default DualProcessExcludeList, required=%lu\n",
+                                      __FUNCTION__, (unsigned long)(defLen + 1)));
+                    return 1;
+                }
+                CcspTraceError(("%s: strcpy_s failed for default DualProcessExcludeList, rc=%d\n",
+                                 __FUNCTION__, rc));
+                return -1;
+            }
+            CcspTraceInfo(("%s: SelfHealDualProcExcludeList not set, returning default: %s\n",
+                            __FUNCTION__, DUAL_PROC_EXCLUDE_DEFAULT));
+            return 0;
+        }
+    }
+
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return -1;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        SelfHeal_SetParamStringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pString
+            );
+
+    description:
+
+        This function is called to set string parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                char*                       pString,
+                The string value to set;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+SelfHeal_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    if (IsStringSame(hInsContext, ParamName, pString, SelfHeal_GetParamStringValue))
+        return TRUE;
+
+    if (pString == NULL)
+    {
+        CcspTraceError(("%s: NULL string provided for parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    if (strcmp(ParamName, "DualProcessExcludeList") == 0)
+    {
+        if (syscfg_set_commit(NULL, "SelfHealDualProcExcludeList", pString) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_commit failed for SelfHealDualProcExcludeList\n",
+                             __FUNCTION__));
+            return FALSE;
+        }
+        CcspTraceInfo(("%s: SelfHealDualProcExcludeList set to: %s\n", __FUNCTION__, pString));
+        return TRUE;
+    }
+
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        SelfHeal_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      pUlong
+            );
+
+    description:
+
+        This function is called to retrieve unsigned long parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      pUlong,
+                The buffer of returned ulong value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+SelfHeal_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "DualProcessDetectInterval") == 0)
+    {
+        char buf[16] = {'\0'};
+        if (syscfg_get(NULL, "SelfHealDualProcDetectInterval", buf, sizeof(buf)) == 0
+            && buf[0] != '\0')
+        {
+            ULONG val = (ULONG)strtoul(buf, NULL, 10);
+            /* Enforce allowed values: 15, 30, 45, 60 */
+            if (val == 15 || val == 30 || val == 45 || val == 60)
+            {
+                *pUlong = val;
+                return TRUE;
+            }
+        }
+        /* Default: 15 minutes */
+        *pUlong = 15;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        SelfHeal_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set unsigned long parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue,
+                The value to set;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+SelfHeal_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "DualProcessDetectInterval") == 0)
+    {
+        /* Only accept 15, 30, 45, or 60 minutes */
+        if (uValue != 15 && uValue != 30 && uValue != 45 && uValue != 60)
+        {
+            CcspTraceError(("%s: Invalid DualProcessDetectInterval %lu. "
+                            "Allowed values: 15, 30, 45, 60\n",
+                            __FUNCTION__, (unsigned long)uValue));
+            return FALSE;
+        }
+        char buf[16] = {'\0'};
+        snprintf(buf, sizeof(buf), "%lu", (unsigned long)uValue);
+        if (syscfg_set_commit(NULL, "SelfHealDualProcDetectInterval", buf) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_commit failed for SelfHealDualProcDetectInterval\n",
+                             __FUNCTION__));
+            return FALSE;
+        }
+        CcspTraceInfo(("%s: SelfHealDualProcDetectInterval set to %s minutes\n",
+                        __FUNCTION__, buf));
+        return TRUE;
+    }
+
     return FALSE;
 }
 
@@ -24922,166 +25257,6 @@ EnableOCSPStapling_SetParamBoolValue
     return FALSE;
 }
 
-/**********************************************************************
-
-    caller:     owner of this object
-
-    prototype:
-
-	BOOL
-	SelfHeal_GetParamUlongValue
-	    (
-		ANSC_HANDLE                 hInsContext,
-		char*                       ParamName,
-		ULONG*                      puLong
-	    );
-
-    description:
-
-	This function is called to retrieve ULONG parameter value;
-
-    argument:   ANSC_HANDLE                 hInsContext,
-		The instance handle;
-
-		char*                       ParamName,
-		The parameter name;
-
-		ULONG*                      puLong
-		The buffer of returned ULONG value;
-
-    return:     TRUE if succeeded.
-
-**********************************************************************/
-BOOL
-SelfHeal_GetParamUlongValue
-(
-    ANSC_HANDLE                 hInsContext,
-    char*                       ParamName,
-    ULONG*                      puLong
-    )
-{
-    UNREFERENCED_PARAMETER(hInsContext);
-    char buf[8] = {0};
-
-    if (strcmp(ParamName, "AggressiveInterval") == 0)
-    {
-        syscfg_get( NULL, ParamName, buf, sizeof(buf));
-        if( 0 == strlen(buf) )
-            return FALSE;
-        *puLong = atol(buf);
-        return TRUE;
-    }
-    AnscTraceWarning(("%s is invalid argument!\n", ParamName));
-    return FALSE;
-}
-
-/**********************************************************************
-
-    caller:     owner of this object
-
-    prototype:
-
-	BOOL
-	SelfHeal_SetParamUlongValue
-	    (
-		ANSC_HANDLE                 hInsContext,
-		char*                       ParamName,
-		ULONG                       uValue
-	    );
-
-    description:
-
-	This function is called to set ULONG parameter value;
-
-    argument:   ANSC_HANDLE                 hInsContext,
-		The instance handle;
-
-		char*                       ParamName,
-		The parameter name;
-
-		ULONG                       uValue
-		The updated ULONG value;
-
-    return:     TRUE if succeeded.
-
-**********************************************************************/
-BOOL
-SelfHeal_SetParamUlongValue
-(
-    ANSC_HANDLE                 hInsContext,
-    char*                       ParamName,
-    ULONG                       uValue
-    )
-{
-    UNREFERENCED_PARAMETER(hInsContext);
-
-    if (strcmp(ParamName, "AggressiveInterval") == 0)
-    {
-        char buf[16];
-        char currentValue[16] = {0};
-        ULONG currentInterval = 0;
-
-        if (syscfg_get(NULL, "AggressiveInterval", currentValue, sizeof(currentValue)) == 0)
-        {
-            currentInterval = atol(currentValue);
-            if (currentInterval == uValue)
-            {
-                CcspTraceInfo(("AggressiveInterval value unchanged (%lu), skipping update\n", uValue));
-                return TRUE;
-            }
-        }
-
-        if (uValue < 2) /* Minimum interval is 2 as per the aggressive selfheal US [RDKB-25546] */
-	    {
-	        AnscTraceWarning(("Minimum interval is 2 for %s !\n", ParamName));
-	        return FALSE;
-	    }
-#if defined(_ARRIS_XB6_PRODUCT_REQ_) || defined(_CBR_PRODUCT_REQ_) || defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_TURRIS_) || defined(_PLATFORM_BANANAPI_R4_) || \
-(defined(_XB6_PRODUCT_REQ_) && defined(_COSA_BCM_ARM_))
-	    syscfg_get( NULL, "resource_monitor_interval", buf, sizeof(buf));
-        if( 0 == strlen(buf) )
-	    {
-	        AnscTraceWarning(("syscfg_get returns NULL for resource_monitor_interval !\n"));
-	        return FALSE;
-	    }
-	    ULONG resource_monitor_interval = atol(buf);
-	    if (uValue >= resource_monitor_interval)
-	    {
-	        CcspTraceWarning(("AggressiveInterval should be lesser than resource_monitor_interval\n"));
-	        return FALSE;
-	    }
-        #endif
-        if (syscfg_set_u_commit(NULL, ParamName, uValue) != 0)
-        {
-            AnscTraceWarning(("%s syscfg_set failed!\n", ParamName));
-            return FALSE;
-        }
-
-        if( g_boot_cron_mode == 0 )
-        {
-            CcspTraceInfo(("SelfHealCronEnable is disabled\n"));
-            buf[0] = '\0';
-            copy_command_output("pidof selfheal_aggressive.sh", buf, sizeof(buf));
-            if (buf[0] != 0) {
-                v_secure_system("kill -9 %s", buf);
-            }
-            v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
-            return TRUE;
-        }
-        
-        // First, remove old cron entry
-        v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
-        // Then, add new cron entry with updated interval
-        v_secure_system("(crontab -l 2>/dev/null; echo \"*/%lu * * * * /usr/ccsp/tad/selfheal_aggressive.sh\") | crontab -", uValue);
-        CcspTraceInfo(("Selfheal aggressive cron job restarted with interval: %lu minutes\n", uValue));
-    }
-    else
-    {
-        AnscTraceWarning(("%s is invalid argument!\n", ParamName));
-        return FALSE;
-    }
-    return TRUE;
-}
 
 #if defined(FEATURE_RDKB_NFC_MANAGER)
 //NFC RFC :: NFC Feature should enable.
