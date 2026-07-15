@@ -1970,13 +1970,6 @@ Relay_GetParamUlongValue
         return TRUE;
     }
 
-    //TR-181 defines ForwardNumberOfEntries for Forwarding table
-    if (strcmp(ParamName, "ForwardNumberOfEntries") == 0)
-    {
-        *puLong = Forwarding_GetEntryCount(hInsContext);
-        return TRUE;
-    }
-
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }

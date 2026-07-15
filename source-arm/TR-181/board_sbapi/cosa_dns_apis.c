@@ -1450,15 +1450,15 @@ CosaDmlDnsEnableRelay
 
     UtopiaContext ctx = {};
 
-    if (!Utopia_Init(&ctx))
-    {
-        return ANSC_STATUS_FAILURE;
-    }
-
     if(g_DnsRelayEnabled == bEnabled)
     {
         CcspTraceWarning(("%s Relay is enabled \n",__FUNCTION__));
         return ANSC_STATUS_SUCCESS;
+    }
+
+    if (!Utopia_Init(&ctx))
+    {
+        return ANSC_STATUS_FAILURE;
     }
 
     g_DnsRelayEnabled = bEnabled;
