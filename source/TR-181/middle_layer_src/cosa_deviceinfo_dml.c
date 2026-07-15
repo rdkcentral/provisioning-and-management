@@ -14065,26 +14065,6 @@ SelfHeal_GetParamBoolValue
     return FALSE;
 }
 
-static void copy_command_output (char *cmd, char *out, int len)
-{
-    FILE *fp;
-
-    out[0] = 0;
-
-    fp = popen (cmd, "r");
-    if (fp)
-    {
-        if (fgets (out, len, fp) != NULL)
-        {
-          //CID 252175 fix - Parse warning (PW.PARAMETER_HIDDEN)
-            size_t len_out = strlen (out);
-            if ((len_out > 0) && (out[len_out - 1] == '\n'))
-                out[len_out - 1] = 0;
-        }
-        pclose (fp);
-    }
-}
-
 /**********************************************************************
 
     caller:     owner of this object
