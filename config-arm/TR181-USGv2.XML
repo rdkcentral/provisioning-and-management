@@ -5128,7 +5128,7 @@
 
               <name>Enable</name>
 
-              <type>bool</type>
+              <type>boolean</type>
 
               <syntax>bool</syntax>
 
