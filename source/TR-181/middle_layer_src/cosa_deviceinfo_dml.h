@@ -1227,14 +1227,26 @@ ManageableNotification_SetParamBoolValue
  APIs for Object:
 
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Cron.SelfHeal.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SelfHeal.DualProcessDetect_Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SelfHeal.DualProcessExcludeList
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SelfHeal.DualProcessDetectInterval
 
     *  SelfHeal_GetParamBoolValue
     *  SelfHeal_SetParamBoolValue
+    *  SelfHeal_GetParamStringValue
+    *  SelfHeal_SetParamStringValue
+    *  SelfHeal_GetParamUlongValue
+    *  SelfHeal_SetParamUlongValue
 
 ***********************************************************************/
 
 /**
  * @brief Get boolean parameter value from SelfHeal object.
+ *
+ * Supports:
+ *   "Enable"                    - SelfHeal cron enable flag (syscfg: SelfHealCronEnable).
+ *   "DualProcessDetectEnable"   - Enable/disable duplicate process detection logging
+ *                                  (syscfg: SelfHealDualProcDetectEnable). Default: true.
  *
  * @param[in] hInsContext - The instance handle to the SelfHeal object.
  * @param[in] ParamName   - Pointer to the parameter name.
@@ -1271,6 +1283,97 @@ SelfHeal_SetParamBoolValue
     ANSC_HANDLE                 hInsContext,
     char*                       ParamName,
     BOOL                        bValue
+);
+
+/**
+ * @brief Get string parameter value from SelfHeal object.
+ *
+ * Supports:
+ *   "DualProcessExcludeList" - comma-separated list of process names to exclude
+ *                              from duplicate process detection, stored in syscfg
+ *                              as "SelfHealDualProcExcludeList".
+ *
+ * @param[in]  hInsContext - The instance handle.
+ * @param[in]  ParamName   - Pointer to the parameter name.
+ * @param[out] pValue      - Buffer to store the retrieved string value.
+ * @param[out] pUlSize     - Size of the buffer; updated if buffer is too small.
+ *
+ * @return 0 on success, 1 if buffer too small (pUlSize updated), -1 on error.
+ */
+ULONG
+SelfHeal_GetParamStringValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    char*                       pValue,
+    ULONG*                      pUlSize
+);
+
+/**
+ * @brief Set string parameter value for SelfHeal object.
+ *
+ * Supports:
+ *   "DualProcessExcludeList" - comma-separated list of process names to exclude
+ *                              from duplicate process detection, stored in syscfg
+ *                              as "SelfHealDualProcExcludeList".
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] pString     - The string value to set.
+ *
+ * @return TRUE if the parameter is set successfully, FALSE otherwise.
+ */
+BOOL
+SelfHeal_SetParamStringValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    char*                       pString
+);
+
+/**
+ * @brief Get unsigned long parameter value from SelfHeal object.
+ *
+ * Supports:
+ *   "DualProcessDetectInterval" - interval in minutes at which the duplicate
+ *                                  process detection log is printed.
+ *                                  Valid values: 15, 30, 45, 60.
+ *                                  Stored in syscfg as "SelfHealDualProcDetectInterval".
+ *                                  Default: 15.
+ *
+ * @param[in]  hInsContext - The instance handle.
+ * @param[in]  ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong      - Pointer to store the retrieved ulong value.
+ *
+ * @return TRUE if the parameter is found and retrieved successfully, FALSE otherwise.
+ */
+BOOL
+SelfHeal_GetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG*                      pUlong
+);
+
+/**
+ * @brief Set unsigned long parameter value for SelfHeal object.
+ *
+ * Supports:
+ *   "DualProcessDetectInterval" - interval in minutes. Accepted values: 15, 30, 45, 60.
+ *                                  Stored in syscfg as "SelfHealDualProcDetectInterval".
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] uValue      - The ulong value to set.
+ *
+ * @return TRUE if the parameter is set successfully, FALSE otherwise.
+ */
+BOOL
+SelfHeal_SetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG                       uValue
 );
 
 /***********************************************************************
