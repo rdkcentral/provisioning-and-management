@@ -1540,14 +1540,6 @@ CosaDmlTimeSetChronyServerSettings
                         iburst));
         return ANSC_STATUS_FAILURE;
     }
-    /* Validate iburst */
-    char *iburst = fields[2];
-    if (strcmp(iburst, "true") != 0 && strcmp(iburst, "false") != 0)
-    {
-        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid iburst '%s' (must be true|false)\n",
-                        iburst));
-        return ANSC_STATUS_FAILURE;
-    }
 
     /* Validate minpoll: integer 3-17 */
     errno = 0;
