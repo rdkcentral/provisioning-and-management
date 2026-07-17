@@ -1455,7 +1455,8 @@ CosaDmlTimeSetMakestep
  * CosaDmlTimeSetChronyServerSettings
  *
  * Parse and validate "source_type,maxsources,iburst,minpoll,maxpoll"
- * then persist to syscfg key chrony_server{serverIdx}_settings.
+ * (e.g. "pool,4,true,10,12") then persist to syscfg key
+ * chrony_server{serverIdx}_settings.
  * ─────────────────────────────────────────────────────────────────────────────*/
 ANSC_STATUS
 CosaDmlTimeSetChronyServerSettings
@@ -1499,17 +1500,46 @@ CosaDmlTimeSetChronyServerSettings
         return ANSC_STATUS_FAILURE;
     }
 
-    /* Validate maxsources: integer 1-10 */
+    /* Validate maxsources: must be a valid integer whose allowed range depends
+     * on source_type:
+     *   pool   -> 1-10
+     *   server -> must be 0 (maxsources is not applicable to a single server directive) 
+	 */
     char *endptr = NULL;
     errno = 0;
     long maxsources = strtol(fields[1], &endptr, 10);
-    if (endptr == fields[1] || *endptr != '\0' || errno != 0 || maxsources < 1 || maxsources > 10)
-    {
-        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid maxsources '%s' (must be 1-10)\n",
+    if (endptr == fields[1] || *endptr != '\0' || errno != 0)
+    {        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid maxsources '%s' (must be an integer)\n",
                         fields[1]));
         return ANSC_STATUS_FAILURE;
     }
+    if (strcmp(source_type, "server") == 0)
+    {
+        if (maxsources != 0)
+        {
+            CcspTraceError(("CosaDmlTimeSetChronyServerSettings: maxsources must be 0 for source_type server (got '%s')\n",
+                            fields[1]));
+            return ANSC_STATUS_FAILURE;
+        }
+    }
+	else /* pool */
+    {
+        if (maxsources < 1 || maxsources > 10)
+        {
+            CcspTraceError(("CosaDmlTimeSetChronyServerSettings: maxsources must be 1-10 for source_type pool (got '%s')\n",
+                            fields[1]));
+            return ANSC_STATUS_FAILURE;
+        }
+    }
 
+    /* Validate iburst */
+    char *iburst = fields[2];
+    if (strcmp(iburst, "true") != 0 && strcmp(iburst, "false") != 0)
+    {
+        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid iburst '%s' (must be true|false)\n",
+                        iburst));
+        return ANSC_STATUS_FAILURE;
+    }
     /* Validate iburst */
     char *iburst = fields[2];
     if (strcmp(iburst, "true") != 0 && strcmp(iburst, "false") != 0)
