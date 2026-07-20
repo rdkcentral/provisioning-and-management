@@ -74,6 +74,8 @@
 #include <cjson/cJSON.h>
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
+#include <errno.h>
+#include <unistd.h>
 
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
 #define BOOTSTRAP_INFO_FILE             "/opt/secure/bootstrap.json"
@@ -646,8 +648,18 @@ CosaDmlTimeSetCfg
      }
 
 #ifdef NTPD_ENABLE
-       CcspTraceWarning(("%s: Triggering event to restart ntpd \n", __FUNCTION__));
-	commonSyseventSet("ntpd-restart", "");
+       /* Restart whichever NTP client is currently active so it reloads the new
+        * server list: chronyd when the RFC flag is set, otherwise ntpd. */
+       if (access("/nvram/chrony_enabled", F_OK) == 0)
+       {
+           CcspTraceWarning(("%s: chrony active - triggering event to restart chronyd \n", __FUNCTION__));
+           commonSyseventSet("chronyd-restart", "");
+       }
+       else
+       {
+           CcspTraceWarning(("%s: Triggering event to restart ntpd \n", __FUNCTION__));
+           commonSyseventSet("ntpd-restart", "");
+       }
 #else
     pthread_t ntp_thread;
     int err = 0;
@@ -1264,6 +1276,25 @@ CosaDmlTimeGetChronyEnable
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+ * CosaChronyNormalizeThreshold
+ *
+ * Format a makestep threshold float into canonical string form that always
+ * carries a decimal point (e.g. 2 -> "2.0", 2.5 -> "2.5"). Shared by the
+ * Makestep getter and setter so set/get round-trips stay consistent.
+ * ─────────────────────────────────────────────────────────────────────────────*/
+static void
+CosaChronyNormalizeThreshold(float threshold, char *out, size_t outLen)
+{
+    snprintf(out, outLen, "%g", threshold);
+    if (strchr(out, '.') == NULL)
+    {
+        size_t n = strlen(out);
+        if (n + 2 < outLen)
+            snprintf(out + n, outLen - n, ".0");
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
  * CosaDmlTimeGetMakestep
  *
  * Reads /nvram/chrony_makestep and converts "makestep <threshold> <limit>"
@@ -1286,7 +1317,11 @@ CosaDmlTimeGetMakestep
             float threshold = 0.0f;
             int   limit     = 0;
             if (sscanf(line, "makestep %f %d", &threshold, &limit) == 2)
-                snprintf(pValue, bufLen, "%g,%d", threshold, limit);
+            {
+                char normThreshold[32] = {0};
+                CosaChronyNormalizeThreshold(threshold, normThreshold, sizeof(normThreshold));
+                snprintf(pValue, bufLen, "%s,%d", normThreshold, limit);
+            }
             else
                 snprintf(pValue, bufLen, "1.0,3");
         }
@@ -1342,6 +1377,17 @@ CosaDmlTimeSetChronyEnable
     )
 {
     int rc;
+
+    /* No-op when the requested state already matches the current state:
+     * do not rewrite the flag file or fire any sysevent. */
+    BOOL bReq     = bEnabled ? TRUE : FALSE;
+    BOOL bCurrent = (access("/nvram/chrony_enabled", F_OK) == 0) ? TRUE : FALSE;
+    if (bReq == bCurrent)
+    {
+        CcspTraceInfo(("CosaDmlTimeSetChronyEnable: already %s, no action\n",
+                       bReq ? "enabled" : "disabled"));
+        return ANSC_STATUS_SUCCESS;
+    }
 
     if (bEnabled)
     {
@@ -1415,22 +1461,52 @@ CosaDmlTimeSetMakestep
     *comma = '\0';
     char *limitStr = comma + 1;
 
+    /* Validate threshold: must be a float in the range 1.0 - 10.0 */
     char *endptr = NULL;
     float threshold = strtof(buf, &endptr);
-    if (endptr == buf || *endptr != '\0' || threshold <= 0.0f)
+    if (endptr == buf || *endptr != '\0' || threshold < 1.0f || threshold > 10.0f)
     {
-        CcspTraceError(("CosaDmlTimeSetMakestep: invalid threshold '%s' (must be > 0)\n", buf));
+        CcspTraceError(("CosaDmlTimeSetMakestep: invalid threshold '%s' (must be 1-10)\n", buf));
         return ANSC_STATUS_FAILURE;
     }
 
+    /* Validate limit: must be an integer >= 1, no extra text (rejects e.g. "1,0,0") */
     errno = 0;
     long limit = strtol(limitStr, &endptr, 10);
-    if (endptr == limitStr || *endptr != '\0' || errno != 0 || limit < 0)
+    if (endptr == limitStr || *endptr != '\0' || errno != 0 || limit < 1)
     {
-        CcspTraceError(("CosaDmlTimeSetMakestep: invalid limit '%s' (must be >= 0 integer)\n", limitStr));
+        CcspTraceError(("CosaDmlTimeSetMakestep: invalid limit '%s' (must be >= 1 integer)\n", limitStr));
         return ANSC_STATUS_FAILURE;
     }
 
+    /* Normalize the threshold to canonical form (e.g. "2." -> "2.0") and build the
+     * directive that will be persisted. */
+    char normThreshold[32] = {0};
+    CosaChronyNormalizeThreshold(threshold, normThreshold, sizeof(normThreshold));
+
+    char directive[80] = {0};
+    snprintf(directive, sizeof(directive), "makestep %s %ld", normThreshold, limit);
+
+    /* No-op when the normalized directive already matches the persisted value:
+     * do not rewrite the file or fire a restart. */
+    FILE *rfp = fopen("/nvram/chrony_makestep", "r");
+    if (rfp != NULL)
+    {
+        char cur[80] = {0};
+        if (fgets(cur, sizeof(cur), rfp) != NULL)
+        {
+            cur[strcspn(cur, "\n")] = '\0';
+            if (strcmp(cur, directive) == 0)
+            {
+                fclose(rfp);
+                CcspTraceInfo(("CosaDmlTimeSetMakestep: '%s' unchanged, no action\n", directive));
+                return ANSC_STATUS_SUCCESS;
+            }
+        }
+        fclose(rfp);
+    }
+
+    /* Write the directive to /nvram so it persists across reboots */
     FILE *fp = fopen("/nvram/chrony_makestep", "w");
     if (fp == NULL)
     {
@@ -1438,12 +1514,12 @@ CosaDmlTimeSetMakestep
                         strerror(errno)));
         return ANSC_STATUS_FAILURE;
     }
-    fprintf(fp, "makestep %s %ld\n", buf, limit);
+    fprintf(fp, "%s\n", directive);
     fclose(fp);
 
-    CcspTraceInfo(("CosaDmlTimeSetMakestep: wrote 'makestep %s %ld' to /nvram/chrony_makestep\n",
-                   buf, limit));
+    CcspTraceInfo(("CosaDmlTimeSetMakestep: wrote '%s' to /nvram/chrony_makestep\n", directive));
 
+    /* Trigger a live config reload — service_chronyd.sh guards on RFC flag internally */
     int rc = v_secure_system("sysevent set chronyd-restart");
     if (rc != 0)
         CcspTraceWarning(("CosaDmlTimeSetMakestep: sysevent set chronyd-restart returned %d\n", rc));
@@ -1541,22 +1617,22 @@ CosaDmlTimeSetChronyServerSettings
         return ANSC_STATUS_FAILURE;
     }
 
-    /* Validate minpoll: integer 3-17 */
+    /* Validate minpoll: integer 4-24 */
     errno = 0;
     long minpoll = strtol(fields[3], &endptr, 10);
-    if (endptr == fields[3] || *endptr != '\0' || errno != 0 || minpoll < 3 || minpoll > 17)
+    if (endptr == fields[3] || *endptr != '\0' || errno != 0 || minpoll < 4 || minpoll > 24)
     {
-        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid minpoll '%s' (must be 3-17)\n",
+        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid minpoll '%s' (must be 4-24)\n",
                         fields[3]));
         return ANSC_STATUS_FAILURE;
     }
 
-    /* Validate maxpoll: integer 3-17, >= minpoll */
+    /* Validate maxpoll: integer 4-24, >= minpoll */
     errno = 0;
     long maxpoll = strtol(fields[4], &endptr, 10);
-    if (endptr == fields[4] || *endptr != '\0' || errno != 0 || maxpoll < 3 || maxpoll > 17 || maxpoll < minpoll)
+    if (endptr == fields[4] || *endptr != '\0' || errno != 0 || maxpoll < 4 || maxpoll > 24 || maxpoll < minpoll)
     {
-        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid maxpoll '%s' (must be 3-17, >= minpoll %ld)\n",
+        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid maxpoll '%s' (must be 4-24, >= minpoll %ld)\n",
                         fields[4], minpoll));
         return ANSC_STATUS_FAILURE;
     }
@@ -1564,6 +1640,17 @@ CosaDmlTimeSetChronyServerSettings
     /* All fields valid — persist to syscfg */
     char syscfgKey[32] = {0};
     snprintf(syscfgKey, sizeof(syscfgKey), "chrony_server%d_settings", serverIdx);
+
+    /* No-op when the incoming value already matches the stored value:
+     * do not re-commit syscfg or fire a restart. */
+    char curVal[128] = {0};
+    syscfg_get(NULL, syscfgKey, curVal, sizeof(curVal));
+    if (strcmp(curVal, pValue) == 0)
+    {
+        CcspTraceInfo(("CosaDmlTimeSetChronyServerSettings: %s unchanged (%s), no action\n",
+                       syscfgKey, pValue));
+        return ANSC_STATUS_SUCCESS;
+    }
 
     if (syscfg_set(NULL, syscfgKey, pValue) != 0)
     {
