@@ -14047,7 +14047,7 @@ SelfHeal_GetParamBoolValue
         }
         return TRUE;
     }
-    if (strcmp(ParamName, "DualProcessDetectEnable") == 0)
+    if (strcmp(ParamName, "DualProcessDetect_Enable") == 0)
     {
         char value[8] = {'\0'};
         if (syscfg_get(NULL, "SelfHealDualProcDetectEnable", value, sizeof(value)) == 0
@@ -14141,7 +14141,7 @@ SelfHeal_SetParamBoolValue
         CcspTraceInfo(("SelfHeal Cron RFC updated. Reboot required to apply mode change\n"));
         return TRUE;
     }
-    if (strcmp(ParamName, "DualProcessDetectEnable") == 0)
+    if (strcmp(ParamName, "DualProcessDetect_Enable") == 0)
     {
         if (syscfg_set_commit(NULL, "SelfHealDualProcDetectEnable",
                               (bValue == TRUE) ? "true" : "false") != 0)

@@ -1227,9 +1227,9 @@ ManageableNotification_SetParamBoolValue
  APIs for Object:
 
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.Cron.SelfHeal.Enable
-    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SelfHeal.DualProcessDetect_Enable
-    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SelfHeal.DualProcessExcludeList
-    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SelfHeal.DualProcessDetectInterval
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SoftwareProcessManager.SelfHeal.DualProcessDetect_Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SoftwareProcessManager.SelfHeal.DualProcessExcludeList
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.SoftwareProcessManager.SelfHeal.DualProcessDetectInterval
 
     *  SelfHeal_GetParamBoolValue
     *  SelfHeal_SetParamBoolValue
@@ -1245,7 +1245,7 @@ ManageableNotification_SetParamBoolValue
  *
  * Supports:
  *   "Enable"                    - SelfHeal cron enable flag (syscfg: SelfHealCronEnable).
- *   "DualProcessDetectEnable"   - Enable/disable duplicate process detection logging
+ *   "DualProcessDetect_Enable"  - Enable/disable duplicate process detection logging
  *                                  (syscfg: SelfHealDualProcDetectEnable). Default: true.
  *
  * @param[in] hInsContext - The instance handle to the SelfHeal object.

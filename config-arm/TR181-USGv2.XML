@@ -2086,26 +2086,12 @@
                                      <functions>
                                          <func_GetParamBoolValue>SelfHeal_GetParamBoolValue</func_GetParamBoolValue>
                                          <func_SetParamBoolValue>SelfHeal_SetParamBoolValue</func_SetParamBoolValue>
-                                         <func_GetParamStringValue>SelfHeal_GetParamStringValue</func_GetParamStringValue>
-                                         <func_SetParamStringValue>SelfHeal_SetParamStringValue</func_SetParamStringValue>
                                      </functions>
                                      <parameters>
                                          <parameter>
                                              <name>Enable</name>
                                              <type>boolean</type>
                                              <syntax>bool</syntax>
-                                             <writable>true</writable>
-                                         </parameter>
-                                         <parameter>
-                                             <name>DualProcessDetect_Enable</name>
-                                             <type>boolean</type>
-                                             <syntax>bool</syntax>
-                                             <writable>true</writable>
-                                         </parameter>
-                                         <parameter>
-                                             <name>DualProcessExcludeList</name>
-                                             <type>string</type>
-                                             <syntax>string</syntax>
                                              <writable>true</writable>
                                          </parameter>
                                      </parameters>
@@ -2552,6 +2538,10 @@
 			      <name>SelfHeal</name>
 			      <objectType>object</objectType>
 			      <functions>
+				<func_GetParamBoolValue>SelfHeal_GetParamBoolValue</func_GetParamBoolValue>
+				<func_SetParamBoolValue>SelfHeal_SetParamBoolValue</func_SetParamBoolValue>
+				<func_GetParamStringValue>SelfHeal_GetParamStringValue</func_GetParamStringValue>
+				<func_SetParamStringValue>SelfHeal_SetParamStringValue</func_SetParamStringValue>
 				<func_GetParamUlongValue>SelfHeal_GetParamUlongValue</func_GetParamUlongValue>
 				<func_SetParamUlongValue>SelfHeal_SetParamUlongValue</func_SetParamUlongValue>
 			      </functions>
@@ -2560,6 +2550,18 @@
 				  <name>AggressiveInterval</name>
 				  <type>unsignedInt</type>
 				  <syntax>uint32</syntax>
+				  <writable>true</writable>
+				</parameter>
+				<parameter>
+				  <name>DualProcessDetect_Enable</name>
+				  <type>boolean</type>
+				  <syntax>bool</syntax>
+				  <writable>true</writable>
+				</parameter>
+				<parameter>
+				  <name>DualProcessExcludeList</name>
+				  <type>string</type>
+				  <syntax>string</syntax>
 				  <writable>true</writable>
 				</parameter>
 				<parameter>
