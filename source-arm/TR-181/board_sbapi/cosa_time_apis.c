@@ -866,6 +866,7 @@ CosaDmlTimeGetState
 }
 
 #ifdef _USE_TIMEZONE_
+#define _XOPEN_SOURCE 700
 ANSC_STATUS getCurrentTimeOffset(char *offset_value)
 {
     if (offset_value == NULL)
@@ -911,7 +912,7 @@ ANSC_STATUS getCurrentTimeOffset(char *offset_value)
             //format offset string
             _ansc_sprintf(utcOffsetStr, "UTC%c%02d:%02d", sign, hours, minutes);
             _ansc_strcpy(offset_value, utcOffsetStr);
-            CcspTraceWarning(("%s %d: UTC Offset = %s\n", __FUNCTION__, __LINE__, offset_value, utcOffsetStr));
+            CcspTraceWarning(("%s %d: UTC Offset = %s utcOffsetStr = %s\n", __FUNCTION__, __LINE__, offset_value, utcOffsetStr));
             status = ANSC_STATUS_SUCCESS;
         }
     }
