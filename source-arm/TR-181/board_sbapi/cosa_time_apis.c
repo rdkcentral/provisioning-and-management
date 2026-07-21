@@ -70,6 +70,7 @@
 
 **************************************************************************/
 
+#define _XOPEN_SOURCE 700
 #include "cosa_time_apis.h"
 #include <cjson/cJSON.h>
 #include "secure_wrapper.h"
@@ -866,7 +867,6 @@ CosaDmlTimeGetState
 }
 
 #ifdef _USE_TIMEZONE_
-#define _XOPEN_SOURCE 700
 ANSC_STATUS getCurrentTimeOffset(char *offset_value)
 {
     if (offset_value == NULL)
