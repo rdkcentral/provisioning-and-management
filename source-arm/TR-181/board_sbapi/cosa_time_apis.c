@@ -1533,7 +1533,7 @@ CosaDmlTimeSetMakestep
  * Parse and validate "source_type,maxsources,iburst,minpoll,maxpoll"
  * (e.g. "pool,4,true,10,12") then persist to syscfg key
  * chrony_server{serverIdx}_settings.
- * ─────────────────────────────────────────────────────────────────────────────*/
+ * ────────────────────────────────────────────────────────
 ANSC_STATUS
 CosaDmlTimeSetChronyServerSettings
     (
@@ -1548,23 +1548,43 @@ CosaDmlTimeSetChronyServerSettings
         return ANSC_STATUS_FAILURE;
     }
 
+    /* Parse on a local copy */
     char buf[128] = {0};
     snprintf(buf, sizeof(buf), "%s", pValue);
 
-    /* Split into exactly 5 comma-separated tokens */
+    /* Split positionally on every comma: unlike strtok, this does NOT collapse
+     * consecutive delimiters, so empty fields are preserved and detected. This
+     * matches how build_chrony_conf.sh consumes the value (positional cut -d','),
+     * ensuring an accepted value maps to the intended directive fields. */
     char *fields[5] = {NULL};
-    int   nfields   = 0;
-    char *tok       = strtok(buf, ",");
-    while (tok != NULL && nfields < 5)
+    int   nfields   = 1;      /* one field precedes the first comma */
+    fields[0]       = buf;
+    for (char *p = buf; *p != '\0'; p++)
     {
-        fields[nfields++] = tok;
-        tok = strtok(NULL, ",");
+        if (*p == ',')
+        {
+            *p = '\0';
+            if (nfields < 5)
+                fields[nfields] = p + 1;
+            nfields++;        /* count total fields to catch > 5 */
+        }
     }
-    if (nfields != 5 || strtok(NULL, ",") != NULL)
+    /* Reject if the field count is not exactly 5 (too few or too many). */
+    if (nfields != 5)
     {
         CcspTraceError(("CosaDmlTimeSetChronyServerSettings: expected 5 fields, got %d in '%s'\n",
                         nfields, pValue));
         return ANSC_STATUS_FAILURE;
+    }
+    /* Reject if any field is empty (empty leading, middle, trailing, or "" input). */
+    for (int k = 0; k < 5; k++)
+    {
+        if (fields[k][0] == '\0')
+        {
+            CcspTraceError(("CosaDmlTimeSetChronyServerSettings: empty field %d in '%s'\n",
+                            k + 1, pValue));
+            return ANSC_STATUS_FAILURE;
+        }
     }
 
     /* Validate source_type */
