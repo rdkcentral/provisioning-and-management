@@ -1436,7 +1436,9 @@ CosaDmlTimeSetChronyEnable
  *
  * Parse "threshold,limit" (e.g. "1.0,3"), validate, and write
  * "makestep <threshold> <limit>" to /nvram/chrony_makestep.
- * ─────────────────────────────────────────────────────────────────────────────*/
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 ANSC_STATUS
 CosaDmlTimeSetMakestep
     (
@@ -1527,13 +1529,6 @@ CosaDmlTimeSetMakestep
     return ANSC_STATUS_SUCCESS;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
- * CosaDmlTimeSetChronyServerSettings
- *
- * Parse and validate "source_type,maxsources,iburst,minpoll,maxpoll"
- * (e.g. "pool,4,true,10,12") then persist to syscfg key
- * chrony_server{serverIdx}_settings.
- * ────────────────────────────────────────────────────────
 ANSC_STATUS
 CosaDmlTimeSetChronyServerSettings
     (
@@ -1599,13 +1594,13 @@ CosaDmlTimeSetChronyServerSettings
     /* Validate maxsources: must be a valid integer whose allowed range depends
      * on source_type:
      *   pool   -> 1-10
-     *   server -> must be 0 (maxsources is not applicable to a single server directive) 
-	 */
+     *   server -> must be 0 (maxsources is not applicable to a single server directive) */
     char *endptr = NULL;
     errno = 0;
     long maxsources = strtol(fields[1], &endptr, 10);
     if (endptr == fields[1] || *endptr != '\0' || errno != 0)
-    {        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid maxsources '%s' (must be an integer)\n",
+    {
+        CcspTraceError(("CosaDmlTimeSetChronyServerSettings: invalid maxsources '%s' (must be an integer)\n",
                         fields[1]));
         return ANSC_STATUS_FAILURE;
     }
@@ -1618,7 +1613,7 @@ CosaDmlTimeSetChronyServerSettings
             return ANSC_STATUS_FAILURE;
         }
     }
-	else /* pool */
+    else /* pool */
     {
         if (maxsources < 1 || maxsources > 10)
         {
@@ -1685,6 +1680,7 @@ CosaDmlTimeSetChronyServerSettings
 
     CcspTraceInfo(("CosaDmlTimeSetChronyServerSettings: %s = %s\n", syscfgKey, pValue));
 
+    /* Trigger a live config reload — service_chronyd.sh guards on RFC flag internally */
     int rc = v_secure_system("sysevent set chronyd-restart");
     if (rc != 0)
         CcspTraceWarning(("CosaDmlTimeSetChronyServerSettings: sysevent set chronyd-restart returned %d\n", rc));
@@ -1693,3 +1689,4 @@ CosaDmlTimeSetChronyServerSettings
 }
 
 #endif
+
