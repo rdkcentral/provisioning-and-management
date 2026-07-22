@@ -1,35 +1,4 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<?define DDNS_BROADBANDFORUM=True?>
-<?define MOCA_HOME_ISOLATION=True?>
-<?define FEATURE_SUPPORT_ONBOARD_LOGGING=True?>
-<?define CONFIG_CISCO_HOTSPOT=True?>
-<?define CONFIG_VENDOR_CUSTOMER_COMCAST=True?>
-<?define CONFIG_INTERNET2P0=True?>
-<?define FEATURE_RDKB_WAN_MANAGER=True?>
-<?define FEATURE_RDKB_XDSL_PPP_MANAGER=True?>
-<?define FEATURE_FWUPGRADE_MANAGER=True?>
-<?define DSLITE_FEATURE_SUPPORT=True?>
-<?define DDNS_BROADBANDFORUM=True?>
-<?define MOCA_HOME_ISOLATION=True?>
-<?define FEATURE_SUPPORT_ONBOARD_LOGGING=True?>
-<?define CONFIG_CISCO_HOTSPOT=True?>
-<?define CONFIG_VENDOR_CUSTOMER_COMCAST=True?>
-<?define CONFIG_INTERNET2P0=True?>
-<?define FEATURE_RDKB_WAN_MANAGER=True?>
-<?define FEATURE_RDKB_XDSL_PPP_MANAGER=True?>
-<?define FEATURE_FWUPGRADE_MANAGER=True?>
-<?define DSLITE_FEATURE_SUPPORT=True?>
-<?define DDNS_BROADBANDFORUM=True?>
-<?define MOCA_HOME_ISOLATION=True?>
-<?define FEATURE_SUPPORT_ONBOARD_LOGGING=True?>
-<?define CONFIG_CISCO_HOTSPOT=True?>
-<?define CONFIG_VENDOR_CUSTOMER_COMCAST=True?>
-<?define CONFIG_INTERNET2P0=True?>
-<?define FEATURE_RDKB_WAN_MANAGER=True?>
-<?define FEATURE_RDKB_XDSL_PPP_MANAGER=True?>
-<?define FEATURE_FWUPGRADE_MANAGER=True?>
-<?define DSLITE_FEATURE_SUPPORT=True?>
-
 <!--
  If not stated otherwise in this file or this component's Licenses.txt file the
  following copyright and licenses apply:
