@@ -2594,6 +2594,15 @@ CosaDmlDcSetFactoryReset
             setTempPartnerId( partnerId );
         } 
 #endif
+#ifdef _ONESTACK_PRODUCT_REQ_
+        // On OneStack, /nvram/.partner_ID is not removed by get_PartnerID(); remove it
+        // during factory reset so a stale PartnerID does not persist after FR.
+        if ( access(PARTNERID_FILE, F_OK) == 0 )
+        {
+            unlink(PARTNERID_FILE);
+            CcspTraceInfo(("FactoryReset: Removed %s on OneStack\n", PARTNERID_FILE));
+        }
+#endif
 
 #ifdef _MACSEC_SUPPORT_
                 //TCXB7-1453
