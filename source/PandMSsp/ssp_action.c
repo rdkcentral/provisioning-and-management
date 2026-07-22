@@ -224,6 +224,7 @@ ssp_engage_pnm
     {
         /* System is fully initialized */
         CcspTraceWarning(("PandMInit:%s PandM registered with CR ,setting the health to Green...\n",__FUNCTION__));
+        CcspTraceInfo(("PandM registered with CR ,setting the health to Green ..Added log by Athira\n"));
         g_pComponent_Common_Dm->Health = CCSP_COMMON_COMPONENT_HEALTH_Green;
     }
     else
