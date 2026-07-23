@@ -2586,9 +2586,12 @@ CosaDmlDcSetFactoryReset
 		}
 
         char partnerId[20];
+        memset(partnerId,0,sizeof(partnerId));
+
+#ifndef _ONESTACK_PRODUCT_REQ_
+        // On OneStack, skip setTempPartnerId during FR: get_PartnerID() does not unlink
+        // /nvram/.partner_ID, so the file would wrongly persist after factory reset.
         int retVal = 0 ;
-        
-	memset(partnerId,0,sizeof(partnerId));
         retVal = syscfg_get(NULL, "PartnerID", partnerId, sizeof(partnerId)) ;
 
         if ( !retVal  && (access(PARTNERID_FILE, F_OK) != 0))
@@ -2596,6 +2599,7 @@ CosaDmlDcSetFactoryReset
             CcspTraceInfo(("Setting %s as partner ID\n", partnerId));
             setTempPartnerId( partnerId );
         } 
+#endif
 
 #ifdef _MACSEC_SUPPORT_
                 //TCXB7-1453
