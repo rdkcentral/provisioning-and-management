@@ -14136,6 +14136,431 @@ SelfHeal_SetParamBoolValue
     prototype:
 
         BOOL
+        MultiProcessDetect_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MultiProcessDetect_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char value[8] = {'\0'};
+        if (syscfg_get(NULL, "MultiProcDetectEnable", value, sizeof(value)) == 0
+            && value[0] != '\0')
+        {
+            *pBool = (strncmp(value, "false", sizeof(value)) == 0) ? FALSE : TRUE;
+        }
+        else
+        {
+            /* Default: enabled */
+            *pBool = TRUE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MultiProcessDetect_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The value to set;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MultiProcessDetect_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, MultiProcessDetect_GetParamBoolValue))
+        return TRUE;
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if (syscfg_set_commit(NULL, "MultiProcDetectEnable",
+                              (bValue == TRUE) ? "true" : "false") != 0)
+        {
+            CcspTraceError(("[%s] syscfg_set_commit failed for MultiProcDetectEnable\n",
+                             __FUNCTION__));
+            return FALSE;
+        }
+        CcspTraceInfo(("%s: MultiProcDetectEnable set to %s\n",
+                        __FUNCTION__, (bValue == TRUE) ? "true" : "false"));
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        ULONG
+        MultiProcessDetect_GetParamStringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pValue,
+                ULONG*                      pUlSize
+            );
+
+    description:
+
+        This function is called to retrieve string parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                char*                       pValue,
+                The string value buffer;
+
+                ULONG*                      pUlSize,
+                The buffer size;
+
+    return:     0 if succeeded, 1 if buffer too small, -1 on error.
+
+**********************************************************************/
+ULONG
+MultiProcessDetect_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    errno_t rc  = -1;
+    int     ret = 0;
+
+    /* Default exclusion list — always included regardless of RFC configuration.
+     * These are known benign multi-instance processes on RDKB devices.
+     * The list is comma-separated and matches the process basenames as seen in ps output. */
+    static const char MULTI_PROC_EXCLUDE_DEFAULT[] =
+        "sleep,dropbear,sh,ash,ssh,stunnel";
+
+    if (strcmp(ParamName, "ExcludeList") == 0)
+    {
+        char buf[512] = {'\0'};
+        ret = syscfg_get(NULL, "MultiProcDetectExcludeList", buf, sizeof(buf));
+        if (ret == 0 && buf[0] != '\0')
+        {
+            /* Return defaults + RFC-configured additions as a single comma-separated list */
+            char combined[768] = {'\0'};
+            snprintf(combined, sizeof(combined), "%s,%s", MULTI_PROC_EXCLUDE_DEFAULT, buf);
+            size_t combinedLen = strlen(combined);
+            rc = strcpy_s(pValue, *pUlSize, combined);
+            if (rc != EOK)
+            {
+                ERR_CHK(rc);
+                if (rc == ERANGE)
+                {
+                    *pUlSize = combinedLen + 1;
+                    if (*pUlSize > 0)
+                    {
+                        pValue[0] = '\0';
+                    }
+                    CcspTraceWarning(("%s: Buffer too small for MultiProcDetectExcludeList, required=%lu\n",
+                                      __FUNCTION__, (unsigned long)(combinedLen + 1)));
+                    return 1;
+                }
+                CcspTraceError(("%s: strcpy_s failed for MultiProcDetectExcludeList, rc=%d\n",
+                                 __FUNCTION__, rc));
+                return -1;
+            }
+            CcspTraceInfo(("%s: MultiProcDetectExcludeList retrieved: %s\n", __FUNCTION__, combined));
+            return 0;
+        }
+        else
+        {
+            /* RFC key not set — return built-in default list only */
+            size_t defLen = strlen(MULTI_PROC_EXCLUDE_DEFAULT);
+            rc = strcpy_s(pValue, *pUlSize, MULTI_PROC_EXCLUDE_DEFAULT);
+            if (rc != EOK)
+            {
+                ERR_CHK(rc);
+                if (rc == ERANGE)
+                {
+                    *pUlSize = defLen + 1;
+                    if (*pUlSize > 0)
+                    {
+                        pValue[0] = '\0';
+                    }
+                    CcspTraceWarning(("%s: Buffer too small for default MultiProcessDetect ExcludeList, required=%lu\n",
+                                      __FUNCTION__, (unsigned long)(defLen + 1)));
+                    return 1;
+                }
+                CcspTraceError(("%s: strcpy_s failed for default MultiProcessDetect ExcludeList, rc=%d\n",
+                                 __FUNCTION__, rc));
+                return -1;
+            }
+            CcspTraceInfo(("%s: MultiProcDetectExcludeList not set, returning default: %s\n",
+                            __FUNCTION__, MULTI_PROC_EXCLUDE_DEFAULT));
+            return 0;
+        }
+    }
+
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return -1;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MultiProcessDetect_SetParamStringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pString
+            );
+
+    description:
+
+        This function is called to set string parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                char*                       pString,
+                The string value to set;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MultiProcessDetect_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    if (IsStringSame(hInsContext, ParamName, pString, MultiProcessDetect_GetParamStringValue))
+        return TRUE;
+
+    if (pString == NULL)
+    {
+        CcspTraceError(("%s: NULL string provided for parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    if (strcmp(ParamName, "ExcludeList") == 0)
+    {
+        if (syscfg_set_commit(NULL, "MultiProcDetectExcludeList", pString) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_commit failed for MultiProcDetectExcludeList\n",
+                             __FUNCTION__));
+            return FALSE;
+        }
+        CcspTraceInfo(("%s: MultiProcDetectExcludeList set to: %s\n", __FUNCTION__, pString));
+        return TRUE;
+    }
+
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MultiProcessDetect_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      pUlong
+            );
+
+    description:
+
+        This function is called to retrieve unsigned long parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      pUlong,
+                The buffer of returned ulong value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MultiProcessDetect_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "DetectionInterval") == 0)
+    {
+        char buf[16] = {'\0'};
+        if (syscfg_get(NULL, "MultiProcDetectInterval", buf, sizeof(buf)) == 0
+            && buf[0] != '\0')
+        {
+            ULONG val = (ULONG)strtoul(buf, NULL, 10);
+            /* Enforce allowed values: 15, 30, 45, 60 */
+            if (val == 15 || val == 30 || val == 45 || val == 60)
+            {
+                *pUlong = val;
+                return TRUE;
+            }
+        }
+        /* Default: 15 minutes */
+        *pUlong = 15;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MultiProcessDetect_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set unsigned long parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue,
+                The value to set;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MultiProcessDetect_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "DetectionInterval") == 0)
+    {
+        /* Only accept 15, 30, 45, or 60 minutes */
+        if (uValue != 15 && uValue != 30 && uValue != 45 && uValue != 60)
+        {
+            CcspTraceError(("%s: Invalid DetectionInterval %lu. "
+                            "Allowed values: 15, 30, 45, 60\n",
+                            __FUNCTION__, (unsigned long)uValue));
+            return FALSE;
+        }
+        char buf[16] = {'\0'};
+        snprintf(buf, sizeof(buf), "%lu", (unsigned long)uValue);
+        if (syscfg_set_commit(NULL, "MultiProcDetectInterval", buf) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_commit failed for MultiProcDetectInterval\n",
+                             __FUNCTION__));
+            return FALSE;
+        }
+        CcspTraceInfo(("%s: MultiProcDetectInterval set to %s minutes\n",
+                        __FUNCTION__, buf));
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
         RdkLogger_GetParamBoolValue
             (
                 ANSC_HANDLE                 hInsContext,
@@ -25068,7 +25493,7 @@ SelfHeal_SetParamUlongValue
             v_secure_system("/usr/ccsp/tad/selfheal_aggressive.sh &");
             return TRUE;
         }
-        
+
         // First, remove old cron entry
         v_secure_system("crontab -l 2>/dev/null | sed '/selfheal_aggressive.sh/d' | crontab -");
         // Then, add new cron entry with updated interval
@@ -25082,6 +25507,7 @@ SelfHeal_SetParamUlongValue
     }
     return TRUE;
 }
+
 
 #if defined(FEATURE_RDKB_NFC_MANAGER)
 //NFC RFC :: NFC Feature should enable.

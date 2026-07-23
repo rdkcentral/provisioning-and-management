@@ -1236,6 +1236,9 @@ ManageableNotification_SetParamBoolValue
 /**
  * @brief Get boolean parameter value from SelfHeal object.
  *
+ * Supports:
+ *   "Enable" - SelfHeal cron enable flag (syscfg: SelfHealCronEnable).
+ *
  * @param[in] hInsContext - The instance handle to the SelfHeal object.
  * @param[in] ParamName   - Pointer to the parameter name.
  * @param[out] pBool      - Pointer to store the boolean value.
@@ -1271,6 +1274,153 @@ SelfHeal_SetParamBoolValue
     ANSC_HANDLE                 hInsContext,
     char*                       ParamName,
     BOOL                        bValue
+);
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MultiProcessDetect.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MultiProcessDetect.ExcludeList
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MultiProcessDetect.DetectionInterval
+
+    *  MultiProcessDetect_GetParamBoolValue
+    *  MultiProcessDetect_SetParamBoolValue
+    *  MultiProcessDetect_GetParamStringValue
+    *  MultiProcessDetect_SetParamStringValue
+    *  MultiProcessDetect_GetParamUlongValue
+    *  MultiProcessDetect_SetParamUlongValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from MultiProcessDetect object.
+ *
+ * Supports:
+ *   "Enable" - Enable/disable duplicate process detection logging
+ *              (syscfg: MultiProcDetectEnable). Default: true.
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return TRUE if succeeded, FALSE otherwise.
+ */
+BOOL
+MultiProcessDetect_GetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL*                       pBool
+);
+
+/**
+ * @brief Set boolean parameter value for MultiProcessDetect object.
+ *
+ * Supports:
+ *   "Enable" - Enable/disable duplicate process detection logging
+ *              (syscfg: MultiProcDetectEnable).
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return TRUE if succeeded, FALSE otherwise.
+ */
+BOOL
+MultiProcessDetect_SetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL                        bValue
+);
+
+/**
+ * @brief Get string parameter value from MultiProcessDetect object.
+ *
+ * Supports:
+ *   "ExcludeList" - comma-separated list of process names to exclude
+ *                   from duplicate process detection.
+ *                   syscfg: MultiProcDetectExcludeList.
+ *                   Default: "sleep,dropbear,sh,ash,ssh,stunnel".
+ *
+ * @param[in]  hInsContext - The instance handle.
+ * @param[in]  ParamName   - Pointer to the parameter name.
+ * @param[out] pValue      - Buffer to store the retrieved string value.
+ * @param[out] pUlSize     - Size of the buffer; updated if buffer is too small.
+ *
+ * @return 0 on success, 1 if buffer too small, -1 on error.
+ */
+ULONG
+MultiProcessDetect_GetParamStringValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    char*                       pValue,
+    ULONG*                      pUlSize
+);
+
+/**
+ * @brief Set string parameter value for MultiProcessDetect object.
+ *
+ * Supports:
+ *   "ExcludeList" - comma-separated list of process names to exclude.
+ *                   syscfg: MultiProcDetectExcludeList.
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] pString     - The string value to set.
+ *
+ * @return TRUE if succeeded, FALSE otherwise.
+ */
+BOOL
+MultiProcessDetect_SetParamStringValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    char*                       pString
+);
+
+/**
+ * @brief Get unsigned long parameter value from MultiProcessDetect object.
+ *
+ * Supports:
+ *   "DetectionInterval" - interval in minutes (15, 30, 45, 60).
+ *                         syscfg: MultiProcDetectInterval. Default: 15.
+ *
+ * @param[in]  hInsContext - The instance handle.
+ * @param[in]  ParamName   - Pointer to the parameter name.
+ * @param[out] pUlong      - Pointer to store the retrieved ulong value.
+ *
+ * @return TRUE if succeeded, FALSE otherwise.
+ */
+BOOL
+MultiProcessDetect_GetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG*                      pUlong
+);
+
+/**
+ * @brief Set unsigned long parameter value for MultiProcessDetect object.
+ *
+ * Supports:
+ *   "DetectionInterval" - interval in minutes. Accepted: 15, 30, 45, 60.
+ *                         syscfg: MultiProcDetectInterval.
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name.
+ * @param[in] uValue      - The ulong value to set.
+ *
+ * @return TRUE if succeeded, FALSE otherwise.
+ */
+BOOL
+MultiProcessDetect_SetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG                       uValue
 );
 
 /***********************************************************************
