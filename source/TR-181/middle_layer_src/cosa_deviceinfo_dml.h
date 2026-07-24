@@ -1236,9 +1236,6 @@ ManageableNotification_SetParamBoolValue
 /**
  * @brief Get boolean parameter value from SelfHeal object.
  *
- * Supports:
- *   "Enable" - SelfHeal cron enable flag (syscfg: SelfHealCronEnable).
- *
  * @param[in] hInsContext - The instance handle to the SelfHeal object.
  * @param[in] ParamName   - Pointer to the parameter name.
  * @param[out] pBool      - Pointer to store the boolean value.
