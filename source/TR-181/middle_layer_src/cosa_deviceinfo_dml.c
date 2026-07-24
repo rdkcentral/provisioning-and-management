@@ -25508,7 +25508,6 @@ SelfHeal_SetParamUlongValue
     return TRUE;
 }
 
-
 #if defined(FEATURE_RDKB_NFC_MANAGER)
 //NFC RFC :: NFC Feature should enable.
 
