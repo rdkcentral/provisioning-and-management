@@ -1392,9 +1392,6 @@ CosaDmlTimeSetChronyEnable
     if (bEnabled)
     {
         CcspTraceInfo(("CosaDmlTimeSetChronyEnable: enabling chrony\n"));
-        rc = v_secure_system("sysevent set ntpd-stop");
-        if (rc != 0)
-            CcspTraceWarning(("CosaDmlTimeSetChronyEnable: ntpd-stop sysevent returned %d\n", rc));
 
         FILE *fp = fopen("/nvram/chrony_enabled", "w");
         if (fp == NULL)
@@ -1405,6 +1402,10 @@ CosaDmlTimeSetChronyEnable
         }
         fclose(fp);
 
+		rc = v_secure_system("sysevent set ntpd-stop");
+        if (rc != 0)
+            CcspTraceWarning(("CosaDmlTimeSetChronyEnable: ntpd-stop sysevent returned %d\n", rc));
+		
         rc = v_secure_system("sysevent set chronyd-start");
         if (rc != 0)
             CcspTraceWarning(("CosaDmlTimeSetChronyEnable: chronyd-start sysevent returned %d\n", rc));
