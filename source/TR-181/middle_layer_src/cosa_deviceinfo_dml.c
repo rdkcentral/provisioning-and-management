@@ -11606,38 +11606,33 @@ Feature_SetParamBoolValue
 #if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (is_devicemode_business())
-#endif // _ONESTACK_PRODUCT_REQ_
+        char buf[5] = {0};
+        syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", buf, sizeof(buf));
+        if (!strcmp(buf, "1"))
         {
-            char buf[5] = {0};
-            syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", buf, sizeof(buf));
-            if (!strcmp(buf, "1"))
-            {
-                if(!setMultiProfileXdnsConfig(bValue))
-                    return FALSE;
+            if(!setMultiProfileXdnsConfig(bValue))
+                return FALSE;
 
-                if (syscfg_set_commit(NULL, "MultiProfileXDNS", bValue ? "1" : "0") != 0)
-                {
-                    CcspTraceError(("[XDNS] syscfg_set MultiProfileXDNS failed!\n"));
-                }
+            if (syscfg_set_commit(NULL, "MultiProfileXDNS", bValue ? "1" : "0") != 0)
+            {
+                CcspTraceError(("[XDNS] syscfg_set MultiProfileXDNS failed!\n"));
             }
             else
             {
-                CcspTraceError(("XDNS Feature is not Enabled. so,EnableMultiProfileXDNS set operation to %d failed \n", bValue));
-                return FALSE;
+                /* Generate T2 marker when MultiprofileXDNS is successfully enabled */
+                if (bValue == TRUE)
+                {
+                    t2_event_d("MultiprofileXDNS_Supported", 1);
+                }
             }
-
-            return TRUE;
         }
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (!is_devicemode_business())
+        else
         {
-            CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
-            t2_event_d("XDNS_MultiProfile_NotSupported", 1);
+            CcspTraceError(("XDNS Feature is not Enabled. so,EnableMultiProfileXDNS set operation to %d failed \n", bValue));
             return FALSE;
         }
-#endif // _ONESTACK_PRODUCT_REQ_
+
+        return TRUE;
     }
 #endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
 
