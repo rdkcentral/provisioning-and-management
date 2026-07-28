@@ -74,11 +74,17 @@
 #include "dml_tr181_custom_cfg.h"
 #include <syscfg/syscfg.h>
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 #if     CFG_USE_CCSP_SYSLOG
     #include <ccsp_syslog.h>
 #endif
 #include "safec_lib_common.h"
-
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include "devicemode.h"
+#endif
 
 void* ResetFailedAttepmts(void* arg)
 {
@@ -101,7 +107,11 @@ void* ResetFailedAttepmts(void* arg)
 		lockoutTime-- ;
         }
 		
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+  #if defined(_ONESTACK_PRODUCT_REQ_)
+  if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+  #endif
+  {
 	if (strcmp(pEntry->Username, "cusadmin") == 0)
 	{
 
@@ -110,6 +120,7 @@ void* ResetFailedAttepmts(void* arg)
 			CcspTraceInfo(("syscfg_set failed\n"));
 		} 
 	}
+  }
 #endif /* _COSA_FOR_BCI_ */
 
       pEntry->NumOfFailedAttempts = 0;
@@ -117,7 +128,7 @@ void* ResetFailedAttepmts(void* arg)
     return NULL;
 }
 
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
 void* RestoreFailedAttempts(void* arg)
 {
         PCOSA_DML_USER  pEntry = (PCOSA_DML_USER)arg;
@@ -644,6 +655,13 @@ User_GetParamUlongValue
         *puLong = pUser->NumOfRestoreFailedAttempt;
         return TRUE;
     }
+#elif defined(_ONESTACK_PRODUCT_REQ_)
+    if (is_devicemode_business() && (strcmp(ParamName, "NumOfRestoreFailedAttempt") == 0))
+    {
+        /* collect value */
+        *puLong = pUser->NumOfRestoreFailedAttempt;
+        return TRUE;
+    }
 #endif
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -776,7 +794,11 @@ User_GetParamStringValue
                }
                return 0;
             }
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+  #if defined(_ONESTACK_PRODUCT_REQ_)
+  if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+  #endif
+  {
             if (strcmp(pUser->Username, "cusadmin") == 0)
             {
                rc = strcpy_s(pValue,*pUlSize, pUser->HashedPassword);
@@ -787,6 +809,7 @@ User_GetParamStringValue
                }
                return 0;
             }
+  }
 #endif
             rc = strcpy_s(pValue,*pUlSize, pUser->Password);
             if(rc != EOK)
@@ -954,6 +977,10 @@ User_SetParamIntValue
 
 	if (strcmp(ParamName, "X_RDKCENTRAL-COM_LoginCounts") == 0)
 	{
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+#endif
+            {
 		if (strcmp(pUser->Username, "cusadmin") == 0)
 		{
 			char buf[16]={0};
@@ -977,8 +1004,8 @@ User_SetParamIntValue
 
 			return TRUE;
 		}
-	}
-		
+	    }
+        }
     return FALSE;
 }
 
@@ -1040,7 +1067,11 @@ User_SetParamUlongValue
     	char buf[10];
  	int MaxFailureAttempts = 0;
 	pUser->NumOfFailedAttempts = uValue;
-	#if defined(_COSA_FOR_BCI_)
+	#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+        #if defined(_ONESTACK_PRODUCT_REQ_)
+        if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+        #endif
+        {
 		if (strcmp(pUser->Username, "cusadmin") == 0)
 		{
 			errno_t rc = -1;
@@ -1060,6 +1091,7 @@ User_SetParamUlongValue
 					pUser->NumOfFailedAttempts = uValue;
 			}
 		}
+	}
 	#else
 		pUser->NumOfFailedAttempts = uValue;
 	#endif
@@ -1093,6 +1125,21 @@ User_SetParamUlongValue
     }
     #if defined(_COSA_FOR_BCI_)
     if (strcmp(ParamName, "NumOfRestoreFailedAttempt") == 0)
+    {
+       /* save update to backup */
+       pUser->NumOfRestoreFailedAttempt   =  uValue;
+       int MaxRestoreRetry = 3;
+
+       if( MaxRestoreRetry == pUser->NumOfRestoreFailedAttempt )
+       {
+           pthread_t restoreattempt;
+           pthread_create(&restoreattempt, NULL, &RestoreFailedAttempts, (void *)pUser);
+	   CcspTraceWarning(("WebUI Restore:  Num of invalid Restoreattempt is %d, Restore from UI  is locked out for 5 Mins \n", pUser->NumOfRestoreFailedAttempt));
+       }
+        return TRUE;
+    }
+    #elif defined(_ONESTACK_PRODUCT_REQ_)
+    if (is_devicemode_business() && (strcmp(ParamName, "NumOfRestoreFailedAttempt") == 0))
     {
        /* save update to backup */
        pUser->NumOfRestoreFailedAttempt   =  uValue;
@@ -1246,8 +1293,14 @@ User_SetParamStringValue
                     return FALSE;
                 }
 	}
-#if defined(_COSA_FOR_BCI_)
-        else if (strcmp(pUser->Username, "cusadmin") == 0)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+     else if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+     {
+	if (strcmp(pUser->Username, "cusadmin") == 0)
+#else
+	else if (strcmp(pUser->Username, "cusadmin") == 0)
+#endif
         {
 		if(isvalid_pwd(pString)){
                     user_hashandsavepwd(NULL,pString,pUser);
@@ -1261,6 +1314,9 @@ User_SetParamStringValue
                     return FALSE;
                 }
         }
+#if defined(_ONESTACK_PRODUCT_REQ_)
+ }
+#endif
 #endif
 	else
 	{

@@ -584,11 +584,17 @@ void* WebServRestart( void *arg )
     UNREFERENCED_PARAMETER(arg);
 
     pthread_detach(pthread_self());
-    if (v_secure_system("/bin/sh /etc/webgui.sh") != 0) {
-        fprintf(stderr, "%s: fail to restart lighttpd\n", __FUNCTION__);
-        return NULL;
-    }
-
+    #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+        if (v_secure_system("/bin/systemctl restart CcspWebUI.service") != 0) {
+            fprintf(stderr, "%s: fail to restart CcspWebUI.service\n", __FUNCTION__);
+            return NULL;
+        }
+    #else
+        if (v_secure_system("/bin/sh /etc/webgui.sh") != 0) {
+            fprintf(stderr, "%s: fail to restart webgui.sh\n", __FUNCTION__);
+            return NULL;
+        }
+    #endif
     v_secure_system("sysevent set firewall-restart");
 
     return NULL;
@@ -2094,6 +2100,10 @@ void* restoreAllDBs(void* arg)
 #elif defined(_COSA_BCM_MIPS_)
         v_secure_system("xf3_erase_nvram");
 #elif defined(_SR213_PRODUCT_REQ_)
+	/* Remove LXY database and certs from nvram during Factory-Reset */
+	v_secure_system("rm -rf /nvram/lxy");
+	v_secure_system("rm -rf /nvram/certs");
+	v_secure_system("rm -rf /nvram/dl");
     /* Wipe out all user data. */
     v_secure_system("sync; find /nvram2 /data -mindepth 1 | grep -vE \"Q[[:xdigit:]]{8}$\" | xargs rm -rf; sync");
     //set flags for all necessary modules.voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
@@ -2576,9 +2586,12 @@ CosaDmlDcSetFactoryReset
 		}
 
         char partnerId[20];
+        memset(partnerId,0,sizeof(partnerId));
+
+#ifndef _ONESTACK_PRODUCT_REQ_
+        // On OneStack, skip setTempPartnerId during FR: get_PartnerID() does not unlink
+        // /nvram/.partner_ID, so the file would wrongly persist after factory reset.
         int retVal = 0 ;
-        
-	memset(partnerId,0,sizeof(partnerId));
         retVal = syscfg_get(NULL, "PartnerID", partnerId, sizeof(partnerId)) ;
 
         if ( !retVal  && (access(PARTNERID_FILE, F_OK) != 0))
@@ -2586,6 +2599,7 @@ CosaDmlDcSetFactoryReset
             CcspTraceInfo(("Setting %s as partner ID\n", partnerId));
             setTempPartnerId( partnerId );
         } 
+#endif
 
 #ifdef _MACSEC_SUPPORT_
                 //TCXB7-1453
@@ -3160,6 +3174,7 @@ CosaDmlDcGetIGMPProxyEnable
     return ANSC_STATUS_SUCCESS;
 }
 
+#ifndef DISABLE_IGMPPROXY
 ANSC_STATUS
 CosaDmlDcSetIGMPProxyEnable
     (
@@ -3190,6 +3205,7 @@ CosaDmlDcSetIGMPProxyEnable
     }
     return ANSC_STATUS_SUCCESS;
 }
+#endif
 
 ANSC_STATUS
 CosaDmlDcGetDNSProxyEnable
@@ -4938,7 +4954,11 @@ static void configBridgeMode(int bEnable) {
 #if defined (_XB7_PRODUCT_REQ_) && defined (_COSA_BCM_ARM_)
         g_SetParamValueBool(brpdm, bEnable);
         if (brmode[0] == '0') {
-            v_secure_system("/bin/sh /etc/webgui.sh &");
+            #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+                v_secure_system("/bin/systemctl restart CcspWebUI.service");
+            #else
+                v_secure_system("/bin/sh /etc/webgui.sh &");
+            #endif
         }
 #elif (!defined _XF3_PRODUCT_REQ_)
         g_SetParamValueBool(brpdm, bEnable);
@@ -4946,9 +4966,13 @@ static void configBridgeMode(int bEnable) {
 	  *  webgui.sh will be triggeed from Gwprovapp after bridge is started.
 	  */
         if (brmode[0] == '0')
-	{
-           v_secure_system("/bin/sh /etc/webgui.sh &");
-	}
+	    {
+            #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+                v_secure_system("/bin/systemctl restart CcspWebUI.service");
+            #else
+                v_secure_system("/bin/sh /etc/webgui.sh &");
+            #endif
+	    }
 #elif defined( _XF3_PRODUCT_REQ_)
         g_SetParamValueBool(brpdm, (bEnable>0?true:false));
 #endif
