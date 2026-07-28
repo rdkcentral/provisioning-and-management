@@ -1448,7 +1448,6 @@ BOOL updateAmenityPSM(char *cVapIndex, char *cVapName , int iCount , pErr pErrRe
             return 1;
         }
      }
-     snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"PSM values are updated\n");
      pErrRetVal->ErrorCode = BLOB_EXEC_SUCCESS;
      return 0;
 }
