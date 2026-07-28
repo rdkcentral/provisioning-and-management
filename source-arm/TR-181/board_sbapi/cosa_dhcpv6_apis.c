@@ -8672,8 +8672,10 @@ int dhcpv6_assign_global_ip(char * prefix, char * intfName, char * ipAddr)
         return 1;
     }
 
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
+#endif /* _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */	    
     {
         if(strncmp(intfName, COSA_DML_DHCPV6_SERVER_IFNAME, strlen(intfName)) == 0)
         {
@@ -8825,7 +8827,7 @@ void CosaDmlDhcpv6sRebootServer()
         char out[128];
 
 /* dibbler-server process start fix for HUB4 and ADA */
-#if defined (_HUB4_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
 #if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
 #endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */ 
@@ -11246,9 +11248,9 @@ dhcpv6c_dbg_thrd(void * in)
                         /*We need get a global ip addres */
 #if defined(_COSA_BCM_ARM_) || defined(INTEL_PUMA7) || defined(_COSA_QCA_ARM_)
 #ifndef _HUB4_PRODUCT_REQ_
-#if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                         if( FALSE == IsThisCurrentPartnerID("sky-") )
-#endif /** _RDKB_GLOBAL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
                         {
                             /*this is for tchxb6*/
                             CcspTraceWarning((" %s dhcpv6_assign_global_ip to brlan0 \n", __FUNCTION__));
