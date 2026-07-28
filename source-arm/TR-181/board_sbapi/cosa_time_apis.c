@@ -1270,6 +1270,12 @@ CosaDmlTimeGetChronyEnable
         BOOL                       *pEnabled
     )
 {
+	 if (pEnabled == NULL)
+     {
+         CcspTraceError(("CosaDmlTimeGetChronyEnable: NULL output pointer\n"));
+         return ANSC_STATUS_FAILURE;
+     }
+
     *pEnabled = (access("/nvram/chrony_enabled", F_OK) == 0) ? TRUE : FALSE;
     CcspTraceInfo(("CosaDmlTimeGetChronyEnable: %s\n", *pEnabled ? "true" : "false"));
     return ANSC_STATUS_SUCCESS;
