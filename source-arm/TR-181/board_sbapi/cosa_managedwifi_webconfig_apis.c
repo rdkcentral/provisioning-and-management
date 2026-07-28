@@ -783,7 +783,6 @@ int processTunnelInfo(amenityBridgeDetails_t * pCurrBrInfo, uint16_t ui16Flag, p
 
     updateFirewallSyscfg(pCurrBrInfo->iBridgeCount, pCurrBrInfo->bIsAmenityEnabled);
 
-    snprintf(pErrVar->ErrorMsg, BUFF_LEN_128,"Success\n");
     pErrVar->ErrorCode = BLOB_EXEC_SUCCESS;
     CcspTraceInfo(("%s:%d, Success \n", __FUNCTION__, __LINE__));
     return 0;
@@ -1169,7 +1168,6 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
         if (ui16Flag == 0)
         {
             CcspTraceError(("%s:%d, No changes in VLAN ID/Enable state\n",__FUNCTION__,__LINE__));
-            snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128, "No changes in VLAN ID/Enable state\n");
             pErrRetVal->ErrorCode = BLOB_EXEC_SUCCESS;
             return pErrRetVal;
         }
@@ -1273,7 +1271,6 @@ pErr createAmenitiesBridge(lanconfigTunnelInfo_t * pLanCfgTunnelInfo)
         sCurrAmenityBridgeDetails.iBridgeCount = 0;
     }
 
-    snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128, "Success");
     pErrRetVal->ErrorCode = BLOB_EXEC_SUCCESS;
     CcspTraceInfo(("%s:%d, BLOB_EXEC_SUCCESS \n",__FUNCTION__,__LINE__));
     return pErrRetVal;
