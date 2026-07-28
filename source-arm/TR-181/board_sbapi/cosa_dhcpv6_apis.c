@@ -2023,7 +2023,7 @@ static int CosaDmlDhcpv6sRestartOnLanStarted(void *arg)
     }
 #endif
 
-#if defined (_SCER11BEL_PRODUCT_REQ_) || defined(_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
     {
         g_dhcpv6_server_prefix_ready = TRUE; // To start dibbler server while lan-statues value is 'started'
@@ -2080,8 +2080,10 @@ CosaDmlDhcpv6Init
 
     if (!Utopia_Init(&utctx))
         return ANSC_STATUS_FAILURE;
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */
     {
         /* Dibbler-init is called to set the pre-configuration for dibbler */
         CcspTraceInfo(("%s dibbler-init.sh Called \n", __func__));
@@ -2218,8 +2220,10 @@ CosaDmlDhcpv6Init
     /*register callback function to restart dibbler-server at right time*/
     CcspTraceWarning(("%s -- %d register lan-status to event dispatcher \n", __FUNCTION__, __LINE__));
     EvtDispterRgstCallbackForEvent("lan-status", CosaDmlDhcpv6sRestartOnLanStarted, NULL);
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
+#endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
     {
         CcspTraceWarning(("%s -- %d register dibblerServer-restart to event dispatcher \n", __FUNCTION__, __LINE__));
         EvtDispterRgstCallbackForEvent("dibblerServer-restart", CosaDmlDhcpv6sRestartOnLanStarted, NULL);
@@ -3656,8 +3660,10 @@ static int _dibbler_server_operation(char * arg)
     if (!strncmp(arg, "stop", 4))
     {
         /*stop the process only if it is started*/
-        #if defined (_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+        #if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+        #if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
             if( TRUE == IsThisCurrentPartnerID("sky-") )
+        #endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
             {
                 if ( !g_dhcpv6_server_started )
                 goto EXIT;   
@@ -3714,8 +3720,10 @@ static int _dibbler_server_operation(char * arg)
             CcspTraceInfo(("%s:%d start dibbler %d\n",__FUNCTION__, __LINE__,g_dhcpv6_server));
             //fprintf(stderr, "%s -- %d start %d\n", __FUNCTION__, __LINE__, g_dhcpv6_server);
 
-            #if defined (_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+            #if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+            #if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                 if( TRUE == IsThisCurrentPartnerID("sky-") )
+            #endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_  */
                 {
                     g_dhcpv6_server_started = TRUE;
                 }
@@ -7115,8 +7123,10 @@ CosaDmlDhcpv6sSetType
         /* We need enable server */
         CcspTraceDebug(("%s,%d: Calling CosaDmlDHCPv6sTriggerRestart(FALSE)...\n", __FUNCTION__, __LINE__));
         CosaDmlDHCPv6sTriggerRestart(FALSE);
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
+#endif /* _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
         {
             v_secure_system("sysevent set zebra-restart");
         }
@@ -8796,7 +8806,7 @@ void CosaDmlDhcpv6sRebootServer()
 
     fd = open(DHCPV6S_SERVER_PID_FILE, O_RDONLY);
 /* dibbler-server process start fix for HUB4 and ADA */
-#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined(_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     FILE *fp_bin = NULL;
     char binbuff[64] = {0};
     fp_bin = v_secure_popen("r","ps|grep %s|grep -v grep", SERVER_BIN);
@@ -8815,8 +8825,10 @@ void CosaDmlDhcpv6sRebootServer()
         char out[128];
 
 /* dibbler-server process start fix for HUB4 and ADA */
-#if defined (_HUB4_PRODUCT_REQ_) || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined (_HUB4_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
+#endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */ 
         {
             if(fd >= 0)
             close(fd);   
@@ -11092,7 +11104,7 @@ dhcpv6c_dbg_thrd(void * in)
                             if(ret != 0) {
                                 CcspTraceInfo(("Assign global ip error \n"));
                             }
-#if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                                 if( TRUE == IsThisCurrentPartnerID("sky-") )
                                 {
                                     CcspTraceInfo(("%s Going to set [%s] address on brlan0 interface \n", __FUNCTION__, globalIP));
@@ -11143,8 +11155,10 @@ dhcpv6c_dbg_thrd(void * in)
                         }
 #endif
 #else
-#if defined(_HUB4_PRODUCT_REQ_)  || defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_)  || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                 if( TRUE == IsThisCurrentPartnerID("sky-") )
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */
                 {
                     commonSyseventGet(SYSEVENT_FIELD_IPV6_PREFIXVLTIME,
                                  hub4_valid_lft, sizeof(hub4_valid_lft));
@@ -11199,7 +11213,7 @@ dhcpv6c_dbg_thrd(void * in)
                         /* we need save this for zebra to send RA
                            ipv6_prefix           // xx:xx::/yy
                          */
-#if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                         if( TRUE == IsThisCurrentPartnerID("sky-") )
                         {
                             v_secure_system("sysevent set zebra-restart ");
@@ -11214,14 +11228,14 @@ dhcpv6c_dbg_thrd(void * in)
 #else
                         v_secure_system("sysevent set zebra-restart ");
 #endif
-#endif /** _RDKB_GLOBAL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */
                         g_dhcpv6_server_prefix_ready = TRUE;
 
 #if defined (_COSA_BCM_ARM_) || defined(_COSA_QCA_ARM_)
 #ifndef _SKY_HUB_COMMON_PRODUCT_REQ_
-#if defined (_RDKB_GLOBAL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                         if( FALSE == IsThisCurrentPartnerID("sky-") )
-#endif /** _RDKB_GLOBAL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ **/
                         {
                             CcspTraceDebug(("%s,%d: Calling CosaDmlDHCPv6sTriggerRestart(FALSE)...\n", __FUNCTION__, __LINE__));
                             CosaDmlDHCPv6sTriggerRestart(FALSE);
