@@ -2084,13 +2084,14 @@ void* restoreAllDBs(void* arg)
 #endif
 
 #if defined(_XER2_PRODUCT_REQ_)
-        v_secure_system("sync;find /nvram /nvram2 /data ! \\( -path '/nvram/.partner_ID' -o -regex '.*/Q[[:xdigit:]]\\{8\\}$' -o -path '/nvram/.apply_partner_defaults' \\) -mindepth 1 | xargs rm -r; sync");
+        v_secure_system("sync; find /nvram /nvram2 /data -mindepth 1 ! \\( -path '/nvram/.partner_ID' -o -regex '.*/Q[[:xdigit:]]\\{8\\}$' -o -path '/nvram/.apply_partner_defaults' \\) -exec rm -rf -- {} +; sync");	
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
-        v_secure_system("mkdir -p /nvram/secure/data/ && touch $_/syscfg.db");
+        v_secure_system("mkdir -p /nvram/secure/data/ && touch /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"factory_reset=y\" >> /nvram/secure/data/syscfg.db");
+        v_secure_system("touch /nvram/apparmor_factory_reset");
         v_secure_system("sync");
 #endif /* _XER2_PRODUCT_REQ_ */
 
