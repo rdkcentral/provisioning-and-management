@@ -405,6 +405,8 @@ CosaRoutingInitialize
         }
         else
         {
+            pMyObject->ulNextRouterInsNum = 1;
+
             pCosaContext->InstanceNumber = pMyObject->ulNextRouterInsNum;  
             
             pRouter->Cfg.InstanceNumber = pCosaContext->InstanceNumber ;
@@ -417,7 +419,7 @@ CosaRoutingInitialize
             }
 
             /* Generate Alias */
-            rc = sprintf_s(pRouter->Cfg.Alias, sizeof(pRouter->Cfg.Alias),"Router%lu", pMyObject->ulNextRouterInsNum);
+	    rc = sprintf_s(pRouter->Cfg.Alias, sizeof(pRouter->Cfg.Alias),"Router%lu", pRouter->Cfg.InstanceNumber);
             if(rc < EOK)
             {
               ERR_CHK(rc);
