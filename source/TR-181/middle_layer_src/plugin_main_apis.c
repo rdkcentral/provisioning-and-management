@@ -815,8 +815,10 @@ static void CheckAndSetRebootReason()
                 syscfg_get( NULL, "X_RDKCENTRAL-COM_LastRebootReason", rebootReason, sizeof(rebootReason));
             }
                 // reset counter to 0 for both known and unknown reason
+		CcspTraceWarning(("setRebootCounter(): before call, rebootCounter=%d\n", getRebootCounter()));
                 if(-1 == setRebootCounter())
                     CcspTraceWarning(("Error to SET reboot counter \n"));
+		CcspTraceWarning(("setRebootCounter(): success, rebootCounter(after)=%d\n", getRebootCounter()));
         }
 
         fpBootLogFile = fopen(BOOT_TIME_LOG_FILE, "a+");
