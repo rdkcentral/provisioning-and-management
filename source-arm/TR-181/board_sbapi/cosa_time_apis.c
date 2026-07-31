@@ -70,7 +70,6 @@
 
 **************************************************************************/
 
-#define _XOPEN_SOURCE 700
 #include "cosa_time_apis.h"
 #include <cjson/cJSON.h>
 #include "secure_wrapper.h"
@@ -926,6 +925,36 @@ ANSC_STATUS getCurrentTimeOffset(char *offset_value)
 }
 #endif
 
+#ifdef _USE_TIMEZONE_
+void parse_time_offset(const char *pTimeOffset, int *tz_hour, int *tz_min, bool *is_west) {
+    *tz_hour = 0;
+    *tz_min = 0;
+    *is_west = false;
+
+    if (!pTimeOffset || strncmp(pTimeOffset, "UTC", 3) != 0)
+        return;
+
+    // Expected format: UTC+8:00 or UTC-05:30
+    char sign = pTimeOffset[3];
+    *is_west = (sign == '-');
+
+    const char *ptr = pTimeOffset + 4;  // Move past "UTC+" or "UTC-"
+    char *colon = strchr(ptr, ':');
+
+    if (!colon){
+        CcspTraceWarning(("Invalid timeOffset format: %s\n", pTimeOffset));
+        return;
+    }
+
+    // Temporarily null-terminate at colon
+    char hour_buf[4] = {0};
+    strncpy(hour_buf, ptr, colon - ptr);
+
+    *tz_hour = strtol(hour_buf, NULL, 10);
+    *tz_min = strtol(colon + 1, NULL, 10);
+}
+#endif
+
 ANSC_STATUS
 CosaDmlTimeGetLocalTime
     (
@@ -956,29 +985,49 @@ struct tm *pLcltime, temp;
     pLcltime = localtime(&t);
 #endif
 #ifdef _USE_TIMEZONE_
+    UNREFERENCED_PARAMETER(pLcltime);
     UtopiaContext ctx;
     char val[UTOPIA_TR181_PARAM_SIZE1] = {0};
+
+    // To fetch and parse timeoffset
+    char timeOffset[MAX_COSATIMEOFFSET_SIZE] = {0};
+    int tz_hour = 0, tz_min = 0;
+    bool is_west = false;
+
+    if (CosaDmlTimeGetTimeOffset(NULL, timeOffset) == ANSC_STATUS_SUCCESS)
+    {
+        parse_time_offset(timeOffset, &tz_hour, &tz_min, &is_west);
+    }
+
     /* Initialize a Utopia Context */
     if (!Utopia_Init(&ctx))
         return ERR_UTCTX_INIT;
     char * regionTime = (char *) calloc(UTOPIA_TR181_PARAM_SIZE1, sizeof(char));
     if (regionTime == NULL)
+    {
+        Utopia_Free(&ctx, 0);
         return ANSC_STATUS_FAILURE;
+    }
     /* Fill Local TZ from SysCfg */
     if ((Utopia_Get_DeviceTime_LocalTZ(&ctx,val)) == UT_SUCCESS)
     {
         /* time_translate() API in zdump library will return region time */
         if (time_translate(val, &regionTime) == 0)
         {
-            struct tm tm;
-            strptime(regionTime, "%a %b %d %H:%M:%S %Y", &tm);
-            _ansc_sprintf(pCurrLocalTime, "%.4u-%.2u-%.2u %.2u:%.2u:%.2u",
-                  (tm.tm_year) + 1900,
-                  (tm.tm_mon) + 1,
-                  tm.tm_mday,
-                  tm.tm_hour,
-                  tm.tm_min,
-                  tm.tm_sec);
+            struct tm tm = {0};
+            if (strptime(regionTime, "%a %b %d %H:%M:%S %Y", &tm) != NULL)
+            {
+                _ansc_sprintf(pCurrLocalTime, "%.4u-%.2u-%.2uT%.2u:%.2u:%.2u%c%.2d:%.2d",
+                      (tm.tm_year) + 1900,
+                      (tm.tm_mon) + 1,
+                      tm.tm_mday,
+                      tm.tm_hour,
+                      tm.tm_min,
+                      tm.tm_sec,
+                      is_west ? '-' : '+',
+                      tz_hour,
+                      tz_min);
+            }
         }
     }
     free(regionTime);
