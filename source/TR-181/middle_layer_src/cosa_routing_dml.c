@@ -3506,6 +3506,7 @@ IPv6Forwarding_Synchronize
         bFound = FALSE;
         for ( i = 0; i < entryCount; i++)
         {
+			CcspTraceError("i : %d, entryCount : %d , pEntry2[i].DestIPPrefix : %s , pEntry->DestIPPrefix : %s \n", i, entryCount, pEntry2[i].DestIPPrefix, pEntry->DestIPPrefix);
             if ( !pulTmp[i] && ( _ansc_strcmp(pEntry2[i].DestIPPrefix, pEntry->DestIPPrefix) == 0 ) && 
                  ( _ansc_strcmp(pEntry2[i].Interface, pEntry->Interface) == 0 ) ) {
                 pulTmp[i] = 1;
