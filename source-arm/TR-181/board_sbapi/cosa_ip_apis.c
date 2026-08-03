@@ -440,6 +440,17 @@ CosaDmlIpInit
 	   g_usg_if_cfg[i].LinkType = ( TRUE == IsThisCurrentPartnerID("sky-") ) ? COSA_DML_LINK_TYPE_VlanLink : COSA_DML_LINK_TYPE_EthLink;   
 	}
 #endif
+ if (i == 0)
+ {
+        
+#if ( defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE) && !defined( _HUB4_PRODUCT_REQ_ ) )
+        char out_value[64] = {0};
+		if (!syscfg_get(NULL, "wan_physical_ifname", out_value, sizeof(out_value)) && out_value[0] !=0)
+			rc = strcpy_s(g_usg_if_cfg[i].IfName, sizeof(g_usg_if_cfg[i].IfName), out_value);  
+#endif
+	    rc = strcpy_s((char *)g_ipif_names[i],sizeof(g_ipif_names[i]), G_USG_IF_NAME(i));
+ }
+ else
         rc = strcpy_s((char *)g_ipif_names[i],sizeof(g_ipif_names[i]), G_USG_IF_NAME(i));
         ERR_CHK(rc);
         if ((gDmsbIpIfLoopbackInstNum == 0) && (strcmp(G_USG_IF_NAME(i), "lo") == 0))

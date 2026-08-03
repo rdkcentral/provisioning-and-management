@@ -214,7 +214,7 @@ CosaDmlDiGetRouterMacAddress
     )
 {
     UNREFERENCED_PARAMETER(hContext);
-#ifdef FEATURE_RDKB_XDSL_PPP_MANAGER
+#if defined(FEATURE_RDKB_XDSL_PPP_MANAGER) || defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
     char wanPhyName[32] = {0};
     char out_value[32] = {0};
 
