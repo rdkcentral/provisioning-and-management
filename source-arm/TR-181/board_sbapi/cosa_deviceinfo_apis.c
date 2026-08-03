@@ -5366,7 +5366,7 @@ CosaDmlSetnewNTPEnable(BOOL bValue)
      }
 
     if ( access( "/nvram/chrony_enabled", F_OK ) == 0 )
-         commonSyseventSet("chrony-restart", "");
+         commonSyseventSet("chronyd-restart", "");
     else
          commonSyseventSet("ntpd-restart", "");
 
