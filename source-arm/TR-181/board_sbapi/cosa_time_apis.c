@@ -76,6 +76,7 @@
 #include "safec_lib_common.h"
 #include <errno.h>
 #include <unistd.h>
+#include <syscfg/syscfg.h>
 
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
 #define BOOTSTRAP_INFO_FILE             "/opt/secure/bootstrap.json"
