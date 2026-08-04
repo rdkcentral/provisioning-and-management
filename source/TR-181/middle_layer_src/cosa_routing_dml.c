@@ -3469,7 +3469,7 @@ IPv6Forwarding_Synchronize
     ULONG                           i             = 0;
     BOOL                            bFound        = FALSE;
     errno_t                         rc            = -1;
- 
+    char buf[256];
     entryCount                      = CosaDmlRoutingGetNumberOfV6Entries(NULL);
     
     pulTmp    =   AnscAllocateMemory( entryCount * sizeof(ULONG) );
@@ -3506,7 +3506,14 @@ IPv6Forwarding_Synchronize
         bFound = FALSE;
         for ( i = 0; i < entryCount; i++)
         {
-			CcspTraceError("i : %d, entryCount : %d , pEntry2[i].DestIPPrefix : %s , pEntry->DestIPPrefix : %s \n", i, entryCount, pEntry2[i].DestIPPrefix, pEntry->DestIPPrefix);
+           snprintf(buf, sizeof(buf),
+         "i : %d, entryCount : %d, pEntry2[i].DestIPPrefix : %s, pEntry->DestIPPrefix : %s\n",
+         i,
+         entryCount,
+         pEntry2[i].DestIPPrefix,
+         pEntry->DestIPPrefix);
+
+	     CcspTraceError(buf);		
             if ( !pulTmp[i] && ( _ansc_strcmp(pEntry2[i].DestIPPrefix, pEntry->DestIPPrefix) == 0 ) && 
                  ( _ansc_strcmp(pEntry2[i].Interface, pEntry->Interface) == 0 ) ) {
                 pulTmp[i] = 1;
