@@ -2247,11 +2247,15 @@ CosaDmlRoutingSetV6Entry
 {
     UNREFERENCED_PARAMETER(hContext);
     ULONG                           i       = 0;
-
+    CcspTraceError(("%s:%d,  ###### g_RouterFull.ulNumOfIPv6Forward: %d ######## \n", __FUNCTION__, __LINE__, g_RouterFull.ulNumOfIPv6Forward));
     for ( i = 0; i < g_RouterFull.ulNumOfIPv6Forward; i++ )
     {
+		CcspTraceError(("%s:%d,  ###### g_RouterFull.V6ForwardList[i].InstanceNumber: %d ######## \n", __FUNCTION__, __LINE__, g_RouterFull.V6ForwardList[i].InstanceNumber));
+		CcspTraceError(("%s:%d,  ###### pEntry->InstanceNumber: %d ######## \n", __FUNCTION__, __LINE__, pEntry->InstanceNumber));
         if ( g_RouterFull.V6ForwardList[i].InstanceNumber == pEntry->InstanceNumber )
         {
+			CcspTraceError(("%s:%d,  ###### entryCount: %d ######## \n", __FUNCTION__, __LINE__, i));
+			
             AnscCopyMemory(&g_RouterFull.V6ForwardList[i], pEntry, sizeof(COSA_DML_ROUTING_V6_ENTRY));
 
             return ANSC_STATUS_SUCCESS;
