@@ -1638,7 +1638,7 @@ MAPT_LOG_INFO("<<<Trace>>> Received PdIPv6Prefix : %s/%u", g_stMaptData.PdIPv6Pr
       syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
       if (strcmp(chronyEnabled, "true") == 0)
       {
-          MAPT_LOG_INFO("Triggering chrony-restart");
+          MAPT_LOG_INFO("Triggering chronyd-restart");
           commonSyseventSet ("chrony-restart", NULL);
       }
       else
