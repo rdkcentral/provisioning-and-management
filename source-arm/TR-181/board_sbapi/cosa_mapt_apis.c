@@ -1633,18 +1633,20 @@ MAPT_LOG_INFO("<<<Trace>>> Received PdIPv6Prefix : %s/%u", g_stMaptData.PdIPv6Pr
   /* Restarting firewall to apply mapt rules */
   MAPT_LOG_INFO("MAPT events are set. Triggering firewall-restart");
   commonSyseventSet (EVENT_FIREWALL_RESTART, NULL);
-  
-  if ( access("/nvram/chrony_enabled", F_OK) == 0 )
-  {
-      MAPT_LOG_INFO("Triggering chrony-restart");
-      commonSyseventSet ("chronyd-restart", NULL);
-  }
-  else
-  {
-      MAPT_LOG_INFO("Triggering ntpd-restart");
-      commonSyseventSet (EVENT_NTPD_RESTART, NULL);
-  }
-
+ {
+     char chronyEnabled[8] = {0};
+      syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
+      if (strcmp(chronyEnabled, "true") == 0)
+      {
+          MAPT_LOG_INFO("Triggering chrony-restart");
+          commonSyseventSet ("chrony-restart", NULL);
+      }
+      else
+      {
+          MAPT_LOG_INFO("Triggering ntpd-restart");
+          commonSyseventSet (EVENT_NTPD_RESTART, NULL);
+      }
+ }
   /* Display port based features' status */
   if ( CosaDmlMaptDisplayFeatureStatus() )
   {
