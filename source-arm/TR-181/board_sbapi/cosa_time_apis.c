@@ -168,6 +168,7 @@ CosaDmlTimeGetLocalTime
 #include <utctx/utctx_api.h>
 #include <utapi.h>
 #include <utapi_util.h>
+#include <syscfg/syscfg.h>
 #include "cosa_drg_common.h"
 #include "platform_hal.h"
 #define UTOPIA_TR181_PARAM_SIZE1   256
@@ -651,16 +652,18 @@ CosaDmlTimeSetCfg
 #ifdef NTPD_ENABLE
        /* Restart whichever NTP client is currently active so it reloads the new
         * server list: chronyd when the RFC flag is set, otherwise ntpd. */
-       if (access("/nvram/chrony_enabled", F_OK) == 0)
-       {
-           CcspTraceWarning(("%s: chrony active - triggering event to restart chronyd \n", __FUNCTION__));
-           commonSyseventSet("chronyd-restart", "");
-       }
-       else
-       {
-           CcspTraceWarning(("%s: Triggering event to restart ntpd \n", __FUNCTION__));
-           commonSyseventSet("ntpd-restart", "");
-       }
+           char chronyEnabled[8] = {0};
+           syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
+           if (strcmp(chronyEnabled, "true") == 0)
+           {
+               CcspTraceWarning(("%s: chrony active - triggering event to restart chronyd \n", __FUNCTION__));
+               commonSyseventSet("chronyd-restart", "");
+           }
+           else
+           {
+               CcspTraceWarning(("%s: Triggering event to restart ntpd \n", __FUNCTION__));
+               commonSyseventSet("ntpd-restart", "");
+           }
 #else
     pthread_t ntp_thread;
     int err = 0;
@@ -1262,8 +1265,8 @@ CosaNTPInitJournal
 /* ─────────────────────────────────────────────────────────────────────────────
  * CosaDmlTimeGetChronyEnable
  *
- * Returns TRUE in *pEnabled when /nvram/chrony_enabled exists (chrony RFC flag
- * is set), FALSE otherwise.  Always returns ANSC_STATUS_SUCCESS.
+ * Returns TRUE in *pEnabled when syscfg key equals "true"
+ * (chrony RFC flag is set), FALSE otherwise.  Always returns ANSC_STATUS_SUCCESS.
  * ─────────────────────────────────────────────────────────────────────────────*/
 ANSC_STATUS
 CosaDmlTimeGetChronyEnable
@@ -1277,7 +1280,9 @@ CosaDmlTimeGetChronyEnable
          return ANSC_STATUS_FAILURE;
      }
 
-    *pEnabled = (access("/nvram/chrony_enabled", F_OK) == 0) ? TRUE : FALSE;
+    char syscfgVal[8] = {0};
+    syscfg_get(NULL, "chrony_enabled", syscfgVal, sizeof(syscfgVal));
+    *pEnabled = (strcmp(syscfgVal, "true") == 0) ? TRUE : FALSE;
     CcspTraceInfo(("CosaDmlTimeGetChronyEnable: %s\n", *pEnabled ? "true" : "false"));
     return ANSC_STATUS_SUCCESS;
 }
@@ -1304,9 +1309,9 @@ CosaChronyNormalizeThreshold(float threshold, char *out, size_t outLen)
 /* ─────────────────────────────────────────────────────────────────────────────
  * CosaDmlTimeGetMakestep
  *
- * Reads /nvram/chrony_makestep and converts "makestep <threshold> <limit>"
+ * Reads syscfg key  and converts "makestep <threshold> <limit>"
  * to "<threshold>,<limit>" form in pValue.
- * Falls back to the compiled default "1.0,3" if the file is absent or malformed.
+ * Falls back to the compiled default "1.0,3" if the key is unset or malformed.
  * ─────────────────────────────────────────────────────────────────────────────*/
 ANSC_STATUS
 CosaDmlTimeGetMakestep
@@ -1315,29 +1320,22 @@ CosaDmlTimeGetMakestep
         ULONG                       bufLen
     )
 {
-    FILE *fp = fopen("/nvram/chrony_makestep", "r");
-    if (fp != NULL)
+   char line[64] = {0};
+    syscfg_get(NULL, "chrony_makestep", line, sizeof(line));
+    if (line[0] != '\0')
     {
-        char line[64] = {0};
-        if (fgets(line, sizeof(line), fp) != NULL)
+        float threshold = 0.0f;
+        int   limit     = 0;
+        if (sscanf(line, "makestep %f %d", &threshold, &limit) == 2)
         {
-            float threshold = 0.0f;
-            int   limit     = 0;
-            if (sscanf(line, "makestep %f %d", &threshold, &limit) == 2)
-            {
-                char normThreshold[32] = {0};
-                CosaChronyNormalizeThreshold(threshold, normThreshold, sizeof(normThreshold));
-                snprintf(pValue, bufLen, "%s,%d", normThreshold, limit);
-            }
-            else
-                snprintf(pValue, bufLen, "1.0,3");
+            char normThreshold[32] = {0};
+            CosaChronyNormalizeThreshold(threshold, normThreshold, sizeof(normThreshold));
+            snprintf(pValue, bufLen, "%s,%d", normThreshold, limit);
         }
-        else
-        {
-            snprintf(pValue, bufLen, "1.0,3");
+        else {
+            snprintf(pValue, bufLen, "1.0,3")
         }
-        fclose(fp);
-    }
+	}
     else
     {
         snprintf(pValue, bufLen, "1.0,3");
@@ -1375,7 +1373,9 @@ CosaDmlTimeGetChronyServerSettings
 /* ─────────────────────────────────────────────────────────────────────────────
  * CosaDmlTimeSetChronyEnable
  *
- * Enable or disable the Chrony NTP client via the RFC flag file and sysevents.
+ * Enable or disable the Chrony NTP client via the syscfg RFC flag and sysevents.
+ * Enable:  sysevent ntpd-stop  →  syscfg chrony_enabled=true  →  sysevent chrony-start
+ * Disable: sysevent chrony-stop →  syscfg chrony_enabled=false →  sysevent ntpd-restart
  * ─────────────────────────────────────────────────────────────────────────────*/
 ANSC_STATUS
 CosaDmlTimeSetChronyEnable
@@ -1386,9 +1386,11 @@ CosaDmlTimeSetChronyEnable
     int rc;
 
     /* No-op when the requested state already matches the current state:
-     * do not rewrite the flag file or fire any sysevent. */
+     * do not rewrite the syscfg key or fire any sysevent. */
+	 char syscfgVal[8] = {0};
+    syscfg_get(NULL, "chrony_enabled", syscfgVal, sizeof(syscfgVal));
     BOOL bReq     = bEnabled ? TRUE : FALSE;
-    BOOL bCurrent = (access("/nvram/chrony_enabled", F_OK) == 0) ? TRUE : FALSE;
+    BOOL bCurrent = (strcmp(syscfgVal, "true") == 0) ? TRUE : FALSE;
     if (bReq == bCurrent)
     {
         CcspTraceInfo(("CosaDmlTimeSetChronyEnable: already %s, no action\n",
@@ -1400,15 +1402,13 @@ CosaDmlTimeSetChronyEnable
     {
         CcspTraceInfo(("CosaDmlTimeSetChronyEnable: enabling chrony\n"));
 
-        FILE *fp = fopen("/nvram/chrony_enabled", "w");
-        if (fp == NULL)
+        /* Persist the RFC flag before starting chronyd */
+        if (syscfg_set_commit(NULL, "chrony_enabled", "true") != 0)
         {
-            CcspTraceError(("CosaDmlTimeSetChronyEnable: failed to create /nvram/chrony_enabled: %s\n",
-                            strerror(errno)));
+            CcspTraceError(("CosaDmlTimeSetChronyEnable: failed to set syscfg chrony_enabled=true"));
             return ANSC_STATUS_FAILURE;
         }
-        fclose(fp);
-
+   
 		rc = v_secure_system("sysevent set ntpd-stop");
         if (rc != 0)
             CcspTraceWarning(("CosaDmlTimeSetChronyEnable: ntpd-stop sysevent returned %d\n", rc));
@@ -1424,10 +1424,9 @@ CosaDmlTimeSetChronyEnable
         if (rc != 0)
             CcspTraceWarning(("CosaDmlTimeSetChronyEnable: chronyd-stop sysevent returned %d\n", rc));
 
-        if (unlink("/nvram/chrony_enabled") != 0 && errno != ENOENT)
+        if (syscfg_set_commit(NULL, "chrony_enabled", "false") != 0)
         {
-            CcspTraceError(("CosaDmlTimeSetChronyEnable: failed to remove /nvram/chrony_enabled: %s\n",
-                            strerror(errno)));
+            CcspTraceError(("CosaDmlTimeSetChronyEnable: failed to set syscfg chrony_enabled=false\n"));
             return ANSC_STATUS_FAILURE;
         }
 
@@ -1443,7 +1442,10 @@ CosaDmlTimeSetChronyEnable
  * CosaDmlTimeSetMakestep
  *
  * Parse "threshold,limit" (e.g. "1.0,3"), validate, and write
- * "makestep <threshold> <limit>" to /nvram/chrony_makestep.
+ * "makestep <threshold> <limit>" to syscfg key chrony_makestep
+ * Persists across reboots. Fires chrony-restart sysevent when chrony is
+ * currently enabled (syscfg chrony_enabled==true) so the daemon picks
+ * up the new value immediately.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -1498,36 +1500,28 @@ CosaDmlTimeSetMakestep
     snprintf(directive, sizeof(directive), "makestep %s %ld", normThreshold, limit);
 
     /* No-op when the normalized directive already matches the persisted value:
-     * do not rewrite the file or fire a restart. */
-    FILE *rfp = fopen("/nvram/chrony_makestep", "r");
-    if (rfp != NULL)
+     * do not rewrite the syscfg or fire a restart.
+	 */
+    char cur[80] = {0};
+    syscfg_get(NULL, "chrony_makestep", cur, sizeof(cur));
+    if (cur[0] != '\0')
     {
-        char cur[80] = {0};
-        if (fgets(cur, sizeof(cur), rfp) != NULL)
+        cur[strcspn(cur, "\n")] = '\0';
+        if (strcmp(cur, directive) == 0)
         {
-            cur[strcspn(cur, "\n")] = '\0';
-            if (strcmp(cur, directive) == 0)
-            {
-                fclose(rfp);
-                CcspTraceInfo(("CosaDmlTimeSetMakestep: '%s' unchanged, no action\n", directive));
-                return ANSC_STATUS_SUCCESS;
-            }
+            CcspTraceInfo(("CosaDmlTimeSetMakestep: '%s' unchanged, no action\n", directive));
+            return ANSC_STATUS_SUCCESS;
         }
-        fclose(rfp);
     }
 
-    /* Write the directive to /nvram so it persists across reboots */
-    FILE *fp = fopen("/nvram/chrony_makestep", "w");
-    if (fp == NULL)
-    {
-        CcspTraceError(("CosaDmlTimeSetMakestep: cannot open /nvram/chrony_makestep: %s\n",
-                        strerror(errno)));
+     /* Persist the directive to syscfg so it survives reboots */
+    if (syscfg_set_commit(NULL, "chrony_makestep", directive) != 0)
+	{
+       CcspTraceError(("CosaDmlTimeSetMakestep: cannot set syscfg chrony_makestep\n"));
         return ANSC_STATUS_FAILURE;
     }
-    fprintf(fp, "%s\n", directive);
-    fclose(fp);
-
-    CcspTraceInfo(("CosaDmlTimeSetMakestep: wrote '%s' to /nvram/chrony_makestep\n", directive));
+ 
+    CcspTraceInfo(("CosaDmlTimeSetMakestep: wrote '%s' to syscfg chrony_makestep\n", directive));
 
     /* Trigger a live config reload — service_chronyd.sh guards on RFC flag internally */
     int rc = v_secure_system("sysevent set chronyd-restart");
