@@ -5377,7 +5377,7 @@ CosaDmlSetnewNTPEnable(BOOL bValue)
          char chronyEnabled[8] = {0};
          syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
          if (strcmp(chronyEnabled, "true") == 0)
-             commonSyseventSet("chrony-restart", "");
+             commonSyseventSet("chronyd-restart", "");
          else
              commonSyseventSet("ntpd-restart", "");
      }
