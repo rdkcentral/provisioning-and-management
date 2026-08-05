@@ -1333,7 +1333,7 @@ CosaDmlTimeGetMakestep
             snprintf(pValue, bufLen, "%s,%d", normThreshold, limit);
         }
         else {
-            snprintf(pValue, bufLen, "1.0,3")
+            snprintf(pValue, bufLen, "1.0,3");
         }
 	}
     else
