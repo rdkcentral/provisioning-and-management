@@ -1471,6 +1471,37 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
 
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) ||  defined(RBUS_BUILD_FLAG_ENABLE) ||  defined(_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
+static void devCtrlRbusLazyProbe(void)
+{
+    const char* enabled = getenv("PAM_RBUS_LAZY_PROBE");
+    const char* probeName = getenv("PAM_RBUS_LAZY_PROBE_PARAM");
+    rbusValue_t value = NULL;
+    rbusError_t rc;
+
+    if(!enabled || strcmp(enabled, "1") != 0)
+        return;
+
+    if(!probeName || probeName[0] == '\0')
+        probeName = WANMGR_WAN_STATE_EVENT;
+
+    CcspTraceInfo(("%s: probing lazy materialization with rbus_get on [%s]\n", __FUNCTION__, probeName));
+    rc = rbus_get(handle, probeName, &value);
+    if(rc == RBUS_ERROR_SUCCESS)
+    {
+        char* text = rbusValue_ToString(value, NULL, 0);
+        CcspTraceInfo(("%s: probe success for [%s], value=%s\n", __FUNCTION__, probeName, text ? text : "<null>"));
+        if(text)
+            free(text);
+    }
+    else
+    {
+        CcspTraceWarning(("%s: probe failed for [%s], rc=%d\n", __FUNCTION__, probeName, rc));
+    }
+
+    if(value)
+        rbusValue_Release(value);
+}
+
 /***********************************************************************
 
   devCtrlRbusInit(): Initialize Rbus and data elements
@@ -1495,6 +1526,7 @@ rbusError_t devCtrlRbusInit()
 	}
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
 	// Register data elements
+    CcspTraceInfo(("%s: registering %u RBUS elements for [%s] in lazy mode\n", __FUNCTION__, (unsigned int)NUM_OF_RBUS_PARAMS, RBUS_COMPONENT_NAME));
 	rc = rbus_regDataElements(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
 #endif
 	if (rc != RBUS_ERROR_SUCCESS)
@@ -1503,6 +1535,8 @@ rbusError_t devCtrlRbusInit()
 		rc = rbus_close(handle);
 		return rc;
 	}
+    CcspTraceInfo(("%s: RBUS lazy registration completed for [%s]\n", __FUNCTION__, RBUS_COMPONENT_NAME));
+    devCtrlRbusLazyProbe();
     #if defined (AMENITIES_NETWORK_ENABLED)
     CcspTraceInfo(("%s: %d, Adding row to the rbus table\n", __FUNCTION__, __LINE__));
     for (int iCount = 1; iCount <= NUM_OF_SUPPORTED_ELEMENTS; iCount++)
