@@ -1471,6 +1471,62 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
 #endif /**  RBUS_BUILD_FLAG_ENABLE && !_HUB4_PRODUCT_REQ_ && !RDKB_EXTENDER_ENABLED */
 
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) ||  defined(RBUS_BUILD_FLAG_ENABLE) ||  defined(_HUB4_PRODUCT_REQ_) || defined (_PLATFORM_RASPBERRYPI_) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
+static void PandM_LogMemoryUsage(const char* stage, const char* detail)
+{
+    FILE* fp;
+    char line[256];
+    char vmRss[64] = "unknown";
+    char vmSize[64] = "unknown";
+    char vmData[64] = "unknown";
+    char* value;
+
+    fp = fopen("/proc/self/status", "r");
+    if(!fp)
+    {
+        CcspTraceWarning(("%s: MEM[%s] detail=%s unable to read /proc/self/status\n", __FUNCTION__, stage ? stage : "unknown", detail ? detail : ""));
+        return;
+    }
+
+    while(fgets(line, sizeof(line), fp))
+    {
+        if(strncmp(line, "VmRSS:", 6) == 0)
+        {
+            value = line + 6;
+            while(*value == ' ' || *value == '\t')
+                value++;
+            strncpy(vmRss, value, sizeof(vmRss) - 1);
+            vmRss[sizeof(vmRss) - 1] = 0;
+            vmRss[strcspn(vmRss, "\r\n")] = 0;
+        }
+        else if(strncmp(line, "VmSize:", 7) == 0)
+        {
+            value = line + 7;
+            while(*value == ' ' || *value == '\t')
+                value++;
+            strncpy(vmSize, value, sizeof(vmSize) - 1);
+            vmSize[sizeof(vmSize) - 1] = 0;
+            vmSize[strcspn(vmSize, "\r\n")] = 0;
+        }
+        else if(strncmp(line, "VmData:", 7) == 0)
+        {
+            value = line + 7;
+            while(*value == ' ' || *value == '\t')
+                value++;
+            strncpy(vmData, value, sizeof(vmData) - 1);
+            vmData[sizeof(vmData) - 1] = 0;
+            vmData[strcspn(vmData, "\r\n")] = 0;
+        }
+    }
+
+    fclose(fp);
+    CcspTraceInfo(("MEM[%s] detail=%s VmRSS=%s VmSize=%s VmData=%s\n",
+        stage ? stage : "unknown",
+        detail ? detail : "",
+        vmRss,
+        vmSize,
+        vmData));
+}
+
 static void devCtrlRbusLazyProbe(void)
 {
     const char* enabled = getenv("PAM_RBUS_LAZY_PROBE");
@@ -1527,7 +1583,8 @@ rbusError_t devCtrlRbusInit()
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
 	// Register data elements
     CcspTraceInfo(("%s: registering %u RBUS elements for [%s] in lazy mode\n", __FUNCTION__, (unsigned int)NUM_OF_RBUS_PARAMS, RBUS_COMPONENT_NAME));
-	rc = rbus_regDataElements(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
+    PandM_LogMemoryUsage("pandm_register_before", "devCtrlRbusInit");
+    rc = rbus_regDataElementsLazy(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
 #endif
 	if (rc != RBUS_ERROR_SUCCESS)
 	{
@@ -1536,13 +1593,16 @@ rbusError_t devCtrlRbusInit()
 		return rc;
 	}
     CcspTraceInfo(("%s: RBUS lazy registration completed for [%s]\n", __FUNCTION__, RBUS_COMPONENT_NAME));
+    PandM_LogMemoryUsage("pandm_register_after", "devCtrlRbusInit");
     devCtrlRbusLazyProbe();
     #if defined (AMENITIES_NETWORK_ENABLED)
     CcspTraceInfo(("%s: %d, Adding row to the rbus table\n", __FUNCTION__, __LINE__));
     for (int iCount = 1; iCount <= NUM_OF_SUPPORTED_ELEMENTS; iCount++)
     {
         CcspTraceInfo(("%s: %d, Adding row %d to the rbus table\n", __FUNCTION__, __LINE__, iCount));
+        PandM_LogMemoryUsage("pandm_table_addrow_before", LAN_BRIDGES_TABLE);
         rc = rbusTable_addRow(handle, LAN_BRIDGES_TABLE, NULL, NULL);
+        PandM_LogMemoryUsage("pandm_table_addrow_after", LAN_BRIDGES_TABLE);
         if (rc != RBUS_ERROR_SUCCESS)
         {
             CcspTraceError(("%s: %d, Failed to add row %d to the rbus table\n", __FUNCTION__, __LINE__, iCount));
