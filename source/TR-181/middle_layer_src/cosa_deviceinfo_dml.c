@@ -11125,6 +11125,290 @@ DFSatBootUp_GetParamBoolValue
     prototype:
 
         BOOL
+        tcpdump_GetParamIntValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                int*                        pint
+            );
+
+    description:
+
+        This function is called to get INT parameter value
+        for tcpdump RFC parameters.
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                int*                        pint
+                The retrieved INT value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+tcpdump_GetParamIntValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pint
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName || !pint)
+    {
+        return FALSE;
+    }
+
+    if (strcmp(ParamName, "Duration") == 0)
+    {
+        char *strValue = NULL;
+        int retPsmGet = CCSP_SUCCESS;
+
+        retPsmGet = PSM_Get_Record_Value2(
+            bus_handle,
+            g_Subsystem,
+            "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.tcpdump.Duration",
+            NULL,
+            &strValue);
+
+        if (retPsmGet == CCSP_SUCCESS && strValue != NULL)
+        {
+            *pint = _ansc_atoi(strValue);
+            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+        }
+        else
+        {
+            *pint = 30;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        tcpdump_SetParamIntValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                int                         iValue
+            );
+
+    description:
+
+        This function is called to set INT parameter value
+        for tcpdump RFC parameters.
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                int                         iValue
+                The updated INT value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+tcpdump_SetParamIntValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         iValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName)
+    {
+        return FALSE;
+    }
+
+    if (strcmp(ParamName, "Duration") == 0)
+    {
+        int retPsmSet = CCSP_SUCCESS;
+        char value[16] = {0};
+
+        snprintf(value, sizeof(value), "%d", iValue);
+        retPsmSet = PSM_Set_Record_Value2(
+            bus_handle,
+            g_Subsystem,
+            "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.tcpdump.Duration",
+            ccsp_string,
+            value);
+
+        if (retPsmSet != CCSP_SUCCESS)
+        {
+            CcspTraceError(("Set failed for tcpdump Duration RFC\n"));
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        strace_GetParamIntValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                int*                        pint
+            );
+
+    description:
+
+        This function is called to get INT parameter value
+        for strace RFC parameters.
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                int*                        pint
+                The retrieved INT value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+strace_GetParamIntValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pint
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName || !pint)
+    {
+        return FALSE;
+    }
+
+    if (strcmp(ParamName, "Duration") == 0)
+    {
+        char *strValue = NULL;
+        int retPsmGet = CCSP_SUCCESS;
+
+        retPsmGet = PSM_Get_Record_Value2(
+            bus_handle,
+            g_Subsystem,
+            "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.strace.Duration",
+            NULL,
+            &strValue);
+
+        if (retPsmGet == CCSP_SUCCESS && strValue != NULL)
+        {
+            *pint = _ansc_atoi(strValue);
+            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+        }
+        else
+        {
+            *pint = 30;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        strace_SetParamIntValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                int                         iValue
+            );
+
+    description:
+
+        This function is called to set INT parameter value
+        for strace RFC parameters.
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                int                         iValue
+                The updated INT value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+strace_SetParamIntValue
+
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         iValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName)
+    {
+        return FALSE;
+    }
+
+    if (strcmp(ParamName, "Duration") == 0)
+    {
+        int retPsmSet = CCSP_SUCCESS;
+        char value[16] = {0};
+
+        snprintf(value, sizeof(value), "%d", iValue);
+        retPsmSet = PSM_Set_Record_Value2(
+            bus_handle,
+            g_Subsystem,
+            "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.strace.Duration",
+            ccsp_string,
+            value);
+
+        if (retPsmSet != CCSP_SUCCESS)
+        {
+            CcspTraceError(("Set failed for strace Duration RFC\n"));
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
         DFS_GetParamBoolValue
             (
                 ANSC_HANDLE                 hInsContext,
@@ -14716,11 +15000,38 @@ RDKDownloadManager_SetParamStringValue
     if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
+    const char* tool = NULL;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
         CcspTraceWarning(("[%s] Invalid parameter value\n", __FUNCTION__));
         return FALSE;
+    }
+
+    if (strncmp(pString, "uninstall:", 10) == 0 || strncmp(pString, "cleanup:", 8) == 0)
+    {
+        const char* cleanupArg = pString + ((strncmp(pString, "uninstall:", 10) == 0) ? 10 : 8);
+        if (strstr(cleanupArg, "tcpdump") != NULL) {
+            tool = "tcpdump";
+        } else if (strstr(cleanupArg, "strace") != NULL) {
+            tool = "strace";
+        } else {
+            CcspTraceWarning(("[%s] Unsupported cleanup target '%s'\n", __FUNCTION__, cleanupArg));
+            return FALSE;
+        }
+
+        ret = v_secure_system("/bin/sh -c 'rm -f /tmp/tools/%s; rm -rf /run/%s; rm -rf /tmp/rdm/downloads/*%s* /tmp/*%s*' >> /rdklogs/logs/rdm_status.log 2>&1 &",
+                              tool,
+                              tool,
+                              tool,
+                              tool);
+        if (ret != 0) {
+            CcspTraceWarning(("[%s] Failed manual cleanup for %s. Returned error code '%d'\n", __FUNCTION__, tool, ret));
+            return FALSE;
+        }
+
+        CcspTraceWarning(("[%s] Manual cleanup triggered for %s\n", __FUNCTION__, tool));
+        return TRUE;
     }
 
     CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
@@ -14730,6 +15041,34 @@ RDKDownloadManager_SetParamStringValue
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
         return FALSE;
+    }
+
+
+    if (strstr(pString, "tcpdump") != NULL) {
+        tool = "tcpdump";
+    } else if (strstr(pString, "strace") != NULL) {
+        tool = "strace";
+    }
+
+    if (tool != NULL)
+    {
+        const char* ttlParam = (strcmp(tool, "tcpdump") == 0)
+            ? "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.tcpdump.Duration"
+            : "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.strace.Duration";
+
+        /* Auto cleanup: use tool-specific RFC Duration; fallback to 30 seconds. */
+        ret = v_secure_system("/bin/sh -c 'ttl=$(tr181 %s 2>/dev/null | tail -n 1); case \"$ttl\" in \"\"|*[!0-9]*) ttl=30;; esac; if [ \"$ttl\" -le 0 ]; then ttl=30; fi; (sleep \"$ttl\"; rm -f /tmp/tools/%s; rm -rf /run/%s; rm -rf /tmp/rdm/downloads/*%s* /tmp/*%s*) >> /rdklogs/logs/rdm_status.log 2>&1 &'",
+                              ttlParam,
+                              tool,
+                              tool,
+                              tool,
+                              tool);
+
+        if (ret != 0) {
+            CcspTraceWarning(("[%s] Failed to schedule TTL cleanup for %s. Returned error code '%d'\n", __FUNCTION__, tool, ret));
+        } else {
+            CcspTraceWarning(("[%s] Scheduled TTL cleanup for %s\n", __FUNCTION__, tool));
+        }
     }
 
     CcspTraceWarning(("[%s] Exiting..\n", __FUNCTION__ ));

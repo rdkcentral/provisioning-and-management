@@ -3568,6 +3568,42 @@
                         </parameter>
                     </parameters>
                 </object>
+            <object>
+              <name>tcpdump</name>
+                <objectType>object</objectType>
+			  
+                <functions>
+                    <func_GetParamIntValue>tcpdump_GetParamIntValue</func_GetParamIntValue>
+                    <func_SetParamIntValue>tcpdump_SetParamIntValue</func_SetParamIntValue>
+                </functions>
+
+                <parameters>
+                    <parameter>
+                        <name>Duration</name>
+                        <type>unsignedInt(0:65535)</type>
+                       <syntax>uint</syntax>
+                       <writable>true</writable>
+                    </parameter>
+                </parameters>
+            </object>
+            <object>
+              <name>strace</name>
+                <objectType>object</objectType>
+			  
+                <functions>
+                    <func_GetParamIntValue>strace_GetParamIntValue</func_GetParamIntValue>
+                    <func_SetParamIntValue>strace_SetParamIntValue</func_SetParamIntValue>
+                </functions>
+
+                <parameters>
+                    <parameter>
+                        <name>Duration</name>
+                        <type>unsignedInt(0:65535)</type>
+                        <syntax>uint</syntax>
+                        <writable>true</writable>
+                    </parameter>
+                </parameters>
+              </object>
 <?ifdef FEATURE_SUPPORT_INTERWORKING?>
 		<object>
 			<name>WiFi-Interworking</name>

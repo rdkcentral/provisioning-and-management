@@ -2659,6 +2659,23 @@ BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, c
 
  APIs for Object:
 
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.tcpdump.Duration
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.strace.Duration
+
+    *  tcpdump_GetParamIntValue
+    *  tcpdump_SetParamIntValue
+    *  strace_GetParamIntValue
+    *  strace_SetParamIntValue
+***********************************************************************/
+BOOL tcpdump_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pint);
+BOOL tcpdump_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int iValue);
+BOOL strace_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pint);
+BOOL strace_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int iValue);
+
+/***********************************************************************
+
+ APIs for Object:
+
     DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.AccountInfo.AccountID
 
     *  AccountInfo_GetParamStringValue
