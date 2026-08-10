@@ -5373,7 +5373,14 @@ CosaDmlSetnewNTPEnable(BOOL bValue)
          }
      }
 
-     commonSyseventSet("ntpd-restart", "");
+    {
+         char chronyEnabled[8] = {0};
+         syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
+         if (strcmp(chronyEnabled, "true") == 0)
+             commonSyseventSet("chronyd-restart", "");
+         else
+             commonSyseventSet("ntpd-restart", "");
+     }
    
      return ANSC_STATUS_SUCCESS;
 

@@ -314,4 +314,106 @@ Time_Rollback
         ANSC_HANDLE                 hInsContext
     );
 
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.Time.Chrony.
+
+    *  Chrony_GetParamBoolValue
+    *  Chrony_SetParamBoolValue
+    *  Chrony_GetParamStringValue
+    *  Chrony_SetParamStringValue
+
+***********************************************************************/
+BOOL
+Chrony_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    );
+
+BOOL
+Chrony_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+ULONG
+Chrony_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+BOOL
+Chrony_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.Time.Chrony.NTPServer.{i}.
+
+    *  NTPServer_GetEntryCount
+    *  NTPServer_GetEntry
+    *  NTPServer_IsUpdated
+    *  NTPServer_Synchronize
+    *  NTPServer_GetParamStringValue
+    *  NTPServer_SetParamStringValue
+
+***********************************************************************/
+ULONG
+NTPServer_GetEntryCount
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+ANSC_HANDLE
+NTPServer_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    );
+
+BOOL
+NTPServer_IsUpdated
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+ULONG
+NTPServer_Synchronize
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+ULONG
+NTPServer_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    );
+
+BOOL
+NTPServer_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
+
 #endif
