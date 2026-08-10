@@ -1415,6 +1415,9 @@ CosaDmlTimeSetChronyEnable
         rc = v_secure_system("sysevent set chronyd-start");
         if (rc != 0)
             CcspTraceWarning(("CosaDmlTimeSetChronyEnable: chronyd-start sysevent returned %d\n", rc));
+		rc = v_secure_system("systemctl start ntp-metrics.service");
+		if (rc != 0)
+            CcspTraceWarning(("CosaDmlTimeSetChronyEnable: starting ntp-metrics.service Failed %d\n", rc));
     }
     else
     {
@@ -1422,6 +1425,10 @@ CosaDmlTimeSetChronyEnable
         rc = v_secure_system("sysevent set chronyd-stop");
         if (rc != 0)
             CcspTraceWarning(("CosaDmlTimeSetChronyEnable: chronyd-stop sysevent returned %d\n", rc));
+		
+		rc = v_secure_system("systemctl stop ntp-metrics.service");
+		if (rc != 0)
+            CcspTraceWarning(("CosaDmlTimeSetChronyEnable: stopping ntp-metrics.service Failed %d\n", rc));
 
         if (syscfg_set_commit(NULL, "chrony_enabled", "false") != 0)
         {
