@@ -15055,10 +15055,22 @@ RDKDownloadManager_SetParamStringValue
         const char* ttlParam = (strcmp(tool, "tcpdump") == 0)
             ? "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.tcpdump.Duration"
             : "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.strace.Duration";
+        char *ttlValue = NULL;
+        int ttl = 30;
+
+        if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, ttlParam, NULL, &ttlValue) == CCSP_SUCCESS && ttlValue != NULL)
+        {
+            int configuredTtl = _ansc_atoi(ttlValue);
+            if (configuredTtl > 0)
+            {
+                ttl = configuredTtl;
+            }
+            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(ttlValue);
+        }
 
         /* Auto cleanup: use tool-specific RFC Duration; fallback to 30 seconds. */
-        ret = v_secure_system("/bin/sh -c 'ttl=$(tr181 %s 2>/dev/null | tail -n 1); case \"$ttl\" in \"\"|*[!0-9]*) ttl=30;; esac; if [ \"$ttl\" -le 0 ]; then ttl=30; fi; (sleep \"$ttl\"; rm -f /tmp/tools/%s; rm -rf /run/%s; rm -rf /tmp/rdm/downloads/*%s* /tmp/*%s*) >> /rdklogs/logs/rdm_status.log 2>&1 &'",
-                              ttlParam,
+        ret = v_secure_system("/bin/sh -c '(sleep %d; rm -f /tmp/tools/%s; rm -rf /run/%s; rm -rf /tmp/rdm/downloads/*%s* /tmp/*%s*) >> /rdklogs/logs/rdm_status.log 2>&1 &'",
+                              ttl,
                               tool,
                               tool,
                               tool,
