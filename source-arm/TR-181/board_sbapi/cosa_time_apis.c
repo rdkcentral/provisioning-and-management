@@ -74,6 +74,8 @@
 #include <cjson/cJSON.h>
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
+#define _XOPEN_SOURCE 700
+#include <time.h>
 
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
 #define BOOTSTRAP_INFO_FILE             "/opt/secure/bootstrap.json"
@@ -199,7 +201,7 @@ ANSC_STATUS updateTimeZone(const char *timezone)
             if (strptime(regionTime, "%a %b %d %H:%M:%S %Y", &tm_local) != NULL)
             {
                 tm_local.tm_isdst = -1;
-		printff("tm_local.tm_isdst= %d\n",(int) tm_local.tm_isdst);
+		        AnscTraceWarning(("tm_local.tm_isdst= %d\n",(int) tm_local.tm_isdst));
             }
 
     if(timezone == NULL)
