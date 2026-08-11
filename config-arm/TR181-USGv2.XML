@@ -3580,8 +3580,8 @@
                 <parameters>
                     <parameter>
                         <name>Duration</name>
-                        <type>unsignedInt(0:65535)</type>
-                       <syntax>uint</syntax>
+                        <type>int</type>
+                       <syntax>int</syntax>
                        <writable>true</writable>
                     </parameter>
                 </parameters>
@@ -3598,8 +3598,8 @@
                 <parameters>
                     <parameter>
                         <name>Duration</name>
-                        <type>unsignedInt(0:65535)</type>
-                        <syntax>uint</syntax>
+                        <type>int</type>
+                        <syntax>int</syntax>
                         <writable>true</writable>
                     </parameter>
                 </parameters>
