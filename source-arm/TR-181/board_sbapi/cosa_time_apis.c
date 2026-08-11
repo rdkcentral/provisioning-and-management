@@ -197,6 +197,14 @@ CosaDmlTimeGetLocalTime
 
 ANSC_STATUS updateTimeZone(const char *timezone)
 {
+            char regionTime[120];
+            struct tm tm_local = {0};
+            if (strptime(regionTime, "%a %b %d %H:%M:%S %Y", &tm_local) != NULL)
+            {
+                tm_local.tm_isdst = -1;
+		printff("tm_local.tm_isdst= %d\n",(int) tm_local.tm_isdst);
+            }
+
     if(timezone == NULL)
         return ANSC_STATUS_FAILURE;
 
