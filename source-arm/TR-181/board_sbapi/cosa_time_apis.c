@@ -74,12 +74,17 @@
 #include <cjson/cJSON.h>
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
-#define _XOPEN_SOURCE 700
-#include <time.h>
+//#define _XOPEN_SOURCE 700
+//#define _XOPEN_SOURCE
+//#include <time.h>
 
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
 #define BOOTSTRAP_INFO_FILE             "/opt/secure/bootstrap.json"
 #define MAX_COSATIMEOFFSET_SIZE   256
+
+char *strptime(const char *restrict s, 
+               const char *restrict format, 
+               struct tm *restrict tm);
 
 ANSC_STATUS
 CosaNTPInitJournal
