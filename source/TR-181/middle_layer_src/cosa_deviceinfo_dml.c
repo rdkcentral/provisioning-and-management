@@ -14774,8 +14774,8 @@ RDKDownloadManager_SetParamStringValue
     int ret =-1;
     const char* tool = NULL;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
-    char packageToInstall[256] = {0};
-    int requestedTtl = 0;
+    //char packageToInstall[256] = {0};
+    //int requestedTtl = 0;
 
     if((!pString) || strlen(pString) == 0 ) {
         CcspTraceWarning(("[%s] Invalid parameter value\n", __FUNCTION__));
