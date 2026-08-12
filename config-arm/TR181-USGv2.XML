@@ -1792,6 +1792,12 @@
                                         <syntax>string</syntax>
                                         <writable>true</writable>
                                 </parameter>
+                                <parameter>
+                                  <name>UnInstallPackage</name>
+                                  <type>string(255)</type>
+                                  <syntax>string</syntax>
+                                  <writable>true</writable>
+                                </parameter>
                         </parameters>
         </object>
         <object>
@@ -3536,6 +3542,22 @@
                                 </parameter>
                         </parameters>
                 </object>
+    <object>
+      <name>DebugPackage</name>
+      <objectType>object</objectType>
+      <functions>
+        <func_GetParamIntValue>DebugPackage_GetParamIntValue</func_GetParamIntValue>
+        <func_SetParamIntValue>DebugPackage_SetParamIntValue</func_SetParamIntValue>
+      </functions>
+      <parameters>
+        <parameter>
+          <name>Duration</name>
+          <type>int</type>
+          <syntax>int</syntax>
+          <writable>true</writable>
+        </parameter>
+      </parameters>
+    </object>
                 <object>
                   <name>meminsight</name>
                     <objectType>object</objectType>
@@ -3568,42 +3590,6 @@
                         </parameter>
                     </parameters>
                 </object>
-            <object>
-              <name>tcpdump</name>
-                <objectType>object</objectType>
-			  
-                <functions>
-                    <func_GetParamIntValue>tcpdump_GetParamIntValue</func_GetParamIntValue>
-                    <func_SetParamIntValue>tcpdump_SetParamIntValue</func_SetParamIntValue>
-                </functions>
-
-                <parameters>
-                    <parameter>
-                        <name>Duration</name>
-                        <type>int</type>
-                       <syntax>int</syntax>
-                       <writable>true</writable>
-                    </parameter>
-                </parameters>
-            </object>
-            <object>
-              <name>strace</name>
-                <objectType>object</objectType>
-			  
-                <functions>
-                    <func_GetParamIntValue>strace_GetParamIntValue</func_GetParamIntValue>
-                    <func_SetParamIntValue>strace_SetParamIntValue</func_SetParamIntValue>
-                </functions>
-
-                <parameters>
-                    <parameter>
-                        <name>Duration</name>
-                        <type>int</type>
-                        <syntax>int</syntax>
-                        <writable>true</writable>
-                    </parameter>
-                </parameters>
-              </object>
 <?ifdef FEATURE_SUPPORT_INTERWORKING?>
 		<object>
 			<name>WiFi-Interworking</name>

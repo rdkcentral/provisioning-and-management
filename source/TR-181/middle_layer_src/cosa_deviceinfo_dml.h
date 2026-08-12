@@ -2634,6 +2634,9 @@ RDKDownloadManager_SetParamStringValue
         char*                       pString
     );
 
+BOOL DebugPackage_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pint);
+BOOL DebugPackage_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int iValue);
+
 #endif
 
 /***********************************************************************
@@ -2654,23 +2657,6 @@ BOOL xMemInsight_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOO
 BOOL xMemInsight_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool);
 ULONG xMemInsight_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
 BOOL xMemInsight_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString);
-
-/***********************************************************************
-
- APIs for Object:
-
-    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.tcpdump.Duration
-    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.strace.Duration
-
-    *  tcpdump_GetParamIntValue
-    *  tcpdump_SetParamIntValue
-    *  strace_GetParamIntValue
-    *  strace_SetParamIntValue
-***********************************************************************/
-BOOL tcpdump_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pint);
-BOOL tcpdump_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int iValue);
-BOOL strace_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pint);
-BOOL strace_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int iValue);
 
 /***********************************************************************
 
