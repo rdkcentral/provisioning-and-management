@@ -511,6 +511,29 @@ CosaDmlDnsRelayGetServer
         PCOSA_DML_DNS_RELAY_ENTRY   pEntry      /* Identified by InstanceNumber */
     );
 
+/**
+ * @brief Gets the DNS forward max value (dnsmasq --dns-forward-max parameter)
+ *
+ * This function retrieves the maximum number of concurrent DNS queries that dnsmasq can handle.
+ * The value is stored in syscfg and defaults to 150 if not configured.
+ *
+ * @return The current DNS forward max value (default: 150)
+ */
+ULONG CosaDmlDnsGetForwardMax(void);
+
+/**
+ * @brief Sets the DNS forward max value and restarts dnsmasq
+ *
+ * This function sets the maximum number of concurrent DNS queries, stores the value in syscfg
+ * for persistence, updates /var/dnsmasq.conf, and triggers a dnsmasq restart.
+ *
+ * @param[in] value The DNS forward max value (valid range: 1-600)
+ *
+ * @return The status of the operation
+ * @retval ANSC_STATUS_SUCCESS Operation succeeded
+ * @retval ANSC_STATUS_FAILURE Operation failed (invalid value or file error)
+ */
+ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value);
 
 #endif
 

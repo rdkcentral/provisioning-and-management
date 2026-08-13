@@ -1712,5 +1712,163 @@ CosaDmlDnsRelayGetServer
     return ANSC_STATUS_FAILURE;
 
 }
+
+/***********************************************************************
+
+    caller:     self
+
+    prototype:
+
+        ULONG
+        CosaDmlDnsGetForwardMax
+            (
+                void
+            );
+
+    description:
+
+        This routine retrieves the DNS forward max value from syscfg.
+
+    return:     DNS forward max value (default: 150)
+
+**********************************************************************/
+
+#define SYSCFG_DNS_FORWARD_MAX "dnsmasq_forward_max"
+#define DEFAULT_DNS_FORWARD_MAX 150
+#define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
+
+ULONG CosaDmlDnsGetForwardMax(void)
+{
+    char buf[16] = {0};
+    ULONG value = DEFAULT_DNS_FORWARD_MAX;
+    
+    /* Try to read from syscfg */
+    if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0)
+    {
+        value = (ULONG)atoi(buf);
+        if (value < 1 || value > 600)
+        {
+            CcspTraceWarning(("%s: Invalid stored value %lu, using default %d\n", 
+                            __FUNCTION__, value, DEFAULT_DNS_FORWARD_MAX));
+            value = DEFAULT_DNS_FORWARD_MAX;
+        }
+    }
+    else
+    {
+        CcspTraceInfo(("%s: No stored value, using default %d\n", 
+                      __FUNCTION__, DEFAULT_DNS_FORWARD_MAX));
+    }
+    
+    return value;
+}
+
+/***********************************************************************
+
+    caller:     self
+
+    prototype:
+
+        ANSC_STATUS
+        CosaDmlDnsSetForwardMax
+            (
+                ULONG value
+            );
+
+    description:
+
+        This routine sets the DNS forward max value, stores in syscfg,
+        updates dnsmasq.conf, and triggers a dnsmasq restart.
+
+    argument:   ULONG value - The DNS forward max value (1-65535)
+
+    return:     operation status
+
+**********************************************************************/
+
+ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
+{
+    char buf[16] = {0};
+    FILE *fp = NULL;
+    char line[512] = {0};
+    char tempFile[128] = "/tmp/dnsmasq.conf.tmp";
+    int found = 0;
+    errno_t rc = -1;
+    
+    if (value < 1 || value > 600)
+    {
+        CcspTraceError(("%s: Invalid value %lu\n", __FUNCTION__, value));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    /* Store in syscfg for persistence across reboots */
+    rc = sprintf_s(buf, sizeof(buf), "%lu", value);
+    if (rc < EOK)
+    {
+        CcspTraceError(("%s: sprintf_s failed\n", __FUNCTION__));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    if (syscfg_set_commit(NULL, SYSCFG_DNS_FORWARD_MAX, buf) != 0)
+    {
+        CcspTraceError(("%s: Failed to store value in syscfg\n", __FUNCTION__));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    CcspTraceInfo(("%s: Stored DNSForwardMax=%lu in syscfg\n", __FUNCTION__, value));
+    
+    /* Update /var/dnsmasq.conf */
+    fp = fopen(DNSMASQ_CONF_FILE, "r");
+    FILE *fp_tmp = fopen(tempFile, "w");
+    
+    if (fp && fp_tmp)
+    {
+        /* Read existing config and update dns-forward-max if it exists */
+        while (fgets(line, sizeof(line), fp) != NULL)
+        {
+            if (strncmp(line, "dns-forward-max=", 16) == 0)
+            {
+                fprintf(fp_tmp, "dns-forward-max=%lu\n", value);
+                found = 1;
+            }
+            else
+            {
+                fputs(line, fp_tmp);
+            }
+        }
+        
+        /* If dns-forward-max wasn't in the file, add it */
+        if (!found)
+        {
+            fprintf(fp_tmp, "dns-forward-max=%lu\n", value);
+        }
+        
+        fclose(fp);
+        fclose(fp_tmp);
+        
+        /* Replace the original file */
+        if (rename(tempFile, DNSMASQ_CONF_FILE) != 0)
+        {
+            CcspTraceError(("%s: Failed to update dnsmasq.conf\n", __FUNCTION__));
+            return ANSC_STATUS_FAILURE;
+        }
+    }
+    else
+    {
+        CcspTraceError(("%s: Failed to open config files\n", __FUNCTION__));
+        if (fp) fclose(fp);
+        if (fp_tmp) fclose(fp_tmp);
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    CcspTraceInfo(("%s: Updated dnsmasq.conf with dns-forward-max=%lu\n", __FUNCTION__, value));
+    
+    /* Restart dnsmasq to apply the change */
+    v_secure_system("sysevent set dhcp_server-restart");
+    
+    CcspTraceInfo(("%s: Triggered dnsmasq restart\n", __FUNCTION__));
+    
+    return ANSC_STATUS_SUCCESS;
+}
+
 #endif
 

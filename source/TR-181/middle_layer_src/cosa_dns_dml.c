@@ -1968,6 +1968,12 @@ Relay_GetParamUlongValue
         return TRUE;
     }
 
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_DNSForwardMax") == 0)
+    {
+        /* Get DNS forward max value */
+        *puLong = CosaDmlDnsGetForwardMax();
+        return TRUE;
+    }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -2168,9 +2174,24 @@ Relay_SetParamUlongValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    UNREFERENCED_PARAMETER(ParamName);
-    UNREFERENCED_PARAMETER(uValue);
     /* check the parameter name and set the corresponding value */
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_DNSForwardMax") == 0)
+    {
+        /* Validate range (1-600) */
+        if (uValue < 1 || uValue > 600)
+        {
+            CcspTraceError(("%s: Invalid DNSForwardMax value %lu (must be 1-600)\n", __FUNCTION__, uValue));
+            return FALSE;
+        }
+        
+        /* Set DNS forward max value */
+        if (CosaDmlDnsSetForwardMax(uValue) == ANSC_STATUS_SUCCESS)
+        {
+            return TRUE;
+        }
+        return FALSE;
+    }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
