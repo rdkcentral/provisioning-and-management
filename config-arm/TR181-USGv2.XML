@@ -1784,6 +1784,8 @@
                         <objectType>object</objectType>
                          <functions>
                                 <func_SetParamStringValue>RDKDownloadManager_SetParamStringValue</func_SetParamStringValue>
+                              <func_GetParamIntValue>RDKDownloadManager_GetParamIntValue</func_GetParamIntValue>
+                              <func_SetParamIntValue>RDKDownloadManager_SetParamIntValue</func_SetParamIntValue>
                         </functions>
                         <parameters>
                                 <parameter>
@@ -1793,9 +1795,9 @@
                                         <writable>true</writable>
                                 </parameter>
                                 <parameter>
-                                  <name>UnInstallPackage</name>
-                                  <type>string(255)</type>
-                                  <syntax>string</syntax>
+                                  <name>PackageExpiryTime</name>
+                                  <type>int</type>
+                                  <syntax>int</syntax>
                                   <writable>true</writable>
                                 </parameter>
                         </parameters>
@@ -3542,22 +3544,6 @@
                                 </parameter>
                         </parameters>
                 </object>
-    <object>
-      <name>DebugPackage</name>
-      <objectType>object</objectType>
-      <functions>
-        <func_GetParamIntValue>DebugPackage_GetParamIntValue</func_GetParamIntValue>
-        <func_SetParamIntValue>DebugPackage_SetParamIntValue</func_SetParamIntValue>
-      </functions>
-      <parameters>
-        <parameter>
-          <name>Duration</name>
-          <type>int</type>
-          <syntax>int</syntax>
-          <writable>true</writable>
-        </parameter>
-      </parameters>
-    </object>
                 <object>
                   <name>meminsight</name>
                     <objectType>object</objectType>

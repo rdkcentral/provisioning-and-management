@@ -10953,7 +10953,7 @@ Feature_SetParamIntValue
 }
 
 BOOL
-DebugPackage_GetParamIntValue
+RDKDownloadManager_GetParamIntValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
@@ -10961,7 +10961,7 @@ DebugPackage_GetParamIntValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if (!ParamName || !pint || strcmp(ParamName, "Duration") != 0)
+    if (!ParamName || !pint || strcmp(ParamName, "PackageExpiryTime") != 0)
     {
         return FALSE;
     }
@@ -10970,7 +10970,7 @@ DebugPackage_GetParamIntValue
     if (PSM_Get_Record_Value2(
             bus_handle,
             g_Subsystem,
-            "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DebugPackage.Duration",
+            "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
             NULL,
             &strValue) == CCSP_SUCCESS && strValue != NULL)
     {
@@ -10979,13 +10979,13 @@ DebugPackage_GetParamIntValue
     }
     else
     {
-        *pint = 30;
+        *pint = 0;
     }
     return TRUE;
 }
 
 BOOL
-DebugPackage_SetParamIntValue
+RDKDownloadManager_SetParamIntValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
@@ -10993,8 +10993,14 @@ DebugPackage_SetParamIntValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if (!ParamName || strcmp(ParamName, "Duration") != 0)
+    if (!ParamName || strcmp(ParamName, "PackageExpiryTime") != 0)
     {
+        return FALSE;
+    }
+
+    if (iValue <= 0)
+    {
+        CcspTraceWarning(("RDKDownloadManager PackageExpiryTime must be greater than zero\n"));
         return FALSE;
     }
 
@@ -11003,7 +11009,7 @@ DebugPackage_SetParamIntValue
     return PSM_Set_Record_Value2(
         bus_handle,
         g_Subsystem,
-        "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DebugPackage.Duration",
+        "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
         ccsp_string,
         value) == CCSP_SUCCESS;
 }
@@ -14769,55 +14775,52 @@ RDKDownloadManager_SetParamStringValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if ((strcmp(ParamName, "InstallPackage") == 0 || strcmp(ParamName, "UnInstallPackage") == 0) && pString != NULL)
+    if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
     const char* tool = NULL;
+    static const char *debugTools[] = { "tcpdump", "strace" };
+    size_t debugToolIndex = 0;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
-    //char packageToInstall[256] = {0};
-    //int requestedTtl = 0;
 
     if((!pString) || strlen(pString) == 0 ) {
         CcspTraceWarning(("[%s] Invalid parameter value\n", __FUNCTION__));
         return FALSE;
     }
 
-    const char *cleanupArg = NULL;
-    if (strcmp(ParamName, "UnInstallPackage") == 0)
-    {
-        cleanupArg = pString;
-    }
-    else if (strncmp(pString, "uninstall:", 10) == 0 || strncmp(pString, "cleanup:", 8) == 0)
-    {
-        cleanupArg = pString + ((strncmp(pString, "uninstall:", 10) == 0) ? 10 : 8);
-    }
-
-    if (cleanupArg != NULL)
-    {
-        if (strstr(cleanupArg, "tcpdump") != NULL) {
-            tool = "tcpdump";
-        } else if (strstr(cleanupArg, "strace") != NULL) {
-            tool = "strace";
-        } else {
-            CcspTraceWarning(("[%s] Unsupported cleanup target '%s'\n", __FUNCTION__, cleanupArg));
-            return FALSE;
-        }
-
-        ret = v_secure_system("/bin/sh -c 'rm -f /tmp/tools/%s; rm -rf /run/%s; rm -rf /tmp/rdm/downloads/*%s* /tmp/*%s*' >> /rdklogs/logs/rdm_status.log 2>&1 &",
-                              tool,
-                              tool,
-                              tool,
-                              tool);
-        if (ret != 0) {
-            CcspTraceWarning(("[%s] Failed manual cleanup for %s. Returned error code '%d'\n", __FUNCTION__, tool, ret));
-            return FALSE;
-        }
-
-        CcspTraceWarning(("[%s] Manual cleanup triggered for %s\n", __FUNCTION__, tool));
-        return TRUE;
-    }
-
     CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
+
+    for (debugToolIndex = 0; debugToolIndex < (sizeof(debugTools) / sizeof(debugTools[0])); ++debugToolIndex)
+    {
+        if (strstr(pString, debugTools[debugToolIndex]) != NULL)
+        {
+            tool = debugTools[debugToolIndex];
+            break;
+        }
+    }
+
+    if (tool != NULL)
+    {
+        const char* durationParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
+        char *durationValue = NULL;
+        char *end = NULL;
+        long duration = 0;
+
+        if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, durationParam, NULL, &durationValue) != CCSP_SUCCESS || durationValue == NULL)
+        {
+            CcspTraceWarning(("[%s] Set PackageExpiryTime before installing debug tool %s\n", __FUNCTION__, tool));
+            return FALSE;
+        }
+
+        duration = strtol(durationValue, &end, 10);
+        if (end == durationValue || *end != '\0' || duration <= 0 || duration > 2147483647L)
+        {
+            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(durationValue);
+            CcspTraceWarning(("[%s] Invalid PackageExpiryTime. Set Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime before installing %s\n", __FUNCTION__, tool));
+            return FALSE;
+        }
+        ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(durationValue);
+    }
 
     ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
@@ -14826,24 +14829,13 @@ RDKDownloadManager_SetParamStringValue
         return FALSE;
     }
 
-
-    if (strstr(pString, "tcpdump") != NULL) {
-        tool = "tcpdump";
-    } else if (strstr(pString, "strace") != NULL) {
-        tool = "strace";
-    }
-
     if (tool != NULL)
     {
-        const char* ttlParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DebugPackage.Duration";
+        const char* ttlParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
         char *ttlValue = NULL;
         int ttl = 30;
 
-        if (requestedTtl > 0)
-        {
-            ttl = requestedTtl;
-        }
-        else if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, ttlParam, NULL, &ttlValue) == CCSP_SUCCESS && ttlValue != NULL)
+        if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, ttlParam, NULL, &ttlValue) == CCSP_SUCCESS && ttlValue != NULL)
         {
             int configuredTtl = _ansc_atoi(ttlValue);
             if (configuredTtl > 0)

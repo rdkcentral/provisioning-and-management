@@ -2634,8 +2634,8 @@ RDKDownloadManager_SetParamStringValue
         char*                       pString
     );
 
-BOOL DebugPackage_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pint);
-BOOL DebugPackage_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int iValue);
+BOOL RDKDownloadManager_GetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int* pint);
+BOOL RDKDownloadManager_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamName, int iValue);
 
 #endif
 
