@@ -66,6 +66,7 @@
 
 #include "cosa_dns_internal.h"
 #include "safec_lib_common.h"
+#include "secure_wrapper.h"
 
 #define SYSCFG_DNS_FORWARD_MAX "dnsmasq_forward_max"
 #define DEFAULT_DNS_FORWARD_MAX 150
