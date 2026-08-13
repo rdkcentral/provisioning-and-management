@@ -67,6 +67,9 @@
 #include "cosa_dns_internal.h"
 #include "safec_lib_common.h"
 
+#define SYSCFG_DNS_FORWARD_MAX "dnsmasq_forward_max"
+#define DEFAULT_DNS_FORWARD_MAX 150
+#define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
 
 #if (defined(_COSA_SIM_))
 
@@ -1732,10 +1735,6 @@ CosaDmlDnsRelayGetServer
     return:     DNS forward max value (default: 150)
 
 **********************************************************************/
-
-#define SYSCFG_DNS_FORWARD_MAX "dnsmasq_forward_max"
-#define DEFAULT_DNS_FORWARD_MAX 150
-#define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
 
 ULONG CosaDmlDnsGetForwardMax(void)
 {
