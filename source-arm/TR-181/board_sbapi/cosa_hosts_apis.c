@@ -377,6 +377,7 @@ int host_filter(LM_host_t *host)
 }
 
 void Hosts_FreeHost(PLmObjectHost pHost){
+    CcspTraceInfo(("SS : Inside Hosts_freeHost from PAM >>>>>> \n"));
     int i;
     if(pHost == NULL)
         return;
@@ -387,6 +388,7 @@ void Hosts_FreeHost(PLmObjectHost pHost){
         AnscFreeMemory(pHost->objectName);
 
     if(pHost->ipv4AddrArray != NULL){
+        CcspTraceInfo(("SS : Inside Hosts_freeHost from PAM ipv4AddrArray is not NULL >>>>>> \n"));
         for(i = 0; i < pHost->numIPv4Addr; i++){
             if(pHost->ipv4AddrArray[i] == NULL)
                 continue;
@@ -400,6 +402,7 @@ void Hosts_FreeHost(PLmObjectHost pHost){
     }
 
     if(pHost->ipv6AddrArray != NULL){
+        CcspTraceInfo(("SS : Inside Hosts_freeHost from PAM ipv6AddrArray is not NULL >>>>>> \n"));
         for(i = 0; i < pHost->numIPv4Addr; i++){
             if(pHost->ipv6AddrArray[i] == NULL)
                 continue;
@@ -413,6 +416,7 @@ void Hosts_FreeHost(PLmObjectHost pHost){
     }
     
     AnscFreeMemory(pHost);
+    CcspTraceInfo(("SS : End of Hosts_freeHost from PAM >>>>>> \n"));
 }
 
 void Hosts_RmHosts(){
