@@ -625,41 +625,47 @@ user_validatepwd
   if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
   #endif
   {
-   if(!strcmp(pEntry->Username,"cusadmin"))
-   {
+    if(!strcmp(pEntry->Username,"cusadmin"))
+    {
+        syscfg_get( NULL, "hash_password_2",fromDB, sizeof(fromDB));
 
-   syscfg_get( NULL, "hash_password_2",fromDB, sizeof(fromDB));
-
-   if(fromDB[0] == '\0')
-   {
-
-	uint8_t *outbuff=NULL;
+        uint8_t *outbuff=NULL;
         size_t outsize;
+        char cusaDefaultPwd[128] = {'\0'};
+        errno_t rc = -1;
         if(rdkconfig_get(&outbuff, &outsize, "cosausers-cusa"))
         {
             CcspTraceWarning(("%s, Extraction failure for cosa value \n",__FUNCTION__));
             return ANSC_STATUS_FAILURE;
         }
         outbuff[strcspn((const char*)outbuff, "\n")] = '\0';
-        user_hashandsavepwd(hContext,(char *)outbuff,pEntry);
+        rc = strcpy_s(cusaDefaultPwd, sizeof(cusaDefaultPwd), (const char*)outbuff);
+        if(rc != EOK)
+        {
+            ERR_CHK(rc);
+        }
+        if(fromDB[0] == '\0')
+        {
+            user_hashandsavepwd(hContext, cusaDefaultPwd, pEntry);
+        }
         if (rdkconfig_free(&outbuff, outsize)  == RDKCONFIG_FAIL) {
            CcspTraceWarning(("%s, Memory deallocation for cosa value failed \n",__FUNCTION__));
         }
-   }
-   if (!strcmp("highspeed",pString))
-   {
-     isDefault=1;
-   }
-   hash_userPassword(pString, getHash, sizeof(getHash));
-   CcspTraceWarning(("%s, Compare passwords\n",__FUNCTION__));
+        if (!strcmp(cusaDefaultPwd, pString))
+        {
+            isDefault=1;
+        }
 
-    v = strcmp(getHash, pEntry->HashedPassword) ? "Invalid_PWD" : (isDefault == 1 ? "Default_PWD" : "Good_PWD");
-    safec_rc = strcpy_s(hashpassword, SIZE_OF_HASHPASSWORD, v);
-    if(safec_rc != EOK)
-    {
-       ERR_CHK(safec_rc);
+        hash_userPassword(pString, getHash, sizeof(getHash));
+        CcspTraceWarning(("%s, Compare passwords\n",__FUNCTION__));
+
+        v = strcmp(getHash, pEntry->HashedPassword) ? "Invalid_PWD" : (isDefault == 1 ? "Default_PWD" : "Good_PWD");
+        safec_rc = strcpy_s(hashpassword, SIZE_OF_HASHPASSWORD, v);
+        if(safec_rc != EOK)
+        {
+            ERR_CHK(safec_rc);
+        }
     }
-   }
   }
 #endif
 
