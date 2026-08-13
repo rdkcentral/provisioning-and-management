@@ -78,6 +78,7 @@
 #include <unistd.h>
 #ifdef _USE_TIMEZONE_
 #include <zdump.h>
+char *strptime(const char *restrict s, const char *restrict format, struct tm *restrict tm);
 #endif
 
 
