@@ -1792,7 +1792,7 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
     char buf[16] = {0};
     FILE *fp = NULL;
     char line[512] = {0};
-    char tempFile[128] = "/tmp/dnsmasq.conf.tmp";
+    char tempFile[128] = "/var/dnsmasq.conf.tmp";
     int found = 0;
     errno_t rc = -1;
     
