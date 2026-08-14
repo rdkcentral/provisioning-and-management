@@ -69,6 +69,7 @@
 #include "secure_wrapper.h"
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #define SYSCFG_DNS_FORWARD_MAX "dnsmasq_forward_max"
 #define DEFAULT_DNS_FORWARD_MAX 150
@@ -1922,28 +1923,43 @@ ANSC_STATUS CosaDmlDnsCommitForwardMax(void)
     /* STEP 1: Update /var/dnsmasq.conf */
     CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Opening config file '%s'\n", DNSMASQ_CONF_FILE));
     
+    printf("[DNS-COMMIT] Opening config file for reading: %s\n", DNSMASQ_CONF_FILE);
+    fflush(stdout);
+    
     fp = fopen(DNSMASQ_CONF_FILE, "r");
     if (!fp)
     {
+        printf("[DNS-COMMIT] ERROR: Failed to open config file for reading (errno=%d: %s)\n", errno, strerror(errno));
+        fflush(stdout);
         CcspTraceError(("CosaDmlDnsCommitForwardMax: Failed to open '%s' for reading (errno=%d)\n", 
                DNSMASQ_CONF_FILE, errno));
         return ANSC_STATUS_FAILURE;
     }
     
+    printf("[DNS-COMMIT] Config file opened successfully, opening temp file: %s\n", tempFile);
+    fflush(stdout);
+    
     FILE *fp_tmp = fopen(tempFile, "w");
     if (!fp_tmp)
     {
+        printf("[DNS-COMMIT] ERROR: Failed to open temp file for writing (errno=%d: %s)\n", errno, strerror(errno));
+        fflush(stdout);
         CcspTraceError(("CosaDmlDnsCommitForwardMax: Failed to open '%s' for writing (errno=%d)\n", 
                tempFile, errno));
         fclose(fp);
         return ANSC_STATUS_FAILURE;
     }
     
+    printf("[DNS-COMMIT] Temp file opened successfully, processing config lines...\n");
+    fflush(stdout);
+    
     /* Read existing config and update dns-forward-max if it exists */
     while (fgets(line, sizeof(line), fp) != NULL)
     {
         if (strncmp(line, "dns-forward-max=", 16) == 0)
         {
+            printf("[DNS-COMMIT] Found existing dns-forward-max line, replacing with value=%lu\n", value);
+            fflush(stdout);
             CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Found existing dns-forward-max line, replacing\n"));
             fprintf(fp_tmp, "dns-forward-max=%lu\n", value);
             found = 1;
@@ -1957,22 +1973,37 @@ ANSC_STATUS CosaDmlDnsCommitForwardMax(void)
     /* If dns-forward-max wasn't in the file, add it */
     if (!found)
     {
+        printf("[DNS-COMMIT] dns-forward-max NOT found in config, adding new line with value=%lu\n", value);
+        fflush(stdout);
         CcspTraceInfo(("CosaDmlDnsCommitForwardMax: dns-forward-max NOT found, adding new line\n"));
         fprintf(fp_tmp, "dns-forward-max=%lu\n", value);
+    }
+    else
+    {
+        printf("[DNS-COMMIT] dns-forward-max line was replaced\n");
+        fflush(stdout);
     }
     
     fclose(fp);
     fclose(fp_tmp);
+    
+    printf("[DNS-COMMIT] Files closed, attempting rename from '%s' to '%s'\n", tempFile, DNSMASQ_CONF_FILE);
+    fflush(stdout);
     
     CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Renaming '%s' to '%s'\n", tempFile, DNSMASQ_CONF_FILE));
     
     /* Replace the original file - try rename first */
     if (rename(tempFile, DNSMASQ_CONF_FILE) != 0)
     {
+        printf("[DNS-COMMIT] rename() FAILED (errno=%d: %s)\n", errno, strerror(errno));
+        fflush(stdout);
+        
         if (errno == EXDEV)
         {
             /* Cross-device link error - /tmp and /var on different filesystems
              * Fallback: copy temp file to target, then delete temp */
+            printf("[DNS-COMMIT] EXDEV error detected, using copy fallback\n");
+            fflush(stdout);
             CcspTraceWarning(("CosaDmlDnsCommitForwardMax: rename failed with EXDEV, using copy fallback\n"));
             
             FILE *fp_src = fopen(tempFile, "r");
@@ -1983,10 +2014,15 @@ ANSC_STATUS CosaDmlDnsCommitForwardMax(void)
                 char copyBuf[4096];
                 size_t n;
                 
+                printf("[DNS-COMMIT] Copying temp file to target...\n");
+                fflush(stdout);
+                
                 while ((n = fread(copyBuf, 1, sizeof(copyBuf), fp_src)) > 0)
                 {
                     if (fwrite(copyBuf, 1, n, fp_dst) != n)
                     {
+                        printf("[DNS-COMMIT] ERROR: fwrite failed during copy\n");
+                        fflush(stdout);
                         CcspTraceError(("CosaDmlDnsCommitForwardMax: fwrite failed during copy\n"));
                         fclose(fp_src);
                         fclose(fp_dst);
@@ -1999,10 +2035,15 @@ ANSC_STATUS CosaDmlDnsCommitForwardMax(void)
                 fclose(fp_dst);
                 unlink(tempFile);  /* Remove temp file after successful copy */
                 
+                printf("[DNS-COMMIT] Copy completed successfully, temp file removed\n");
+                fflush(stdout);
                 CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Successfully copied temp file to target\n"));
             }
             else
             {
+                printf("[DNS-COMMIT] ERROR: Failed to open files for copy (fp_src=%p, fp_dst=%p, errno=%d)\n",
+                       (void*)fp_src, (void*)fp_dst, errno);
+                fflush(stdout);
                 CcspTraceError(("CosaDmlDnsCommitForwardMax: Failed to open files for copy (src=%p, dst=%p)\n",
                                (void*)fp_src, (void*)fp_dst));
                 if (fp_src) fclose(fp_src);
@@ -2013,6 +2054,8 @@ ANSC_STATUS CosaDmlDnsCommitForwardMax(void)
         }
         else
         {
+            printf("[DNS-COMMIT] ERROR: rename failed with errno=%d (%s), not EXDEV - aborting\n", errno, strerror(errno));
+            fflush(stdout);
             CcspTraceError(("CosaDmlDnsCommitForwardMax: rename() failed (errno=%d)\n", errno));
             unlink(tempFile);
             return ANSC_STATUS_FAILURE;
@@ -2020,9 +2063,13 @@ ANSC_STATUS CosaDmlDnsCommitForwardMax(void)
     }
     else
     {
+        printf("[DNS-COMMIT] rename() succeeded\n");
+        fflush(stdout);
         CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Successfully renamed temp file\n"));
     }
     
+    printf("[DNS-COMMIT] Config file updated successfully\n");
+    fflush(stdout);
     CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Updated dnsmasq.conf with dns-forward-max=%lu\n", value));
     
     /* STEP 2: Restart dnsmasq to apply the change */
