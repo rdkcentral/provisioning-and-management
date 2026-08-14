@@ -539,14 +539,16 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value);
  * @brief Commits the pending DNS forward max value
  *
  * This function commits the staged value by:
- * 1. Updating /var/dnsmasq.conf
- * 2. Restarting dnsmasq via sysevent
- * 3. Persisting to syscfg
- * 4. Clearing pending state
+ * 1. Persisting to syscfg
+ * 2. Restarting dnsmasq (which regenerates config from syscfg via Utopia script)
+ * 3. Clearing pending state
+ *
+ * Note: The Utopia script (prepare_dhcp_conf) reads from syscfg and generates
+ * the dnsmasq.conf file with the dns-forward-max parameter.
  *
  * @return The status of the operation
  * @retval ANSC_STATUS_SUCCESS Commit succeeded
- * @retval ANSC_STATUS_FAILURE Commit failed (file error or restart failed)
+ * @retval ANSC_STATUS_FAILURE Commit failed (syscfg error or restart failed)
  */
 ANSC_STATUS CosaDmlDnsCommitForwardMax(void);
 
