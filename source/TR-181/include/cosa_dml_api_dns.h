@@ -522,18 +522,43 @@ CosaDmlDnsRelayGetServer
 ULONG CosaDmlDnsGetForwardMax(void);
 
 /**
- * @brief Sets the DNS forward max value and restarts dnsmasq
+ * @brief Validates and stages the DNS forward max value
  *
- * This function sets the maximum number of concurrent DNS queries, stores the value in syscfg
- * for persistence, updates /var/dnsmasq.conf, and triggers a dnsmasq restart.
+ * This function validates the new value (1-600) and stages it for commit.
+ * The actual update happens in CosaDmlDnsCommitForwardMax().
  *
  * @param[in] value The DNS forward max value (valid range: 1-600)
  *
  * @return The status of the operation
- * @retval ANSC_STATUS_SUCCESS Operation succeeded
- * @retval ANSC_STATUS_FAILURE Operation failed (invalid value or file error)
+ * @retval ANSC_STATUS_SUCCESS Validation succeeded, value staged
+ * @retval ANSC_STATUS_FAILURE Validation failed (invalid value)
  */
 ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value);
+
+/**
+ * @brief Commits the pending DNS forward max value
+ *
+ * This function commits the staged value by:
+ * 1. Updating /var/dnsmasq.conf
+ * 2. Restarting dnsmasq via sysevent
+ * 3. Persisting to syscfg
+ * 4. Clearing pending state
+ *
+ * @return The status of the operation
+ * @retval ANSC_STATUS_SUCCESS Commit succeeded
+ * @retval ANSC_STATUS_FAILURE Commit failed (file error or restart failed)
+ */
+ANSC_STATUS CosaDmlDnsCommitForwardMax(void);
+
+/**
+ * @brief Rolls back the pending DNS forward max value
+ *
+ * This function discards the staged value without applying it.
+ *
+ * @return The status of the operation
+ * @retval ANSC_STATUS_SUCCESS Rollback succeeded
+ */
+ANSC_STATUS CosaDmlDnsRollbackForwardMax(void);
 
 #endif
 

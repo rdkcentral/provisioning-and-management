@@ -2531,6 +2531,12 @@ Config_Commit
 {
     UNREFERENCED_PARAMETER(hInsContext);
     
+    /* Commit the pending DNS forward max value */
+    if (CosaDmlDnsCommitForwardMax() != ANSC_STATUS_SUCCESS)
+    {
+        return -1;
+    }
+    
     return 0;
 }
 
@@ -2563,6 +2569,9 @@ Config_Rollback
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
+    
+    /* Rollback the pending DNS forward max value */
+    CosaDmlDnsRollbackForwardMax();
     
     return 0;
 }
