@@ -96,6 +96,10 @@
 //$HL 4/30/2013
 #include "ccsp_psm_helper.h"
 
+#ifdef CORE_NET_LIB
+#include <libnet.h>
+#endif
+
 #if defined (FEATURE_RDKB_WAN_MANAGER)
 extern ANSC_HANDLE bus_handle;
 #define ETH_AGENT_COMPONENT_NAME                "eRT.com.cisco.spvtg.ccsp.ethagent"
@@ -1613,6 +1617,44 @@ _EXIT:
     close(sock);
     return ret;
 }
+
+#ifdef BRLAN0_MTU_SUPPORT_FEATURE
+void CosaUtilSetBrlan0MTU(char * if_name, char * mtu_size)
+{
+    char current_if_list[1024] = {0};
+    FILE *fp;
+    int ret;
+
+#ifdef CORE_NET_LIB
+    ret = interface_set_mtu(if_name, mtu_size);
+#endif
+    if (ret != 0)
+    {
+        AnscTraceFlow(("%s: Failed to set MTU on %s (ret=%d)\n", __FUNCTION__, if_name, ret));
+    }
+
+    fp = v_secure_popen("r","brctl show %s | sed '1d' | awk '{print $NF}' | tr '\n' ' ' ", if_name);
+    if ( fp != NULL )
+    {
+        if(fgets(current_if_list,sizeof(current_if_list)-1,fp) != NULL)
+	{
+            for (char *token = strtok(current_if_list, " "); token != NULL; token = strtok(NULL, " "))
+	    {
+                ret = interface_set_mtu(token, mtu_size);
+                if (ret != 0)
+		{
+                    AnscTraceFlow(("%s: Failed to set MTU on %s (ret=%d)\n", __FUNCTION__, token, ret));
+                }
+            }
+        }
+        ret = v_secure_pclose(fp);
+        if (ret != 0) 
+        {
+            AnscTraceFlow(("%s: Error in closing pipe! [%d]\n", __FUNCTION__, ret));
+        }
+    }
+}
+#endif
 
 #if defined( _HUB4_PRODUCT_REQ_ ) || defined( _SR300_PRODUCT_REQ_ ) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
 
