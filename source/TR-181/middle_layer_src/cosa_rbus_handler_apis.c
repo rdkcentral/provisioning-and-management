@@ -22,6 +22,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
 #include <sysevent/sysevent.h>
 #include "ccsp_trace.h"
 #include "cosa_rbus_handler_apis.h"
@@ -94,6 +97,7 @@ static void CosaRbus_LogProcessMemory(char const* stage, char const* processName
     char vmRss[64] = "unknown";
     char vmSize[64] = "unknown";
     char vmData[64] = "unknown";
+    char vmHwm[64] = "unknown";
     char* value;
 
     if(pid <= 0)
@@ -141,12 +145,30 @@ static void CosaRbus_LogProcessMemory(char const* stage, char const* processName
             vmData[sizeof(vmData) - 1] = 0;
             vmData[strcspn(vmData, "\r\n")] = 0;
         }
+        else if(strncmp(line, "VmHWM:", 6) == 0)
+        {
+            value = line + 6;
+            while(*value == ' ' || *value == '\t')
+                value++;
+            strncpy(vmHwm, value, sizeof(vmHwm) - 1);
+            vmHwm[sizeof(vmHwm) - 1] = 0;
+            vmHwm[strcspn(vmHwm, "\r\n")] = 0;
+        }
     }
 
     fclose(fp);
 
-    CcspTraceInfo(("RBUS_REG_MEM stage=%s process=%s pid=%d VmRSS=%s VmSize=%s VmData=%s\n",
-        stage ? stage : "unknown", processName ? processName : "unknown", pid, vmRss, vmSize, vmData));
+    CcspTraceInfo(("RBUS_REG_MEM stage=%s process=%s pid=%d VmRSS=%s VmSize=%s VmData=%s VmHWM=%s\n",
+        stage ? stage : "unknown", processName ? processName : "unknown", pid, vmRss, vmSize, vmData, vmHwm));
+
+#if defined(__GLIBC__)
+    {
+        struct mallinfo2 info = mallinfo2();
+        CcspTraceInfo(("RBUS_REG_HEAP stage=%s process=%s pid=%d uordblks=%zu fordblks=%zu keepcost=%zu\n",
+            stage ? stage : "unknown", processName ? processName : "unknown", pid,
+            (size_t)info.uordblks, (size_t)info.fordblks, (size_t)info.keepcost));
+    }
+#endif
 }
 
 static void CosaRbus_LogRegistrationMemorySnapshot(char const* stage)
@@ -1560,7 +1582,9 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
 
     /* Timeout value of 60 seconds is chosen to balance responsiveness and resource usage for WAN status event subscription.
        This duration allows sufficient time for event delivery and processing under typical network conditions. */
+    CosaRbus_LogRegistrationMemorySnapshot("before_wanstatus_subscribe");
     rc = rbusEvent_Subscribe(handle, WANMGR_CURRENT_STATUS_TR181, Cosa_Rbus_Handler_WanStatus_EventHandler, NULL, 60);
+    CosaRbus_LogRegistrationMemorySnapshot("after_wanstatus_subscribe");
     if(rc != RBUS_ERROR_SUCCESS)
     {
         CcspTraceError(("%s %d - Failed to Subscribe %s, Error=%s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181, rbusError_ToString(rc)));
@@ -1586,7 +1610,9 @@ rbusError_t devCtrlRbusInit()
 		return RBUS_ERROR_BUS_ERROR;
     }
 
-	rc = rbus_open(&handle, RBUS_COMPONENT_NAME);
+    CosaRbus_LogRegistrationMemorySnapshot("before_rbus_open");
+    rc = rbus_open(&handle, RBUS_COMPONENT_NAME);
+    CosaRbus_LogRegistrationMemorySnapshot("after_rbus_open");
 	if (rc != RBUS_ERROR_SUCCESS)
 	{
 		CcspTraceWarning(("DevCtrl rbus initialization failed\n"));
@@ -1596,7 +1622,9 @@ rbusError_t devCtrlRbusInit()
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
 	// Register data elements
     CosaRbus_LogRegistrationMemorySnapshot("before_registration");
+    CosaRbus_LogRegistrationMemorySnapshot("before_registration");
 	rc = rbus_regDataElements(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
+    CosaRbus_LogRegistrationMemorySnapshot("after_registration");
     CosaRbus_LogRegistrationMemorySnapshot("after_registration");
 #endif
 	if (rc != RBUS_ERROR_SUCCESS)
@@ -1609,8 +1637,10 @@ rbusError_t devCtrlRbusInit()
     CcspTraceInfo(("%s: %d, Adding row to the rbus table\n", __FUNCTION__, __LINE__));
     for (int iCount = 1; iCount <= NUM_OF_SUPPORTED_ELEMENTS; iCount++)
     {
+		CosaRbus_LogRegistrationMemorySnapshot("before_table_addrow");
         CcspTraceInfo(("%s: %d, Adding row %d to the rbus table\n", __FUNCTION__, __LINE__, iCount));
         rc = rbusTable_addRow(handle, LAN_BRIDGES_TABLE, NULL, NULL);
+		CosaRbus_LogRegistrationMemorySnapshot("after_table_addrow");
         if (rc != RBUS_ERROR_SUCCESS)
         {
             CcspTraceError(("%s: %d, Failed to add row %d to the rbus table\n", __FUNCTION__, __LINE__, iCount));
