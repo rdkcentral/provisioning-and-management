@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <sysevent/sysevent.h>
 #include "ccsp_trace.h"
 #include "cosa_rbus_handler_apis.h"
@@ -54,6 +55,105 @@ unsigned int gSubscribersCount_IPv6 = 0;
 rbusHandle_t handle;
 static char g_wanState[64] = "Unknown";
 #define NUM_OF_RBUS_PARAMS sizeof(devCtrlRbusDataElements)/sizeof(devCtrlRbusDataElements[0])
+
+static pid_t CosaRbus_GetPidByName(char const* processName)
+{
+    FILE* fp;
+    char cmd[64];
+    char output[128] = {0};
+    char* token;
+
+    if(!processName || !processName[0])
+        return -1;
+
+    snprintf(cmd, sizeof(cmd), "pidof %s 2>/dev/null", processName);
+    fp = popen(cmd, "r");
+    if(!fp)
+        return -1;
+
+    if(!fgets(output, sizeof(output), fp))
+    {
+        pclose(fp);
+        return -1;
+    }
+
+    pclose(fp);
+
+    token = strtok(output, " \t\r\n");
+    if(!token)
+        return -1;
+
+    return (pid_t)strtol(token, NULL, 10);
+}
+
+static void CosaRbus_LogProcessMemory(char const* stage, char const* processName, pid_t pid)
+{
+    FILE* fp;
+    char statusPath[64];
+    char line[256];
+    char vmRss[64] = "unknown";
+    char vmSize[64] = "unknown";
+    char vmData[64] = "unknown";
+    char* value;
+
+    if(pid <= 0)
+    {
+        CcspTraceWarning(("RBUS_REG_MEM stage=%s process=%s pid=not-found\n",
+            stage ? stage : "unknown", processName ? processName : "unknown"));
+        return;
+    }
+
+    snprintf(statusPath, sizeof(statusPath), "/proc/%d/status", pid);
+    fp = fopen(statusPath, "r");
+    if(!fp)
+    {
+        CcspTraceWarning(("RBUS_REG_MEM stage=%s process=%s pid=%d failed_to_open=%s\n",
+            stage ? stage : "unknown", processName ? processName : "unknown", pid, statusPath));
+        return;
+    }
+
+    while(fgets(line, sizeof(line), fp))
+    {
+        if(strncmp(line, "VmRSS:", 6) == 0)
+        {
+            value = line + 6;
+            while(*value == ' ' || *value == '\t')
+                value++;
+            strncpy(vmRss, value, sizeof(vmRss) - 1);
+            vmRss[sizeof(vmRss) - 1] = 0;
+            vmRss[strcspn(vmRss, "\r\n")] = 0;
+        }
+        else if(strncmp(line, "VmSize:", 7) == 0)
+        {
+            value = line + 7;
+            while(*value == ' ' || *value == '\t')
+                value++;
+            strncpy(vmSize, value, sizeof(vmSize) - 1);
+            vmSize[sizeof(vmSize) - 1] = 0;
+            vmSize[strcspn(vmSize, "\r\n")] = 0;
+        }
+        else if(strncmp(line, "VmData:", 7) == 0)
+        {
+            value = line + 7;
+            while(*value == ' ' || *value == '\t')
+                value++;
+            strncpy(vmData, value, sizeof(vmData) - 1);
+            vmData[sizeof(vmData) - 1] = 0;
+            vmData[strcspn(vmData, "\r\n")] = 0;
+        }
+    }
+
+    fclose(fp);
+
+    CcspTraceInfo(("RBUS_REG_MEM stage=%s process=%s pid=%d VmRSS=%s VmSize=%s VmData=%s\n",
+        stage ? stage : "unknown", processName ? processName : "unknown", pid, vmRss, vmSize, vmData));
+}
+
+static void CosaRbus_LogRegistrationMemorySnapshot(char const* stage)
+{
+    CosaRbus_LogProcessMemory(stage, "PandM", getpid());
+    CosaRbus_LogProcessMemory(stage, "rtrouted", CosaRbus_GetPidByName("rtrouted"));
+}
 
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED)
 DeviceControl_Net_Mode deviceControl_Net_Mode;
@@ -1495,7 +1595,9 @@ rbusError_t devCtrlRbusInit()
 	}
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
 	// Register data elements
+    CosaRbus_LogRegistrationMemorySnapshot("before_registration");
 	rc = rbus_regDataElements(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
+    CosaRbus_LogRegistrationMemorySnapshot("after_registration");
 #endif
 	if (rc != RBUS_ERROR_SUCCESS)
 	{
