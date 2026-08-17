@@ -14730,6 +14730,90 @@ RDKRemoteDebugger_SetParamBoolValue
     return FALSE;
 }
 
+static BOOL
+RDKDownloadManager_IsConfiguredDebugTool(const char *pString)
+{
+    FILE *config = NULL;
+    char line[256] = {0};
+    char *comment = NULL;
+    char trimmed_input[256] = {0};
+    char trimmed_line[256] = {0};
+    char *start = NULL;
+    char *end = NULL;
+
+    if (pString == NULL || pString[0] == '\0') {
+        return FALSE;
+    }
+
+    snprintf(trimmed_input, sizeof(trimmed_input), "%s", pString);
+    start = trimmed_input;
+    while (*start == ' ' || *start == '\t' || *start == '\r' || *start == '\n') {
+        start++;
+    }
+    if (start != trimmed_input) {
+        memmove(trimmed_input, start, strlen(start) + 1);
+    }
+    end = trimmed_input + strlen(trimmed_input);
+    while (end > trimmed_input && (*(end - 1) == ' ' || *(end - 1) == '\t' || *(end - 1) == '\r' || *(end - 1) == '\n')) {
+        *(--end) = '\0';
+    }
+
+    config = fopen("/etc/rdm/debugtools.cfg", "r");
+    if (config == NULL) {
+        return FALSE;
+    }
+
+    while (fgets(line, sizeof(line), config) != NULL) {
+        size_t len = strlen(line);
+
+        while (len > 0 && (line[len - 1] == ' ' || line[len - 1] == '\t' || line[len - 1] == '\r' || line[len - 1] == '\n')) {
+            line[--len] = '\0';
+        }
+
+        start = line;
+        while (*start == ' ' || *start == '\t' || *start == '\r' || *start == '\n') {
+            start++;
+        }
+        if (start != line) {
+            memmove(line, start, strlen(start) + 1);
+        }
+
+        comment = strchr(line, '#');
+        if (comment != NULL) {
+            *comment = '\0';
+        }
+
+        len = strlen(line);
+        while (len > 0 && (line[len - 1] == ' ' || line[len - 1] == '\t' || line[len - 1] == '\r' || line[len - 1] == '\n')) {
+            line[--len] = '\0';
+        }
+
+        if (line[0] == '\0') {
+            continue;
+        }
+
+        snprintf(trimmed_line, sizeof(trimmed_line), "%s", line);
+        if (strcmp(trimmed_input, trimmed_line) == 0) {
+            fclose(config);
+            return TRUE;
+        }
+
+        if (strstr(trimmed_input, trimmed_line) != NULL && strstr(trimmed_input, ":") != NULL) {
+            char *tool_pos = strstr(trimmed_input, trimmed_line);
+            if (tool_pos != NULL && strncmp(tool_pos, trimmed_line, strlen(trimmed_line)) == 0) {
+                char *colon = strchr(trimmed_input, ':');
+                if (colon != NULL && strcmp(trimmed_line, colon + 1) != 0) {
+                    fclose(config);
+                    return TRUE;
+                }
+            }
+        }
+    }
+
+    fclose(config);
+    return FALSE;
+}
+
 /***********************************************************************
 
  APIs for Object:
@@ -14779,8 +14863,6 @@ RDKDownloadManager_SetParamStringValue
     {
     int ret =-1;
     const char* tool = NULL;
-    static const char *debugTools[] = { "tcpdump", "strace" };
-    size_t debugToolIndex = 0;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
@@ -14790,13 +14872,9 @@ RDKDownloadManager_SetParamStringValue
 
     CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
 
-    for (debugToolIndex = 0; debugToolIndex < (sizeof(debugTools) / sizeof(debugTools[0])); ++debugToolIndex)
+  if (RDKDownloadManager_IsConfiguredDebugTool(pString))
     {
-        if (strstr(pString, debugTools[debugToolIndex]) != NULL)
-        {
-            tool = debugTools[debugToolIndex];
-            break;
-        }
+        tool = pString;
     }
 
     if (tool != NULL)
