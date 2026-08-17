@@ -9609,12 +9609,6 @@
 
         <func_SetParamUlongValue>Config_SetParamUlongValue</func_SetParamUlongValue>
 
-        <func_Validate>Config_Validate</func_Validate>
-
-        <func_Commit>Config_Commit</func_Commit>
-
-        <func_Rollback>Config_Rollback</func_Rollback>
-
       </functions>
 
       <parameters>

@@ -75,10 +75,6 @@
 #define DEFAULT_DNS_FORWARD_MAX 150
 #define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
 
-/* Pending value for DNS forward max (for transaction support) */
-static ULONG g_PendingDnsForwardMax = 0;
-static BOOL g_PendingDnsForwardMaxSet = FALSE;
-
 #if (defined(_COSA_SIM_))
 
 COSA_DML_DNS_CLIENT_SERVER  g_DnsServerFull[10] =
@@ -1730,10 +1726,10 @@ CosaDmlDnsRelayGetServer
 
     prototype:
 
-        ULONG
-        CosaDmlDnsGetForwardMax
-            (
-                void
+        ULONGg
+        CosaDmlDnsGetForwardMaxg
+            (g
+                voidg
             );
 
     description:
@@ -1770,7 +1766,7 @@ ULONG CosaDmlDnsGetForwardMax(void)
     }
     else
     {
-        printf("[DNS-GET] syscfg_get FAILED, using default %d\n", DEFAULT_DNS_FORWARD_MAX);
+        printf("[DNS-GET] syscfg_get FAILED, c using default %d\n", DEFAULT_DNS_FORWARD_MAX);
         fflush(stdout);
         CcspTraceInfo(("%s: No stored value, using default %d\n", 
                       __FUNCTION__, DEFAULT_DNS_FORWARD_MAX));
@@ -1819,8 +1815,8 @@ ULONG CosaDmlDnsGetForwardMax(void)
 
     description:
 
-        This function validates and stages the DNS forward max value.
-        The actual update happens in CosaDmlDnsCommitForwardMax().
+        This function validates the DNS forward max value, saves it to syscfg,
+        and restarts dnsmasq immediately.
 
     argument:   ULONG                   value
                 New value (1-600).
@@ -1830,11 +1826,16 @@ ULONG CosaDmlDnsGetForwardMax(void)
 **********************************************************************/
 ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
 {
+    char buf[16] = {0};
+    errno_t rc = -1;
+    int ret = 0;
+    
     printf("[DNS-SET] CosaDmlDnsSetForwardMax CALLED with value=%lu\n", value);
     fflush(stdout);
     
-    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Staging value=%lu\n", value));
+    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Setting value=%lu\n", value));
     
+    /* Validate range */
     if (value < 1 || value > 600)
     {
         printf("[DNS-SET] Validation FAILED - out of range\n");
@@ -1843,151 +1844,48 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
         return ANSC_STATUS_FAILURE;
     }
     
-    /* Stage the value for commit */
-    g_PendingDnsForwardMax = value;
-    g_PendingDnsForwardMaxSet = TRUE;
-    
-    printf("[DNS-SET] Value staged successfully, pending=%lu\n", g_PendingDnsForwardMax);
-    fflush(stdout);
-    
-    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Validation passed, staged value=%lu\n", value));
-    return ANSC_STATUS_SUCCESS;
-}
-
-/**********************************************************************
-
-    caller:     COSA DML
-
-    prototype:
-
-        ANSC_STATUS
-        CosaDmlDnsCommitForwardMax
-            (
-                void
-            );
-
-    description:
-
-        This function commits the pending DNS forward max value by:
-        1. Persisting to syscfg
-        2. Restarting dnsmasq (which regenerates config from syscfg)
-        3. Clearing pending state
-
-    argument:   None
-
-    return:     ANSC_STATUS_SUCCESS or ANSC_STATUS_FAILURE
-
-**********************************************************************/
-ANSC_STATUS CosaDmlDnsCommitForwardMax(void)
-{
-    char buf[16] = {0};
-    errno_t rc = -1;
-    int ret = 0;
-    ULONG value;
-    
-    printf("[DNS-COMMIT] ===== CosaDmlDnsCommitForwardMax ENTRY =====\n");
-    fflush(stdout);
-    
-    if (!g_PendingDnsForwardMaxSet)
-    {
-        printf("[DNS-COMMIT] No pending value to commit (g_PendingDnsForwardMaxSet=%d)\n", g_PendingDnsForwardMaxSet);
-        fflush(stdout);
-        CcspTraceWarning(("CosaDmlDnsCommitForwardMax: No pending value to commit\n"));
-        return ANSC_STATUS_SUCCESS;
-    }
-    
-    value = g_PendingDnsForwardMax;
-    printf("[DNS-COMMIT] Committing pending value=%lu\n", value);
-    fflush(stdout);
-    
-    /* STEP 1: Store in syscfg */
-    printf("[DNS-COMMIT] STEP 1: Writing to syscfg key='%s' value='%lu'\n", SYSCFG_DNS_FORWARD_MAX, value);
+    /* Write to syscfg */
+    printf("[DNS-SET] Writing to syscfg key='%s' value='%lu'\n", SYSCFG_DNS_FORWARD_MAX, value);
     fflush(stdout);
     
     rc = sprintf_s(buf, sizeof(buf), "%lu", value);
     if (rc < EOK)
     {
-        printf("[DNS-COMMIT] sprintf_s for syscfg FAILED\n");
+        printf("[DNS-SET] sprintf_s FAILED\n");
         fflush(stdout);
-        CcspTraceError(("CosaDmlDnsCommitForwardMax: sprintf_s failed, rc=%d\n", rc));
+        CcspTraceError(("CosaDmlDnsSetForwardMax: sprintf_s failed, rc=%d\n", rc));
         return ANSC_STATUS_FAILURE;
     }
     
     if (syscfg_set_commit(NULL, SYSCFG_DNS_FORWARD_MAX, buf) != 0)
     {
-        printf("[DNS-COMMIT] syscfg_set_commit FAILED\n");
+        printf("[DNS-SET] syscfg_set_commit FAILED\n");
         fflush(stdout);
-        CcspTraceError(("CosaDmlDnsCommitForwardMax: syscfg_set_commit FAILED\n"));
+        CcspTraceError(("CosaDmlDnsSetForwardMax: syscfg_set_commit FAILED\n"));
         return ANSC_STATUS_FAILURE;
     }
     
-    printf("[DNS-COMMIT] syscfg write SUCCESS\n");
+    printf("[DNS-SET] syscfg write SUCCESS\n");
     fflush(stdout);
-    CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Stored DNSForwardMax=%lu in syscfg\n", value));
+    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Stored DNSForwardMax=%lu in syscfg\n", value));
     
-    /* STEP 2: Restart dnsmasq (which will regenerate config from syscfg) */
-    printf("[DNS-COMMIT] STEP 2: Triggering dnsmasq restart (will regenerate config from syscfg)\n");
+    /* Restart dnsmasq */
+    printf("[DNS-SET] Triggering dnsmasq restart\n");
     fflush(stdout);
-    CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Triggering dnsmasq restart via sysevent\n"));
+    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Triggering dnsmasq restart via sysevent\n"));
     
     ret = v_secure_system("sysevent set dhcp_server-restart");
     if (ret != 0)
     {
-        printf("[DNS-COMMIT] sysevent FAILED (ret=%d)\n", ret);
+        printf("[DNS-SET] sysevent FAILED (ret=%d)\n", ret);
         fflush(stdout);
-        CcspTraceError(("CosaDmlDnsCommitForwardMax: sysevent failed (ret=%d)\n", ret));
+        CcspTraceError(("CosaDmlDnsSetForwardMax: sysevent failed (ret=%d)\n", ret));
         return ANSC_STATUS_FAILURE;
     }
     
-    printf("[DNS-COMMIT] sysevent succeeded\n");
+    printf("[DNS-SET] Complete - value set and dnsmasq restarted\n");
     fflush(stdout);
-    CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Triggered dnsmasq restart\n"));
-    
-    /* STEP 3: Clear pending state */
-    g_PendingDnsForwardMaxSet = FALSE;
-    g_PendingDnsForwardMax = 0;
-    
-    printf("[DNS-COMMIT] ===== Commit COMPLETE, cleared pending state =====\n");
-    fflush(stdout);
-    
-    CcspTraceInfo(("CosaDmlDnsCommitForwardMax: Commit complete\n"));
-    return ANSC_STATUS_SUCCESS;
-}
-
-/**********************************************************************
-
-    caller:     COSA DML
-
-    prototype:
-
-        ANSC_STATUS
-        CosaDmlDnsRollbackForwardMax
-            (
-                void
-            );
-
-    description:
-
-        This function rolls back the pending DNS forward max value.
-
-    argument:   None
-
-    return:     ANSC_STATUS_SUCCESS
-
-**********************************************************************/
-ANSC_STATUS CosaDmlDnsRollbackForwardMax(void)
-{
-    if (g_PendingDnsForwardMaxSet)
-    {
-        CcspTraceInfo(("CosaDmlDnsRollbackForwardMax: Discarding pending value=%lu\n", 
-                       g_PendingDnsForwardMax));
-        g_PendingDnsForwardMaxSet = FALSE;
-        g_PendingDnsForwardMax = 0;
-    }
-    else
-    {
-        CcspTraceInfo(("CosaDmlDnsRollbackForwardMax: No pending value to rollback\n"));
-    }
+    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Complete\n"));
     
     return ANSC_STATUS_SUCCESS;
 }
