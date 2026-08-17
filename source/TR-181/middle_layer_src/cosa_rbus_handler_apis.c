@@ -1460,9 +1460,7 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
 
     /* Timeout value of 60 seconds is chosen to balance responsiveness and resource usage for WAN status event subscription.
        This duration allows sufficient time for event delivery and processing under typical network conditions. */
-    CosaRbus_LogRegistrationMemorySnapshot("before_wanstatus_subscribe");
     rc = rbusEvent_Subscribe(handle, WANMGR_CURRENT_STATUS_TR181, Cosa_Rbus_Handler_WanStatus_EventHandler, NULL, 60);
-    CosaRbus_LogRegistrationMemorySnapshot("after_wanstatus_subscribe");
     if(rc != RBUS_ERROR_SUCCESS)
     {
         CcspTraceError(("%s %d - Failed to Subscribe %s, Error=%s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181, rbusError_ToString(rc)));
@@ -1497,9 +1495,7 @@ rbusError_t devCtrlRbusInit()
 	}
 #if  defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED) || defined (WIFI_MANAGE_SUPPORTED) || defined (RBUS_WAN_IP)
 	// Register data elements
-    CosaRbus_LogRegistrationMemorySnapshot("before_registration");
 	rc = rbus_regDataElements(handle, NUM_OF_RBUS_PARAMS, devCtrlRbusDataElements);
-    CosaRbus_LogRegistrationMemorySnapshot("after_registration");
 #endif
 	if (rc != RBUS_ERROR_SUCCESS)
 	{
@@ -1511,10 +1507,8 @@ rbusError_t devCtrlRbusInit()
     CcspTraceInfo(("%s: %d, Adding row to the rbus table\n", __FUNCTION__, __LINE__));
     for (int iCount = 1; iCount <= NUM_OF_SUPPORTED_ELEMENTS; iCount++)
     {
-		CosaRbus_LogRegistrationMemorySnapshot("before_table_addrow");
         CcspTraceInfo(("%s: %d, Adding row %d to the rbus table\n", __FUNCTION__, __LINE__, iCount));
         rc = rbusTable_addRow(handle, LAN_BRIDGES_TABLE, NULL, NULL);
-		CosaRbus_LogRegistrationMemorySnapshot("after_table_addrow");
         if (rc != RBUS_ERROR_SUCCESS)
         {
             CcspTraceError(("%s: %d, Failed to add row %d to the rbus table\n", __FUNCTION__, __LINE__, iCount));
