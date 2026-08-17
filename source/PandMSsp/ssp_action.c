@@ -208,6 +208,63 @@ ssp_engage_pnm
        return ANSC_STATUS_FAILURE;
     }
 
+    {
+        FILE* fp = fopen("/proc/self/status", "r");
+        char line[256];
+        char vmRss[64] = "unknown";
+        char vmSize[64] = "unknown";
+        char vmData[64] = "unknown";
+        char vmHwm[64] = "unknown";
+        char* value;
+
+        if(fp)
+        {
+            while(fgets(line, sizeof(line), fp))
+            {
+                if(strncmp(line, "VmRSS:", 6) == 0)
+                {
+                    value = line + 6;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmRss, value, sizeof(vmRss) - 1);
+                    vmRss[sizeof(vmRss) - 1] = 0;
+                    vmRss[strcspn(vmRss, "\r\n")] = 0;
+                }
+                else if(strncmp(line, "VmSize:", 7) == 0)
+                {
+                    value = line + 7;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmSize, value, sizeof(vmSize) - 1);
+                    vmSize[sizeof(vmSize) - 1] = 0;
+                    vmSize[strcspn(vmSize, "\r\n")] = 0;
+                }
+                else if(strncmp(line, "VmData:", 7) == 0)
+                {
+                    value = line + 7;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmData, value, sizeof(vmData) - 1);
+                    vmData[sizeof(vmData) - 1] = 0;
+                    vmData[strcspn(vmData, "\r\n")] = 0;
+                }
+                else if(strncmp(line, "VmHWM:", 6) == 0)
+                {
+                    value = line + 6;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmHwm, value, sizeof(vmHwm) - 1);
+                    vmHwm[sizeof(vmHwm) - 1] = 0;
+                    vmHwm[strcspn(vmHwm, "\r\n")] = 0;
+                }
+            }
+            fclose(fp);
+        }
+
+        CcspTraceInfo(("PAM_DM_REG_MEM stage=before_RegisterCcspDataModel2 component=%s VmRSS=%s VmSize=%s VmData=%s VmHWM=%s\n",
+            pStartCfg->ComponentName ? pStartCfg->ComponentName : "unknown", vmRss, vmSize, vmData, vmHwm));
+    }
+
     returnStatus =
         pDslhCpeController->RegisterCcspDataModel2
             (
@@ -219,6 +276,63 @@ ssp_engage_pnm
                 pStartCfg->DbusPath,                /* Component Path    */
                 g_Subsystem                         /* Component Prefix  */
             );
+
+    {
+        FILE* fp = fopen("/proc/self/status", "r");
+        char line[256];
+        char vmRss[64] = "unknown";
+        char vmSize[64] = "unknown";
+        char vmData[64] = "unknown";
+        char vmHwm[64] = "unknown";
+        char* value;
+
+        if(fp)
+        {
+            while(fgets(line, sizeof(line), fp))
+            {
+                if(strncmp(line, "VmRSS:", 6) == 0)
+                {
+                    value = line + 6;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmRss, value, sizeof(vmRss) - 1);
+                    vmRss[sizeof(vmRss) - 1] = 0;
+                    vmRss[strcspn(vmRss, "\r\n")] = 0;
+                }
+                else if(strncmp(line, "VmSize:", 7) == 0)
+                {
+                    value = line + 7;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmSize, value, sizeof(vmSize) - 1);
+                    vmSize[sizeof(vmSize) - 1] = 0;
+                    vmSize[strcspn(vmSize, "\r\n")] = 0;
+                }
+                else if(strncmp(line, "VmData:", 7) == 0)
+                {
+                    value = line + 7;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmData, value, sizeof(vmData) - 1);
+                    vmData[sizeof(vmData) - 1] = 0;
+                    vmData[strcspn(vmData, "\r\n")] = 0;
+                }
+                else if(strncmp(line, "VmHWM:", 6) == 0)
+                {
+                    value = line + 6;
+                    while(*value == ' ' || *value == '\t')
+                        value++;
+                    strncpy(vmHwm, value, sizeof(vmHwm) - 1);
+                    vmHwm[sizeof(vmHwm) - 1] = 0;
+                    vmHwm[strcspn(vmHwm, "\r\n")] = 0;
+                }
+            }
+            fclose(fp);
+        }
+
+        CcspTraceInfo(("PAM_DM_REG_MEM stage=after_RegisterCcspDataModel2 component=%s VmRSS=%s VmSize=%s VmData=%s VmHWM=%s\n",
+            pStartCfg->ComponentName ? pStartCfg->ComponentName : "unknown", vmRss, vmSize, vmData, vmHwm));
+    }
 
     if ( returnStatus == ANSC_STATUS_SUCCESS || returnStatus == CCSP_SUCCESS )
     {
