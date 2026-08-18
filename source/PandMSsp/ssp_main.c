@@ -486,6 +486,8 @@ static int find_log_fd(const char *logname)
     char path[128];
     char target[512];
 
+    FILE *fp = fopen("/tmp/cloexec_debug.txt", "a");
+
     for (int fd = 3; fd < 64; fd++)
     {
         snprintf(path, sizeof(path),"/proc/self/fd/%d", fd);
@@ -496,13 +498,22 @@ static int find_log_fd(const char *logname)
 
         target[len] = '\0';
 
+        if (fp)
+            fprintf(fp,"FD=%d PATH=%s\n",fd,target);
         if (strstr(target, logname))
         {
+            if (fp)
+                fprintf(fp,"MATCH fd=%d\n",fd);
+            fclose(fp);
             CcspTraceInfo(("Prashant: MATCH: fd=%d path=%s\n", fd, target));
             return fd;
         }
     }
 
+    if (fp) {
+        fprintf(fp,"MATCH not found\n");
+        fclose(fp);
+    }
     return -1;
 }
 
