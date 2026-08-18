@@ -1756,6 +1756,14 @@ ULONG CosaDmlDnsGetForwardMax(void)
                             __FUNCTION__, value, DEFAULT_DNS_FORWARD_MAX));
             value = DEFAULT_DNS_FORWARD_MAX;
         }
+        else
+        {
+            CcspTraceInfo(("%s: Returning dns-forward-max=%lu from syscfg\n", __FUNCTION__, value));
+        }
+    }
+    else
+    {
+        CcspTraceInfo(("%s: No stored value, returning default=%d\n", __FUNCTION__, DEFAULT_DNS_FORWARD_MAX));
     }
     
     return value;
