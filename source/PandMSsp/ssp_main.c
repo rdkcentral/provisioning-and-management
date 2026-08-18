@@ -481,6 +481,67 @@ static int is_core_dump_opened(void)
 int sock = 0;
 #endif
 
+static int find_log_fd(const char *logname)
+{
+    char path[128];
+    char target[512];
+
+    for (int fd = 3; fd < 64; fd++)
+    {
+        snprintf(path, sizeof(path),"/proc/self/fd/%d", fd);
+
+        ssize_t len = readlink(path, target, sizeof(target) - 1);
+        if (len < 0)
+            continue;
+
+        target[len] = '\0';
+
+        if (strstr(target, logname))
+        {
+            return fd;
+        }
+    }
+
+    return -1;
+}
+
+static void set_pam_log_cloexec(void)
+{
+    int fd;
+    int flags;
+
+    /*
+     * Update log filename pattern as required.
+     * Example:
+     *  PAMlog.txt.0
+     */
+    fd = find_log_fd("PAM");
+
+    if (fd < 0)
+    {
+        fprintf(stderr,"PAM: log fd not found\n");
+        return;
+    }
+
+    flags = fcntl(fd, F_GETFD);
+
+    if (flags == -1)
+    {
+        perror("fcntl(F_GETFD)");
+        return;
+    }
+
+    if (!(flags & FD_CLOEXEC))
+    {
+        if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1)
+        {
+            perror("fcntl(F_SETFD)");
+            return;
+        }
+
+        fprintf(stderr, "PAM: FD_CLOEXEC set on log fd=%d\n",fd);
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -693,6 +754,9 @@ if(id != 0)
     }
 
     check_component_crash(PAM_INIT_FILE_BOOTUP);
+
+    /* Prevent exec'ed child processes from inheriting PAM log fd */
+    set_pam_log_cloexec();
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
