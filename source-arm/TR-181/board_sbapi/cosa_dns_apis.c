@@ -72,7 +72,7 @@
 #include <string.h>
 
 #define SYSCFG_DNS_FORWARD_MAX "dnsmasq_forward_max"
-#define DEFAULT_DNS_FORWARD_MAX 150
+#define DEFAULT_DNS_FORWARD_MAX 600
 #define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
 
 #if (defined(_COSA_SIM_))
@@ -1745,35 +1745,18 @@ ULONG CosaDmlDnsGetForwardMax(void)
     char buf[16] = {0};
     ULONG value = DEFAULT_DNS_FORWARD_MAX;
     
-    printf("[DNS-GET] CosaDmlDnsGetForwardMax CALLED\n");
-    fflush(stdout);
-    
     /* Try to read from syscfg */
     if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0)
     {
         value = (ULONG)atoi(buf);
-        printf("[DNS-GET] Read from syscfg: buf='%s', value=%lu\n", buf, value);
-        fflush(stdout);
         
         if (value < 1 || value > 600)
         {
-            printf("[DNS-GET] Invalid value %lu, using default %d\n", value, DEFAULT_DNS_FORWARD_MAX);
-            fflush(stdout);
             CcspTraceWarning(("%s: Invalid stored value %lu, using default %d\n", 
                             __FUNCTION__, value, DEFAULT_DNS_FORWARD_MAX));
             value = DEFAULT_DNS_FORWARD_MAX;
         }
     }
-    else
-    {
-        printf("[DNS-GET] syscfg_get FAILED, c using default %d\n", DEFAULT_DNS_FORWARD_MAX);
-        fflush(stdout);
-        CcspTraceInfo(("%s: No stored value, using default %d\n", 
-                      __FUNCTION__, DEFAULT_DNS_FORWARD_MAX));
-    }
-    
-    printf("[DNS-GET] Returning value=%lu\n", value);
-    fflush(stdout);
     
     return value;
 }
@@ -1830,62 +1813,36 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
     errno_t rc = -1;
     int ret = 0;
     
-    printf("[DNS-SET] CosaDmlDnsSetForwardMax CALLED with value=%lu\n", value);
-    fflush(stdout);
-    
-    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Setting value=%lu\n", value));
-    
     /* Validate range */
     if (value < 1 || value > 600)
     {
-        printf("[DNS-SET] Validation FAILED - out of range\n");
-        fflush(stdout);
         CcspTraceError(("CosaDmlDnsSetForwardMax: Invalid value %lu (must be 1-600)\n", value));
         return ANSC_STATUS_FAILURE;
     }
     
     /* Write to syscfg */
-    printf("[DNS-SET] Writing to syscfg key='%s' value='%lu'\n", SYSCFG_DNS_FORWARD_MAX, value);
-    fflush(stdout);
-    
     rc = sprintf_s(buf, sizeof(buf), "%lu", value);
     if (rc < EOK)
     {
-        printf("[DNS-SET] sprintf_s FAILED\n");
-        fflush(stdout);
         CcspTraceError(("CosaDmlDnsSetForwardMax: sprintf_s failed, rc=%d\n", rc));
         return ANSC_STATUS_FAILURE;
     }
     
     if (syscfg_set_commit(NULL, SYSCFG_DNS_FORWARD_MAX, buf) != 0)
     {
-        printf("[DNS-SET] syscfg_set_commit FAILED\n");
-        fflush(stdout);
-        CcspTraceError(("CosaDmlDnsSetForwardMax: syscfg_set_commit FAILED\n"));
+        CcspTraceError(("CosaDmlDnsSetForwardMax: syscfg_set_commit failed\n"));
         return ANSC_STATUS_FAILURE;
     }
     
-    printf("[DNS-SET] syscfg write SUCCESS\n");
-    fflush(stdout);
-    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Stored DNSForwardMax=%lu in syscfg\n", value));
+    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Set dns-forward-max=%lu\n", value));
     
     /* Restart dnsmasq */
-    printf("[DNS-SET] Triggering dnsmasq restart\n");
-    fflush(stdout);
-    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Triggering dnsmasq restart via sysevent\n"));
-    
     ret = v_secure_system("sysevent set dhcp_server-restart");
     if (ret != 0)
     {
-        printf("[DNS-SET] sysevent FAILED (ret=%d)\n", ret);
-        fflush(stdout);
-        CcspTraceError(("CosaDmlDnsSetForwardMax: sysevent failed (ret=%d)\n", ret));
+        CcspTraceError(("CosaDmlDnsSetForwardMax: sysevent dhcp_server-restart failed (ret=%d)\n", ret));
         return ANSC_STATUS_FAILURE;
     }
-    
-    printf("[DNS-SET] Complete - value set and dnsmasq restarted\n");
-    fflush(stdout);
-    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Complete\n"));
     
     return ANSC_STATUS_SUCCESS;
 }
