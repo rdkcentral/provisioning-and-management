@@ -650,8 +650,6 @@ int main(int argc, char* argv[])
     RDK_LOGGER_INIT();
 #endif
 
-    CcspTraceInfo(("Prashant ########### This is test changes.....1\n"));
-    check_pam_log_fd();
     dump_fds("AFTER_RDK_LOGGER_INIT");
     
 #if defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_BANANAPI_R4_)
@@ -709,11 +707,12 @@ if(id != 0)
 }
 #endif
 
-    check_pam_log_fd();
 #if defined(_DEBUG) && defined(_COSA_SIM_)
     AnscSetTraceLevel(CCSP_TRACE_LEVEL_INFO);
 #endif
 
+    dump_fds("AFTER_RDK_LOGGER_INIT......1");
+    check_pam_log_fd();
     for (idx = 1; idx < argc; idx++)
     {
         if ( (strcmp(argv[idx], "-subsys") == 0) )
@@ -746,6 +745,7 @@ if(id != 0)
     }
 
     check_pam_log_fd();
+    set_pam_log_cloexec();
     CcspTraceInfo(("Prashant ########### This is test changes.....2\n"));
     // To identify slow child process
     fp = fopen("/tmp/debugslowchildprocess", "r");
@@ -856,7 +856,6 @@ if(id != 0)
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
     check_pam_log_fd();
-    set_pam_log_cloexec();
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
     if (syscfg_get(NULL, "wifimotion_enabled", value, sizeof(value)) == 0)
