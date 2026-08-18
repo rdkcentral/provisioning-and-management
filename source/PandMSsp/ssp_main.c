@@ -517,6 +517,7 @@ static void set_pam_log_cloexec(void)
      */
     fd = find_log_fd("PAM");
 
+    CcspTraceWarning(("Prashant: PAM_DEBUG: logfd=%d\n", fd));
     if (fd < 0)
     {
         fprintf(stderr,"PAM: log fd not found\n");
@@ -525,6 +526,7 @@ static void set_pam_log_cloexec(void)
 
     flags = fcntl(fd, F_GETFD);
 
+    CcspTraceWarning(("Prashant: PAM_DEBUG: before F_GETFD=0x%x\n", flags));
     if (flags == -1)
     {
         perror("fcntl(F_GETFD)");
@@ -541,6 +543,10 @@ static void set_pam_log_cloexec(void)
 
         fprintf(stderr, "PAM: FD_CLOEXEC set on log fd=%d\n",fd);
     }
+
+    CcspTraceWarning(("Prashant: PAM_DEBUG: F_SETFD ret=%d\n", ret));
+    flags = fcntl(fd, F_GETFD);
+    CcspTraceWarning(("PAM_DEBUG: after F_GETFD=0x%x\n", flags));
 }
 
 int main(int argc, char* argv[])
@@ -568,6 +574,7 @@ int main(int argc, char* argv[])
 #endif
 
     CcspTraceInfo(("Prashant ########### This is test changes.....1\n"));
+    set_pam_log_cloexec();
 #if defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_BANANAPI_R4_)
 	int id=0;
 	id=getuid();
@@ -759,7 +766,7 @@ if(id != 0)
 
     CcspTraceInfo(("Prashant ########### This is test changes.....4\n"));
     /* Prevent exec'ed child processes from inheriting PAM log fd */
-    set_pam_log_cloexec();
+    //set_pam_log_cloexec();
     CcspTraceInfo(("Prashant ########### This is test changes.....5\n"));
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
