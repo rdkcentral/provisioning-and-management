@@ -1745,21 +1745,12 @@ ULONG CosaDmlDnsGetForwardMax(void)
     char buf[16] = {0};
     ULONG value = DEFAULT_DNS_FORWARD_MAX;
     
-    /* Try to read from syscfg */
+    CcspTraceInfo(("%s...", __FUNCTION__));
+    
+    /* Read from syscfg, return default if not set */
     if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0)
     {
         value = (ULONG)atoi(buf);
-        
-        if (value < 1 || value > 600)
-        {
-            CcspTraceWarning(("%s: Invalid stored value %lu, using default %d\n", 
-                            __FUNCTION__, value, DEFAULT_DNS_FORWARD_MAX));
-            value = DEFAULT_DNS_FORWARD_MAX;
-        }
-        else
-        {
-            CcspTraceInfo(("%s: Returning dns-forward-max=%lu from syscfg\n", __FUNCTION__, value));
-        }
     }
     else
     {
@@ -1821,6 +1812,8 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
     ULONG currentValue = 0;
     errno_t rc = -1;
     int ret = 0;
+    
+    CcspTraceInfo(("%s...", __FUNCTION__));
     
     /* Validate range */
     if (value < 1 || value > 600)
