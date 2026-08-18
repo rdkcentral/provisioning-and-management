@@ -72,6 +72,7 @@
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
+#include "mtrace_watcher.h"
 
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
@@ -794,6 +795,7 @@ if(id != 0)
 
     if ( bRunAsDaemon )
     {
+        mtrace_watcher_start();
         while(1)
         {
             sleep(30);
