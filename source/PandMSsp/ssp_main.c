@@ -506,6 +506,7 @@ int main(int argc, char* argv[])
     RDK_LOGGER_INIT();
 #endif
 
+    printf("########### This is test changes.\n");
 #if defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_BANANAPI_R4_)
 	int id=0;
 	id=getuid();
