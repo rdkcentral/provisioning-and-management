@@ -567,7 +567,7 @@ int main(int argc, char* argv[])
     RDK_LOGGER_INIT();
 #endif
 
-    CcspTraceInfo("Prashant ########### This is test changes.....1\n");
+    CcspTraceInfo(("Prashant ########### This is test changes.....1\n"));
 #if defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_BANANAPI_R4_)
 	int id=0;
 	id=getuid();
@@ -658,7 +658,7 @@ if(id != 0)
         }
     }
 
-    CcspTraceInfo("Prashant ########### This is test changes.....2\n");
+    CcspTraceInfo(("Prashant ########### This is test changes.....2\n"));
     // To identify slow child process
     fp = fopen("/tmp/debugslowchildprocess", "r");
     if (fp)
@@ -747,7 +747,7 @@ if(id != 0)
 #else
     subSys = NULL;      /* use default sub-system */
 #endif
-    CcspTraceInfo("Prashant ########### This is test changes.....3\n");
+    CcspTraceInfo(("Prashant ########### This is test changes.....3\n"));
     err = Cdm_Init(bus_handle, subSys, NULL, NULL, pComponentName);
     if (err != CCSP_SUCCESS)
     {
@@ -757,10 +757,10 @@ if(id != 0)
 
     check_component_crash(PAM_INIT_FILE_BOOTUP);
 
-    CcspTraceInfo("Prashant ########### This is test changes.....4\n");
+    CcspTraceInfo(("Prashant ########### This is test changes.....4\n"));
     /* Prevent exec'ed child processes from inheriting PAM log fd */
     set_pam_log_cloexec();
-    CcspTraceInfo("Prashant ########### This is test changes.....5\n");
+    CcspTraceInfo(("Prashant ########### This is test changes.....5\n"));
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
