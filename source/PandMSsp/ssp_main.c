@@ -498,6 +498,7 @@ static int find_log_fd(const char *logname)
 
         if (strstr(target, logname))
         {
+            CcspTraceInfo(("Prashant: MATCH: fd=%d path=%s\n", fd, target));
             return fd;
         }
     }
@@ -510,23 +511,29 @@ static void set_pam_log_cloexec(void)
     int fd;
     int flags;
 
+    FILE *fp = fopen("/tmp/cloexec_debug.txt", "a");
     /*
      * Update log filename pattern as required.
      * Example:
      *  PAMlog.txt.0
      */
-    fd = find_log_fd("PAM");
+    fd = find_log_fd("PAMlog.txt");
 
-    //CcspTraceInfo(("Prashant: PAM_DEBUG: logfd=%d\n", fd));
+    CcspTraceInfo(("Prashant: PAM_DEBUG: logfd=%d\n", fd));
     if (fd < 0)
     {
         fprintf(stderr,"PAM: log fd not found\n");
+        fprintf(fp, "Found fd=%d\n", fd);
+        fclose(fp);
         return;
     }
 
     flags = fcntl(fd, F_GETFD);
 
-    //CcspTraceInfo(("Prashant: PAM_DEBUG: before F_GETFD=0x%x\n", flags));
+    CcspTraceInfo(("Prashant: PAM_DEBUG: before F_GETFD=0x%x\n", flags));
+    if (fp)
+       fprintf(fp, "Before F_GETFD flags=0x%x\n", flags);
+
     if (flags == -1)
     {
         perror("fcntl(F_GETFD)");
@@ -538,15 +545,28 @@ static void set_pam_log_cloexec(void)
         if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1)
         {
             perror("fcntl(F_SETFD)");
+            if (fp) {
+                fprintf(fp, "F_SETFD failed\n");
+                fclose(fp);
+            }
             return;
         }
 
         fprintf(stderr, "PAM: FD_CLOEXEC set on log fd=%d\n",fd);
     }
 
-    //CcspTraceInfo(("Prashant: PAM_DEBUG: F_SETFD ret=%d\n", ret));
+    CcspTraceInfo(("Prashant: PAM_DEBUG: F_SETFD ret=%d\n", ret));
     flags = fcntl(fd, F_GETFD);
-    //CcspTraceInfo(("PAM_DEBUG: after F_GETFD=0x%x\n", flags));
+    CcspTraceInfo(("PAM_DEBUG: after F_GETFD=0x%x\n", flags));
+
+    if (fp){
+        fprintf(fp, "After F_GETFD flags=0x%x\n", flags);
+        if (flags & FD_CLOEXEC)
+            fprintf(fp, "FD_CLOEXEC SET\n");
+        else
+            fprintf(fp, "FD_CLOEXEC NOT SET\n");
+        fclose(fp);
+    }
 }
 
 int main(int argc, char* argv[])
