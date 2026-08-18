@@ -528,7 +528,7 @@ static void set_pam_log_cloexec(void)
      * Example:
      *  PAMlog.txt.0
      */
-    fd = find_log_fd("PAMlog.txt");
+    fd = find_log_fd("PAM");
 
     if (fp)
        fprintf(fp, "Prashant: PAM_DEBUG: logfd=%d\n", fd);
@@ -582,6 +582,50 @@ static void set_pam_log_cloexec(void)
     }
 }
 
+static void check_pam_log_fd(void)
+{
+    int fd = find_log_fd("PAM");
+
+    if (fd >= 0)
+    {
+        FILE *fp = fopen("/tmp/cloexec_debug.txt", "a");
+        if (fp)
+        {
+            fprintf(fp, "FOUND PAMLOG fd=%d\n", fd);
+            fclose(fp);
+        }
+    }
+}
+
+static void dump_fds(const char *tag)
+{
+    FILE *fp = fopen("/tmp/fd_dump.txt", "a");
+
+    if (!fp)
+        return;
+
+    fprintf(fp, "\n=== %s ===\n", tag);
+
+    for (int fd = 0; fd < 64; fd++)
+    {
+        char path[128];
+        char target[512];
+
+        snprintf(path,sizeof(path),
+                 "/proc/self/fd/%d",fd);
+
+        ssize_t len = readlink(path,target,sizeof(target)-1);
+
+        if (len > 0)
+        {
+            target[len] = '\0';
+            fprintf(fp,"FD=%d -> %s\n",fd,target);
+        }
+    }
+
+    fclose(fp);
+}
+
 int main(int argc, char* argv[])
 {
     int                             cmdChar            = 0;
@@ -607,7 +651,9 @@ int main(int argc, char* argv[])
 #endif
 
     CcspTraceInfo(("Prashant ########### This is test changes.....1\n"));
-    set_pam_log_cloexec();
+    check_pam_log_fd();
+    dump_fds("AFTER_RDK_LOGGER_INIT");
+    
 #if defined(_PLATFORM_RASPBERRYPI_) || defined(_PLATFORM_BANANAPI_R4_)
 	int id=0;
 	id=getuid();
@@ -629,6 +675,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
     
+    check_pam_log_fd();
     /* Set the global pComponentName */
     pComponentName = gpPnmStartCfg->ComponentName;
 
@@ -662,7 +709,7 @@ if(id != 0)
 }
 #endif
 
-
+    check_pam_log_fd();
 #if defined(_DEBUG) && defined(_COSA_SIM_)
     AnscSetTraceLevel(CCSP_TRACE_LEVEL_INFO);
 #endif
@@ -698,6 +745,7 @@ if(id != 0)
         }
     }
 
+    check_pam_log_fd();
     CcspTraceInfo(("Prashant ########### This is test changes.....2\n"));
     // To identify slow child process
     fp = fopen("/tmp/debugslowchildprocess", "r");
@@ -769,6 +817,7 @@ if(id != 0)
 #endif
 #endif
 
+   check_pam_log_fd();
    t2_init("CcspPandM");
    ret = cmd_dispatch('e');
    if(ret != 0)
@@ -787,6 +836,7 @@ if(id != 0)
 #else
     subSys = NULL;      /* use default sub-system */
 #endif
+    check_pam_log_fd();
     CcspTraceInfo(("Prashant ########### This is test changes.....3\n"));
     err = Cdm_Init(bus_handle, subSys, NULL, NULL, pComponentName);
     if (err != CCSP_SUCCESS)
@@ -795,8 +845,9 @@ if(id != 0)
         exit(1);
     }
 
+    dump_fds("AFTER_CCSP_INIT");
     check_component_crash(PAM_INIT_FILE_BOOTUP);
-
+     check_pam_log_fd();
     CcspTraceInfo(("Prashant ########### This is test changes.....4\n"));
     /* Prevent exec'ed child processes from inheriting PAM log fd */
     //set_pam_log_cloexec();
@@ -804,7 +855,8 @@ if(id != 0)
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
-
+    check_pam_log_fd();
+    set_pam_log_cloexec();
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
     if (syscfg_get(NULL, "wifimotion_enabled", value, sizeof(value)) == 0)
@@ -854,6 +906,7 @@ if(id != 0)
        }
     }
 
+    dump_fds("AFTER_COMPONENT_REGISTRATION");
 #if defined(_COSA_INTEL_USG_ARM_) 
     {
         #define DATA_SIZE 1024
@@ -898,6 +951,7 @@ if(id != 0)
     }
 #endif
 
+    dump_fds("AFTER_COMPONENT_REGISTRATION1");
     printf("Entering P&M loop\n");
     CcspTraceWarning(("RDKB_SYSTEM_BOOT_UP_LOG : Entering P&M loop... \n"));
 
