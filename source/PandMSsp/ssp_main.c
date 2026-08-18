@@ -519,7 +519,9 @@ static void set_pam_log_cloexec(void)
      */
     fd = find_log_fd("PAMlog.txt");
 
-    CcspTraceInfo(("Prashant: PAM_DEBUG: logfd=%d\n", fd));
+    if (fp)
+       fprintf(fp, "Prashant: PAM_DEBUG: logfd=%d\n", fd);
+
     if (fd < 0)
     {
         fprintf(stderr,"PAM: log fd not found\n");
@@ -530,7 +532,6 @@ static void set_pam_log_cloexec(void)
 
     flags = fcntl(fd, F_GETFD);
 
-    CcspTraceInfo(("Prashant: PAM_DEBUG: before F_GETFD=0x%x\n", flags));
     if (fp)
        fprintf(fp, "Before F_GETFD flags=0x%x\n", flags);
 
@@ -555,9 +556,10 @@ static void set_pam_log_cloexec(void)
         fprintf(stderr, "PAM: FD_CLOEXEC set on log fd=%d\n",fd);
     }
 
-    CcspTraceInfo(("Prashant: PAM_DEBUG: F_SETFD ret=%d\n", ret));
+    if (fp)
+       fprintf(fp, "Again Before F_GETFD flags=0x%x\n", flags);
+
     flags = fcntl(fd, F_GETFD);
-    CcspTraceInfo(("PAM_DEBUG: after F_GETFD=0x%x\n", flags));
 
     if (fp){
         fprintf(fp, "After F_GETFD flags=0x%x\n", flags);
