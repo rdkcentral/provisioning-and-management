@@ -62,6 +62,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <utapi.h>
 #include <mqueue.h>
 #include "cosa_common_util.h"
@@ -1327,6 +1329,24 @@ int executeCmd(char *cmd)
     return 0;
 }
 
+int getPAMlogFD(void)
+{
+    char path[PARAM_NAME_LEN];
+    char target[PARAM_LENGTH_512];
+
+    for (int fd = FD_START; fd < FD_END; fd++) {
+        snprintf(path, sizeof(path), "/proc/self/fd/%d", fd);
+        ssize_t len = readlink(path, target, sizeof(target) - 1);
+        if (len > 0) {
+            target[len] = '\0';
+            if (strstr(target, "/rdklogs/logs/PAMlog")) {
+                return fd;
+            }
+        }
+    }
+
+    return -1;
+ }
 
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
 void* RegenerateUla(void *arg)

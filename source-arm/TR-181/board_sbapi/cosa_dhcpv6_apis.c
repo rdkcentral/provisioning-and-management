@@ -91,6 +91,7 @@ extern ANSC_HANDLE bus_handle;
 extern char g_Subsystem[32];
 
 extern int executeCmd(char *cmd);
+extern int getPAMlogFD(void);
   
 void _get_shell_output (FILE *fp, char *buf, size_t len);
 int _get_shell_output2 (FILE *fp, char *needle);
@@ -3730,8 +3731,13 @@ static int _dibbler_server_operation(char * arg)
             #endif
 
             //v_secure_system(SERVER_BIN " start");
-        int flags = fcntl(4, F_GETFD);
-        fcntl(4, F_SETFD, flags | FD_CLOEXEC);
+            int logfd = getPAMlogFD();
+            if (logfd >= 0) {
+                int flags = fcntl(logfd, F_GETFD);
+                if (flags >= 0) {
+                    fcntl(logfd, F_SETFD, flags | FD_CLOEXEC);
+                }
+            }
 	    snprintf(cmd,sizeof(cmd), "%s start", SERVER_BIN);
 	    executeCmd(cmd);
         }

@@ -113,6 +113,7 @@
 
 #define MAX_PROCESS_NUMBER 300
 
+extern int getPAMlogFD(void);
 static int writeToJson(char *data, char *file);
 
 #if defined(_PLATFORM_IPQ_) || defined(_XER5_PRODUCT_REQ_)
@@ -2495,8 +2496,13 @@ int setXOpsReverseSshTrigger(char *input) {
         {
                 CcspTraceInfo(("[%s] Starting Stunnel \n",__FUNCTION__));
                 CcspTraceInfo(("[%s] Stunnel Commmand = %s %d %s %s %d %s %s %s \n",__FUNCTION__,stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin));
-                int flags = fcntl(4, F_GETFD);
-                fcntl(4, F_SETFD, flags | FD_CLOEXEC);
+                int logfd = getPAMlogFD();
+                if (logfd >= 0) {
+                    int flags = fcntl(logfd, F_GETFD);
+                    if (flags >= 0) {
+                        fcntl(logfd, F_SETFD, flags | FD_CLOEXEC);
+                    }
+                }
                 int ret = v_secure_system("/bin/sh %s %d %s %s %d %s %s %s &",stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin);
                 if (ret != 0) {
                     CcspTraceError(("[%s] Stunnel execution failed with return code %d\n", __FUNCTION__, ret));

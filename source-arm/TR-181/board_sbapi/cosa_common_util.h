@@ -76,6 +76,9 @@
 #define MAX_MSG_SIZE sizeof(arg_struct_t)
 #define PARAM_NAME_LEN 128
 #define VALUE_LEN      128
+#define PARAM_LENGTH_512  512
+#define FD_START 3
+#define FD_END 32
 
 #if defined (RBUS_WAN_IP)
 typedef struct{
