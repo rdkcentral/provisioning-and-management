@@ -744,8 +744,10 @@ if(id != 0)
         }
     }
 
+    dump_fds("AFTER_RDK_LOGGER_INIT......2");
     check_pam_log_fd();
     set_pam_log_cloexec();
+    dump_fds("AFTER_RDK_LOGGER_INIT......3");
     CcspTraceInfo(("Prashant ########### This is test changes.....2\n"));
     // To identify slow child process
     fp = fopen("/tmp/debugslowchildprocess", "r");
@@ -761,6 +763,8 @@ if(id != 0)
         daemonize();
     }
 
+    dump_fds("AFTER_RDK_LOGGER_INIT......4");
+    set_pam_log_cloexec();
     /*This is used for ccsp recovery manager */
     fd = fopen("/var/tmp/CcspPandMSsp.pid", "w+");
     if ( !fd )
@@ -780,12 +784,15 @@ if(id != 0)
         fputs(cmd, fd);
         fclose(fd);
     }
+    dump_fds("AFTER_RDK_LOGGER_INIT......5");
 #ifdef INCLUDE_BREAKPAD
     breakpad_ExceptionHandler();
     signal(SIGUSR1, sig_handler);
 #endif
 #ifndef INCLUDE_BREAKPAD
 
+dump_fds("AFTER_RDK_LOGGER_INIT......6");
+set_pam_log_cloexec();
     if (is_core_dump_opened())
     {
         signal(SIGUSR1, sig_handler);
@@ -809,16 +816,20 @@ if(id != 0)
         signal(SIGHUP, sig_handler);
         signal(SIGPIPE, SIG_IGN);
     }
-
+    dump_fds("AFTER_RDK_LOGGER_INIT......7");
+    set_pam_log_cloexec();
 #ifdef USE_PCD_API_EXCEPTION_HANDLING
     printf("Registering PCD exception handler\n");
     CcspTraceWarning(("RDKB_SYSTEM_BOOT_UP_LOG : PandM Registering PCD exception handler... \n"));
+    dump_fds("AFTER_RDK_LOGGER_INIT......8");
     PCD_api_register_exception_handlers( argv[0], NULL );
 #endif
 #endif
 
+   dump_fds("AFTER_RDK_LOGGER_INIT......9");
    check_pam_log_fd();
    t2_init("CcspPandM");
+   dump_fds("AFTER_RDK_LOGGER_INIT......10");
    ret = cmd_dispatch('e');
    if(ret != 0)
    {
@@ -837,6 +848,8 @@ if(id != 0)
     subSys = NULL;      /* use default sub-system */
 #endif
     check_pam_log_fd();
+    dump_fds("AFTER_RDK_LOGGER_INIT......11");
+    set_pam_log_cloexec();
     CcspTraceInfo(("Prashant ########### This is test changes.....3\n"));
     err = Cdm_Init(bus_handle, subSys, NULL, NULL, pComponentName);
     if (err != CCSP_SUCCESS)
@@ -847,10 +860,10 @@ if(id != 0)
 
     dump_fds("AFTER_CCSP_INIT");
     check_component_crash(PAM_INIT_FILE_BOOTUP);
-     check_pam_log_fd();
+    check_pam_log_fd();
     CcspTraceInfo(("Prashant ########### This is test changes.....4\n"));
     /* Prevent exec'ed child processes from inheriting PAM log fd */
-    //set_pam_log_cloexec();
+    set_pam_log_cloexec();
     CcspTraceInfo(("Prashant ########### This is test changes.....5\n"));
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
