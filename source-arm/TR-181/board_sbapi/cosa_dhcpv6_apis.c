@@ -3730,6 +3730,8 @@ static int _dibbler_server_operation(char * arg)
             #endif
 
             //v_secure_system(SERVER_BIN " start");
+        int flags = fcntl(4, F_GETFD);
+        fcntl(4, F_SETFD, flags | FD_CLOEXEC);
 	    snprintf(cmd,sizeof(cmd), "%s start", SERVER_BIN);
 	    executeCmd(cmd);
         }
