@@ -14822,7 +14822,7 @@ RDKDownloadManager_SetParamStringValue
         ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(durationValue);
     }
 
-    ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
+    ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1", pString);
 
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
