@@ -14850,7 +14850,7 @@ RDKDownloadManager_SetParamStringValue
             char expirySpec[128] = {0};
             time_t expiryTime = time(NULL) + ttl;
             snprintf(expirySpec, sizeof(expirySpec), "%s:%lld", tool, (long long)expiryTime);
-            ret = v_secure_system("/usr/bin/rdm -s \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", expirySpec);
+            ret = v_secure_system("/usr/bin/rdm -s \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1", expirySpec);
         }
 
         if (ret != 0) {
