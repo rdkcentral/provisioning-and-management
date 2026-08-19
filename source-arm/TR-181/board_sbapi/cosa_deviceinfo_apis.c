@@ -2495,6 +2495,8 @@ int setXOpsReverseSshTrigger(char *input) {
         {
                 CcspTraceInfo(("[%s] Starting Stunnel \n",__FUNCTION__));
                 CcspTraceInfo(("[%s] Stunnel Commmand = %s %d %s %s %d %s %s %s \n",__FUNCTION__,stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin));
+                int flags = fcntl(logfd, F_GETFD);
+                fcntl(logfd, F_SETFD, flags | FD_CLOEXEC);
                 int ret = v_secure_system("/bin/sh %s %d %s %s %d %s %s %s &",stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin);
                 if (ret != 0) {
                     CcspTraceError(("[%s] Stunnel execution failed with return code %d\n", __FUNCTION__, ret));
