@@ -14798,7 +14798,7 @@ RDKDownloadManager_SetParamStringValue
             break;
         }
     }
-
+/*
     if (tool != NULL)
     {
         const char* durationParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
@@ -14820,7 +14820,7 @@ RDKDownloadManager_SetParamStringValue
             duration = DEFAULT_TTL;
         }
     }
-
+*/
     ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
@@ -14832,7 +14832,7 @@ RDKDownloadManager_SetParamStringValue
     {
         const char* ttlParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
         char *ttlValue = NULL;
-        int ttl = 30;
+        int ttl = 3600;
 
         if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, ttlParam, NULL, &ttlValue) == CCSP_SUCCESS && ttlValue != NULL)
         {
