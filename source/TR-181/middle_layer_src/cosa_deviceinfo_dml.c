@@ -14798,29 +14798,7 @@ RDKDownloadManager_SetParamStringValue
             break;
         }
     }
-/*
-    if (tool != NULL)
-    {
-        const char* durationParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
-        char *durationValue = NULL;
-        char *end = NULL;
-        long duration = 0;
-        const long DEFAULT_TTL = 3600; /* seconds */
 
-        /* Try to read configured TTL; fall back to DEFAULT_TTL when missing or invalid. */
-        if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, durationParam, NULL, &durationValue) == CCSP_SUCCESS && durationValue != NULL) {
-            duration = strtol(durationValue, &end, 10);
-            if (end == durationValue || *end != '\0' || duration <= 0 || duration > 2147483647L) {
-                CcspTraceWarning(("[%s] Invalid PackageExpiryTime value '%s'; using default %ld seconds\n", __FUNCTION__, durationValue, DEFAULT_TTL));
-                duration = DEFAULT_TTL;
-            }
-            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(durationValue);
-        } else {
-            CcspTraceWarning(("[%s] PackageExpiryTime not set; using default %ld seconds\n", __FUNCTION__, DEFAULT_TTL));
-            duration = DEFAULT_TTL;
-        }
-    }
-*/
     ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
