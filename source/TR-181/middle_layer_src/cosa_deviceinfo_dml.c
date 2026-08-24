@@ -15050,7 +15050,7 @@ WiFiInterworking_GetParamBoolValue
 	    ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
 	}
 	else
-	    *pBool = FALSE;
+	    *pBool = TRUE;
 	return TRUE;
     }
 
@@ -15241,7 +15241,7 @@ WiFiPasspoint_GetParamBoolValue
 	    ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
 	}
 	else
-	    *pBool = FALSE;
+	    *pBool = TRUE;
 	return TRUE;
     }
 
@@ -15299,7 +15299,7 @@ WiFiPasspoint_SetParamBoolValue
 			((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
  		}
 		else
-			interworking = FALSE;
+			interworking = TRUE;
 
 		if(interworking == FALSE) {
  			CcspTraceError(("Passpoint cannot be enabled when interworking is disabled.\n"));
