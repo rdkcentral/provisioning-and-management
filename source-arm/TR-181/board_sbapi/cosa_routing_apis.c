@@ -2145,6 +2145,7 @@ CosaDmlRoutingGetNumberOfV6Entries
     )
 {
     UNREFERENCED_PARAMETER(hContext);
+	CcspTraceError(("%s:%d,  ###### entryCount: %d ######## \n", __FUNCTION__, __LINE__, g_RouterFull.ulNumOfIPv6Forward));
     return g_RouterFull.ulNumOfIPv6Forward;
 }
 
@@ -4694,7 +4695,7 @@ CosaDmlRoutingGetNumberOfV6Entries
     UNREFERENCED_PARAMETER(hContext);
     if (Route6_LoadRouteInfo() != 0)
         return 0;
-	
+	CcspTraceError(("%s:%d,  ###### entryCount: %d ######## \n", __FUNCTION__, __LINE__, g_numRtInfo6));
     return g_numRtInfo6;
 }
 
