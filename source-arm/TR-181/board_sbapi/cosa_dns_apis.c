@@ -71,7 +71,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SYSCFG_DNS_FORWARD_MAX "dnsmasq_forward_max"
+#define SYSCFG_DNS_FORWARD_MAX "dnsmasq_dns_forward_max"
 #define DEFAULT_DNS_FORWARD_MAX 600
 #define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
 
@@ -953,6 +953,7 @@ CosaDmlDnsRelayGetServer
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "cosa_x_cisco_com_devicecontrol_apis.h"
+#include "cosa_drg_common.h"
 
 
 /**********************************************************************
@@ -1743,18 +1744,18 @@ CosaDmlDnsRelayGetServer
 ULONG CosaDmlDnsGetForwardMax(void)
 {
     char buf[16] = {0};
-    ULONG value = DEFAULT_DNS_FORWARD_MAX;
+    ULONG value = 0;
     
     CcspTraceInfo(("%s...", __FUNCTION__));
     
-    /* Read from syscfg, return default if not set */
-    if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0)
+    /* Read from syscfg, return 0 if not set (no --dns-forward-max flag) */
+    if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0 && buf[0] != '\0')
     {
         value = (ULONG)atoi(buf);
     }
     else
     {
-        CcspTraceInfo(("%s: No stored value, returning default=%d\n", __FUNCTION__, DEFAULT_DNS_FORWARD_MAX));
+        CcspTraceInfo(("%s: No stored value, returning 0 (no flag)\n", __FUNCTION__));
     }
     
     return value;
@@ -1849,11 +1850,11 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
     
     CcspTraceInfo(("CosaDmlDnsSetForwardMax: Set dns-forward-max=%lu\n", value));
     
-    /* Restart dnsmasq */
-    ret = v_secure_system("sysevent set dhcp_server-restart");
+    /* Restart dnsmasq using C API */
+    ret = commonSyseventSet("dhcp_server-restart", "");
     if (ret != 0)
     {
-        CcspTraceError(("CosaDmlDnsSetForwardMax: sysevent dhcp_server-restart failed (ret=%d)\n", ret));
+        CcspTraceError(("CosaDmlDnsSetForwardMax: commonSyseventSet dhcp_server-restart failed (ret=%d)\n", ret));
         return ANSC_STATUS_FAILURE;
     }
     
