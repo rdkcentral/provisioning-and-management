@@ -72,7 +72,7 @@
 #include <string.h>
 
 #define SYSCFG_DNS_FORWARD_MAX "dnsmasq_dns_forward_max"
-#define DEFAULT_DNS_FORWARD_MAX 600
+#define DEFAULT_DNS_FORWARD_MAX 150
 #define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
 
 #if (defined(_COSA_SIM_))
@@ -1744,18 +1744,22 @@ CosaDmlDnsRelayGetServer
 ULONG CosaDmlDnsGetForwardMax(void)
 {
     char buf[16] = {0};
-    ULONG value = 0;
+    ULONG value = DEFAULT_DNS_FORWARD_MAX;
     
     CcspTraceInfo(("%s...", __FUNCTION__));
     
-    /* Read from syscfg, return 0 if not set (no --dns-forward-max flag) */
+    /* Read from syscfg, return default 150 if not set */
     if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0 && buf[0] != '\0')
     {
         value = (ULONG)atoi(buf);
+        if (value == 0)
+        {
+            value = DEFAULT_DNS_FORWARD_MAX;
+        }
     }
     else
     {
-        CcspTraceInfo(("%s: No stored value, returning 0 (no flag)\n", __FUNCTION__));
+        CcspTraceInfo(("%s: No stored value, returning default=%d\n", __FUNCTION__, DEFAULT_DNS_FORWARD_MAX));
     }
     
     return value;
