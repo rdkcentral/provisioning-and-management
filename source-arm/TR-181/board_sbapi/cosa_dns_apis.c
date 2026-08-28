@@ -69,11 +69,11 @@
 #include "secure_wrapper.h"
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define SYSCFG_DNS_FORWARD_MAX "dnsmasq_dns_forward_max"
 #define DEFAULT_DNS_FORWARD_MAX 150
-#define DNSMASQ_CONF_FILE "/var/dnsmasq.conf"
 
 #if (defined(_COSA_SIM_))
 
@@ -1730,9 +1730,9 @@ CosaDmlDnsRelayGetServer
     prototype:
 
         ULONGg
-        CosaDmlDnsGetForwardMaxg
-            (g
-                voidg
+        CosaDmlDnsGetForwardMax
+            (
+                void
             );
 
     description:
@@ -1784,7 +1784,7 @@ ULONG CosaDmlDnsGetForwardMax(void)
         This routine sets the DNS forward max value, stores in syscfg,
         updates dnsmasq.conf, and triggers a dnsmasq restart.
 
-    argument:   ULONG value - The DNS forward max value (1-65535)
+    argument:   ULONG value - The DNS forward max value (1-600)
 
     return:     operation status
 
