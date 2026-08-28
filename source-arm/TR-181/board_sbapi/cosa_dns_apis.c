@@ -1147,6 +1147,7 @@ CosaDmlDnsClientGetServers
                             pServer[i].Order          = 1 + i;
                             pServer[i].InstanceNumber = 1 + i;
                             pServer[i].bEnabled       = TRUE;
+                            pServer[i].Status         = COSA_DML_DNS_STATUS_Enabled;
                             pServer[i].Type           = COSA_DML_DNS_ADDR_SRC_DHCPV4;
                             i++;
                             break;
@@ -1156,6 +1157,7 @@ CosaDmlDnsClientGetServers
                             pServer[i].Order          = 1 + i;
                             pServer[i].InstanceNumber = 1 + i;
                             pServer[i].bEnabled       = TRUE;
+                            pServer[i].Status         = COSA_DML_DNS_STATUS_Enabled;
                             pServer[i].Type           = COSA_DML_DNS_ADDR_SRC_DHCPV6;
                             i++;
                             break;
