@@ -66,9 +66,6 @@
 
 #include "cosa_dns_internal.h"
 #include "safec_lib_common.h"
-#include "secure_wrapper.h"
-#include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -1754,8 +1751,12 @@ ULONG CosaDmlDnsGetForwardMax(void)
     if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0 && buf[0] != '\0')
     {
         value = (ULONG)atoi(buf);
-        if (value == 0)
+        
+        /* Validate range (same as setter: 1-600) */
+        if (value < 1 || value > 600)
         {
+            CcspTraceWarning(("CosaDmlDnsGetForwardMax: Invalid stored value %lu (must be 1-600), returning default %d\n", 
+                             value, DEFAULT_DNS_FORWARD_MAX));
             value = DEFAULT_DNS_FORWARD_MAX;
         }
     }
