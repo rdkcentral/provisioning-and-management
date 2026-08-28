@@ -1755,8 +1755,8 @@ ULONG CosaDmlDnsGetForwardMax(void)
         /* Validate range (same as setter: 1-600) */
         if (value < 1 || value > 600)
         {
-            CcspTraceWarning(("CosaDmlDnsGetForwardMax: Invalid stored value %lu (must be 1-600), returning default %d\n", 
-                             value, DEFAULT_DNS_FORWARD_MAX));
+            CcspTraceWarning(("%s: Invalid stored value %lu (must be 1-600), returning default %d\n", 
+                             __FUNCTION__, value, DEFAULT_DNS_FORWARD_MAX));
             value = DEFAULT_DNS_FORWARD_MAX;
         }
     }
@@ -1826,7 +1826,7 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
     /* Validate range */
     if (value < 1 || value > 600)
     {
-        CcspTraceError(("CosaDmlDnsSetForwardMax: Invalid value %lu (must be 1-600)\n", value));
+        CcspTraceError(("%s: Invalid value %lu (must be 1-600)\n", __FUNCTION__, value));
         return ANSC_STATUS_FAILURE;
     }
     
@@ -1836,7 +1836,7 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
         currentValue = (ULONG)atoi(buf);
         if (currentValue == value)
         {
-            CcspTraceInfo(("CosaDmlDnsSetForwardMax: Value unchanged (%lu), skipping restart\n", value));
+            CcspTraceInfo(("%s: Value unchanged (%lu), skipping restart\n", __FUNCTION__, value));
             return ANSC_STATUS_SUCCESS;
         }
     }
@@ -1845,23 +1845,23 @@ ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
     rc = sprintf_s(buf, sizeof(buf), "%lu", value);
     if (rc < EOK)
     {
-        CcspTraceError(("CosaDmlDnsSetForwardMax: sprintf_s failed, rc=%d\n", rc));
+        CcspTraceError(("%s: sprintf_s failed, rc=%d\n", __FUNCTION__, rc));
         return ANSC_STATUS_FAILURE;
     }
     
     if (syscfg_set_commit(NULL, SYSCFG_DNS_FORWARD_MAX, buf) != 0)
     {
-        CcspTraceError(("CosaDmlDnsSetForwardMax: syscfg_set_commit failed\n"));
+        CcspTraceError(("%s: syscfg_set_commit failed\n", __FUNCTION__));
         return ANSC_STATUS_FAILURE;
     }
     
-    CcspTraceInfo(("CosaDmlDnsSetForwardMax: Set dns-forward-max=%lu\n", value));
+    CcspTraceInfo(("%s: Set dns-forward-max=%lu\n", __FUNCTION__, value));
     
     /* Restart dnsmasq using C API */
     ret = commonSyseventSet("dhcp_server-restart", "");
     if (ret != 0)
     {
-        CcspTraceError(("CosaDmlDnsSetForwardMax: commonSyseventSet dhcp_server-restart failed (ret=%d)\n", ret));
+        CcspTraceError(("%s: commonSyseventSet dhcp_server-restart failed (ret=%d)\n", __FUNCTION__, ret));
         return ANSC_STATUS_FAILURE;
     }
     
