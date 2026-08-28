@@ -1729,7 +1729,7 @@ CosaDmlDnsRelayGetServer
 
     prototype:
 
-        ULONGg
+        ULONG
         CosaDmlDnsGetForwardMax
             (
                 void
