@@ -2000,8 +2000,6 @@ LanMngm_GetParamUlongValue
     PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_LAN_MANAGEMENT        pLanMngm    = (PCOSA_DML_LAN_MANAGEMENT)pLinkObj->hContext;
 
-    char ip_buff[16]  = {0};
-    struct in_addr addr;
 
     if (strcmp(ParamName, "LanMode") == 0)
     {
@@ -2020,22 +2018,12 @@ LanMngm_GetParamUlongValue
     }
     if (strcmp(ParamName, "LanSubnetMask") == 0)
     {
-        syscfg_get(NULL, DHCPV4_LAN_NETMASK , ip_buff, sizeof(ip_buff));
-        if (inet_pton(AF_INET, ip_buff, &addr) != 1) {
-            CcspTraceWarning(("inet_pton: Invalid IPv4 address\n"));
-            return FALSE;
-        }
-        *pUlong = addr.s_addr;
+        *pUlong = pLanMngm->LanSubnetMask.Value;
         return TRUE;
     }
     if (strcmp(ParamName, "LanIPAddress") == 0)
     {
-        syscfg_get(NULL, DHCPV4_LAN_IP, ip_buff, sizeof(ip_buff));
-        if (inet_pton(AF_INET, ip_buff, &addr) != 1) {
-            CcspTraceWarning(("inet_pton: Invalid IPv4 address\n"));
-            return FALSE;
-        }
-        *pUlong = addr.s_addr;
+        *pUlong = pLanMngm->LanIPAddress.Value;
         return TRUE;
     }
     if (strcmp(ParamName, "LanTos") == 0)
