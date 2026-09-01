@@ -3469,7 +3469,6 @@ IPv6Forwarding_Synchronize
     ULONG                           i             = 0;
     BOOL                            bFound        = FALSE;
     errno_t                         rc            = -1;
- 
     entryCount                      = CosaDmlRoutingGetNumberOfV6Entries(NULL);
     
     pulTmp    =   AnscAllocateMemory( entryCount * sizeof(ULONG) );
@@ -3506,6 +3505,14 @@ IPv6Forwarding_Synchronize
         bFound = FALSE;
         for ( i = 0; i < entryCount; i++)
         {
+
+		 CcspTraceError(("%s:%d, i : %d\n", __FUNCTION__, __LINE__, i));
+		 CcspTraceError(("%s:%d,  entryCount: %d \n", __FUNCTION__, __LINE__, entryCount));
+		 CcspTraceError(("%s:%d,  pEntry2[i].DestIPPrefix : %s \n", __FUNCTION__, __LINE__,  pEntry2[i].DestIPPrefix));
+		CcspTraceError(("%s:%d,  pEntry->DestIPPrefix : %s \n", __FUNCTION__, __LINE__,  pEntry->DestIPPrefix));
+		CcspTraceError(("%s:%d,  pEntry2[i].Interface: %s\n", __FUNCTION__, __LINE__, pEntry2[i].Interface));
+        CcspTraceError(("%s:%d,  pEntry->Interface: %s\n", __FUNCTION__, __LINE__, pEntry->Interface));
+		
             if ( !pulTmp[i] && ( _ansc_strcmp(pEntry2[i].DestIPPrefix, pEntry->DestIPPrefix) == 0 ) && 
                  ( _ansc_strcmp(pEntry2[i].Interface, pEntry->Interface) == 0 ) ) {
                 pulTmp[i] = 1;
