@@ -1784,6 +1784,8 @@
                         <objectType>object</objectType>
                          <functions>
                                 <func_SetParamStringValue>RDKDownloadManager_SetParamStringValue</func_SetParamStringValue>
+                              <func_GetParamIntValue>RDKDownloadManager_GetParamIntValue</func_GetParamIntValue>
+                              <func_SetParamIntValue>RDKDownloadManager_SetParamIntValue</func_SetParamIntValue>
                         </functions>
                         <parameters>
                                 <parameter>
@@ -1791,6 +1793,12 @@
                                         <type>string(255)</type>
                                         <syntax>string</syntax>
                                         <writable>true</writable>
+                                </parameter>
+                                <parameter>
+                                  <name>PackageExpiryTime</name>
+                                  <type>int</type>
+                                  <syntax>int</syntax>
+                                  <writable>true</writable>
                                 </parameter>
                         </parameters>
         </object>
