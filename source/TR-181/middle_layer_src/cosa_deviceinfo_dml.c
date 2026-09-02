@@ -10951,6 +10951,68 @@ Feature_SetParamIntValue
     }
     return FALSE;
 }
+
+BOOL
+RDKDownloadManager_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pint
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName || !pint || strcmp(ParamName, "PackageExpiryTime") != 0)
+    {
+        return FALSE;
+    }
+
+    char *strValue = NULL;
+    if (PSM_Get_Record_Value2(
+            bus_handle,
+            g_Subsystem,
+            "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
+            NULL,
+            &strValue) == CCSP_SUCCESS && strValue != NULL)
+    {
+        *pint = _ansc_atoi(strValue);
+        ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+    }
+    else
+    {
+        *pint = 0;
+    }
+    return TRUE;
+}
+
+BOOL
+RDKDownloadManager_SetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         iValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName || strcmp(ParamName, "PackageExpiryTime") != 0)
+    {
+        return FALSE;
+    }
+
+    if (iValue <= 0)
+    {
+        CcspTraceWarning(("RDKDownloadManager PackageExpiryTime must be greater than zero\n"));
+        return FALSE;
+    }
+
+    char value[16] = {0};
+    snprintf(value, sizeof(value), "%d", iValue);
+    return PSM_Set_Record_Value2(
+        bus_handle,
+        g_Subsystem,
+        "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
+        ccsp_string,
+        value) == CCSP_SUCCESS;
+}
 /**********************************************************************
 
     caller:     owner of this object
@@ -14716,6 +14778,9 @@ RDKDownloadManager_SetParamStringValue
     if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
+    const char* tool = NULL;
+    static const char *debugTools[] = { "tcpdump", "strace" };
+    size_t debugToolIndex = 0;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
@@ -14725,11 +14790,51 @@ RDKDownloadManager_SetParamStringValue
 
     CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
 
+    for (debugToolIndex = 0; debugToolIndex < (sizeof(debugTools) / sizeof(debugTools[0])); ++debugToolIndex)
+    {
+        if (strstr(pString, debugTools[debugToolIndex]) != NULL)
+        {
+            tool = debugTools[debugToolIndex];
+            break;
+        }
+    }
+
     ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
         return FALSE;
+    }
+
+    if (tool != NULL)
+    {
+        const char* ttlParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
+        char *ttlValue = NULL;
+        int ttl = 3600;
+
+        if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, ttlParam, NULL, &ttlValue) == CCSP_SUCCESS && ttlValue != NULL)
+        {
+            int configuredTtl = _ansc_atoi(ttlValue);
+            if (configuredTtl > 0)
+            {
+                ttl = configuredTtl;
+            }
+            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(ttlValue);
+        }
+
+        /* Store an absolute expiry time. RDM performs cleanup from cron. */
+        {
+            char expirySpec[128] = {0};
+            time_t expiryTime = time(NULL) + ttl;
+            snprintf(expirySpec, sizeof(expirySpec), "%s:%lld", tool, (long long)expiryTime);
+            ret = v_secure_system("/usr/bin/rdm -s \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", expirySpec);
+        }
+
+        if (ret != 0) {
+            CcspTraceWarning(("[%s] Failed to schedule TTL cleanup for %s. Returned error code '%d'\n", __FUNCTION__, tool, ret));
+        } else {
+            CcspTraceWarning(("[%s] Scheduled TTL cleanup for %s\n", __FUNCTION__, tool));
+        }
     }
 
     CcspTraceWarning(("[%s] Exiting..\n", __FUNCTION__ ));
