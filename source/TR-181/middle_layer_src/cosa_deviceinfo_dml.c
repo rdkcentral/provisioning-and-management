@@ -14282,11 +14282,11 @@ MultiProcessDetect_SetParamBoolValue
         BOOL                        bValue
     )
 {
-    if (IsBoolSame(hInsContext, ParamName, bValue, MultiProcessDetect_GetParamBoolValue))
-        return TRUE;
-
     if (strcmp(ParamName, "Enable") == 0)
     {
+        if (IsBoolSame(hInsContext, ParamName, bValue, MultiProcessDetect_GetParamBoolValue))
+            return TRUE;
+
         if (syscfg_set_commit(NULL, "MultiProcDetectEnable",
                               (bValue == TRUE) ? "true" : "false") != 0)
         {
@@ -14365,22 +14365,23 @@ MultiProcessDetect_GetParamStringValue
         ret = syscfg_get(NULL, "MultiProcDetectExcludeList", rfcbuf, sizeof(rfcbuf));
 
         char combined[1024] = {'\0'};
+        int combinedLen = 0;
         if (ret == 0 && rfcbuf[0] != '\0')
         {
             /* Return defaults + RFC additions as full effective list */
-            snprintf(combined, sizeof(combined), "%s,%s", defbuf, rfcbuf);
+            combinedLen = snprintf(combined, sizeof(combined), "%s,%s", defbuf, rfcbuf);
+            if (combinedLen < 0) combinedLen = 0;
         }
         else
         {
             /* RFC key not set — return defaults only */
-            snprintf(combined, sizeof(combined), "%s", defbuf);
+            combinedLen = snprintf(combined, sizeof(combined), "%s", defbuf);
+            if (combinedLen < 0) combinedLen = 0;
         }
 
-        size_t combinedLen = strlen(combined);
         rc = strcpy_s(pValue, *pUlSize, combined);
         if (rc != EOK)
         {
-            ERR_CHK(rc);
             if (rc == ERANGE)
             {
                 *pUlSize = combinedLen + 1;
@@ -14443,9 +14444,6 @@ MultiProcessDetect_SetParamStringValue
         char*                       pString
     )
 {
-    if (IsStringSame(hInsContext, ParamName, pString, MultiProcessDetect_GetParamStringValue))
-        return TRUE;
-
     if (pString == NULL)
     {
         CcspTraceError(("%s: NULL string provided for parameter '%s'\n", __FUNCTION__, ParamName));
@@ -14454,6 +14452,9 @@ MultiProcessDetect_SetParamStringValue
 
     if (strcmp(ParamName, "ExcludeList") == 0)
     {
+        if (IsStringSame(hInsContext, ParamName, pString, MultiProcessDetect_GetParamStringValue))
+            return TRUE;
+
         if (syscfg_set_commit(NULL, "MultiProcDetectExcludeList", pString) != 0)
         {
             CcspTraceError(("%s: syscfg_set_commit failed for MultiProcDetectExcludeList\n",
