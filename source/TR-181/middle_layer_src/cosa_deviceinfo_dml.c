@@ -10969,10 +10969,12 @@ Feature_SetParamIntValue
         if (syscfg_set_commit(NULL, "edns_packet_size", buf) != 0)
         {
                CcspTraceInfo(("syscfg_set edns_packet_size failed\n"));
+               return FALSE;
         }
         else
         {
             v_secure_system("sysevent set dhcp_server-restart");
+            return TRUE;
         }
     }
     return FALSE;
