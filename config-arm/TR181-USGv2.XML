@@ -1899,10 +1899,8 @@
                         <functions>
                             <func_GetParamBoolValue>Feature_GetParamBoolValue</func_GetParamBoolValue>
                             <func_SetParamBoolValue>Feature_SetParamBoolValue</func_SetParamBoolValue>
-<?ifdef BCI?>
-                                <func_GetParamIntValue>Feature_GetParamIntValue</func_GetParamIntValue>
+                            <func_GetParamIntValue>Feature_GetParamIntValue</func_GetParamIntValue>
                         	<func_SetParamIntValue>Feature_SetParamIntValue</func_SetParamIntValue>
-<?endif?>
                             <func_GetParamStringValue>Feature_GetParamStringValue</func_GetParamStringValue>
                             <func_SetParamStringValue>Feature_SetParamStringValue</func_SetParamStringValue>
                         </functions>
@@ -1947,6 +1945,12 @@
                                 <writable>true</writable>
                             </parameter>
 <?endif?>
+                                <parameter>
+                                    <name>EDNSPacketSize</name>
+                                    <type>int</type>
+                                    <syntax>int</syntax>
+                                    <writable>true</writable>
+                                </parameter>
                             <parameter>
                                 <name>Xupnp</name>
                                 <type>boolean</type>

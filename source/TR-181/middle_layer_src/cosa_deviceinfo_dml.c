@@ -9481,6 +9481,17 @@ Feature_GetParamIntValue
              return TRUE;
          }
     }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+         /* collect value */
+         char buf[10];
+         syscfg_get( NULL, "edns_packet_size", buf, sizeof(buf));
+         if( buf [0] != '\0' )
+         {
+             *pint= ( atoi(buf) );
+             return TRUE;
+         }
+    }
     return FALSE;
 }
 /**********************************************************************
@@ -10948,6 +10959,23 @@ Feature_SetParamIntValue
                CcspTraceInfo(("syscfg_set low_queue_reboot_threshold failed\n"));
         }
 	return TRUE;
+    }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+        CcspTraceInfo(("Set EDNSPacketSize \n"));
+        char buf[8]={0};
+        snprintf(buf, sizeof(buf), "%d", bValue);
+
+        if (syscfg_set_commit(NULL, "edns_packet_size", buf) != 0)
+        {
+               CcspTraceInfo(("syscfg_set edns_packet_size failed\n"));
+               return FALSE;
+        }
+        else
+        {
+            v_secure_system("sysevent set dhcp_server-restart");
+            return TRUE;
+        }
     }
     return FALSE;
 }
