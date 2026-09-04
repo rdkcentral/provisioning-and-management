@@ -208,9 +208,9 @@ void webConfigFrameworkInit()
 {
 #if defined (FEATURE_RDKB_DHCP_MANAGER)
 	#if defined(SPEED_BOOST_SUPPORTED)
-		char *sub_docs[]= {"portforwarding","wan","lan","hotspot","connectedbuilding","xmspeedboost","webui",(char *) 0 };
+        char *sub_docs[]= {"portforwarding","wan","macbinding","lan","hotspot","connectedbuilding","xmspeedboost","webui",(char *) 0 };
 	#else
-		char *sub_docs[]= {"portforwarding","wan","lan","hotspot","connectedbuilding","webui",(char *) 0 };
+        char *sub_docs[]= {"portforwarding","wan","macbinding","lan","hotspot","connectedbuilding","webui",(char *) 0 };
 	#endif
 #else
 	#if defined(SPEED_BOOST_SUPPORTED)
