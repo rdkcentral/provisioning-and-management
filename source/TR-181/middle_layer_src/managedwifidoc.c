@@ -190,7 +190,6 @@ void tunnelLanConfigDocdestroy( lanconfigTunnelInfo_t *pTunnelLanCfg)
             free(pTunnelLanCfg->pVlanIds);
             pTunnelLanCfg->pVlanIds = NULL;
         }
-        free(pTunnelLanCfg); /* CID 346829 fix - Resource leak prevention */
     }
 }
 #endif
