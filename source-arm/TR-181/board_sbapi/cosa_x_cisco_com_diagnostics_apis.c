@@ -484,6 +484,8 @@ static int _get_log(PCOSA_DML_DIAGNOSTICS_ENTRY *ppEntry, char *path, char *user
     v_secure_system("grep %s " MERGED_LOG_FILE " | sort -r -n -k4 > " SORT_MERGE_LOG_FILE, HOSTNAME);
 
     fd = fopen(SORT_MERGE_LOG_FILE, "r");
+    if(fd == NULL)
+        return 0;
     _getLogInfo(fd, &entry, &count, user);
     fclose(fd);
 
@@ -725,4 +727,3 @@ CosaDmlDiagnosticsGetAllSyslog
     }
 }
 #endif
-
