@@ -2917,6 +2917,8 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
      * because of "proto" (orig) info,
      * we use "ip -6 route" instead of "route -A inet6".
      */
+    CcspTraceInfo(("Ranjani -----> %s get current wan interface names for\n", 
+                        __FUNCTION__));
     if ((fp = v_secure_popen("r", "ip -6 route show dev %s", ifname)) == NULL)
         return -1;
 
@@ -2933,9 +2935,10 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
         info6 = &infos[entryCnt];
         bzero(info6, sizeof(RouteInfo6_t));
 
+      CcspTraceInfo(("Ranjani -----> %s get current wan interface names for\n", prefix));
         if (strcmp(prefix, "default") == 0)
-            //snprintf(info6->prefix, sizeof(info6->prefix), "::/0");
-			continue;
+            snprintf(info6->prefix, sizeof(info6->prefix), "::/0");
+	//		continue;
         else
             snprintf(info6->prefix, sizeof(info6->prefix), "%s", prefix);
 
