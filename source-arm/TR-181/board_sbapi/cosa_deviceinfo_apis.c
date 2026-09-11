@@ -2384,6 +2384,18 @@ int findLocalPortAvailable()
         }
         return -1;
 }
+
+/* Returns TRUE when device.properties BUILD_TYPE=prod */
+BOOL isProdHardened(void)
+{
+    char buildType[32] = {0};
+
+    if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType), "BUILD_TYPE") != 0)
+        return FALSE;
+
+    return (strcmp(buildType, "prod") == 0) ? TRUE : FALSE;
+}
+
 int setXOpsReverseSshArgs(char* pString) {
     char tempCopy[512] = { "\0" };
     char* tempStr = NULL;
@@ -2482,6 +2494,7 @@ ANSC_STATUS getXOpsReverseSshArgs
 
 int setXOpsReverseSshTrigger(char *input) {
     char *trigger = NULL;
+    char *trigger_shorts = NULL;
     if (!input) {
         printf("Input args are empty \n");
         AnscTraceWarning(("Input args are empty !!!!\n"));
@@ -2489,10 +2502,17 @@ int setXOpsReverseSshTrigger(char *input) {
     }
 
     trigger = strstr(input, "start");
+    trigger_shorts = strstr(input, "start shorts");
+
+    /* On prod-hardened devices, only the shorts-brokered tunnel is allowed; plain reverse SSH is blocked */
+    if (trigger && !trigger_shorts && isProdHardened())
+    {
+        CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n",__FUNCTION__));
+        return NOK;
+    }
+
     if (trigger) {
     #ifdef ENABLE_SHORTS
-        char *trigger_shorts = NULL;
-        trigger_shorts = strstr(input,"start shorts");
         if (trigger_shorts)
         {
                 CcspTraceInfo(("[%s] Starting Stunnel \n",__FUNCTION__));
