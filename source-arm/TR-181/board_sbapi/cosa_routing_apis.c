@@ -3270,7 +3270,7 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 
         CcspTraceInfo(("%s: current WAN interface: %s\n",
                __FUNCTION__, wan_ifname));
-        snprintf(iflist[0], IFNAME_SIZ, "%s", "erouter0");
+        snprintf(iflist[0], IFNAME_SIZ, "%s", "veip0.0");
         snprintf(iflist[1], IFNAME_SIZ, "%s", "brlan0");
 #if defined (_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
         snprintf(iflist[2], IFNAME_SIZ, "%s", "lo");
