@@ -86,16 +86,16 @@ CosaDmlRLog_Term(void);
 * @brief Validate the remote logging configuration.
 *
 * This function validates the remote logging configuration parameters. If Enable is TRUE, it checks
-* that Host is not empty and Port is within valid range (0-65535).
+* that Host is a valid IPv4/IPv6 address or hostname and Port is within valid range (0-65535).
 *
 * @param[in] pRLog  - Pointer to a COSA_DML_RLOG structure containing the configuration to validate.
 *                    \n Enable must be TRUE for host/port validation.
-*                    \n Host (max 256 bytes) must be non-empty if enabled.
+*                    \n Host (max 255 bytes) must be a valid IPv4/IPv6 address or hostname if enabled.
 *                    \n Port must be 0-65535.
 *
 * @return The status of the operation.
 * @retval ANSC_STATUS_SUCCESS if validation is successful.
-* @retval ANSC_STATUS_FAILURE if pRLog is NULL, Host is empty when enabled, or Port exceeds 65535.
+* @retval ANSC_STATUS_FAILURE if pRLog is NULL, Host is invalid when enabled, or Port exceeds 65535.
 *
 */
 ANSC_STATUS

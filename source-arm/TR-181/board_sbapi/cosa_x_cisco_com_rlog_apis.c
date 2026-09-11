@@ -34,6 +34,8 @@
 **********************************************************************/
 
 #include "cosa_x_cisco_com_rlog_apis.h"
+#include <arpa/inet.h>
+#include <ctype.h>
 #include <utctx/utctx.h>
 #include <utctx/utctx_api.h>
 #include <utapi.h>
@@ -159,9 +161,49 @@ RLog_GetLevel(void)
 }
 #endif
 
+static BOOL
+RLog_IsValidHost(const char *host)
+{
+    const char *label_start;
+    const char *cursor;
+    struct in_addr ipv4;
+    struct in6_addr ipv6;
+
+    if (!host || host[0] == '\0' || strlen(host) >= sizeof(((COSA_DML_RLOG *)0)->Host))
+        return FALSE;
+
+    if (inet_pton(AF_INET, host, &ipv4) == 1 || inet_pton(AF_INET6, host, &ipv6) == 1)
+        return TRUE;
+
+    label_start = host;
+    for (cursor = host; *cursor != '\0'; cursor++)
+    {
+        if (*cursor == '.')
+        {
+            if (cursor == label_start || label_start[0] == '-' || cursor[-1] == '-' ||
+                (size_t)(cursor - label_start) > 63)
+                return FALSE;
+            label_start = cursor + 1;
+            continue;
+        }
+
+        if (!isalnum((unsigned char)*cursor) && *cursor != '-')
+            return FALSE;
+    }
+
+    if (cursor == label_start || label_start[0] == '-' || cursor[-1] == '-' ||
+        (size_t)(cursor - label_start) > 63)
+        return FALSE;
+
+    return TRUE;
+}
+
 static int
 RLog_Restart(PCOSA_DML_RLOG conf)
 {
+    if (CosaDmlRLog_Validate(conf) != ANSC_STATUS_SUCCESS)
+        return -1;
+
 #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_)
     int err = 0, level;
     level = RLog_GetLevel();
@@ -175,17 +217,17 @@ RLog_Restart(PCOSA_DML_RLOG conf)
 
     if (conf->Enable && strlen(conf->Host) > 0)
     {
-        CcspTraceInfo(("%s vsystem %d \n", __FUNCTION__,__LINE__));
+        CcspTraceInfo(("%s v_secure_system %d \n", __FUNCTION__,__LINE__));
         #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_) //XF3 doesnt have syslogd
         if (conf->Port == 0 || conf->Port > 65535)
-            err = vsystem("syslogd -l %d -R %s -L", level, conf->Host);
+            err = v_secure_system("syslogd -l %d -R %s -L", level, conf->Host);
         else
-            err = vsystem("syslogd -l %d -R %s:%d -L", level, conf->Host, conf->Port);
+            err = v_secure_system("syslogd -l %d -R %s:%d -L", level, conf->Host, conf->Port);
         #endif
     }
     else
     {
-        CcspTraceInfo(("%s vsystem %d \n", __FUNCTION__,__LINE__));
+        CcspTraceInfo(("%s v_secure_system %d \n", __FUNCTION__,__LINE__));
         #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_) //XF3 doesnt have syslogd
         err = vsystem("syslogd -l %d", level);
         #endif
@@ -242,8 +284,12 @@ CosaDmlRLog_Validate(PCOSA_DML_RLOG pRLog)
 
     if (pRLog->Enable)
     {
-        if (strlen(pRLog->Host) == 0)
+        if (!RLog_IsValidHost(pRLog->Host))
+        {
+            AnscTraceError(("%s: invalid remote logging host '%s'\n", __FUNCTION__,
+                pRLog->Host ? pRLog->Host : "(null)"));
             return ANSC_STATUS_FAILURE;
+        }
 
         if (pRLog->Port > 65535)
             return ANSC_STATUS_FAILURE;
