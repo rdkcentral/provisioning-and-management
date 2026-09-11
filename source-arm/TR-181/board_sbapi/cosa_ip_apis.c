@@ -4650,7 +4650,11 @@ CosaDmlIpIfGetStats
        
 
         if (CosaUtilGetIfStats((char *)g_ipif_names[ulIpIfInstanceNumber-1],  (PCOSA_DML_IF_STATS)pStats))
+        {
+            /* IP.Interface.Stats Bytes* as full ULONG (no 32-bit wrap) */
+            CosaUtilApplyIfByteStats64((char *)g_ipif_names[ulIpIfInstanceNumber-1], (PCOSA_DML_IF_STATS)pStats);
             return ANSC_STATUS_SUCCESS;
+        }
         else
         {
             AnscTraceError(("%s -- failed!\n", __FUNCTION__)); 
