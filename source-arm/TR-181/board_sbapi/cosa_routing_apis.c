@@ -3226,13 +3226,19 @@ get_current_wan_ifname(char *ifname, size_t ifname_size)
 
     ifname[0] = '\0';
 
+    CcspTraceInfo(("%s get current wan interface names for\n", 
+                        __FUNCTION__));
     if (commonSyseventGet("current_wan_ifname", ifname, ifname_size) != 0 ||
         ifname[0] == '\0')
     {
         /* Fallback used by existing PandM code. */
+        CcspTraceInfo(("get current wan interface names : %s\n", 
+                        ifname));
         if (commonSyseventGet("wan_ifname", ifname, ifname_size) != 0 ||
             ifname[0] == '\0')
         {
+    CcspTraceInfo(("%s get current wan interface names return -1\n", 
+                        __FUNCTION__));
             return -1;
         }
     }
@@ -3249,7 +3255,7 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
     if (!iflist || !nlist)
         return -1;
 
-    CcspTraceWarning(("%s v6 route table interface names for\n", 
+    CcspTraceInfo(("%s v6 route table interface names for\n", 
                         __FUNCTION__));
 #if defined(USE_TR181_PATH)
     int ifnum = g_GetParamValueUlong(g_pDslhDmlAgent, "Device.IP.InterfaceNumberOfEntries");
@@ -3259,7 +3265,7 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
         if (*nlist < 2)
             return -1;
 
-        CcspTraceWarning(("%s nrlan0 v6 route table interface names for\n", 
+        CcspTraceInfo(("%s nrlan0 v6 route table interface names for\n", 
                         __FUNCTION__));
         if (get_current_wan_ifname(wan_ifname, sizeof(wan_ifname)) != 0)
         {
