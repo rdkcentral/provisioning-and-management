@@ -2388,10 +2388,12 @@ int findLocalPortAvailable()
 /* Returns TRUE when device.properties BUILD_TYPE=prod */
 BOOL isProdHardened(void)
 {
-    char buildType[32] = {0};
+    char buildType[6] = {0};
 
-    if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType), "BUILD_TYPE") != 0)
+    if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType) - 1, "BUILD_TYPE") != 0)
         return FALSE;
+
+    buildType[sizeof(buildType) - 1] = '\0';
 
     return (strcmp(buildType, "prod") == 0) ? TRUE : FALSE;
 }
@@ -2494,7 +2496,6 @@ ANSC_STATUS getXOpsReverseSshArgs
 
 int setXOpsReverseSshTrigger(char *input) {
     char *trigger = NULL;
-    char *trigger_shorts = NULL;
     if (!input) {
         printf("Input args are empty \n");
         AnscTraceWarning(("Input args are empty !!!!\n"));
@@ -2502,17 +2503,11 @@ int setXOpsReverseSshTrigger(char *input) {
     }
 
     trigger = strstr(input, "start");
-    trigger_shorts = strstr(input, "start shorts");
-
-    /* On prod-hardened devices, only the shorts-brokered tunnel is allowed; plain reverse SSH is blocked */
-    if (trigger && !trigger_shorts && isProdHardened())
-    {
-        CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n",__FUNCTION__));
-        return NOK;
-    }
 
     if (trigger) {
     #ifdef ENABLE_SHORTS
+        char *trigger_shorts = NULL;
+        trigger_shorts = strstr(input,"start shorts");
         if (trigger_shorts)
         {
                 CcspTraceInfo(("[%s] Starting Stunnel \n",__FUNCTION__));
@@ -2525,10 +2520,15 @@ int setXOpsReverseSshTrigger(char *input) {
 
         else {
     #endif
-                CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
-                int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
-                if (ret != 0) {
-                    CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+                if (!isProdHardened()) {
+                    CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
+                    int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                    if (ret != 0) {
+                        CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+                    }
+                } else {
+                    CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n", __FUNCTION__));
+                    return NOK;
                 }
     #ifdef ENABLE_SHORTS
         }
