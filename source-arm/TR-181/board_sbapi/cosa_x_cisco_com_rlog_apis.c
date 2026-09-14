@@ -34,6 +34,8 @@
 **********************************************************************/
 
 #include "cosa_x_cisco_com_rlog_apis.h"
+#include <arpa/inet.h>
+#include <ctype.h>
 #include <utctx/utctx.h>
 #include <utctx/utctx_api.h>
 #include <utapi.h>
@@ -134,6 +136,49 @@ RLog_SaveConf(const PCOSA_DML_RLOG conf)
     return 0;
 }
 
+static BOOL
+RLog_IsValidHost(const char *host)
+{
+    struct in_addr ipv4;
+    struct in6_addr ipv6;
+    size_t labelLength = 0;
+    size_t hostLength;
+    const char *labelStart = host;
+    const char *current;
+
+    if (!host || host[0] == '\0')
+        return FALSE;
+
+    hostLength = strlen(host);
+    if (hostLength > 255)
+        return FALSE;
+
+    if (inet_pton(AF_INET, host, &ipv4) == 1 || inet_pton(AF_INET6, host, &ipv6) == 1)
+        return TRUE;
+
+    for (current = host; *current != '\0'; current++)
+    {
+        if (*current == '.')
+        {
+            if (labelLength == 0 || labelLength > 63 || labelStart[0] == '-' || current[-1] == '-')
+                return FALSE;
+
+            labelStart = current + 1;
+            labelLength = 0;
+            continue;
+        }
+
+        if (!isalnum((unsigned char)*current) && *current != '-')
+            return FALSE;
+
+        labelLength++;
+        if (labelLength > 63)
+            return FALSE;
+    }
+
+    return labelLength > 0 && labelStart[0] != '-' && current[-1] != '-';
+}
+
 #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_)
 static int 
 RLog_GetLevel(void)
@@ -162,8 +207,12 @@ RLog_GetLevel(void)
 static int
 RLog_Restart(PCOSA_DML_RLOG conf)
 {
+    if (!conf || (conf->Host[0] != '\0' && !RLog_IsValidHost(conf->Host)))
+        return -1;
+
 #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_)
     int err = 0, level;
+    struct in6_addr ipv6;
     level = RLog_GetLevel();
 #endif
 #if 0 /* no PID file in current version */
@@ -178,16 +227,18 @@ RLog_Restart(PCOSA_DML_RLOG conf)
         CcspTraceInfo(("%s vsystem %d \n", __FUNCTION__,__LINE__));
         #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_) //XF3 doesnt have syslogd
         if (conf->Port == 0 || conf->Port > 65535)
-            err = vsystem("syslogd -l %d -R %s -L", level, conf->Host);
+            err = v_secure_system("syslogd -l %d -R %s -L", level, conf->Host);
+        else if (inet_pton(AF_INET6, conf->Host, &ipv6) == 1)
+            err = v_secure_system("syslogd -l %d -R [%s]:%d -L", level, conf->Host, conf->Port);
         else
-            err = vsystem("syslogd -l %d -R %s:%d -L", level, conf->Host, conf->Port);
+            err = v_secure_system("syslogd -l %d -R %s:%d -L", level, conf->Host, conf->Port);
         #endif
     }
     else
     {
         CcspTraceInfo(("%s vsystem %d \n", __FUNCTION__,__LINE__));
         #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_) //XF3 doesnt have syslogd
-        err = vsystem("syslogd -l %d", level);
+        err = v_secure_system("syslogd -l %d", level);
         #endif
     }
 #if !defined(INTEL_PUMA7) && !defined(_XF3_PRODUCT_REQ_)
@@ -248,6 +299,9 @@ CosaDmlRLog_Validate(PCOSA_DML_RLOG pRLog)
         if (pRLog->Port > 65535)
             return ANSC_STATUS_FAILURE;
     }
+
+    if (pRLog->Host[0] != '\0' && !RLog_IsValidHost(pRLog->Host))
+        return ANSC_STATUS_FAILURE;
 
     return ANSC_STATUS_SUCCESS;
 }
