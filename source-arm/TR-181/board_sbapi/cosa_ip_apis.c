@@ -3106,6 +3106,7 @@ CosaDmlIpIfSetV4Addr
         ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
         PCOSA_DML_IP_V4ADDR             p_be_buf = NULL; 
         char                            buf[256];
+        char                            lan_ifname[IFNAME_SZ] = {0};
         UtopiaContext                   utctx;
         errno_t safec_rc = -1;
         
@@ -3153,6 +3154,14 @@ CosaDmlIpIfSetV4Addr
 
             UTOPIA_SET(&utctx, UtopiaValue_LAN_IPAddr, buf);
             Utopia_Free(&utctx, 1);
+
+            if (syscfg_get(NULL, "lan_ifname", lan_ifname, sizeof(lan_ifname)) == 0 &&
+                strcmp((char *)g_ipif_names[ulIpIfInstanceNumber - 1], lan_ifname) == 0 &&
+                pEntry->IPAddress.Value != 0)
+            {
+                pthread_t tid;
+                pthread_create(&tid, NULL, &WebGUIRestart, NULL);
+            }
             
             p_be_buf->IPAddress.Value = pEntry->IPAddress.Value;
         }

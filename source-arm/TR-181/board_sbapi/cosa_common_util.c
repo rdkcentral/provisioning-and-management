@@ -106,7 +106,6 @@ volatile bool gMaptEnabled = false ; // false : disabled, true : enabled
 #endif
 
 extern ANSC_HANDLE bus_handle;
-extern void* WebGUIRestart( void *pArg );
 #if defined (WIFI_MANAGE_SUPPORTED)
 extern  char   g_Subsystem[32];
 
@@ -716,6 +715,22 @@ EvtDispterIpv6PrefixCallback( char *prefix )
      }
 
 }
+void *
+WebGUIRestart(void *arg)
+{
+    UNREFERENCED_PARAMETER(arg);
+    pthread_detach(pthread_self());
+    CcspTraceInfo(("%s:%d, WebGUIRestart called\n", __FUNCTION__, __LINE__));
+
+#if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+    system("/bin/systemctl restart CcspWebUI.service");
+#else
+    system("/bin/sh /etc/webgui.sh &");
+#endif
+
+    return NULL;
+}
+
 static void
 EvtDispterWanIpAddrsCallback(char *ip_addrs)
 {
