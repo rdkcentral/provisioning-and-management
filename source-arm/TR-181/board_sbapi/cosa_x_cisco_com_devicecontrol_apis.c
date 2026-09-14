@@ -2085,9 +2085,9 @@ void* restoreAllDBs(void* arg)
 
 #if defined(_SCXF11BFL_PRODUCT_REQ_)
         /* Remove /data & /nvram - Preserve scratchpad, core data and required decryption keys. */
-        v_secure_system("sync; find /nvram /nvram2 /data -mindepth 1 | grep -vE \"^/nvram/\\.partner_ID$|^/nvram/\\.apply_partner_defaults$|^/data/scratchpad$|^/data/core\\.new$|^/data/core\\.last$|.*/Q[[:xdigit:]]{8}$\" | xargs rm -rf; sync");
-        v_secure_system("sync; rm -rf /data/.comcast_config_set.done /data/.nvram_restore_cfg.txt /data/.user_nvram.setting /data/.kernel_nvram.setting /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*; sync");
-        v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
+        v_secure_system("find /nvram /nvram2 /data -mindepth 1 | grep -vE \"^/nvram/\\.partner_ID$|^/nvram/\\.apply_partner_defaults$|^/data/scratchpad$|^/data/core\\.new$|^/data/core\\.last$|.*/Q[[:xdigit:]]{8}$\" | xargs rm -rf; sync");
+        v_secure_system("rm -rf /data/.comcast_config_set.done /data/.nvram_restore_cfg.txt /data/.user_nvram.setting /data/.kernel_nvram.setting /nvram/.bcmwifi_xhs_lnf_enabled /data/.mlo_upgrade; sync");
+        v_secure_system("touch /data/.do_fr_on_boot; sync");
         v_secure_system("mkdir -p /nvram/secure/data/ && touch /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
