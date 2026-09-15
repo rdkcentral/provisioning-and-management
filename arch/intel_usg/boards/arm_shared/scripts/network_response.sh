@@ -24,9 +24,10 @@
 # Eg Command: curl -w '%{http_code}\n' http://clients3.google.com/generate_204 --connect-timeout 10 -m 10
 
 source /lib/rdk/t2Shared_api.sh
+source /etc/waninfo.sh
 
 TRIGGER_STATE=$1
-WAN_INTERFACE="erouter0"
+WAN_INTERFACE=$(getWanInterfaceName)
 REVERT_FLAG="/nvram/reverted"
 EROUTER_IP=""
 EROUTER_IP6=""

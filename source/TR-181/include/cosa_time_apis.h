@@ -342,4 +342,45 @@ extern ANSC_STATUS fillCurrentPartnerId
 *
 */
 time_t getOffset();
+
+ANSC_STATUS
+CosaDmlTimeGetChronyEnable
+    (
+        BOOL                       *pEnabled
+    );
+
+ANSC_STATUS
+CosaDmlTimeGetMakestep
+    (
+        char                       *pValue,
+        ULONG                       bufLen
+    );
+
+ANSC_STATUS
+CosaDmlTimeGetChronyServerSettings
+    (
+        int                         serverIdx,
+        char                       *pValue,
+        ULONG                       bufLen
+    );
+
+ANSC_STATUS
+CosaDmlTimeSetChronyEnable
+    (
+        BOOL                        bEnabled
+    );
+
+ANSC_STATUS
+CosaDmlTimeSetMakestep
+    (
+        char                       *pValue
+    );
+
+ANSC_STATUS
+CosaDmlTimeSetChronyServerSettings
+    (
+        int                         serverIdx,
+        const char                 *pValue
+    );
+
 #endif
