@@ -1985,6 +1985,7 @@ CosaDmlIpIfMlanSetV4Addr
     int                             iReturnValue    = CCSP_SUCCESS;
     char                            pParamPath[64]  = {0};
     char                            primary_lan_l3net[16] = {0};
+    unsigned long                   primaryLanL3netInstance = 0;
     unsigned int                    RecordType      = ccsp_string;
     char                            RecordValue[64] = {0};
     COSA_DML_IP_V4ADDR              previousEntry   = {0};
@@ -2097,7 +2098,8 @@ CosaDmlIpIfMlanSetV4Addr
         previousEntry.IPAddress.Value != pEntry->IPAddress.Value &&
         pEntry->IPAddress.Value != 0 &&
         commonSyseventGet("primary_lan_l3net", primary_lan_l3net, sizeof(primary_lan_l3net)) == 0 &&
-        _ansc_atol(primary_lan_l3net) == ulIpIfInstanceNumber)
+        (primaryLanL3netInstance = strtoul(primary_lan_l3net, NULL, 10)) ==
+            (unsigned long)ulIpIfInstanceNumber)
     {
         pthread_t tid;
         CcspTraceInfo(("%s -- primary LAN L3 network IP address changed, restarting Web GUI\n", __FUNCTION__));
