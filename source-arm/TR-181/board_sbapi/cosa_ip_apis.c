@@ -3160,6 +3160,7 @@ CosaDmlIpIfSetV4Addr
                 pEntry->IPAddress.Value != 0)
             {
                 pthread_t tid;
+                CcspTraceInfo(("%s -- configured LAN interface %s IP address changed, restarting Web GUI\n", __FUNCTION__, lan_ifname));
                 pthread_create(&tid, NULL, &WebGUIRestart, NULL);
             }
             

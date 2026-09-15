@@ -4753,6 +4753,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
             pLanMngm->LanIPAddress.Value != 0)
         {
             pthread_t tid;
+            CcspTraceInfo(("%s -- LAN management IP address changed, restarting Web GUI\n", __FUNCTION__));
             pthread_create(&tid, NULL, &WebGUIRestart, NULL);
         }
         char l_cSecWebUI_Enabled[8] = {0};

@@ -758,6 +758,7 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
         CcspTraceInfo(("%s Setting current_wan_ipaddr and restarting firewall %d \n", __FUNCTION__,__LINE__)); 
 	    sysevent_set(se_fd, token, "current_wan_ipaddr", ip_addrs, 0);
 	    sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
+        CcspTraceInfo(("%s -- WAN IPv4 address update is creating WebGUI restart thread\n", __FUNCTION__));
         pthread_create(&tid, NULL, &WebGUIRestart, NULL);
     }
 #if defined (RBUS_WAN_IP)
