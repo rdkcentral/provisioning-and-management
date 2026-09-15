@@ -229,9 +229,9 @@ RLog_Restart(PCOSA_DML_RLOG conf)
         if (conf->Port == 0 || conf->Port > 65535)
             err = v_secure_system("syslogd -l %d -R %s -L", level, conf->Host);
         else if (inet_pton(AF_INET6, conf->Host, &ipv6) == 1)
-            err = v_secure_system("syslogd -l %d -R [%s]:%d -L", level, conf->Host, conf->Port);
+            err = v_secure_system("syslogd -l %d -R [%s]:%lu -L", level, conf->Host, (unsigned long)conf->Port);
         else
-            err = v_secure_system("syslogd -l %d -R %s:%d -L", level, conf->Host, conf->Port);
+            err = v_secure_system("syslogd -l %d -R %s:%lu -L", level, conf->Host, (unsigned long)conf->Port);
         #endif
     }
     else
