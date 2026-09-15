@@ -2999,8 +2999,10 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
         v_secure_pclose(fp);
 	//Fix for issue RDKB-367
 #if defined(_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
+      CcspTraceInfo(("Ranjani:3002 %s-----> get current wan interface names for\n", __FUNCTION__));
     snprintf(cmd, sizeof(cmd), "ip -6 route list table main");
 #else 
+      CcspTraceInfo(("Ranjani:3005 -----> %s get current wan interface names for\n", __FUNCTION__));
     snprintf(cmd, sizeof(cmd), "ip -6 route list table erouter");
 #endif
     if ((fp = popen(cmd, "r")) == NULL)
@@ -3008,6 +3010,7 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
 	
     while (fgets(line, sizeof(line), fp) != NULL)
     {
+      CcspTraceInfo(("Ranjani -----> %s get current wan interface names for\n", __FUNCTION__));
         if (entryCnt >= *numInfo) 
             break;
 
@@ -3019,11 +3022,14 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
         bzero(info6, sizeof(RouteInfo6_t));
 
         if (strcmp(prefix, "default") == 0) {
+      CcspTraceInfo(("Ranjani -----> %s get current wan interface names for\n", __FUNCTION__));
             snprintf(info6->prefix, sizeof(info6->prefix), "::/0");
 	}
         else
+	{
             snprintf(info6->prefix, sizeof(info6->prefix), "%s", prefix);
-
+      CcspTraceInfo(("Ranjani -----> %s get current wan interface names for\n", __FUNCTION__));
+         }
         /* record the interface */
         safec_rc = sprintf_s(info6->interface, sizeof(info6->interface), "%s", ifname);
         if(safec_rc < EOK) ERR_CHK(safec_rc);
@@ -3218,47 +3224,15 @@ Route6_IsRouteExist(const char *prefix, const char *gw, const char *dev)
 
 #define MAX_RT6IF       16
 #define IFNAME_SIZ      32
-#define WAN_IFNAME_MAX_LEN 64
-static int
-get_current_wan_ifname(char *ifname, size_t ifname_size)
-{
-    if (ifname == NULL || ifname_size == 0)
-    {
-        return -1;
-    }
-
-    ifname[0] = '\0';
-
-    CcspTraceInfo(("%s get current wan interface names for\n", 
-                        __FUNCTION__));
-    if (commonSyseventGet("current_wan_ifname", ifname, ifname_size) != 0 ||
-        ifname[0] == '\0')
-    {
-        /* Fallback used by existing PandM code. */
-        CcspTraceInfo(("get current wan interface names : %s\n", 
-                        ifname));
-        if (commonSyseventGet("wan_ifname", ifname, ifname_size) != 0 ||
-            ifname[0] == '\0')
-        {
-    CcspTraceInfo(("%s get current wan interface names return -1\n", 
-                        __FUNCTION__));
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
 
 static int
 Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 {
-    char wan_ifname[WAN_IFNAME_MAX_LEN] = {0};
-
+    char wan_interface[32] = {0};
     if (!iflist || !nlist)
         return -1;
 
-    CcspTraceInfo(("%s v6 route table interface names for\n", 
+    CcspTraceInfo(("%s anjani ---> le interface names for\n", 
                         __FUNCTION__));
 #if defined(USE_TR181_PATH)
     int ifnum = g_GetParamValueUlong(g_pDslhDmlAgent, "Device.IP.InterfaceNumberOfEntries");
@@ -3267,18 +3241,19 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 #endif
         if (*nlist < 2)
             return -1;
+         /*get current eRT interface*/
+    commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+    if('\0' == wan_interface[0])
+    {
+        /*default wan interface*/
+        commonSyseventGet("wan_ifname", wan_interface, sizeof(wan_interface));
+    }
 
-        CcspTraceInfo(("%s nrlan0 v6 route table interface names for\n", 
+        CcspTraceInfo(("%s Ranjani ---> te table interface names for\n", 
                         __FUNCTION__));
-        if (get_current_wan_ifname(wan_ifname, sizeof(wan_ifname)) != 0)
-        {
-            CcspTraceError(("%s: unable to get current WAN interface name\n",
-                    __FUNCTION__));
-            return ANSC_STATUS_FAILURE;
-        }
 
-        CcspTraceInfo(("%s: current WAN interface: %s\n",
-               __FUNCTION__, wan_ifname));
+        CcspTraceInfo(("%s: Ranjani --> interface: %s\n",
+               __FUNCTION__, wan_interface));
         snprintf(iflist[0], IFNAME_SIZ, "%s", "veip0.0");
         snprintf(iflist[1], IFNAME_SIZ, "%s", "brlan0");
 #if defined (_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
