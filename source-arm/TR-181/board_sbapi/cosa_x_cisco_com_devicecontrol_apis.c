@@ -2084,10 +2084,32 @@ void* restoreAllDBs(void* arg)
 #endif
 
 #if defined(_SCXF11BFL_PRODUCT_REQ_)
+        int rc = 0;
         /* Remove /data & /nvram - Preserve scratchpad, core data and required decryption keys. */
-        v_secure_system("find /nvram /nvram2 /data -mindepth 1 | grep -vE \"^/nvram/\\.partner_ID$|^/nvram/\\.apply_partner_defaults$|^/data/scratchpad$|^/data/core\\.new$|^/data/core\\.last$|.*/Q[[:xdigit:]]{8}$\" | xargs rm -rf; sync");
-        v_secure_system("rm -rf /data/.comcast_config_set.done /data/.nvram_restore_cfg.txt /data/.user_nvram.setting /data/.kernel_nvram.setting /nvram/.bcmwifi_xhs_lnf_enabled /data/.mlo_upgrade; sync");
-        v_secure_system("touch /data/.do_fr_on_boot; sync");
+        rc = v_secure_system(
+            "find /nvram /nvram2 /data -mindepth 1 "
+            "! -path '/nvram/.partner_ID' "
+            "! -path '/nvram/.apply_partner_defaults' "
+            "! -path '/data/scratchpad' "
+            "! -path '/data/core.new' "
+            "! -path '/data/core.new/*' "
+            "! -path '/data/core.last' "
+            "! -path '/data/core.last/*' "
+            "! -path '/nvram2/logs' "
+            "! -path '/nvram2/logs/*' "
+            "! -path '/nvram/6' "
+            "! -path '/nvram/6/*' "
+            "! -path '/nvram2/preserveLogs' "
+            "! -path '/nvram2/preserveLogs/*' "
+            "! -regex '.*/Q[[:xdigit:]]\\{8\\}$' "
+            "-exec rm -rf {} +");
+        if (0 != rc )
+        {
+            CcspTraceError(("%s: FactoryReset: SCXF cleanup failed; "
+                            "v_secure_system returned %d\n", __FUNCTION__, rc));
+	}
+
+        v_secure_system("touch /data/.do_fr_on_boot;");
         v_secure_system("mkdir -p /nvram/secure/data/ && touch /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
