@@ -2918,7 +2918,7 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
      * we use "ip -6 route" instead of "route -A inet6".
      */
     CcspTraceInfo(("Ranjani -----> %s get current wan interface names for\n", 
-                        __FUNCTION__));
+                        ifname));
     if ((fp = v_secure_popen("r", "ip -6 route show dev %s", ifname)) == NULL)
         return -1;
 
@@ -3228,7 +3228,7 @@ Route6_IsRouteExist(const char *prefix, const char *gw, const char *dev)
 static int
 Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 {
-    char wan_interface[32] = {0};
+    char xf10_wan_interface[32] = {0};
     if (!iflist || !nlist)
         return -1;
 
@@ -3242,21 +3242,23 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
         if (*nlist < 2)
             return -1;
          /*get current eRT interface*/
-    commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
-    if('\0' == wan_interface[0])
+    commonSyseventGet("current_wan_ifname", xf10_wan_interface, sizeof(xf10_wan_interface));
+    if('\0' == xf10_wan_interface[0])
     {
         /*default wan interface*/
-        commonSyseventGet("wan_ifname", wan_interface, sizeof(wan_interface));
+        commonSyseventGet("wan_ifname", xf10_wan_interface, sizeof(xf10_wan_interface));
     }
 
         CcspTraceInfo(("%s Ranjani ---> te table interface names for\n", 
                         __FUNCTION__));
 
-        CcspTraceInfo(("%s: Ranjani --> interface: %s\n",
-               __FUNCTION__, wan_interface));
+        CcspTraceInfo(("%s: Ranjani --> interface\n",
+               xf10_wan_interface));
         snprintf(iflist[0], IFNAME_SIZ, "%s", "veip0.0");
         snprintf(iflist[1], IFNAME_SIZ, "%s", "brlan0");
 #if defined (_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
+        CcspTraceInfo(("%s: Ranjani --> DSL: %s\n",
+               __FUNCTION__, xf10_wan_interface));
         snprintf(iflist[2], IFNAME_SIZ, "%s", "lo");
         *nlist = 3;
 #else
@@ -3265,6 +3267,17 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 
         *nlist = 4;
 #endif
+#if defined(_WNXL11BWL_PRODUCT_REQ_) || defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
+    char wan1_interface[32] = {0};
+    commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+        CcspTraceInfo(("%s: 3273: Ranjani --> interface\n",
+               wan1_interface));
+#else
+    char *wan1_interface = "erouter0";
+        CcspTraceInfo(("%s: 3276 : Ranjani --> interface\n",
+               wan1_interface));
+#endif
+	
 #if defined(USE_TR181_PATH)
     }
     else
@@ -3336,7 +3349,7 @@ Route6_LoadRouteInfo(void)
 
         if (Route6_GetRouteTable(iflist[i], &g_routeInfos6[0], &rtcnt) != 0)
         {
-            CcspTraceWarning(("%s: Fail to get IPv6 route table for %s\n", 
+            CcspTraceInfo(("%s: Fail to get IPv6 route table for %s\n", 
                         __FUNCTION__, iflist[i]));
             continue;
         }
