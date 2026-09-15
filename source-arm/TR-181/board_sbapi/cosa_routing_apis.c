@@ -2920,18 +2920,32 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
     CcspTraceInfo(("Ranjani -----> %s get current wan interface names for\n", 
                         ifname));
     if ((fp = v_secure_popen("r", "ip -6 route show dev %s", ifname)) == NULL)
+    {
+    CcspTraceInfo(("Ranjani -----> %s get current wan iNULL : 2924\n", 
+                        ifname));
         return -1;
+    }
 
     entryCnt = g_numRtInfo6;
+
+    CcspTraceInfo(("Ranjani -----> %d entry count L : 2924\n", 
+                        entryCnt));
     while (fgets(line, sizeof(line), fp) != NULL)
     {
-        if (entryCnt >= *numInfo)
+    
+    CcspTraceInfo(("Ranjani -----> %s  %d  %dentry count L : 2924\n", 
+                        line, entryCnt, *numInfo));
+	    if (entryCnt >= *numInfo)
             break;
 
         /* first token is prefix */
         if ((prefix = strtok_r(line, delim, &saveptr)) == NULL)
+	{
+	    
+            CcspTraceInfo(("Ranjani -----> %s prefix count L : 2924\n", 
+                        prefix));
             continue;
-
+        }
         info6 = &infos[entryCnt];
         bzero(info6, sizeof(RouteInfo6_t));
 
