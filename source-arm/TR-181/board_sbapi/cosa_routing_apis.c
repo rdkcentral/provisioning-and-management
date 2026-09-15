@@ -3269,7 +3269,7 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 #endif
 #if defined(_WNXL11BWL_PRODUCT_REQ_) || defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
     char wan1_interface[32] = {0};
-    commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+    commonSyseventGet("current_wan_ifname", wan1_interface, sizeof(wan1_interface));
         CcspTraceInfo(("%s: 3273: Ranjani --> interface\n",
                wan1_interface));
 #else
