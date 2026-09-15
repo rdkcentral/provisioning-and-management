@@ -2087,27 +2087,32 @@ void* restoreAllDBs(void* arg)
         int rc = 0;
         /* Remove /data & /nvram - Preserve scratchpad, core data and required decryption keys. */
         rc = v_secure_system(
-            "find /nvram /nvram2 /data -mindepth 1 "
-            "! -path '/nvram/.partner_ID' "
-            "! -path '/nvram/.apply_partner_defaults' "
-            "! -path '/data/scratchpad' "
-            "! -path '/data/core.new' "
-            "! -path '/data/core.new/*' "
-            "! -path '/data/core.last' "
-            "! -path '/data/core.last/*' "
-            "! -path '/nvram2/logs' "
-            "! -path '/nvram2/logs/*' "
-            "! -path '/nvram/6' "
-            "! -path '/nvram/6/*' "
-            "! -path '/nvram2/preserveLogs' "
-            "! -path '/nvram2/preserveLogs/*' "
-            "! -regex '.*/Q[[:xdigit:]]\\{8\\}$' "
-            "-exec rm -rf {} +");
-        if (0 != rc )
+                 "find /nvram /nvram2 /data -depth -mindepth 1 "
+                 "! -path '/nvram/.partner_ID' "
+                 "! -path '/nvram/.apply_partner_defaults' "
+                 "! -path '/nvram/secure' "
+                 "! -path '/nvram2/logs' "
+                 "! -path '/nvram2/logs/*' "
+                 "! -path '/nvram/6' "
+                 "! -path '/nvram/6/*' "
+                 "! -path '/nvram2/preserveLogs' "
+                 "! -path '/nvram2/preserveLogs/*' "
+                 "! -path '/data/scratchpad' "
+                 "! -path '/data/scratchpad/*' "
+                 "! -path '/data/core.new' "
+                 "! -path '/data/core.last' "
+                 "! -regex '.*/Q[[:xdigit:]]\\{8\\}$' "
+                 "-exec rm -rf {} \\;");
+
+        if (rc != 0)
         {
-            CcspTraceError(("%s: FactoryReset: SCXF cleanup failed; "
-                            "v_secure_system returned %d\n", __FUNCTION__, rc));
-	}
+            CcspTraceError(("FactoryReset: data/nvram content cleanup failed; "
+                                  "v_secure_system returned %d\n", rc));
+        }
+        else
+        {
+            CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup completed successfully\n"));
+        }
 
         v_secure_system("touch /data/.do_fr_on_boot;");
         v_secure_system("mkdir -p /nvram/secure/data/ && touch /nvram/secure/data/syscfg.db");
