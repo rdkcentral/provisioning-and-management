@@ -3383,6 +3383,58 @@ option 60 4D53465420352E30
 option 53 03 
 
 */
+#define DHCP_OPT_PARAM_REQ_LIST 55
+
+/* The client's parameter request list (option 55) as RDK's dnsmasq records it: a
+ * comma separated decimal list. The comma tells it apart from a client id.
+ */
+static BOOL _is_dhcp_fingerprint(const char *pStr)
+{
+    BOOL bHasComma = FALSE;
+
+    if ( !pStr || !*pStr )
+        return FALSE;
+
+    for ( ; *pStr; pStr++ )
+    {
+        if ( *pStr == ',' )
+        {
+            bHasComma = TRUE;
+            continue;
+        }
+        if ( (*pStr < '0') || (*pStr > '9') )
+            return FALSE;
+    }
+
+    return bHasComma;
+}
+
+/* "1,3,6,12" -> "0103060C", the hexBinary form of Option.Value */
+static void _dhcp_fingerprint_to_hex(const char *pList, char *pHex, ULONG ulHexSize)
+{
+    ULONG ulLen = 0;
+
+    if ( !pHex || (ulHexSize == 0) )
+        return;
+
+    pHex[0] = 0;
+
+    /* 3 = two hex digits and the terminator */
+    while ( pList && *pList && ((ulLen + 3) <= ulHexSize) )
+    {
+        ULONG ulTag = strtoul(pList, NULL, 10);
+
+        if ( ulTag <= 255 )
+        {
+            snprintf(&pHex[ulLen], ulHexSize - ulLen, "%02lX", ulTag);
+            ulLen += 2;
+        }
+
+        while ( *pList && (*pList != ',') ) pList++;
+        if ( *pList == ',' ) pList++;
+    }
+}
+
 int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, ULONG maxAddress)
 {
     UNREFERENCED_PARAMETER(instancenum);
@@ -3403,7 +3455,7 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
     char * pExpire = NULL,*pTemp;
     char * pMac = NULL;
     char * pIP = NULL;
-    char *pHost = NULL, *pVClass = NULL, *pCt=NULL;
+    char *pHost = NULL, *pVClass = NULL, *pCt=NULL, *pFinger = NULL, *pFirst = NULL;
     char * pKey = NULL;
     char * pTmp1 = NULL;
     char * pTmp2 = NULL;
@@ -3475,6 +3527,7 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
 	/*Note: newly added parameters must be set to NULL here*/
 		pCt = NULL;
 		pVClass = NULL;
+		pFinger = NULL;
 
 		i = 0;
 		while( oneline[i] == ' ' ) i++;
@@ -3534,9 +3587,19 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
 			continue;
 		}
 
+		/*RDK's dnsmasq records the parameter request list before the client id*/
+		pFirst = &oneline[i];
 		while( (oneline[i] != ' ') && (oneline[i] != '\0') ) i++;
 		if(oneline[i]){/*There are newly added parameters*/
-			oneline[i++] = 0; /*end of Client Id*/
+			oneline[i++] = 0; /*end of Client Id, or of the fingerprint*/
+
+			if(_is_dhcp_fingerprint(pFirst)){
+				pFinger = pFirst;
+
+				while( oneline[i] == ' ' ) i++;
+				while( (oneline[i] != ' ') && (oneline[i] != '\0') ) i++;
+				if(oneline[i]) oneline[i++] = 0; /*end of Client Id*/
+			}
 
 			/*to get create time*/
 			while( oneline[i] == ' ' ) i++;
@@ -3555,6 +3618,13 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
 				if(pTemp)
 				*pTemp = 0;
 			}
+		}
+		else{/*last field, strip the new line*/
+			pTemp = strchr(pFirst, '\n');
+			if(pTemp)
+				*pTemp = 0;
+			if(_is_dhcp_fingerprint(pFirst))
+				pFinger = pFirst;
 		}
 
 		/* for client */
@@ -3616,6 +3686,16 @@ int _cosa_get_dhcps_client(ULONG instancenum, UCHAR *ifName, ULONG minAddress, U
 		}
 	
 		pContentEntry->NumberofIPAddress = 1;
+
+		/*the request list is the only client option the lease database carries*/
+		if(pFinger){
+			pContentEntry->pOption = (PCOSA_DML_DHCPSV4_CLIENT_OPTION)AnscAllocateMemory(sizeof(COSA_DML_DHCPSV4_CLIENT_OPTION));
+			if ( !pContentEntry->pOption )
+				goto ErrRet;
+			pContentEntry->pOption[0].Tag = DHCP_OPT_PARAM_REQ_LIST;
+			_dhcp_fingerprint_to_hex(pFinger, (char*)pContentEntry->pOption[0].Value, sizeof(pContentEntry->pOption[0].Value));
+			pContentEntry->NumberofOption = 1;
+		}
 		size += 1;
 		sizeClientContent = size;
 		/* reallocate memory for another 100 clients */
