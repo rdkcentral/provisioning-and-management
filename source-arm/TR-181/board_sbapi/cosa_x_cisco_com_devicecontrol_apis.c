@@ -2102,7 +2102,7 @@ void* restoreAllDBs(void* arg)
                  "! -path '/data/core.new' "
                  "! -path '/data/core.last' "
                  "! -regex '.*/Q[[:xdigit:]]\\{8\\}$' "
-                 "-exec rm -rf {} \\;");
+                 "-exec rm -rf {} ';'");
 
         if (rc != 0)
         {
