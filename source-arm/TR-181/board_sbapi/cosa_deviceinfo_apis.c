@@ -2385,13 +2385,14 @@ int findLocalPortAvailable()
         return -1;
 }
 
-/* Returns TRUE when device.properties BUILD_TYPE=prod */
+/* Returns TRUE when device.properties BUILD_TYPE=prod and if device.properties file does not exists */
+/* else FALSE */
 BOOL isProdHardened(void)
 {
     char buildType[6] = {0};
 
     if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType) - 1, "BUILD_TYPE") != 0)
-        return FALSE;
+        return TRUE;
 
     buildType[sizeof(buildType) - 1] = '\0';
 
