@@ -2091,6 +2091,7 @@ void* restoreAllDBs(void* arg)
                  "! -path '/nvram/.partner_ID' "
                  "! -path '/nvram/.apply_partner_defaults' "
                  "! -path '/nvram/secure' "
+                 "! -path '/nvram/secure/*' "
                  "! -path '/nvram2/logs' "
                  "! -path '/nvram2/logs/*' "
                  "! -path '/nvram/6' "
