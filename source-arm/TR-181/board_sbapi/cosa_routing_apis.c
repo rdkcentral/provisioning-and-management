@@ -1612,6 +1612,8 @@ CosaDmlStaticRouteSetEntry
         
 
 **********************************************************************/
+static int Route6_RefreshOnWanStarted(void *arg);
+
 ANSC_STATUS
 CosaDmlRoutingInit
     (
@@ -1627,7 +1629,11 @@ CosaDmlRoutingInit
     CosaDmlGetRipdConfiguration();
     CosaDmlGenerateRipdConfigFile(hDml);
     //CosaRipdOperation("restart");
-    
+
+    /* refresh IPv6 route/interface info once wan interface & routes are ready */
+    EvtDispterRgstCallbackForEvent("wan-status", Route6_RefreshOnWanStarted, NULL);
+    EvtDispterRgstCallbackForEvent("tr_erouter0_dhcpv6_client_v6pref", Route6_RefreshOnWanStarted, NULL);
+
     AnscTraceWarning(("CosaDmlRipInit -- exits.\n"));
     return returnStatus;
 }
@@ -3243,8 +3249,11 @@ static int
 Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 {
     char xf10_wan_interface[32] = {0};
+    int  cap;
     if (!iflist || !nlist)
         return -1;
+
+    cap = *nlist;
 
     CcspTraceInfo(("%s anjani ---> le interface names for\n", 
                         __FUNCTION__));
@@ -3253,7 +3262,7 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
     if (ifnum <= 0)
     {
 #endif
-        if (*nlist < 2)
+        if (cap < 2)
             return -1;
          /*get current eRT interface*/
     commonSyseventGet("current_wan_ifname", xf10_wan_interface, sizeof(xf10_wan_interface));
@@ -3291,7 +3300,23 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
         CcspTraceInfo(("%s: 3276 : Ranjani --> interface\n",
                wan1_interface));
 #endif
-	
+
+        /* actually add the resolved wan interface (was computed but never used) */
+        if (wan1_interface[0] && *nlist < cap)
+        {
+            int dup = 0, k;
+            for (k = 0; k < *nlist; k++)
+            {
+                if (strcmp(iflist[k], wan1_interface) == 0)
+                {
+                    dup = 1;
+                    break;
+                }
+            }
+            if (!dup)
+                snprintf(iflist[(*nlist)++], IFNAME_SIZ, "%s", wan1_interface);
+        }
+
 #if defined(USE_TR181_PATH)
     }
     else
@@ -3334,6 +3359,23 @@ Route6_GenerateName(const char *prefix, const char *gateway,
     snprintf(name, size, "%s_%s_%s", prefix, gateway, interface);
 
     return 0;
+}
+
+static int Route6_LoadRouteInfo(void);
+
+/* wan-status event callback: refresh IPv6 route cache once WAN if/routes are up */
+static int
+Route6_RefreshOnWanStarted(void *arg)
+{
+    UNREFERENCED_PARAMETER(arg);
+
+    if (Route6_LoadRouteInfo() != 0)
+    {
+        CcspTraceWarning(("%s: failed to refresh IPv6 route info on wan-status\n", __FUNCTION__));
+        return ANSC_STATUS_FAILURE;
+    }
+
+    return ANSC_STATUS_SUCCESS;
 }
 
 static int 

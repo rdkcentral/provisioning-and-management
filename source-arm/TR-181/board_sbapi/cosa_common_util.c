@@ -1162,6 +1162,8 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
     if ( 0 == sysevent_get(fd, token, IPV6_PREFIX_EVENT, evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
     {
         EvtDispterIpv6PrefixCallback(evtValue);
+        if (ANSC_STATUS_SUCCESS != EvtDispterCallFuncByEvent(IPV6_PREFIX_EVENT))
+            returnStatus = ANSC_STATUS_FAILURE;
     }
 
     /*dibblerServer-restart*/
@@ -1270,6 +1272,7 @@ EvtDispterEventHandler(void *arg)
             case EVENT_WAN_IPV4_RECD:
                 break;
             case EVENT_IPV6_PREFIX_RECD:
+                EvtDispterCallFuncByEvent(IPV6_PREFIX_EVENT);
                 break;
 #if defined (RBUS_WAN_IP)
             case EVENT_WAN_IPV6_RECD:
