@@ -82,6 +82,7 @@
 #endif
 #include "secure_wrapper.h"
 #include "cosa_drg_common.h"
+#include "cosa_common_util.h"
 #include "ccsp_psm_helper.h"
 #include "safec_lib_common.h"
 
@@ -565,7 +566,6 @@ bool IsPortOverlapWithPTPorts(int mgmtport)
     }
     return 0;
 }
-
 void* WebGuiRestart( void *arg )
 {
     UNREFERENCED_PARAMETER(arg);
@@ -4749,6 +4749,13 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 		setLanMgmtUpnp(&utctx, pLanMngm->LanUpnp);
         Utopia_Free(&utctx, 1);
         pLanMngm->LanNetwork.Value = _CALC_NETWORK(pLanMngm->LanIPAddress.Value, pLanMngm->LanSubnetMask.Value);
+        if (orgLanMngm.LanIPAddress.Value != pLanMngm->LanIPAddress.Value &&
+            pLanMngm->LanIPAddress.Value != 0)
+        {
+            pthread_t tid;
+            CcspTraceInfo(("%s -- LAN management IP address changed, restarting Web GUI\n", __FUNCTION__));
+            pthread_create(&tid, NULL, &WebGUIRestart, NULL);
+        }
         char l_cSecWebUI_Enabled[8] = {0};
         syscfg_get(NULL, "SecureWebUI_Enable", l_cSecWebUI_Enabled, sizeof(l_cSecWebUI_Enabled));
         if (!strncmp(l_cSecWebUI_Enabled, "true", 4)) { 
