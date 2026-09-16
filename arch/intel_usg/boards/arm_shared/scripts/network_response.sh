@@ -1,4 +1,7 @@
 #!/bin/sh
+if [ -f /etc/utopia/service.d/log_capture_path.sh ]; then
+    . /etc/utopia/service.d/log_capture_path.sh
+fi
 #######################################################################################
 # If not stated otherwise in this file or this component's Licenses.txt file the
 # following copyright and licenses apply:
@@ -53,8 +56,6 @@ v4Count=0
 v6Count=0
 
 export PATH=$PATH:/fss/gw
-exec >>/tmp/pandm_network_response.log 2>&1
-echo "$(date '+%Y-%m-%d %H:%M:%S') pid=$$ network_response.sh args=$*"
 ATOM_RPC_IP=`cat /etc/device.properties | grep ATOM_ARPING_IP | cut -f 2 -d"="`
 BOX_TYPE=`cat /etc/device.properties | grep BOX_TYPE | cut -f 2 -d"="`
 MODEL_NUM=`cat /etc/device.properties | grep MODEL_NUM  | cut -f2 -d=`
