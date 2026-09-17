@@ -10963,7 +10963,7 @@ Feature_SetParamIntValue
     if (strcmp(ParamName, "EDNSPacketSize") == 0)
     {
         CcspTraceInfo(("Set EDNSPacketSize \n"));
-        char buf[8]={0};
+        char buf[16]={0};
         snprintf(buf, sizeof(buf), "%d", bValue);
 
         if (syscfg_set_commit(NULL, "edns_packet_size", buf) != 0)
@@ -10973,7 +10973,7 @@ Feature_SetParamIntValue
         }
         else
         {
-            v_secure_system("sysevent set dhcp_server-restart");
+            commonSyseventSet("dhcp_server-restart", NULL);
             return TRUE;
         }
     }
