@@ -206,7 +206,16 @@ int setBlobVersion (char *subdoc, uint32_t version)
 
 void webConfigFrameworkInit()
 {
-#if defined (FEATURE_RDKB_DHCP_MANAGER)
+void webConfigFrameworkInit()
+{
+#if defined (FEATURE_RDKB_DHCP_MANAGER) && defined(_CBR2_PRODUCT_REQ_)
+	/* on CBR2, CcspDHCPMgr owns Device.DHCPv4; PAM must not also claim the macbinding subdoc */
+	#if defined(SPEED_BOOST_SUPPORTED)
+        char *sub_docs[]= {"portforwarding","wan","lan","hotspot","connectedbuilding","xmspeedboost","webui",(char *) 0 };
+	#else
+        char *sub_docs[]= {"portforwarding","wan","lan","hotspot","connectedbuilding","webui",(char *) 0 };
+	#endif
+#elif defined (FEATURE_RDKB_DHCP_MANAGER)
 	#if defined(SPEED_BOOST_SUPPORTED)
         char *sub_docs[]= {"portforwarding","wan","macbinding","lan","hotspot","connectedbuilding","xmspeedboost","webui",(char *) 0 };
 	#else
