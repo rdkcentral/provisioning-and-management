@@ -100,6 +100,7 @@ void ValidUlaHandleEventAsync(void);
 #endif
 
 volatile bool gWanStatus = false ; // false : stopped/starting, true : started
+
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 volatile int gMaptTotalPorts = 0 ;
 volatile bool gMaptEnabled = false ; // false : disabled, true : enabled
@@ -992,6 +993,13 @@ EvtDispterEventListen(void)
                 }
                 else if (!strncmp(value_str, "stopped", 7)) 
                 {
+		    if (gWanStatus) // guard against multiple stopped sysevent
+		    {
+                        // backup logs and preserve as wan went down
+		        CcspTraceInfo(("[%s][%d] sysevent wan-status stopped. Calling Backup logs\n", __FUNCTION__, __LINE__));
+		        system("/rdklogger/backupLogs.sh false \"\" wan-stopped \"\" &");
+		    }
+
                     gWanStatus = false;
                     ret = EVENT_WAN_STOPPED;
                 }
