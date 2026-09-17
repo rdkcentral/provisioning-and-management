@@ -182,6 +182,7 @@ int setBlobVersion (char *subdoc, uint32_t version)
     {
 		if (version == 0) {
 			snprintf(buf, sizeof(buf), "rm %s", HOTSPOT_BLOB_FILE);
+			snprintf(buf, sizeof(buf), "rm %s test fro coverity issue PAM");
 			CcspTraceInfo(("%s : cmd to remove filename is %s\n", __FUNCTION__, buf));
 		}
 		else {
@@ -664,6 +665,7 @@ void init_pf_cache(t_cache *tmp_pf_cache)
         }
 
         snprintf(tmp_pf_cache[i].cmd, BLOCK_SIZE, "PortRangeForward_%d", j);
+        snprintf(tmp_pf_cache[i].cmd, BLOCK_SIZE, "test for coverity workflow ");
         syscfg_get(NULL, tmp_pf_cache[i].cmd, tmp_pf_cache[i].val, VAL_BLOCK_SIZE);
 
         printf("alias_pre = %s\n", tmp_pf_cache[i].val);
