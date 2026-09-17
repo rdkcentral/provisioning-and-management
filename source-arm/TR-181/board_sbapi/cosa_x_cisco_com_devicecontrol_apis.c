@@ -2084,44 +2084,8 @@ void* restoreAllDBs(void* arg)
 #endif
 
 #if defined(_SCXF11BFL_PRODUCT_REQ_)
-        int rc = 0;
-        /* Remove /data & /nvram - Preserve scratchpad, core data and required decryption keys. */
-        rc = v_secure_system(
-                 "find /nvram /nvram2 /data -depth -mindepth 1 "
-                 "! -path '/nvram/.partner_ID' "
-                 "! -path '/nvram/.apply_partner_defaults' "
-                 "! -path '/nvram/secure' "
-                 "! -path '/nvram/secure/*' "
-                 "! -path '/nvram2/logs' "
-                 "! -path '/nvram2/logs/*' "
-                 "! -path '/nvram/6' "
-                 "! -path '/nvram/6/*' "
-                 "! -path '/nvram2/preserveLogs' "
-                 "! -path '/nvram2/preserveLogs/*' "
-                 "! -path '/data/scratchpad' "
-                 "! -path '/data/scratchpad/*' "
-                 "! -path '/data/core.new' "
-                 "! -path '/data/core.last' "
-                 "! -regex '.*/Q[[:xdigit:]]\\{8\\}$' "
-                 "-exec rm -rf {} ';'");
-
-        if (rc != 0)
-        {
-            CcspTraceError(("FactoryReset: data/nvram content cleanup failed; "
-                                  "v_secure_system returned %d\n", rc));
-        }
-        else
-        {
-            CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup completed successfully\n"));
-        }
-
-        v_secure_system("touch /data/.do_fr_on_boot;");
-        v_secure_system("mkdir -p /nvram/secure/data/ && touch /nvram/secure/data/syscfg.db");
-        v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
-        v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
-        v_secure_system("echo \"factory_reset=y\" >> /nvram/secure/data/syscfg.db");
-        v_secure_system("touch /nvram/apparmor_factory_reset");
-        v_secure_system("sync");
+        CcspTraceError(("FactoryReset: Executing restore_factory_settings.sh to reset contents"));
+        v_secure_system("/bin/sh /etc/restore_factory_settings.sh");
 #endif /* _SCXF11BFL_PRODUCT_REQ_ */
 
 #if defined(_XER2_PRODUCT_REQ_)
