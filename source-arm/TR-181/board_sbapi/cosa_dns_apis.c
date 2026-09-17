@@ -66,7 +66,11 @@
 
 #include "cosa_dns_internal.h"
 #include "safec_lib_common.h"
+#include <stdlib.h>
+#include <string.h>
 
+#define SYSCFG_DNS_FORWARD_MAX "dnsmasq_dns_forward_max"
+#define DEFAULT_DNS_FORWARD_MAX 150
 
 #if (defined(_COSA_SIM_))
 
@@ -946,6 +950,7 @@ CosaDmlDnsRelayGetServer
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include "cosa_x_cisco_com_devicecontrol_apis.h"
+#include "cosa_drg_common.h"
 
 
 /**********************************************************************
@@ -1714,5 +1719,154 @@ CosaDmlDnsRelayGetServer
     return ANSC_STATUS_FAILURE;
 
 }
+
+/***********************************************************************
+
+    caller:     self
+
+    prototype:
+
+        ULONG
+        CosaDmlDnsGetForwardMax
+            (
+                void
+            );
+
+    description:
+
+        This routine retrieves the DNS forward max value from syscfg.
+
+    return:     DNS forward max value (default: 150)
+
+**********************************************************************/
+
+ULONG CosaDmlDnsGetForwardMax(void)
+{
+    char buf[16] = {0};
+    ULONG value = DEFAULT_DNS_FORWARD_MAX;
+    
+    CcspTraceInfo(("%s...", __FUNCTION__));
+    
+    /* Read from syscfg, return default 150 if not set */
+    if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0 && buf[0] != '\0')
+    {
+        value = (ULONG)atoi(buf);
+        
+        /* Validate range (same as setter: 1-600) */
+        if (value < 1 || value > 600)
+        {
+            CcspTraceWarning(("%s: Invalid stored value %lu (must be 1-600), returning default %d\n", 
+                             __FUNCTION__, value, DEFAULT_DNS_FORWARD_MAX));
+            value = DEFAULT_DNS_FORWARD_MAX;
+        }
+    }
+    else
+    {
+        CcspTraceInfo(("%s: No stored value, returning default=%d\n", __FUNCTION__, DEFAULT_DNS_FORWARD_MAX));
+    }
+    
+    return value;
+}
+
+/***********************************************************************
+
+    caller:     self
+
+    prototype:
+
+        ANSC_STATUS
+        CosaDmlDnsSetForwardMax
+            (
+                ULONG value
+            );
+
+    description:
+
+        This routine sets the DNS forward max value, stores in syscfg,
+        updates dnsmasq.conf, and triggers a dnsmasq restart.
+
+    argument:   ULONG value - The DNS forward max value (1-600)
+
+    return:     operation status
+
+**********************************************************************/
+
+/**********************************************************************
+
+    caller:     COSA DML
+
+    prototype:
+
+        ANSC_STATUS
+        CosaDmlDnsSetForwardMax
+            (
+                ULONG                   value
+            );
+
+    description:
+
+        This function validates the DNS forward max value, saves it to syscfg,
+        and restarts dnsmasq immediately.
+
+    argument:   ULONG                   value
+                New value (1-600).
+
+    return:     ANSC_STATUS_SUCCESS or ANSC_STATUS_FAILURE
+
+**********************************************************************/
+ANSC_STATUS CosaDmlDnsSetForwardMax(ULONG value)
+{
+    char buf[16] = {0};
+    ULONG currentValue = 0;
+    errno_t rc = -1;
+    int ret = 0;
+    
+    CcspTraceInfo(("%s...", __FUNCTION__));
+    
+    /* Validate range */
+    if (value < 1 || value > 600)
+    {
+        CcspTraceError(("%s: Invalid value %lu (must be 1-600)\n", __FUNCTION__, value));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    /* Check if value is already set to avoid unnecessary restart */
+    if (syscfg_get(NULL, SYSCFG_DNS_FORWARD_MAX, buf, sizeof(buf)) == 0)
+    {
+        currentValue = (ULONG)atoi(buf);
+        if (currentValue == value)
+        {
+            CcspTraceInfo(("%s: Value unchanged (%lu), skipping restart\n", __FUNCTION__, value));
+            return ANSC_STATUS_SUCCESS;
+        }
+    }
+    
+    /* Write to syscfg */
+    rc = sprintf_s(buf, sizeof(buf), "%lu", value);
+    if (rc < EOK)
+    {
+        CcspTraceError(("%s: sprintf_s failed, rc=%d\n", __FUNCTION__, rc));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    if (syscfg_set_commit(NULL, SYSCFG_DNS_FORWARD_MAX, buf) != 0)
+    {
+        CcspTraceError(("%s: syscfg_set_commit failed\n", __FUNCTION__));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    CcspTraceInfo(("%s: Set dns-forward-max=%lu\n", __FUNCTION__, value));
+    
+    /* Restart dnsmasq using C API */
+    ret = commonSyseventSet("dhcp_server-restart", "");
+    if (ret != 0)
+    {
+        CcspTraceError(("%s: commonSyseventSet dhcp_server-restart failed (ret=%d)\n", __FUNCTION__, ret));
+        return ANSC_STATUS_FAILURE;
+    }
+    
+    return ANSC_STATUS_SUCCESS;
+}
+
 #endif
 

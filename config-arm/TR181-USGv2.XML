@@ -9605,6 +9605,38 @@
     
     </object>
 
+    <object>
+
+      <name>Config</name>
+
+      <objectType>object</objectType>
+
+      <functions>
+
+        <func_GetParamUlongValue>Config_GetParamUlongValue</func_GetParamUlongValue>
+
+        <func_SetParamUlongValue>Config_SetParamUlongValue</func_SetParamUlongValue>
+
+      </functions>
+
+      <parameters>
+
+        <parameter>
+
+          <name>X_RDKCENTRAL-COM_DNSForwardMax</name>
+
+          <type>unsignedInt</type>
+
+          <syntax>uint32</syntax>
+
+          <writable>true</writable>
+
+        </parameter>
+
+      </parameters>
+
+    </object>
+
       </objects>
 
     </object>
