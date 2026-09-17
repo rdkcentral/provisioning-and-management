@@ -409,71 +409,124 @@ SaveWebServConf(const WebServConf_t *conf)
     return 0;
 }
 
+#define PORT_MIN (int)1
+#define PORT_MAX (int)65535
+#define PORT_BASE (int)10
+
 bool IsPortOverlapWithPFPorts(int mgmtport)
 {
     CcspTraceInfo(("%s %d - Entry mgmtport=%d\n",__FUNCTION__,__LINE__, mgmtport));
+    if (mgmtport < PORT_MIN || mgmtport > PORT_MAX)
+    {
+        CcspTraceError(("%s %d - Invalid management port %d\n",
+                        __FUNCTION__, __LINE__, mgmtport));
+        return false;
+    }
+
     char pfcount[8] = {0};
     char query[32] = {0};
     char namespace[32] = {0};
 
     syscfg_get( NULL, "PortRangeForwardCount", pfcount, sizeof(pfcount));
-    CcspTraceInfo(("%s %d - PortRangeForwardCount=%s \n",__FUNCTION__,__LINE__,pfcount));
-    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
-      namespace[0] = '\0';
-      snprintf(query, sizeof(query), "PortRangeForward_%d", idx);
-      int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
-      if (0 != rc || '\0' == namespace[0]) {
-         continue;
-      }
-      query[0] = '\0';
-      rc = syscfg_get(namespace, "enabled", query, sizeof(query));
-      if (0 != rc || '\0' == query[0]) {
-         continue;
-      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
-        CcspTraceDebug(("%s %d- PFR namespace Not enabled \n",__FUNCTION__,__LINE__));
-        continue;
-      }
-      char sdport[10];
-      char edport[10];
-      char portrange[30];
-      portrange[0]='\0';
-      sdport[0] = '\0';
-      edport[0] = '\0';
-      rc = syscfg_get(namespace, "external_port_range", portrange, sizeof(portrange));
-      if (0 != rc || '\0' == portrange[0]) {
-         continue;
-      } else {
-         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
-            continue;
-         }
-      }
-      if (atoi(sdport) <= mgmtport && mgmtport <= atoi(edport))
-      {
-          CcspTraceInfo(("%s %d- mgmtport over laps with PFR External ports \n",__FUNCTION__,__LINE__));
-          return 1;
-      }
-      rc = syscfg_get(namespace, "internal_port", sdport, sizeof(sdport));
-      rc |= syscfg_get(namespace, "internal_port_range_size", portrange, sizeof(portrange));
-      int edport_i = atoi(sdport) + atoi(portrange);
-      CcspTraceInfo(("%s %d- PFR End port=%d \n",__FUNCTION__,__LINE__, edport_i));
-      if (0 != rc || '\0' == sdport[0]) {
-         continue;
-      }
-      if (atoi(sdport) <= mgmtport && mgmtport <= edport_i)
-      {
-          CcspTraceInfo(("%s %d- mgmtport over laps with PFR internal ports \n",__FUNCTION__,__LINE__));
-          return 1;
-      }
+    char *endptr = NULL;
+    long pfr_count = strtol(pfcount, &endptr, PORT_BASE);
+    if (endptr == pfcount || *endptr != '\0' || pfr_count < 0) {
+        pfr_count = 0;
+    }
+    CcspTraceInfo(("%s %d - PortRangeForwardCount=%ld\n",__FUNCTION__,__LINE__,pfr_count));
+    for (long idx=1 ; idx<=pfr_count; idx++) {
+       namespace[0] = '\0';
+       snprintf(query, sizeof(query), "PortRangeForward_%ld", idx);
+       int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
+       if (0 != rc || '\0' == namespace[0]) {
+          continue;
+       }
+       query[0] = '\0';
+       rc = syscfg_get(namespace, "enabled", query, sizeof(query));
+       if (0 != rc || '\0' == query[0]) {
+          continue;
+       }
+       if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+          CcspTraceDebug(("%s %d- PFR namespace Not enabled \n",__FUNCTION__,__LINE__));
+          continue;
+       }
+
+       char sdport[16] = {0};
+       char edport[16] = {0};
+       char portrange[32] = {0};
+       rc = syscfg_get(namespace, "external_port_range", portrange, sizeof(portrange));
+        if ((rc == 0) && (portrange[0] != '\0')) {
+          if (sscanf(portrange, "%15s %15s", sdport, edport) == 2) {
+              char *endptr = NULL;
+
+	      long start_port = strtol(sdport, &endptr, PORT_BASE);
+	      if (*endptr != '\0') {
+                 continue;
+              }
+
+	      long end_port = strtol(edport, &endptr, PORT_BASE);
+              if (*endptr != '\0') {
+                 continue;
+              }
+
+	      if ((start_port >= PORT_MIN) &&
+                 (end_port <= PORT_MAX) &&
+                 (start_port <= end_port)) {
+		 if ((mgmtport >= start_port) &&
+                        (mgmtport <= end_port)) {
+                        CcspTraceInfo(("%s %d - mgmtport overlaps with PFR external ports\n",
+                                        __FUNCTION__, __LINE__));
+                        return true;
+                 }
+             }
+	  }
+       }
+       char internal_port[16] = {0};
+       char range_size[16] = {0};
+       rc = syscfg_get(namespace, "internal_port", internal_port, sizeof(internal_port));
+       rc |= syscfg_get(namespace, "internal_port_range_size", range_size, sizeof(range_size));
+       if ((rc == 0) && (internal_port[0] != '\0') && (range_size[0] != '\0')) {
+          char *endptr = NULL;
+          long start_port = strtol(internal_port, &endptr, PORT_BASE);
+	  if (*endptr != '\0') {
+             continue;
+          }
+
+	  long size = strtol(range_size, &endptr, PORT_BASE);
+	  if (*endptr != '\0') {
+             continue;
+          }
+
+	  if ((start_port >= PORT_MIN) && (start_port <= PORT_MAX) && (size > 0)) {
+             long end_port;
+             if (size > ((long)PORT_MAX - start_port + 1)) {
+                end_port = PORT_MAX;
+             } else {
+                end_port = start_port + size - 1;
+             }
+
+             if ((mgmtport >= start_port) && (mgmtport <= end_port)) {
+                CcspTraceInfo(("%s %d - mgmtport overlaps with PFR internal ports\n",
+                                    __FUNCTION__, __LINE__));
+                return true;
+             }
+          }
+       }
     }
 
     memset(pfcount,0, sizeof(pfcount));
     memset(query,0, sizeof(query));
     memset(namespace,0, sizeof(namespace));
     syscfg_get( NULL, "SinglePortForwardCount", pfcount, sizeof(pfcount));
-    CcspTraceInfo(("%s %d- SPF count=%s \n",__FUNCTION__,__LINE__,pfcount));
-    for (int idx=1 ; idx<=atoi(pfcount); idx++) {
+    char *endptr = NULL;
+    long spfcount = strtol(pfcount, &endptr, PORT_BASE);
+    if (endptr == pfcount || *endptr != '\0' || spfcount < 0) {
+        spfcount = 0;
+    }
+    CcspTraceInfo(("%s %d- SPF count=%ld \n",__FUNCTION__,__LINE__,spfcount));
+    for (long idx=1 ; idx<=spfcount; idx++) {
       namespace[0] = '\0';
-      snprintf(query, sizeof(query), "SinglePortForward_%d", idx);
+      snprintf(query, sizeof(query), "SinglePortForward_%ld", idx);
       int rc = syscfg_get(NULL, query, namespace, sizeof(namespace));
       if (0 != rc || '\0' == namespace[0]) {
          continue;
@@ -482,27 +535,37 @@ bool IsPortOverlapWithPFPorts(int mgmtport)
       rc = syscfg_get(namespace, "enabled", query, sizeof(query));
       if (0 != rc || '\0' == query[0]) {
          continue;
-      } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
+      }
+      if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
         CcspTraceDebug(("%s %d- SPF namespace Not enabled \n",__FUNCTION__,__LINE__));
         continue;
       }
-      char extport[10];
-      char intport[10];
-      extport[0] = '\0';
-      intport[0] = '\0';
+      char extport[16] = {0};
+      char intport[16] = {0};
       rc = syscfg_get(namespace, "external_port", extport, sizeof(extport));
       rc |= syscfg_get(namespace, "internal_port", intport, sizeof(intport));
       if (0 != rc || '\0' == extport[0] || '\0' == intport[0]) {
          continue;
       }
-      if (atoi(extport) == mgmtport || mgmtport == atoi(intport))
-      {
-          CcspTraceInfo(("%s %d- mgmtport over laps with SPF internal or external port \n",__FUNCTION__,__LINE__));
-          return 1;
+      char *endptr = NULL;
+      long ext = strtol(extport, &endptr, PORT_BASE);
+      if (*endptr != '\0') {
+         continue;
+      }
+      long in = strtol(intport, &endptr, PORT_BASE);
+      if (*endptr != '\0') {
+         continue;
+      }
+      if ((ext < PORT_MIN) || (ext > PORT_MAX) || (in < PORT_MIN) || (in > PORT_MAX)) {
+         continue;
+      }
+      if ((mgmtport == ext) || (mgmtport == in)) {
+         CcspTraceInfo(("%s %d- mgmtport over laps with SPF internal or external port \n",__FUNCTION__,__LINE__));
+         return true;
       }
     }
     CcspTraceInfo(("%s %d - Exit\n",__FUNCTION__,__LINE__));
-    return 0;
+    return false;
 }
 
 bool IsPortOverlapWithPTPorts(int mgmtport)
