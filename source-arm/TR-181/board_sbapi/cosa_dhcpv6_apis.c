@@ -7629,7 +7629,7 @@ CosaDmlDhcpv6sSetPoolCfg
 	if( bNeedZebraRestart )
 	{
         CcspTraceWarning(("%s Restarting Zebra Process\n", __FUNCTION__));
-        v_secure_system("killall zebra && sysevent set zebra-restart");
+        v_secure_system("killall zebra; sysevent set zebra-restart");
 	}
 
     return ANSC_STATUS_SUCCESS;
