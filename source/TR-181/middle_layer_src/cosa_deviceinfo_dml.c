@@ -11011,7 +11011,10 @@ RDKDownloadManager_SetParamIntValue
         return FALSE;
     }
 
-    syscfg_commit();
+	 if (syscfg_commit() != 0)
+     {
+         return FALSE;
+     }
 
     return TRUE;
 }
