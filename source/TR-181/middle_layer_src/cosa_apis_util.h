@@ -73,6 +73,7 @@
 #define  _COSA_APIS_UTIL_H
 
 #include "cosa_dml_api_common.h"
+#include "secure_wrapper.h"
 
 typedef struct StaticRoute
 {
@@ -269,6 +270,17 @@ int CosaUtilGetIfStats(char * ifname, PCOSA_DML_IF_STATS  pStats);
  *
  */
 ULONG CosaUtilIoctlXXX(char * if_name, char * method, void * input);
+
+/**
+ * @brief Execute MTU size set operation on a network interface.
+ *
+ * This function performs an ioctl operation on the specified network interface.
+ *
+ * @param[in] if_name - Pointer to the interface name.
+ * @param[in] mtu_size  - Pointer to the MTU size.
+ *
+ */
+void CosaUtilSetBrlan0MTU(char * if_name, char * mtu_size);
 
 /**
  * @brief Convert a netmask string to a number.
