@@ -255,6 +255,13 @@ CosaUtilChannelValidate2
  */
 int CosaUtilGetIfStats(char * ifname, PCOSA_DML_IF_STATS  pStats);
 
+/*
+ * Read only BytesSent/BytesReceived from /proc/net/dev as full 64-bit counters
+ * (no strtoul_custom wrap). Used by Device.IP.Interface.*.Stats only.
+ */
+int CosaUtilGetIfByteStats64(char * ifname, ULONG * pBytesSent, ULONG * pBytesReceived);
+void CosaUtilApplyIfByteStats64(char * ifname, PCOSA_DML_IF_STATS pStats);
+
 /**
  * @brief Execute ioctl operation on a network interface.
  *

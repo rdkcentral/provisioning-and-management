@@ -1793,6 +1793,79 @@ done:
 }
 #endif
 
+/*
+ * Device.IP.Interface.*.Stats.BytesSent/BytesReceived need full 64-bit values
+ * (TR-181 StatsCounter64). Do not use strtoul_custom here — that wrap is for
+ * other DMs that remain unsignedInt/uint32 (e.g. PPP RDKSI-13803).
+ */
+int CosaUtilGetIfByteStats64(char * ifname, ULONG * pBytesSent, ULONG * pBytesReceived)
+{
+    FILE * fp;
+    char buf[1024] = {0};
+    char * p;
+    int i;
+    int ret = 0;
+    char BytesReceived[24] = {0};
+    char BytesSent[24] = {0};
+    char skip1[24], skip2[24], skip3[24];
+
+    if (!ifname || !pBytesSent || !pBytesReceived)
+    {
+        return 0;
+    }
+
+    *pBytesSent = 0;
+    *pBytesReceived = 0;
+
+    fp = fopen("/proc/net/dev", "r");
+    if (!fp)
+    {
+        return 0;
+    }
+
+    i = 0;
+    while (fgets(buf, sizeof(buf), fp))
+    {
+        if (++i <= 2) continue;
+
+        if ((p = strchr(buf, ':')))
+        {
+            if (strstr(buf, ifname))
+            {
+                /* rx bytes, rx pkts, rx errs, rx drop, ... tx bytes ... */
+                if (sscanf(p+1, "%23s %23s %23s %23s %*u %*u %*u %*u %23s",
+                           BytesReceived, skip1, skip2, skip3, BytesSent) == 5)
+                {
+                    *pBytesReceived = (ULONG)strtoull(BytesReceived, NULL, 10);
+                    *pBytesSent = (ULONG)strtoull(BytesSent, NULL, 10);
+                    ret = TRUE;
+                }
+                break;
+            }
+        }
+    }
+
+    fclose(fp);
+    return ret;
+}
+
+void CosaUtilApplyIfByteStats64(char * ifname, PCOSA_DML_IF_STATS pStats)
+{
+    ULONG bytesSent = 0;
+    ULONG bytesReceived = 0;
+
+    if (!ifname || !pStats)
+    {
+        return;
+    }
+
+    if (CosaUtilGetIfByteStats64(ifname, &bytesSent, &bytesReceived))
+    {
+        pStats->BytesSent = bytesSent;
+        pStats->BytesReceived = bytesReceived;
+    }
+}
+
 ULONG NetmaskToNumber(char *netmask)
 {
     char * pch;

@@ -8205,7 +8205,7 @@
 
               <name>BytesSent</name>
 
-              <type>unsignedInt</type>
+              <type>unsignedLong</type>
 
               <syntax>uint32</syntax>
 
@@ -8217,7 +8217,7 @@
 
               <name>BytesReceived</name>
 
-              <type>unsignedInt</type>
+              <type>unsignedLong</type>
 
               <syntax>uint32</syntax>
 
