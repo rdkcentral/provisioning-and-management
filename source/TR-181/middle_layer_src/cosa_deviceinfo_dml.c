@@ -1757,7 +1757,7 @@ BOOL
     /* Required for xPC sync */
     if (strcmp(ParamName, "URL") == 0)
     {
-      if (pString != NULL && valid_url(pString))
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
       {
         if (syscfg_set_commit(NULL, "TelemetryEndpointURL", pString) != 0)
         {
@@ -9419,7 +9419,7 @@ BOOL
 
     if (strcmp(ParamName, "S3SigningUrl") == 0)
     {
-      if (pString != NULL && valid_url(pString))
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
       {
         if (syscfg_set_commit(NULL, "CrashUpload_S3SigningUrl", pString) != 0)
         {
