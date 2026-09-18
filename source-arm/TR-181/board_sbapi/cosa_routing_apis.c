@@ -2916,6 +2916,7 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
      * because of "proto" (orig) info,
      * we use "ip -6 route" instead of "route -A inet6".
      */
+    CcspTraceInfo(("Ranjani --> %s %d  \n", __FUNCTION__,__LINE__));
     if ((fp = v_secure_popen("r", "ip -6 route show dev %s", ifname)) == NULL)
         return -1;
 
@@ -3000,10 +3001,16 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
         v_secure_pclose(fp);
 	//Fix for issue RDKB-367
 #if defined(_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
+     CcspTraceInfo(("Ranjani main table%s %d \n", __FUNCTION__,__LINE__));
     snprintf(cmd, sizeof(cmd), "ip -6 route list table main");
 #else 
+     CcspTraceInfo(("Ranjani erouter table%s %d \n", __FUNCTION__,__LINE__));
     snprintf(cmd, sizeof(cmd), "ip -6 route list table erouter");
 #endif
+#if  defined (_SCXF11BFL_PRODUCT_REQ_)
+ CcspTraceInfo(("Ranjani XF11 main %s %d \n", __FUNCTION__,__LINE__));
+    snprintf(cmd, sizeof(cmd), "ip -6 route list table main");
+#endif    
     if ((fp = popen(cmd, "r")) == NULL)
         return -1;
 	
