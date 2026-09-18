@@ -77,7 +77,7 @@
 #include <libnet.h>
 #endif
 
-#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 #include "cosa_drg_common.h"
 #endif
 
@@ -2933,8 +2933,13 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
         bzero(info6, sizeof(RouteInfo6_t));
 
         if (strcmp(prefix, "default") == 0)
-            //snprintf(info6->prefix, sizeof(info6->prefix), "::/0");
-			continue;
+        {
+            #if defined(_SCXF11BFL_PRODUCT_REQ_)
+                snprintf(info6->prefix, sizeof(info6->prefix), "::/0");
+            #else
+                continue;
+            #endif
+        }
         else
             snprintf(info6->prefix, sizeof(info6->prefix), "%s", prefix);
 
@@ -3218,6 +3223,7 @@ Route6_IsRouteExist(const char *prefix, const char *gw, const char *dev)
 static int
 Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
 {
+    char wan_interface[32] = {0};
     if (!iflist || !nlist)
         return -1;
 
@@ -3229,7 +3235,14 @@ Route6_GetIfNames(char iflist[][IFNAME_SIZ], int *nlist)
         if (*nlist < 2)
             return -1;
 
-        snprintf(iflist[0], IFNAME_SIZ, "%s", "erouter0");
+        /*get current eRT interface*/
+        commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
+        if('\0' == wan_interface[0])
+        {
+            /*default wan interface*/
+            commonSyseventGet("wan_ifname", wan_interface, sizeof(wan_interface));
+        }
+        snprintf(iflist[0], IFNAME_SIZ, "%s", wan_interface);
         snprintf(iflist[1], IFNAME_SIZ, "%s", "brlan0");
 #if defined (_COSA_BCM_MIPS_) || defined(_ENABLE_DSL_SUPPORT_)
         snprintf(iflist[2], IFNAME_SIZ, "%s", "lo");
