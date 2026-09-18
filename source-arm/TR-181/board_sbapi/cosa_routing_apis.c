@@ -77,7 +77,7 @@
 #include <libnet.h>
 #endif
 
-#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
+#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 #include "cosa_drg_common.h"
 #endif
 
