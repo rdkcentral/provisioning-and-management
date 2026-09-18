@@ -77,7 +77,7 @@
 #include <libnet.h>
 #endif
 
-#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#if defined (_CBR_PRODUCT_REQ_) || defined (_BWG_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_)
 #include "cosa_drg_common.h"
 #endif
 
@@ -2933,7 +2933,7 @@ Route6_GetRouteTable(const char *ifname, RouteInfo6_t infos[], int *numInfo)
         bzero(info6, sizeof(RouteInfo6_t));
 
         if (strcmp(prefix, "default") == 0)
-        //    snprintf(info6->prefix, sizeof(info6->prefix), "::/0");
+            //snprintf(info6->prefix, sizeof(info6->prefix), "::/0");
             continue;
         else
             snprintf(info6->prefix, sizeof(info6->prefix), "%s", prefix);
