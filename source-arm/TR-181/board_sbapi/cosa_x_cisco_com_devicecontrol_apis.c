@@ -2089,7 +2089,7 @@ void* restoreAllDBs(void* arg)
 	v_secure_system("rm -rf /nvram/dl");
 	v_secure_system("touch /nvram/apparmor_factory_reset");
         CcspTraceError(("FactoryReset: Executing restore_factory_settings.sh to reset contents"));
-        rc = v_secure_system("/bin/sh /etc/restore_factory_settings.sh");
+        rc = v_secure_system("/bin/sh -x /etc/restore_factory_settings.sh");
 	if (rc != 0)
 	{
 		CcspTraceError(("FactoryReset: data/nvram content cleanup failed; "
