@@ -2084,8 +2084,21 @@ void* restoreAllDBs(void* arg)
 #endif
 
 #if defined(_SCXF11BFL_PRODUCT_REQ_)
+	v_secure_system("rm -rf /nvram/lxy");
+	v_secure_system("rm -rf /nvram/certs");
+	v_secure_system("rm -rf /nvram/dl");
+	v_secure_system("touch /nvram/apparmor_factory_reset");
         CcspTraceError(("FactoryReset: Executing restore_factory_settings.sh to reset contents"));
-        v_secure_system("/bin/sh /etc/restore_factory_settings.sh");
+        rc = v_secure_system("/bin/sh /etc/restore_factory_settings.sh");
+	if (rc != 0)
+	{
+		CcspTraceError(("FactoryReset: data/nvram content cleanup failed; "
+                                  "v_secure_system returned %d\n", rc));
+	}
+        else
+        {
+            CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup completed successfully\n"));
+        }
 #endif /* _SCXF11BFL_PRODUCT_REQ_ */
 
 #if defined(_XER2_PRODUCT_REQ_)
