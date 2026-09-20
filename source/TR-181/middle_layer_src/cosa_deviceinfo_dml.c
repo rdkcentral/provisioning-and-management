@@ -9499,7 +9499,7 @@ Feature_GetParamIntValue
     if (strcmp(ParamName, "EDNSPacketSize") == 0)
     {
          /* collect value */
-         char buf[10];
+char buf[16] = {0};
          syscfg_get( NULL, "edns_packet_size", buf, sizeof(buf));
          if( buf [0] != '\0' )
          {
