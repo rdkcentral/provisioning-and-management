@@ -115,6 +115,8 @@
 
 #if defined(_ONESTACK_PRODUCT_REQ_)
 #include <rdkb_feature_mode_gate.h>
+#include "cosa_x_cisco_com_truestaticip_internal.h"
+#include "cosa_apis_util.h"
 #endif
 
 extern ULONG g_currentBsUpdate;
@@ -130,6 +132,7 @@ void Send_Notification_Task(char* delay, char* startTime, char* download_status,
 void set_firmware_download_start_time(char *start_time);
 char* get_firmware_download_start_time();
 void *handleBleRestart(void *arg);
+static BOOL valid_url (char *buff);
 #if (defined _COSA_INTEL_XB3_ARM_)
 BOOL CMRt_Isltn_Enable(BOOL status);
 #endif
@@ -482,7 +485,7 @@ static unsigned long long GetAvailableSpace_tmp()
 
 static void UpdateSettingsFile( char param[64], char value[10] )
 {
-    CcspTraceInfo(("\nUpdateSettingsFile\n"));
+    CcspTraceInfo(("UpdateSettingsFile\n"));
     errno_t          rc                  = -1;
 
     FILE* fp = fopen( "/tmp/.hwselftest_settings", "r");
@@ -1754,6 +1757,8 @@ BOOL
     /* Required for xPC sync */
     if (strcmp(ParamName, "URL") == 0)
     {
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
+      {
         if (syscfg_set_commit(NULL, "TelemetryEndpointURL", pString) != 0)
         {
             CcspTraceError(("syscfg_set failed\n"));
@@ -1763,6 +1768,11 @@ BOOL
         {
             return TRUE;
         }
+      }
+      else
+      {
+	    return FALSE;
+      }
     }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -9409,6 +9419,8 @@ BOOL
 
     if (strcmp(ParamName, "S3SigningUrl") == 0)
     {
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
+      {
         if (syscfg_set_commit(NULL, "CrashUpload_S3SigningUrl", pString) != 0)
         {
             CcspTraceError(("syscfg_set failed\n"));
@@ -9418,6 +9430,11 @@ BOOL
         {
             return TRUE;
         }
+      }
+      else
+      {
+	    return FALSE;
+      }
     }
 
 /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -10079,67 +10096,6 @@ SyndicationFlowControl_GetParamStringValue
     }
     return -1;
 }
-
-/**********************************************************************
-
-    caller:     owner of this object
-
-    prototype:
-
-        BOOL
-        MEMSWAP_GetParamBoolValue
-            (
-                ANSC_HANDLE                 hInsContext,
-                char*                       ParamName,
-                BOOL*                       pBool
-            );
-
-    description:
-
-        This function is called to retrieve Boolean parameter value;
-
-    argument:   ANSC_HANDLE                 hInsContext,
-                The instance handle;
-
-                char*                       ParamName,
-                The parameter name;
-
-                BOOL*                       pBool
-                The buffer of returned boolean value;
-
-    return:     TRUE if succeeded.
-
-**********************************************************************/
-BOOL
-MEMSWAP_GetParamBoolValue
-
-    (
-        ANSC_HANDLE                 hInsContext,
-        char*                       ParamName,
-        BOOL*                       pBool
-    )
-{
-    UNREFERENCED_PARAMETER(hInsContext);
-    if (strcmp(ParamName, "Enable") == 0)
-    {
-       /* Collect Value */
-       char *strValue = NULL;
-       int retPsmGet = CCSP_SUCCESS;
-
-
-        retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable", NULL, &strValue);
-        if (retPsmGet == CCSP_SUCCESS) {
-            *pBool = _ansc_atoi(strValue);
-            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
-        }
-        else
-            *pBool = FALSE;
-
-         return TRUE;
-    }
-    return FALSE;
-}
-
 
 /**********************************************************************
 
@@ -11010,6 +10966,68 @@ Feature_SetParamIntValue
     }
     return FALSE;
 }
+
+BOOL
+RDKDownloadManager_GetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int*                        pint
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName || !pint || strcmp(ParamName, "PackageExpiryTime") != 0)
+    {
+        return FALSE;
+    }
+
+    char *strValue = NULL;
+    if (PSM_Get_Record_Value2(
+            bus_handle,
+            g_Subsystem,
+            "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
+            NULL,
+            &strValue) == CCSP_SUCCESS && strValue != NULL)
+    {
+        *pint = _ansc_atoi(strValue);
+        ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+    }
+    else
+    {
+        *pint = 0;
+    }
+    return TRUE;
+}
+
+BOOL
+RDKDownloadManager_SetParamIntValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        int                         iValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (!ParamName || strcmp(ParamName, "PackageExpiryTime") != 0)
+    {
+        return FALSE;
+    }
+
+    if (iValue <= 0)
+    {
+        CcspTraceWarning(("RDKDownloadManager PackageExpiryTime must be greater than zero\n"));
+        return FALSE;
+    }
+
+    char value[16] = {0};
+    snprintf(value, sizeof(value), "%d", iValue);
+    return PSM_Set_Record_Value2(
+        bus_handle,
+        g_Subsystem,
+        "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
+        ccsp_string,
+        value) == CCSP_SUCCESS;
+}
 /**********************************************************************
 
     caller:     owner of this object
@@ -11643,9 +11661,9 @@ Feature_SetParamBoolValue
     if (strcmp(ParamName, "OneToOneNAT") == 0)
     {
 #if defined(_ONESTACK_PRODUCT_REQ_)
-        if(!isFeatureSupportedInCurrentMode(FEATURE_TRUE_STATIC_IP))
+        if (CheckTSIPModeGate(bValue) != ANSC_STATUS_SUCCESS)
         {
-            CcspTraceError(("OneToOneNAT is not supported in non business mode \n"));
+            CcspTraceError(("OneToOneNAT is not supported in current system settings \n"));
             t2_event_d("OneToOneNAT_NotSupported", 1);
             return FALSE;
         }
@@ -11665,38 +11683,33 @@ Feature_SetParamBoolValue
 #if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     if (strcmp(ParamName, "EnableMultiProfileXDNS") == 0)
     {
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (is_devicemode_business())
-#endif // _ONESTACK_PRODUCT_REQ_
+        char buf[5] = {0};
+        syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", buf, sizeof(buf));
+        if (!strcmp(buf, "1"))
         {
-            char buf[5] = {0};
-            syscfg_get(NULL, "X_RDKCENTRAL-COM_XDNS", buf, sizeof(buf));
-            if (!strcmp(buf, "1"))
-            {
-                if(!setMultiProfileXdnsConfig(bValue))
-                    return FALSE;
+            if(!setMultiProfileXdnsConfig(bValue))
+                return FALSE;
 
-                if (syscfg_set_commit(NULL, "MultiProfileXDNS", bValue ? "1" : "0") != 0)
-                {
-                    CcspTraceError(("[XDNS] syscfg_set MultiProfileXDNS failed!\n"));
-                }
+            if (syscfg_set_commit(NULL, "MultiProfileXDNS", bValue ? "1" : "0") != 0)
+            {
+                CcspTraceError(("[XDNS] syscfg_set MultiProfileXDNS failed!\n"));
             }
             else
             {
-                CcspTraceError(("XDNS Feature is not Enabled. so,EnableMultiProfileXDNS set operation to %d failed \n", bValue));
-                return FALSE;
+                /* Generate T2 marker when MultiprofileXDNS is successfully enabled */
+                if (bValue == TRUE)
+                {
+                    t2_event_d("MultiprofileXDNS_Supported", 1);
+                }
             }
-
-            return TRUE;
         }
-#if defined(_ONESTACK_PRODUCT_REQ_)
-        if (!is_devicemode_business())
+        else
         {
-            CcspTraceInfo(("[XDNS] MultiProfile feature not supported in residential mode\n"));
-            t2_event_d("XDNS_MultiProfile_NotSupported", 1);
+            CcspTraceError(("XDNS Feature is not Enabled. so,EnableMultiProfileXDNS set operation to %d failed \n", bValue));
             return FALSE;
         }
-#endif // _ONESTACK_PRODUCT_REQ_
+
+        return TRUE;
     }
 #endif // _COSA_FOR_BCI_ || _ONESTACK_PRODUCT_REQ_
 
@@ -12199,63 +12212,6 @@ UploadLogsOnUnscheduledReboot_SetParamBoolValue
     {
         syscfg_set_commit(NULL, "UploadLogsOnUnscheduledRebootDisable", (bValue == TRUE) ? "true" : "false");
         return TRUE;
-    }
-    return FALSE;
-}
-
-
-/**********************************************************************
-
-    caller:     owner of this object
-
-    prototype:
-
-        BOOL
-        MEMSWAP_SetParamBoolValue
-            (
-                ANSC_HANDLE                 hInsContext,
-                char*                       ParamName,
-                BOOL                        bValue
-            );
-
-    description:
-
-        This function is called to set BOOL parameter value;
-
-    argument:   ANSC_HANDLE                 hInsContext,
-                The instance handle;
-
-                char*                       ParamName,
-                The parameter name;
-
-                BOOL                        bValue
-                The updated BOOL value;
-
-    return:     TRUE if succeeded.
-
-**********************************************************************/
-BOOL
-MEMSWAP_SetParamBoolValue
-    (
-        ANSC_HANDLE                 hInsContext,
-        char*                       ParamName,
-        BOOL                        bValue
-    )
-{
-    if (IsBoolSame(hInsContext, ParamName, bValue, MEMSWAP_GetParamBoolValue))
-        return TRUE;
-
-    if (strcmp(ParamName, "Enable") == 0)
-    {
-       int retPsmGet = CCSP_SUCCESS;
-
-       retPsmGet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.Enable", ccsp_string, bValue ? "1" : "0");
-       if (retPsmGet != CCSP_SUCCESS) {
-           CcspTraceError(("Set failed for MEMSWAP support \n"));
-           return FALSE;
-       }
-       CcspTraceInfo(("Successfully set MEMSWAP support \n"));
-       return TRUE;
     }
     return FALSE;
 }
@@ -14618,7 +14574,9 @@ CognitiveMotionDetection_SetParamBoolValue
 
         if (bValue == TRUE)
         {
-            v_secure_system("systemctl start systemd-cognitive_wifimotion.service");
+            /* Start WFM in background to avoid blocking PandM init.
+             * WFM has After=onewifi.service and will start once onewifi is active.*/
+            v_secure_system("systemctl start systemd-cognitive_wifimotion.service &");
         }
         else
         {
@@ -14835,6 +14793,9 @@ RDKDownloadManager_SetParamStringValue
     if (strcmp(ParamName, "InstallPackage") == 0 && pString != NULL)
     {
     int ret =-1;
+    const char* tool = NULL;
+    static const char *debugTools[] = { "tcpdump", "strace" };
+    size_t debugToolIndex = 0;
     CcspTraceWarning(("[%s] Entering..\n", __FUNCTION__ ));
 
     if((!pString) || strlen(pString) == 0 ) {
@@ -14844,11 +14805,51 @@ RDKDownloadManager_SetParamStringValue
 
     CcspTraceWarning(("[%s] Executing command - rdm -x %s & \n", __FUNCTION__, pString));
 
+    for (debugToolIndex = 0; debugToolIndex < (sizeof(debugTools) / sizeof(debugTools[0])); ++debugToolIndex)
+    {
+        if (strstr(pString, debugTools[debugToolIndex]) != NULL)
+        {
+            tool = debugTools[debugToolIndex];
+            break;
+        }
+    }
+
     ret = v_secure_system("/usr/bin/rdm -x \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", pString);
 
     if (ret != 0) {
         CcspTraceWarning(("[%s] Failed to execute the command. Returned error code '%d'\n", __FUNCTION__, ret));
         return FALSE;
+    }
+
+    if (tool != NULL)
+    {
+        const char* ttlParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
+        char *ttlValue = NULL;
+        int ttl = 3600;
+
+        if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, ttlParam, NULL, &ttlValue) == CCSP_SUCCESS && ttlValue != NULL)
+        {
+            int configuredTtl = _ansc_atoi(ttlValue);
+            if (configuredTtl > 0)
+            {
+                ttl = configuredTtl;
+            }
+            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(ttlValue);
+        }
+
+        /* Store an absolute expiry time. RDM performs cleanup from cron. */
+        {
+            char expirySpec[128] = {0};
+            time_t expiryTime = time(NULL) + ttl;
+            snprintf(expirySpec, sizeof(expirySpec), "%s:%lld", tool, (long long)expiryTime);
+            ret = v_secure_system("/usr/bin/rdm -s \"%s\" >> /rdklogs/logs/rdm_status.log 2>&1 &", expirySpec);
+        }
+
+        if (ret != 0) {
+            CcspTraceWarning(("[%s] Failed to schedule TTL cleanup for %s. Returned error code '%d'\n", __FUNCTION__, tool, ret));
+        } else {
+            CcspTraceWarning(("[%s] Scheduled TTL cleanup for %s\n", __FUNCTION__, tool));
+        }
     }
 
     CcspTraceWarning(("[%s] Exiting..\n", __FUNCTION__ ));
@@ -15064,7 +15065,7 @@ WiFiInterworking_GetParamBoolValue
 	    ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
 	}
 	else
-	    *pBool = FALSE;
+	    *pBool = TRUE;
 	return TRUE;
     }
 
@@ -15255,7 +15256,7 @@ WiFiPasspoint_GetParamBoolValue
 	    ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
 	}
 	else
-	    *pBool = FALSE;
+	    *pBool = TRUE;
 	return TRUE;
     }
 
@@ -15313,7 +15314,7 @@ WiFiPasspoint_SetParamBoolValue
 			((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
  		}
 		else
-			interworking = FALSE;
+			interworking = TRUE;
 
 		if(interworking == FALSE) {
  			CcspTraceError(("Passpoint cannot be enabled when interworking is disabled.\n"));
@@ -22447,10 +22448,22 @@ UPnPRefactor_SetParamBoolValue
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 #if defined(_ONESTACK_PRODUCT_REQ_)
+/*
+ * Only True Static IP is checked here. Other TSIP-family features
+ * (OneToOneNAT, Firewall TrueStaticIpEnable, Static Routing) are all
+ * dependent on True Static IP being active - they are functionally
+ * inert without it. A single TSIP check is therefore considered sufficient.
+ */
 static BOOL IsMAPTConflictingFeaturesEnabled(void)
 {
-    // TODO: Add check to see if any conflicting feature of MAP-T 
-    //       like Static Routing, 1-1 NAT, etc are enabled
+    PCOSA_DATAMODEL_TSIP pTSIP = (PCOSA_DATAMODEL_TSIP)g_pCosaBEManager->hTSIP;
+    if (pTSIP && pTSIP->TSIPCfg.Enabled)
+    {
+        CcspTraceInfo(("%s: MAP-T enable rejected, True Static IP is active\n", __FUNCTION__));
+        return TRUE;
+    }
+
+    CcspTraceInfo(("%s: No conflicting features found, MAP-T enable allowed\n", __FUNCTION__));
     return FALSE;
 }
 #endif
@@ -23052,7 +23065,7 @@ HwHealthTestPTREnable_SetParamBoolValue
                    ERR_CHK(rc);
                    return FALSE;
                 }
-                CcspTraceInfo(("\nExecuting command: %s\n", cmd));
+                CcspTraceInfo(("Executing command: %s\n", cmd));
                 v_secure_system("/usr/bin/hwselftest_cronjobscheduler.sh true &");
             }
             else
@@ -23208,12 +23221,12 @@ HwHealthTestPTRFrequency_SetParamUlongValue
             //Read the PTR enable param
             if (IsBoolSame(hInsContext, "enable", true, HwHealthTestPTREnable_GetParamBoolValue))
             {
-                CcspTraceInfo(("\n\nExecuting the command: /usr/bin/hwselftest_cronjobscheduler.sh true frequencyUpdate"));
+                CcspTraceInfo(("Executing the command: /usr/bin/hwselftest_cronjobscheduler.sh true frequencyUpdate\n"));
                 v_secure_system("/usr/bin/hwselftest_cronjobscheduler.sh true frequencyUpdate");
             }
             else
             {
-                CcspTraceInfo(("\n\nExecuting the command: /usr/bin/hwselftest_cronjobscheduler.sh false"));
+                CcspTraceInfo(("Executing the command: /usr/bin/hwselftest_cronjobscheduler.sh false\n"));
                 v_secure_system("/usr/bin/hwselftest_cronjobscheduler.sh false" );
             }
             return TRUE;
@@ -25614,5 +25627,459 @@ LatencyMeasureTcpSetupIPv6_SetParamBoolValue
 
     return FALSE;
 
+}
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.MEMSWAP.
+
+    *  MEMSWAP_GetParamBoolValue
+    *  MEMSWAP_SetParamBoolValue
+    *  MEMSWAP_GetParamUlongValue
+    *  MEMSWAP_SetParamUlongValue
+    *  Tunables_GetParamUlongValue
+    *  Tunables_SetParamUlongValue
+
+***********************************************************************/
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MEMSWAP_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MEMSWAP_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char value[8] = {0};
+        if(syscfg_get(NULL, "MemorySwapEnable", value, sizeof(value)) == 0)
+        {
+            *pBool = (strcmp(value, "true") == 0) ? TRUE : FALSE;
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapEnable\n", __FUNCTION__));
+            return FALSE;
+        }
+    }
+
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        MEMSWAP_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MEMSWAP_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    if (IsBoolSame(hInsContext, ParamName, bValue, MEMSWAP_GetParamBoolValue))
+    {
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if (syscfg_set_commit(NULL, "MemorySwapEnable", bValue ? "true" : "false") != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_commit failed for MemorySwapEnable\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        MEMSWAP_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      puLong
+            );
+
+    description:
+
+        This function is called to retrieve ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      puLong
+                The buffer of returned ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MEMSWAP_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "DiskSize") == 0)
+    {
+        char value[8] = {0};
+        if(syscfg_get(NULL, "MemorySwapDiskSizeMB", value, sizeof(value)) == 0)
+        {
+            *puLong = atol(value);
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapDiskSizeMB\n", __FUNCTION__));
+            return FALSE;
+        }
+    } else if (strcmp(ParamName, "StatsInterval") == 0)
+    {
+        char value[8] = {0};
+        if(syscfg_get(NULL, "MemorySwapStatsIntervalMinutes", value, sizeof(value)) == 0)
+        {
+            *puLong = atol(value);
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapStatsIntervalMinutes\n", __FUNCTION__));
+            return FALSE;
+        }
+    }
+    return FALSE;
+}
+
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        MEMSWAP_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue
+                The updated ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+MEMSWAP_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (IsUlongSame(hInsContext, ParamName, uValue, MEMSWAP_GetParamUlongValue))
+    {
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "DiskSize") == 0)
+    {
+        if (uValue < 50 || uValue > 1024 ) {
+            CcspTraceWarning(("DiskSize value should be between 50MB and 1GB\n"));
+            return FALSE;
+        }
+
+        if (syscfg_set_u_commit(NULL, "MemorySwapDiskSizeMB", uValue) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_u_commit failed for MemorySwapDiskSizeMB\n", __FUNCTION__));
+            return FALSE;
+        }
+
+        return TRUE;
+    } else if (strcmp(ParamName, "StatsInterval") == 0) {
+        if (uValue < 10 || uValue > 120) {
+            CcspTraceWarning(("StatsInterval value should be between 10 minutes and 2 hours\n"));
+            return FALSE;
+        }
+
+        // To prevent irregular intervals at the top of the hour, we only allow values that divide
+        // evenly into 1 hour (10, 12, 15, 20, 30) or represent clean hour blocks (60, 120).
+        switch (uValue) {
+            case 10:
+            case 12:
+            case 15:
+            case 20:
+            case 30:
+            case 60:
+            case 120:
+                break;
+            default:
+                CcspTraceWarning(("StatsInterval value should divide evenly into 60 or be a clean hour block up to 2 hours\n"));
+                return FALSE; // Invalid (e.g. 25, 45, 122, etc)
+        }
+
+        if (syscfg_set_u_commit(NULL, "MemorySwapStatsIntervalMinutes", uValue) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_u_commit failed for MemorySwapStatsIntervalMinutes\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Tunables_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      puLong
+            );
+
+    description:
+
+        This function is called to retrieve ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      puLong
+                The buffer of returned ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+Tunables_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Swappiness") == 0)
+    {
+        char value[8] = {0};
+        if(syscfg_get(NULL, "MemorySwapTunablesSwappiness", value, sizeof(value)) == 0)
+        {
+            *puLong = atol(value);
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapTunablesSwappiness\n", __FUNCTION__));
+            return FALSE;
+        }
+    } else if (strcmp(ParamName, "WatermarkScaleFactor") == 0)
+    {
+        char value[8] = {0};
+        if(syscfg_get(NULL, "MemorySwapTunablesWatermarkScaleFactor", value, sizeof(value)) == 0)
+        {
+            *puLong = atol(value);
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapTunablesWatermarkScaleFactor\n", __FUNCTION__));
+            return FALSE;
+        }
+    } else if (strcmp(ParamName, "PageCluster") == 0)
+    {
+        char value[8] = {0};
+        if(syscfg_get(NULL, "MemorySwapTunablesPageCluster", value, sizeof(value)) == 0)
+        {
+            *puLong = atol(value);
+            return TRUE;
+        }
+        else
+        {
+            CcspTraceError(("%s: syscfg_get failed for MemorySwapTunablesPageCluster\n", __FUNCTION__));
+            return FALSE;
+        }
+    }
+    return FALSE;
+}
+
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Tunables_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue
+                The updated ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+Tunables_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (IsUlongSame(hInsContext, ParamName, uValue, Tunables_GetParamUlongValue))
+    {
+        return TRUE;
+    }
+
+    if (strcmp(ParamName, "Swappiness") == 0)
+    {
+        if (uValue > 200) {
+            CcspTraceWarning(("Swappiness value should be between 0 and 200\n"));
+            return FALSE;
+        }
+        if (syscfg_set_u_commit(NULL, "MemorySwapTunablesSwappiness", uValue) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_u_commit failed for MemorySwapTunablesSwappiness\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    } else if (strcmp(ParamName, "WatermarkScaleFactor") == 0)
+    {
+        if (uValue < 10 || uValue > 200) {
+            CcspTraceWarning(("WatermarkScaleFactor value should be between 10 and 200\n"));
+            return FALSE;
+        }
+        if (syscfg_set_u_commit(NULL, "MemorySwapTunablesWatermarkScaleFactor", uValue) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_u_commit failed for MemorySwapTunablesWatermarkScaleFactor\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    } else if (strcmp(ParamName, "PageCluster") == 0)
+    {
+        if (uValue > 3) {
+            CcspTraceWarning(("PageCluster value should be between 0 and 3\n"));
+            return FALSE;
+        }
+        if (syscfg_set_u_commit(NULL, "MemorySwapTunablesPageCluster", uValue) != 0)
+        {
+            CcspTraceError(("%s: syscfg_set_u_commit failed for MemorySwapTunablesPageCluster\n", __FUNCTION__));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
 }
 

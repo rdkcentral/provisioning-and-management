@@ -239,7 +239,8 @@ static inline int _month2i(char *m)
 
 static inline int date2i(char *date)
 {
-    char mon[3];
+    /* CID 745860 fix - Out of bounds write issue - changed array size to 4 to hold '\0' */
+    char mon[4];
     int day,h,m,s;
     int value = 0;
 

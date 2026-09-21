@@ -74,6 +74,10 @@
 #include "dml_tr181_custom_cfg.h"
 #include <syscfg/syscfg.h>
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+#include <rdkb_feature_mode_gate.h>
+#endif
+
 #if     CFG_USE_CCSP_SYSLOG
     #include <ccsp_syslog.h>
 #endif
@@ -103,7 +107,11 @@ void* ResetFailedAttepmts(void* arg)
 		lockoutTime-- ;
         }
 		
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+  #if defined(_ONESTACK_PRODUCT_REQ_)
+  if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+  #endif
+  {
 	if (strcmp(pEntry->Username, "cusadmin") == 0)
 	{
 
@@ -112,6 +120,7 @@ void* ResetFailedAttepmts(void* arg)
 			CcspTraceInfo(("syscfg_set failed\n"));
 		} 
 	}
+  }
 #endif /* _COSA_FOR_BCI_ */
 
       pEntry->NumOfFailedAttempts = 0;
@@ -785,7 +794,11 @@ User_GetParamStringValue
                }
                return 0;
             }
-#if defined(_COSA_FOR_BCI_)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+  #if defined(_ONESTACK_PRODUCT_REQ_)
+  if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+  #endif
+  {
             if (strcmp(pUser->Username, "cusadmin") == 0)
             {
                rc = strcpy_s(pValue,*pUlSize, pUser->HashedPassword);
@@ -796,6 +809,7 @@ User_GetParamStringValue
                }
                return 0;
             }
+  }
 #endif
             rc = strcpy_s(pValue,*pUlSize, pUser->Password);
             if(rc != EOK)
@@ -963,6 +977,10 @@ User_SetParamIntValue
 
 	if (strcmp(ParamName, "X_RDKCENTRAL-COM_LoginCounts") == 0)
 	{
+#if defined(_ONESTACK_PRODUCT_REQ_)
+            if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+#endif
+            {
 		if (strcmp(pUser->Username, "cusadmin") == 0)
 		{
 			char buf[16]={0};
@@ -986,8 +1004,8 @@ User_SetParamIntValue
 
 			return TRUE;
 		}
-	}
-		
+	    }
+        }
     return FALSE;
 }
 
@@ -1049,7 +1067,11 @@ User_SetParamUlongValue
     	char buf[10];
  	int MaxFailureAttempts = 0;
 	pUser->NumOfFailedAttempts = uValue;
-	#if defined(_COSA_FOR_BCI_)
+	#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+        #if defined(_ONESTACK_PRODUCT_REQ_)
+        if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+        #endif
+        {
 		if (strcmp(pUser->Username, "cusadmin") == 0)
 		{
 			errno_t rc = -1;
@@ -1069,6 +1091,7 @@ User_SetParamUlongValue
 					pUser->NumOfFailedAttempts = uValue;
 			}
 		}
+	}
 	#else
 		pUser->NumOfFailedAttempts = uValue;
 	#endif
@@ -1270,8 +1293,14 @@ User_SetParamStringValue
                     return FALSE;
                 }
 	}
-#if defined(_COSA_FOR_BCI_)
-        else if (strcmp(pUser->Username, "cusadmin") == 0)
+#if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
+#if defined(_ONESTACK_PRODUCT_REQ_)
+     else if (isFeatureSupportedInCurrentMode(FEATURE_CUSADMIN_ENABLE))
+     {
+	if (strcmp(pUser->Username, "cusadmin") == 0)
+#else
+	else if (strcmp(pUser->Username, "cusadmin") == 0)
+#endif
         {
 		if(isvalid_pwd(pString)){
                     user_hashandsavepwd(NULL,pString,pUser);
@@ -1285,6 +1314,9 @@ User_SetParamStringValue
                     return FALSE;
                 }
         }
+#if defined(_ONESTACK_PRODUCT_REQ_)
+ }
+#endif
 #endif
 	else
 	{

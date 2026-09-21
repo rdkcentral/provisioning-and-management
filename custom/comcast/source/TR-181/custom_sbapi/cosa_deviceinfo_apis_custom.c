@@ -177,6 +177,11 @@ CosaDmlDiGetCMMacAddress
         s_get_interface_mac("eth0", pValue, 18);
         *pulSize = AnscSizeOfString(pValue);
         return ANSC_STATUS_SUCCESS;
+#elif PON_GATEWAY
+    platform_hal_GetBaseMacAddress(pValue);
+    *pulSize = AnscSizeOfString(pValue);
+    CcspTraceInfo(("=====> %s:%d: platform_hal_GetBaseMacAddress returned MAC = %s ===> \n", __func__, __LINE__, pValue));
+    return ANSC_STATUS_SUCCESS;
 #else
 	return Local_CosaDmlGetParamValueByPathName("Device.X_CISCO_COM_CableModem.MACAddress", pValue, pulSize);
 #endif
@@ -209,7 +214,7 @@ CosaDmlDiGetRouterMacAddress
     )
 {
     UNREFERENCED_PARAMETER(hContext);
-#ifdef FEATURE_RDKB_XDSL_PPP_MANAGER
+#if defined(FEATURE_RDKB_XDSL_PPP_MANAGER) || defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
     char wanPhyName[32] = {0};
     char out_value[32] = {0};
 
@@ -333,7 +338,7 @@ CosaDmlDiGetRouterIPv6Address
     }
 #elif defined(_HUB4_PRODUCT_REQ_)
 	CosaUtilGetIpv6AddrInfo("brlan0", &p_v6addr, &v6addr_num);
-#elif defined(_WNXL11BWL_PRODUCT_REQ_)
+#elif defined(_WNXL11BWL_PRODUCT_REQ_) || defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
         char wan_interface[32] = {0};
         commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
         CosaUtilGetIpv6AddrInfo(wan_interface, &p_v6addr, &v6addr_num);
@@ -342,38 +347,12 @@ CosaDmlDiGetRouterIPv6Address
 #endif
     for(i = 0; i < v6addr_num; i++ )
     {
-#if defined(_RDKB_GLOBAL_PRODUCT_REQ_)
-        if ( p_v6addr[i].scope == IPV6_ADDR_SCOPE_GLOBAL ) 
-        {
-            if ( TRUE == IsLANIPv6GUASupported )
-            {
-                if ( (strncmp(p_v6addr[i].v6addr, "fd", 2) != 0) && (strncmp(p_v6addr[i].v6addr, "fc", 2) != 0) )
-                {
-                    l_iIpV6AddrLen = strlen(p_v6addr[i].v6addr);
-                    strncpy(pValue, p_v6addr[i].v6addr, l_iIpV6AddrLen);
-                    pValue[l_iIpV6AddrLen] = '\0';
-                }
-            }
-            else
-            {
-                l_iIpV6AddrLen = strlen(p_v6addr[i].v6addr);
-                strncpy(pValue, p_v6addr[i].v6addr, l_iIpV6AddrLen);
-                pValue[l_iIpV6AddrLen] = '\0';
-            }
-
-        }
-#else
-#if defined(_HUB4_PRODUCT_REQ_)
-        if((p_v6addr[i].scope == IPV6_ADDR_SCOPE_GLOBAL) && (strncmp(p_v6addr[i].v6addr, "fd", 2) != 0) && (strncmp(p_v6addr[i].v6addr, "fc", 2) != 0))
-#else
         if(p_v6addr[i].scope == IPV6_ADDR_SCOPE_GLOBAL)
-#endif
         {
 			l_iIpV6AddrLen = strlen(p_v6addr[i].v6addr);
 			strncpy(pValue, p_v6addr[i].v6addr, l_iIpV6AddrLen);
 			pValue[l_iIpV6AddrLen] = '\0';
         }
-#endif /** _RDKB_GLOBAL_PRODUCT_REQ_ */
     }
 	if(p_v6addr)
         free(p_v6addr);

@@ -976,3 +976,196 @@ Time_Rollback
     return 0;
 }
 
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.Time.Chrony.
+
+    *  Chrony_GetParamBoolValue
+    *  Chrony_SetParamBoolValue
+    *  Chrony_GetParamStringValue
+    *  Chrony_SetParamStringValue
+
+***********************************************************************/
+
+BOOL
+Chrony_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        CosaDmlTimeGetChronyEnable(pBool);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+BOOL
+Chrony_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        if (CosaDmlTimeSetChronyEnable(bValue) != ANSC_STATUS_SUCCESS)
+        {
+            CcspTraceError(("Chrony.Enable: CosaDmlTimeSetChronyEnable(%d) failed\n", bValue));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+ULONG
+Chrony_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Makestep") == 0)
+    {
+        CosaDmlTimeGetMakestep(pValue, *pUlSize);
+        return 0;
+    }
+    return -1;
+}
+
+BOOL
+Chrony_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Makestep") == 0)
+    {
+        if (CosaDmlTimeSetMakestep(pString) != ANSC_STATUS_SUCCESS)
+        {
+            CcspTraceError(("Chrony.Makestep: CosaDmlTimeSetMakestep('%s') failed\n", pString));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.Time.Chrony.NTPServer.{i}.
+
+    *  NTPServer_GetEntryCount
+    *  NTPServer_GetEntry
+    *  NTPServer_IsUpdated
+    *  NTPServer_Synchronize
+    *  NTPServer_GetParamStringValue
+    *  NTPServer_SetParamStringValue
+
+***********************************************************************/
+
+/* Static instance context array — stores instance number (1-based) */
+static ULONG g_NTPServerInsContext[5] = {1, 2, 3, 4, 5};
+
+ULONG
+NTPServer_GetEntryCount
+    (
+        ANSC_HANDLE                 hInsContext
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    return 5;
+}
+
+ANSC_HANDLE
+NTPServer_GetEntry
+    (
+        ANSC_HANDLE                 hInsContext,
+        ULONG                       nIndex,
+        ULONG*                      pInsNumber
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (nIndex >= 5)
+        return NULL;
+    *pInsNumber = nIndex + 1;
+    return (ANSC_HANDLE)&g_NTPServerInsContext[nIndex];
+}
+
+BOOL
+NTPServer_IsUpdated
+    (
+        ANSC_HANDLE                 hInsContext
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    return TRUE;
+}
+
+ULONG
+NTPServer_Synchronize
+    (
+        ANSC_HANDLE                 hInsContext
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    return 0;
+}
+
+ULONG
+NTPServer_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    ULONG instanceNum = *((ULONG *)hInsContext);
+    if (strcmp(ParamName, "Settings") == 0)
+    {
+        CosaDmlTimeGetChronyServerSettings((int)instanceNum, pValue, *pUlSize);
+        return 0;
+    }
+    return -1;
+}
+
+BOOL
+NTPServer_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    ULONG instanceNum = *((ULONG *)hInsContext);
+    if (strcmp(ParamName, "Settings") == 0)
+    {
+        if (CosaDmlTimeSetChronyServerSettings((int)instanceNum, pString) != ANSC_STATUS_SUCCESS)
+        {
+            CcspTraceError(("NTPServer.%lu.Settings: validation failed for '%s'\n",
+                            instanceNum, pString));
+            return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+

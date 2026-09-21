@@ -2023,7 +2023,7 @@ static int CosaDmlDhcpv6sRestartOnLanStarted(void *arg)
     }
 #endif
 
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
     {
         g_dhcpv6_server_prefix_ready = TRUE; // To start dibbler server while lan-statues value is 'started'
@@ -2080,10 +2080,10 @@ CosaDmlDhcpv6Init
 
     if (!Utopia_Init(&utctx))
         return ANSC_STATUS_FAILURE;
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */
     {
         /* Dibbler-init is called to set the pre-configuration for dibbler */
         CcspTraceInfo(("%s dibbler-init.sh Called \n", __func__));
@@ -2220,10 +2220,10 @@ CosaDmlDhcpv6Init
     /*register callback function to restart dibbler-server at right time*/
     CcspTraceWarning(("%s -- %d register lan-status to event dispatcher \n", __FUNCTION__, __LINE__));
     EvtDispterRgstCallbackForEvent("lan-status", CosaDmlDhcpv6sRestartOnLanStarted, NULL);
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
     {
         CcspTraceWarning(("%s -- %d register dibblerServer-restart to event dispatcher \n", __FUNCTION__, __LINE__));
         EvtDispterRgstCallbackForEvent("dibblerServer-restart", CosaDmlDhcpv6sRestartOnLanStarted, NULL);
@@ -3643,7 +3643,7 @@ static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger)
 }
 
 /*SKYH4-3227 : variable to check if process is started already*/
-#if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     BOOL  g_dhcpv6_server_started = FALSE;
 #endif
 
@@ -3660,10 +3660,10 @@ static int _dibbler_server_operation(char * arg)
     if (!strncmp(arg, "stop", 4))
     {
         /*stop the process only if it is started*/
-        #if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
-        #if defined (_SCER11BEL_PRODUCT_REQ_)
+        #if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+        #if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
             if( TRUE == IsThisCurrentPartnerID("sky-") )
-        #endif /** _SCER11BEL_PRODUCT_REQ_ */
+        #endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
             {
                 if ( !g_dhcpv6_server_started )
                 goto EXIT;   
@@ -3720,10 +3720,10 @@ static int _dibbler_server_operation(char * arg)
             CcspTraceInfo(("%s:%d start dibbler %d\n",__FUNCTION__, __LINE__,g_dhcpv6_server));
             //fprintf(stderr, "%s -- %d start %d\n", __FUNCTION__, __LINE__, g_dhcpv6_server);
 
-            #if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
-            #if defined (_SCER11BEL_PRODUCT_REQ_)
+            #if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+            #if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                 if( TRUE == IsThisCurrentPartnerID("sky-") )
-            #endif /** _SCER11BEL_PRODUCT_REQ_ */
+            #endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_  */
                 {
                     g_dhcpv6_server_started = TRUE;
                 }
@@ -4567,12 +4567,62 @@ void poolValueFill(FILE *fp, const char* prefixValue, const char* PrefixRangeBeg
 {
 	int resStart = 0;
     int resStop = 0;
+    char adjustedPrefixRangeBegin[64] = {0};
     CcspTraceDebug(("DEBUG LOG : Inside poolValueFill"));
 
-    size_t len_prefix_begin = strlen((const char *)PrefixRangeBegin) + 1;
+    /*
+     * RFC 7084 WAA-7 / RFC 9096: When the WAN interface does not receive a global IPv6 address
+     * via SLAAC or DHCPv6, the WAN Manager may derive one from the delegated prefix (IAPD).
+     * If that address falls within the DHCPv6 server pool, exclude it so LAN clients are never
+     * offered the WAN-side address, avoiding duplicate address assignment.
+     */
+    strncpy(adjustedPrefixRangeBegin, PrefixRangeBegin, sizeof(adjustedPrefixRangeBegin) - 1);
+
+    char wan6Addr[128] = {0};
+    commonSyseventGet("wan6_ipaddr", wan6Addr, sizeof(wan6Addr));
+    if (wan6Addr[0] != '\0')
+    {
+        /* Strip /prefix_len (e.g. "/128") from wan6_ipaddr if present */
+        char *slash = strchr(wan6Addr, '/');
+        if (slash)
+            *slash = '\0';
+
+        /* Build the first pool address: prefixValue + PrefixRangeBegin */
+        char firstPoolAddr[128] = {0};
+        snprintf(firstPoolAddr, sizeof(firstPoolAddr), "%s%s", prefixValue, PrefixRangeBegin);
+
+        /* Compare using inet_pton to normalize both addresses to binary form.
+         * Simple string comparison fails because PrefixRangeBegin can be ":0:0:0:0001"
+         * while wan6_ipaddr may be in compressed notation (e.g. "2001:db8::1"). */
+        struct in6_addr wanBin, poolBin;
+        if (inet_pton(AF_INET6, wan6Addr, &wanBin) == 1 &&
+            inet_pton(AF_INET6, firstPoolAddr, &poolBin) == 1 &&
+            memcmp(&wanBin, &poolBin, sizeof(struct in6_addr)) == 0)
+        {
+            /* Increment the last group of PrefixRangeBegin to exclude the WAN address.
+             * Find the last ':' and parse the trailing host value. */
+            char tempBegin[64] = {0};
+            strncpy(tempBegin, PrefixRangeBegin, sizeof(tempBegin) - 1);
+            char *lastColon = strrchr(tempBegin, ':');
+            if (lastColon != NULL)
+            {
+                unsigned long hostPart = strtoul(lastColon + 1, NULL, 16);
+                hostPart++;
+                /* Rebuild adjustedPrefixRangeBegin with the incremented host part */
+                size_t prefixPartLen = (size_t)(lastColon - tempBegin + 1); /* includes the ':' */
+                snprintf(adjustedPrefixRangeBegin, sizeof(adjustedPrefixRangeBegin),
+                         "%.*s%04lx", (int)prefixPartLen, tempBegin, hostPart);
+                CcspTraceInfo(("poolValueFill: WAN address %s matches first pool address %s, "
+                               "advancing PrefixRangeBegin to %s\n",
+                               wan6Addr, firstPoolAddr, adjustedPrefixRangeBegin));
+            }
+        }
+    }
+
+    size_t len_prefix_begin = strlen(adjustedPrefixRangeBegin) + 1;
     char* prefix_begin = (char *) malloc(len_prefix_begin);
     if(prefix_begin != NULL){
-        strncpy(prefix_begin,(const char*) PrefixRangeBegin, len_prefix_begin);
+        strncpy(prefix_begin, adjustedPrefixRangeBegin, len_prefix_begin);
         resStart = processConcatIP(prefixValue, prefix_begin);
     }
     else{
@@ -4590,7 +4640,7 @@ void poolValueFill(FILE *fp, const char* prefixValue, const char* PrefixRangeBeg
 
     if(resStart == 1 && resStop == 1){
         CcspTraceDebug(("Valid IPv6 Address for RangeBegin and RangeEnd\n"));
-        int erVal = fprintf(fp, "       pool %s%s - %s%s\n", prefixValue, PrefixRangeBegin, prefixValue, PrefixRangeEnd );
+        int erVal = fprintf(fp, "       pool %s%s - %s%s\n", prefixValue, adjustedPrefixRangeBegin, prefixValue, PrefixRangeEnd );
         if(erVal < 0){
             CcspTraceInfo(("PoolValueFill : Unable to write to server file"));
         }
@@ -7073,10 +7123,10 @@ CosaDmlDhcpv6sSetType
         /* We need enable server */
         CcspTraceDebug(("%s,%d: Calling CosaDmlDHCPv6sTriggerRestart(FALSE)...\n", __FUNCTION__, __LINE__));
         CosaDmlDHCPv6sTriggerRestart(FALSE);
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /* _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
         {
             v_secure_system("sysevent set zebra-restart");
         }
@@ -8622,10 +8672,10 @@ int dhcpv6_assign_global_ip(char * prefix, char * intfName, char * ipAddr)
         return 1;
     }
 
-#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
-#endif /* _SCER11BEL_PRODUCT_REQ_ */
+#endif /* _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */	    
     {
         if(strncmp(intfName, COSA_DML_DHCPV6_SERVER_IFNAME, strlen(intfName)) == 0)
         {
@@ -8758,7 +8808,7 @@ void CosaDmlDhcpv6sRebootServer()
 
     fd = open(DHCPV6S_SERVER_PID_FILE, O_RDONLY);
 /* dibbler-server process start fix for HUB4 and ADA */
-#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     FILE *fp_bin = NULL;
     char binbuff[64] = {0};
     fp_bin = v_secure_popen("r","ps|grep %s|grep -v grep", SERVER_BIN);
@@ -8777,10 +8827,10 @@ void CosaDmlDhcpv6sRebootServer()
         char out[128];
 
 /* dibbler-server process start fix for HUB4 and ADA */
-#if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_HUB4_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
     if( TRUE == IsThisCurrentPartnerID("sky-") )
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */ 
         {
             if(fd >= 0)
             close(fd);   
@@ -11056,7 +11106,7 @@ dhcpv6c_dbg_thrd(void * in)
                             if(ret != 0) {
                                 CcspTraceInfo(("Assign global ip error \n"));
                             }
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                                 if( TRUE == IsThisCurrentPartnerID("sky-") )
                                 {
                                     CcspTraceInfo(("%s Going to set [%s] address on brlan0 interface \n", __FUNCTION__, globalIP));
@@ -11107,10 +11157,10 @@ dhcpv6c_dbg_thrd(void * in)
                         }
 #endif
 #else
-#if defined(_HUB4_PRODUCT_REQ_)  || defined (_SCER11BEL_PRODUCT_REQ_)
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined(_HUB4_PRODUCT_REQ_)  || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                 if( TRUE == IsThisCurrentPartnerID("sky-") )
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */
                 {
                     commonSyseventGet(SYSEVENT_FIELD_IPV6_PREFIXVLTIME,
                                  hub4_valid_lft, sizeof(hub4_valid_lft));
@@ -11165,7 +11215,7 @@ dhcpv6c_dbg_thrd(void * in)
                         /* we need save this for zebra to send RA
                            ipv6_prefix           // xx:xx::/yy
                          */
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                         if( TRUE == IsThisCurrentPartnerID("sky-") )
                         {
                             v_secure_system("sysevent set zebra-restart ");
@@ -11180,14 +11230,14 @@ dhcpv6c_dbg_thrd(void * in)
 #else
                         v_secure_system("sysevent set zebra-restart ");
 #endif
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */
                         g_dhcpv6_server_prefix_ready = TRUE;
 
 #if defined (_COSA_BCM_ARM_) || defined(_COSA_QCA_ARM_)
 #ifndef _SKY_HUB_COMMON_PRODUCT_REQ_
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                         if( FALSE == IsThisCurrentPartnerID("sky-") )
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ **/
                         {
                             CcspTraceDebug(("%s,%d: Calling CosaDmlDHCPv6sTriggerRestart(FALSE)...\n", __FUNCTION__, __LINE__));
                             CosaDmlDHCPv6sTriggerRestart(FALSE);
@@ -11198,9 +11248,9 @@ dhcpv6c_dbg_thrd(void * in)
                         /*We need get a global ip addres */
 #if defined(_COSA_BCM_ARM_) || defined(INTEL_PUMA7) || defined(_COSA_QCA_ARM_)
 #ifndef _HUB4_PRODUCT_REQ_
-#if defined (_SCER11BEL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
                         if( FALSE == IsThisCurrentPartnerID("sky-") )
-#endif /** _SCER11BEL_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_  || _XER2_PRODUCT_REQ_ */
                         {
                             /*this is for tchxb6*/
                             CcspTraceWarning((" %s dhcpv6_assign_global_ip to brlan0 \n", __FUNCTION__));
@@ -11271,7 +11321,7 @@ dhcpv6c_dbg_thrd(void * in)
                             CcspTraceWarning(("%s,%d: setting lan-restart\n", __FUNCTION__,__LINE__));
                             commonSyseventSet("lan-restart", "1");
 
-#if defined (_SKY_HUB_COMMON_PRODUCT_REQ_) || defined(INTEL_PUMA7) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#if defined (_SKY_HUB_COMMON_PRODUCT_REQ_) || defined(INTEL_PUMA7) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined(_XER2_PRODUCT_REQ_)
                             CcspTraceDebug(("%s,%d: Calling CosaDmlDHCPv6sTriggerRestart(FALSE)...\n", __FUNCTION__, __LINE__));
                             CosaDmlDHCPv6sTriggerRestart(FALSE);
 #endif /* _SKY_HUB_COMMON_PRODUCT_REQ_ and INTEL_PUMA7 */
@@ -11590,7 +11640,7 @@ void Switch_ipv6_mode(char *ifname, int length)
         char hotspot_wan_ifname[32] = {0};
         getMeshWanIfName(mesh_wan_ifname,sizeof(mesh_wan_ifname));
         getHotSpotWanIfName(hotspot_wan_ifname,sizeof(hotspot_wan_ifname));
-	CcspTraceWarning((" %s :MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__,ifname, hotspot_wan_ifname));
+	    CcspTraceWarning((" %s :MESH WAN IFNAME is (%s), WAN MANAGER IFNAME is (%s)\n", __FUNCTION__,ifname, hotspot_wan_ifname));
         if((strncmp(ifname, mesh_wan_ifname,length ) == 0) || (strncmp(ifname, hotspot_wan_ifname,length ) == 0))
 #else
         char default_wan_ifname[64];
@@ -11600,7 +11650,7 @@ void Switch_ipv6_mode(char *ifname, int length)
 #endif
         {
 #ifdef MONITOR_IPV6_NETLINK
-	    pthread_t MonitorIpv6_tid;
+            pthread_t MonitorIpv6_tid;
             char *hotspotIfname_copy = strdup(hotspot_wan_ifname); // pass to thread
 
             if (pthread_create(&MonitorIpv6_tid, NULL, monitor_ipv6_assignments, (void *)hotspotIfname_copy) != 0) {
@@ -11610,10 +11660,17 @@ void Switch_ipv6_mode(char *ifname, int length)
                 pthread_detach(MonitorIpv6_tid); // thread will run independently
             }
 #endif
-
             SwitchToULAIpv6(); //Secondary Wan
             CcspTraceWarning(("%s: Switched to ULA IPv6\n", __FUNCTION__));
 #if defined(WAN_MANAGER_UNIFICATION_ENABLED)
+	        char tmpBuf[32] ={0};
+	        /* Update RemoteWAN IPv6 routing for a secondary WAN interface transition. */
+	        commonSyseventGet("remotewan_routeset", tmpBuf, sizeof(tmpBuf));
+	        if (strcmp(tmpBuf,"true") == 0 )
+	        {
+		        delRemoteWanIpv6Route();
+		        CcspTraceInfo(("%s-%d : Deleted RemoteWAN Default Route \n",__FUNCTION__, __LINE__));
+	        }
             addRemoteWanIpv6Route();
 #endif
         }

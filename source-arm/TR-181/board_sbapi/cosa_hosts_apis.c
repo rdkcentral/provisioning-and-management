@@ -882,6 +882,8 @@ CosaDmlHostsGetHosts
     if (!hosts)
         return ANSC_STATUS_FAILURE;
 
+    /* CID 340106 - String not null terminated - Fix is added in lan-manager-lite
+    as the API lm_get_all_hosts is from lmlite code lm_api.c */
     if(LM_RET_SUCCESS == lm_get_all_hosts(hosts))
     {
         *pulCount = hosts->count;

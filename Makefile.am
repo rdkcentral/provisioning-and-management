@@ -35,7 +35,12 @@ libtr181_la_DEPENDENCIES = \
 
 libtr181_la_LIBADD = $(libtr181_la_DEPENDENCIES)
 
-libtr181_la_LDFLAGS = -lsecure_wrapper -lwebconfig_framework -lhal_moca -lapi_dhcpv4c -lhal_msomgmt -lhal_platform -lhal_ethsw -llmapi -lccsp_common -lcm_mgnt -lutapi -lutctx -llibparodus -lcurl
+libtr181_la_LDFLAGS = -lsecure_wrapper -lwebconfig_framework -lhal_moca -lapi_dhcpv4c -lhal_msomgmt -lhal_platform -lhal_ethsw -llmapi -lccsp_common -lcm_mgnt -lutapi -lutctx -llibparodus -lcurl -ltelemetry_msgsender
+
+if ONESTACK_PRODUCT_REQ
+libtr181_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir)
+libtr181_la_LIBADD += -ldevicemode -lrdkb_feature_mode_gate
+endif
 
 #libtr181_la_LDFLAGS += -Wl,--no-undefined -Wl,--no-allow-shlib-undefined
 endif
