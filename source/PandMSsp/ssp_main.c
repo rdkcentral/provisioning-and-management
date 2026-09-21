@@ -610,6 +610,11 @@ if(id != 0)
         daemonize();
     }
 
+    if (freopen("/tmp/pandm_stderr.log", "a", stderr) == NULL)
+    {
+        CcspTraceWarning(("Failed to redirect stderr to /tmp/pandm_stderr.log\n"));
+    }
+
     /*This is used for ccsp recovery manager */
     fd = fopen("/var/tmp/CcspPandMSsp.pid", "w+");
     if ( !fd )
