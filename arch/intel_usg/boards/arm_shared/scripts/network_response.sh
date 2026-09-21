@@ -22,7 +22,7 @@
 # Query the response code of google service. If we get 204, then that means
 # we are not in DNS redirection mode.
 # Eg Command: curl -w '%{http_code}\n' http://clients3.google.com/generate_204 --connect-timeout 10 -m 10
-set -x
+
 source /lib/rdk/t2Shared_api.sh
 source /etc/waninfo.sh
 
@@ -53,8 +53,7 @@ v4Count=0
 v6Count=0
 
 export PATH=$PATH:/fss/gw
-exec >>/tmp/pandm_network_response.log 2>&1
-echo "$(date '+%Y-%m-%d %H:%M:%S') pid=$$ network_response.sh args=$*"
+source /etc/utopia/service.d/log_capture_path.sh
 ATOM_RPC_IP=`cat /etc/device.properties | grep ATOM_ARPING_IP | cut -f 2 -d"="`
 BOX_TYPE=`cat /etc/device.properties | grep BOX_TYPE | cut -f 2 -d"="`
 MODEL_NUM=`cat /etc/device.properties | grep MODEL_NUM  | cut -f2 -d=`
