@@ -157,7 +157,3 @@ endif
 if CPU_FREQ_SUPPORT
 libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lcpufreq
 endif
-
-if CPU_FREQ_SUPPORT
-libCcspPandM_middle_layer_src_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir) -lcpufreq
-endif
