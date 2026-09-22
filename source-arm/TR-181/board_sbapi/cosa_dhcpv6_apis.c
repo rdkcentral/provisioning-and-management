@@ -7140,8 +7140,10 @@ CosaDmlDhcpv6sSetType
      * to the configured poll range.
      */
     pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_type");
-    v_secure_system("gw_lan_refresh");
-    pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_type");
+    {
+        int refreshStatus = v_secure_system("gw_lan_refresh >> /tmp/pandm_gw_lan_refresh.log 2>&1");
+        pandm_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_dhcpv6_type_ok" : "after_gw_lan_refresh_from_dhcpv6_type_failed");
+    }
 
     if ( g_dhcpv6_server && bApply )
     {
@@ -7599,8 +7601,10 @@ CosaDmlDhcpv6sSetPoolCfg
              ( 0 != strcmp( (const char*)pCfg->PrefixRangeEnd, (const char*)sDhcpv6ServerPool[Index].Cfg.PrefixRangeEnd ) ) )
         {
             pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_pool_update_existing");
-            v_secure_system("gw_lan_refresh");
-            pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_pool_update_existing");
+            {
+                int refreshStatus = v_secure_system("gw_lan_refresh >> /tmp/pandm_gw_lan_refresh.log 2>&1");
+                pandm_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_dhcpv6_pool_update_existing_ok" : "after_gw_lan_refresh_from_dhcpv6_pool_update_existing_failed");
+            }
         }
 //#endif
 
@@ -7626,8 +7630,10 @@ CosaDmlDhcpv6sSetPoolCfg
              ( 0 != strcmp((const char*)pCfg->PrefixRangeEnd, (const char*)sDhcpv6ServerPool[DHCPV6S_POOL_NUM -1].Cfg.PrefixRangeEnd ) ) )
         {
             pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_pool_update_new");
-            v_secure_system("gw_lan_refresh");
-            pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_pool_update_new");
+            {
+                int refreshStatus = v_secure_system("gw_lan_refresh >> /tmp/pandm_gw_lan_refresh.log 2>&1");
+                pandm_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_dhcpv6_pool_update_new_ok" : "after_gw_lan_refresh_from_dhcpv6_pool_update_new_failed");
+            }
         }
 //#endif
 
@@ -8910,8 +8916,10 @@ void CosaDmlDhcpv6sRebootServer()
         g_dhcpv6s_refresh_count = 0;
         CcspTraceWarning(("%s: DBG calling  gw_lan_refresh\n", __func__));
         pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_refresh_count");
-        v_secure_system("gw_lan_refresh");
-        pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_refresh_count");
+        {
+            int refreshStatus = v_secure_system("gw_lan_refresh >> /tmp/pandm_gw_lan_refresh.log 2>&1");
+            pandm_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_dhcpv6_refresh_count_ok" : "after_gw_lan_refresh_from_dhcpv6_refresh_count_failed");
+        }
     }
 
     return;

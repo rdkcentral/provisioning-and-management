@@ -604,8 +604,10 @@ CosaDmlLanManagementSetCfg
         system("killall zebra; sysevent set zebra-restart");
     }
     pandm_lan_refresh_log("before_gw_lan_refresh_from_lan_management");
-    system("gw_lan_refresh");
-    pandm_lan_refresh_log("after_gw_lan_refresh_from_lan_management");
+    {
+        int refreshStatus = system("gw_lan_refresh >> /tmp/pandm_gw_lan_refresh.log 2>&1");
+        pandm_lan_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_lan_management_ok" : "after_gw_lan_refresh_from_lan_management_failed");
+    }
 
     return ANSC_STATUS_SUCCESS;
 }
