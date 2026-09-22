@@ -1157,6 +1157,16 @@ CosaDmlDiSetAndProcessDhcpServDetectionFlag
    );
 
 /**
+* @brief Check whether the device is a prod-hardened build.
+*
+* Reads BUILD_TYPE from /etc/device.properties.
+*
+* @return TRUE if BUILD_TYPE is "prod", FALSE otherwise.
+*
+*/
+BOOL isProdHardened(void);
+
+/**
 * @brief Trigger XOps reverse SSH connection.
 *
 * This function initiates a reverse SSH connection for XOps remote support operations.
