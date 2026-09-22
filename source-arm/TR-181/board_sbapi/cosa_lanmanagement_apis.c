@@ -65,11 +65,33 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include "cosa_lanmanagement_apis.h"
 #include "syscfg/syscfg.h"
 #include "utapi/utapi.h"
 #include "utapi/utapi_util.h"
+
+static void pandm_lan_refresh_log(const char *stage)
+{
+    FILE *logFile = fopen("/tmp/pandm_stderr.log", "a");
+    time_t currentTime;
+    struct tm localTime;
+    char timestamp[32];
+
+    if (logFile == NULL)
+    {
+        return;
+    }
+
+    currentTime = time(NULL);
+    localtime_r(&currentTime, &localTime);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
+    fprintf(logFile, "%s pid=%ld LAN_STAGE=%s\n", timestamp, (long)getpid(), stage);
+    fclose(logFile);
+}
 #include "ccsp_psm_helper.h"
 #if defined(_HUB4_PRODUCT_REQ_) || defined(_RDKB_GLOBAL_PRODUCT_REQ_)
 #include "platform_hal.h"
@@ -581,7 +603,9 @@ CosaDmlLanManagementSetCfg
     {
         system("killall zebra; sysevent set zebra-restart");
     }
+    pandm_lan_refresh_log("before_gw_lan_refresh_from_lan_management");
     system("gw_lan_refresh");
+    pandm_lan_refresh_log("after_gw_lan_refresh_from_lan_management");
 
     return ANSC_STATUS_SUCCESS;
 }

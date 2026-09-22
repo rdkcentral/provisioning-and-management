@@ -76,8 +76,30 @@
 #include "dhcpsnooper.h"
 #include "safec_lib_common.h"
 #include <syscfg/syscfg.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 
 #define GRETEST
+
+static void pandm_hotspot_log(const char *stage, const char *interfaces)
+{
+    FILE *logFile = fopen("/tmp/pandm_stderr.log", "a");
+    time_t currentTime;
+    struct tm localTime;
+    char timestamp[32];
+
+    if (logFile == NULL)
+    {
+        return;
+    }
+
+    currentTime = time(NULL);
+    localtime_r(&currentTime, &localTime);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
+    fprintf(logFile, "%s pid=%ld HOTSPOT_STAGE=%s interfaces=%s\n", timestamp, (long)getpid(), stage, interfaces != NULL ? interfaces : "<null>");
+    fclose(logFile);
+}
 
 #if defined(GRETEST)
 
@@ -299,6 +321,7 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 //     }*/
     
     //snprintf(paramname, sizeof(paramname), 
+    pandm_hotspot_log("enter_hotspot_update_circuit_ids", NULL);
     CcspTraceInfo(("entered%s\n","hotspot_update_circuit_ids"));
     if (pthread_mutex_trylock(&circuitid_lock) != 0) {
      CcspTraceInfo(("%s is already running, skip duplicate update\n", __FUNCTION__));
@@ -319,6 +342,7 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 	strncpy(localinterfaces,LOCALINTERFACES_PRE_SECURE_SSID,sizeof(localinterfaces));
     }
     CcspTraceInfo(("localinterfaces %s\n", localinterfaces));
+    pandm_hotspot_log("resolved_hotspot_localinterfaces", localinterfaces);
     
     curInt = strtok_r(localinterfaces, ",", &save);
 

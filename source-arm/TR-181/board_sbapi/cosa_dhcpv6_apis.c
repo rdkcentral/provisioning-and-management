@@ -79,6 +79,9 @@
 #include <ccsp_psm_helper.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 #ifdef _ONESTACK_PRODUCT_REQ_
 #include <rdkb_feature_mode_gate.h>
 #endif
@@ -88,6 +91,25 @@
 
 extern void* g_pDslhDmlAgent;
 extern ANSC_HANDLE bus_handle;
+
+static void pandm_refresh_log(const char *stage)
+{
+    FILE *logFile = fopen("/tmp/pandm_stderr.log", "a");
+    time_t currentTime;
+    struct tm localTime;
+    char timestamp[32];
+
+    if (logFile == NULL)
+    {
+        return;
+    }
+
+    currentTime = time(NULL);
+    localtime_r(&currentTime, &localTime);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
+    fprintf(logFile, "%s pid=%ld DHCPV6_STAGE=%s\n", timestamp, (long)getpid(), stage);
+    fclose(logFile);
+}
 extern char g_Subsystem[32];
 
 extern int executeCmd(char *cmd);
@@ -3603,6 +3625,7 @@ CosaDmlDhcpv6cGetReceivedOptionCfg
 
 static int CosaDmlDHCPv6sTriggerRestart(BOOL OnlyTrigger)
 {
+    pandm_refresh_log(OnlyTrigger ? "dhcpv6_restart_trigger_only" : "dhcpv6_restart");
     
     DHCPVS_DEBUG_PRINT
     #if (defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && ! defined(DHCPV6_PREFIX_FIX) ) || defined (_ONESTACK_PRODUCT_REQ_)
@@ -7116,7 +7139,9 @@ CosaDmlDhcpv6sSetType
      * Added gw_lan_refresh to effect the stateful address to the clients according
      * to the configured poll range.
      */
+    pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_type");
     v_secure_system("gw_lan_refresh");
+    pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_type");
 
     if ( g_dhcpv6_server && bApply )
     {
@@ -7573,7 +7598,9 @@ CosaDmlDhcpv6sSetPoolCfg
         if ( ( 0 != strcmp( (const char*)pCfg->PrefixRangeBegin, (const char*)sDhcpv6ServerPool[Index].Cfg.PrefixRangeBegin ) ) || \
              ( 0 != strcmp( (const char*)pCfg->PrefixRangeEnd, (const char*)sDhcpv6ServerPool[Index].Cfg.PrefixRangeEnd ) ) )
         {
+            pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_pool_update_existing");
             v_secure_system("gw_lan_refresh");
+            pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_pool_update_existing");
         }
 //#endif
 
@@ -7598,7 +7625,9 @@ CosaDmlDhcpv6sSetPoolCfg
         if ( ( 0 != strcmp((const char*)pCfg->PrefixRangeBegin, (const char*)sDhcpv6ServerPool[DHCPV6S_POOL_NUM -1].Cfg.PrefixRangeBegin)) ||
              ( 0 != strcmp((const char*)pCfg->PrefixRangeEnd, (const char*)sDhcpv6ServerPool[DHCPV6S_POOL_NUM -1].Cfg.PrefixRangeEnd ) ) )
         {
+            pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_pool_update_new");
             v_secure_system("gw_lan_refresh");
+            pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_pool_update_new");
         }
 //#endif
 
@@ -8880,7 +8909,9 @@ void CosaDmlDhcpv6sRebootServer()
     {
         g_dhcpv6s_refresh_count = 0;
         CcspTraceWarning(("%s: DBG calling  gw_lan_refresh\n", __func__));
+        pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_refresh_count");
         v_secure_system("gw_lan_refresh");
+        pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_refresh_count");
     }
 
     return;

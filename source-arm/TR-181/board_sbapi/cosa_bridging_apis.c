@@ -63,6 +63,9 @@
 #include "cosa_bridging_apis.h"
 #include "safec_lib_common.h"
 #include <errno.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 
 #if defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
 #include "cosa_bridging_apis_ext.h"
@@ -699,6 +702,19 @@ CosaDmlBrgInit
 {
     UNREFERENCED_PARAMETER(hDml);
     UNREFERENCED_PARAMETER(phContext);
+    {
+        FILE *logFile = fopen("/tmp/pandm_stderr.log", "a");
+        time_t currentTime = time(NULL);
+        struct tm localTime;
+        char timestamp[32];
+        if (logFile != NULL)
+        {
+            localtime_r(&currentTime, &localTime);
+            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
+            fprintf(logFile, "%s pid=%ld BRIDGE_STAGE=CosaDmlBrgInit_enter\n", timestamp, (long)getpid());
+            fclose(logFile);
+        }
+    }
     print_time("CosaDmlBrgInit -- in");
 #if defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
     int retPsmGet1 = CCSP_SUCCESS;
@@ -856,6 +872,19 @@ CosaDmlBrgInit
     gInit = 1;
     CosaDmlPrintHSVlanPsmValue( (char*)__FUNCTION__ , __LINE__ );
     print_time("CosaDmlBrgInit -- OUT");
+    {
+        FILE *logFile = fopen("/tmp/pandm_stderr.log", "a");
+        time_t currentTime = time(NULL);
+        struct tm localTime;
+        char timestamp[32];
+        if (logFile != NULL)
+        {
+            localtime_r(&currentTime, &localTime);
+            strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
+            fprintf(logFile, "%s pid=%ld BRIDGE_STAGE=CosaDmlBrgInit_exit\n", timestamp, (long)getpid());
+            fclose(logFile);
+        }
+    }
     return ANSC_STATUS_SUCCESS;
 #endif
 }
