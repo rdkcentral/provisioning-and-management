@@ -41,6 +41,8 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <time.h>
 
 #include <syscfg/syscfg.h>
 #include "ssp_global.h"
@@ -81,6 +83,25 @@
 
 //  Existing pam_initialized is removed from systemd/selfheal . Created this file to determine if component is coming after crashed to sync values from server.
 #define PAM_INIT_FILE_BOOTUP "/tmp/pam_initialized_bootup"
+
+static void pandm_boot_log(const char *stage)
+{
+    FILE *logFile = fopen("/tmp/pandm_stderr.log", "a");
+    time_t currentTime;
+    struct tm localTime;
+    char timestamp[32];
+
+    if (logFile == NULL)
+    {
+        return;
+    }
+
+    currentTime = time(NULL);
+    localtime_r(&currentTime, &localTime);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
+    fprintf(logFile, "%s pid=%ld BOOT_STAGE=%s\n", timestamp, (long)getpid(), stage);
+    fclose(logFile);
+}
 
 PDSLH_CPE_CONTROLLER_OBJECT     pDslhCpeController      = NULL;
 PCOMPONENT_COMMON_DM            g_pComponent_Common_Dm  = NULL;
@@ -614,6 +635,7 @@ if(id != 0)
     {
         CcspTraceWarning(("Failed to redirect stderr to /tmp/pandm_stderr.log\n"));
     }
+    pandm_boot_log("stderr_redirected");
 
     /*This is used for ccsp recovery manager */
     fd = fopen("/var/tmp/CcspPandMSsp.pid", "w+");
@@ -634,6 +656,7 @@ if(id != 0)
         fputs(cmd, fd);
         fclose(fd);
     }
+    pandm_boot_log("pid_file_written");
 #ifdef INCLUDE_BREAKPAD
     breakpad_ExceptionHandler();
     signal(SIGUSR1, sig_handler);
@@ -671,7 +694,9 @@ if(id != 0)
 #endif
 #endif
 
-   t2_init("CcspPandM");
+    pandm_boot_log("before_t2_init");
+    t2_init("CcspPandM");
+    pandm_boot_log("after_t2_init");
    ret = cmd_dispatch('e');
    if(ret != 0)
    {
@@ -689,17 +714,21 @@ if(id != 0)
 #else
     subSys = NULL;      /* use default sub-system */
 #endif
+    pandm_boot_log("before_Cdm_Init");
     err = Cdm_Init(bus_handle, subSys, NULL, NULL, pComponentName);
     if (err != CCSP_SUCCESS)
     {
         fprintf(stderr, "Cdm_Init: %s\n", Cdm_StrError(err));
         exit(1);
     }
+    pandm_boot_log("after_Cdm_Init");
 
     check_component_crash(PAM_INIT_FILE_BOOTUP);
 
     CcspTraceInfo(("PAM_DBG:----------------------touch /tmp/pam_initialized-------------------\n"));
+    pandm_boot_log("before_pam_initialized_command");
     v_secure_system("touch " PAM_INIT_FILE " ; touch " PAM_INIT_FILE_BOOTUP);
+    pandm_boot_log("after_pam_initialized_command");
 
 #ifdef FEATURE_COGNITIVE_WIFIMOTION
     char value[6] = { 0 };
@@ -707,9 +736,11 @@ if(id != 0)
     {
         if (!strncmp(value, "true", 4))
         {
+            pandm_boot_log("before_wifimotion_start");
             /* Start WFM in background to avoid blocking PandM init.
              * WFM has After=onewifi.service and will start once onewifi is active.*/
             v_secure_system("systemctl start systemd-cognitive_wifimotion.service &");
+            pandm_boot_log("after_wifimotion_start");
         }
     }
 #endif
@@ -720,12 +751,17 @@ if(id != 0)
     {
          if (strncmp(buf, "false", 5) == 0)
              /*check this file during Tr069 service start*/
+         {
+             pandm_boot_log("before_disable_tr069_command");
              v_secure_system("touch /tmp/disableTr069");
+             pandm_boot_log("after_disable_tr069_command");
+         }
     }
 #endif
 	
     if ( bRunAsDaemon )
     {
+         pandm_boot_log("before_parent_semaphore_release");
        if (bDebugSlowChildProcess)
        {
            CcspTraceInfo(("PAM_DBG:-----------------waiting for 600 seconds to trigger parent to child this process-----------------\n"));
@@ -748,6 +784,7 @@ if(id != 0)
        {
            CcspTraceInfo(("PAM_DEBUG:---------------sem_close returns error %d - %s, continuing-------------\n", errno, strerror(errno)));
        }
+       pandm_boot_log("after_parent_semaphore_release");
     }
 
 #if defined(_COSA_INTEL_USG_ARM_) 
@@ -788,7 +825,9 @@ if(id != 0)
         if (urlPtr != NULL && urlPtr[0] != 0 && strlen(urlPtr) > 0) {
             CcspTraceInfo(("Reported an ATOM IP of %s \n", urlPtr));
             CcspTraceInfo(("PAM_DBG:-----------------touch pam_initialized in atom ----------------\n"));
+            pandm_boot_log("before_atom_pam_initialized_command");
             v_secure_system("/usr/bin/rpcclient %s '/bin/touch /tmp/pam_initialized'&", urlPtr);
+            pandm_boot_log("after_atom_pam_initialized_command");
             CcspTraceInfo(("PAM_DBG:-----------------created pam_initialized in atom ----------------\n"));
         }
     }
@@ -796,6 +835,7 @@ if(id != 0)
 
     printf("Entering P&M loop\n");
     CcspTraceWarning(("RDKB_SYSTEM_BOOT_UP_LOG : Entering P&M loop... \n"));
+    pandm_boot_log("entering_pandm_loop");
 
     if ( bRunAsDaemon )
     {
