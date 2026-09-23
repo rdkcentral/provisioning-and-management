@@ -1840,17 +1840,17 @@
                                 <syntax>bool</syntax>
                                 <writable>true</writable>
                             </parameter>
+                            <parameter>
+                                <name>EDNSPacketSize</name>
+                                <type>int</type>
+                                <syntax>int</syntax>
+                                <writable>true</writable>
+                            </parameter>
 <?ifdef _XB6_PRODUCT_REQ_ & !BCI?>
                             <parameter>
                                 <name>BLERadio</name>
                                 <type>boolean</type>
                                 <syntax>bool</syntax>
-                                <writable>true</writable>
-                            </parameter>
-                            <parameter>
-                                <name>EDNSPacketSize</name>
-                                <type>int</type>
-                                <syntax>int</syntax>
                                 <writable>true</writable>
                             </parameter>
 <?endif?>
