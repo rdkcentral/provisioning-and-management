@@ -5966,20 +5966,20 @@ Stats5_GetParamUlongValue
         return FALSE;
     }
    
-    CcspTraceInfo("########## Prashant....1: pIfFull->Info.Status: %d\n", pIfFull->Info.Status);
+    CcspTraceInfo(("########## Prashant....1: pIfFull->Info.Status: %d\n", pIfFull->Info.Status));
     returnStatus = CosaDmlIpIfGetStats(pMyObject->hSbContext, pIfFull->Cfg.InstanceNumber, pIPStats);
 
     if( returnStatus != ANSC_STATUS_SUCCESS )
     {
-        CcspTraceInfo("########## Prashant....2\n");
+        CcspTraceInfo(("########## Prashant....2\n"));
         goto FAILED;
     }
 
-    CcspTraceInfo("########## Prashant....3\n");
+    CcspTraceInfo(("########## Prashant....3\n"));
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "BytesSent") == 0)
     {
-        CcspTraceInfo("########## Prashant....4\n");
+        CcspTraceInfo(("########## Prashant....4\n"));
         /* collect value */
         *puLong = pIPStats->BytesSent;
         goto SUCCESS;
@@ -6084,12 +6084,12 @@ Stats5_GetParamUlongValue
     }
 
 SUCCESS:
-    CcspTraceInfo("########## Prashant....5\n");
+    CcspTraceInfo(("########## Prashant....5\n"));
     AnscFreeMemory(pIPStats);
     return TRUE;
 
 FAILED:
-    CcspTraceInfo("########## Prashant....6\n");
+    CcspTraceInfo(("########## Prashant....6\n"));
     AnscFreeMemory(pIPStats);
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
