@@ -5960,6 +5960,7 @@ Stats5_GetParamUlongValue
     PCOSA_DML_IP_STATS              pIPStats      = (PCOSA_DML_IP_STATS)AnscAllocateMemory(sizeof(COSA_DML_IP_STATS));
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_IP_IF_FULL2           pIfFull = (PCOSA_DML_IP_IF_FULL2)pCosaContext->hContext;
+    uint32_t                        ipAddr        = 0;
     struct in_addr                  tempAddr      = {0};
     char                            addrStr[INET_ADDRSTRLEN] = {0};
 
@@ -5968,23 +5969,30 @@ Stats5_GetParamUlongValue
         return FALSE;
     }
    
-    CcspTraceInfo(("########## Prashant....0: Interface: %s, Status: %d\n", pIfFull->Cfg.Name, pIfFull->Info.Status));
+    CcspTraceInfo(("########## Prashant....0: Interface: %s, Status: %d\n", pIfFull->Info.Name, pIfFull->Info.Status));
     
     /* Pre-check: verify interface is accessible before calling backend */
-    returnStatus = CosaUtilGetIfAddr(pIfFull->Cfg.Name, &tempAddr);
-    if ( inet_ntop(AF_INET, &tempAddr, addrStr, sizeof(addrStr)) == NULL )
+    ipAddr = CosaUtilGetIfAddr(pIfFull->Info.Name);
+    if ( ipAddr == 0 )
     {
         snprintf(addrStr, sizeof(addrStr), "0.0.0.0");
-    }
-    
-    if ( returnStatus != ANSC_STATUS_SUCCESS )
-    {
-        CcspTraceInfo(("########## Prashant....1: FAILED - Interface %s not accessible (IP: %s), skipping stats\n", pIfFull->Cfg.Name, addrStr));
+        CcspTraceInfo(("########## Prashant....1: FAILED - Interface %s not accessible (IP: %s), skipping stats\n", pIfFull->Info.Name, addrStr));
         AnscFreeMemory(pIPStats);
         return FALSE;
     }
     
-    CcspTraceInfo(("########## Prashant....1: SUCCESS - Interface %s accessible (IP: %s), calling backend\n", pIfFull->Cfg.Name, addrStr));
+    /* Convert IP address to string for logging */
+    tempAddr.s_addr = ipAddr;
+    if ( inet_ntoa(tempAddr) == NULL )
+    {
+        snprintf(addrStr, sizeof(addrStr), "0.0.0.0");
+    }
+    else
+    {
+        snprintf(addrStr, sizeof(addrStr), "%s", inet_ntoa(tempAddr));
+    }
+    
+    CcspTraceInfo(("########## Prashant....1.1: SUCCESS - Interface %s accessible (IP: %s), calling backend\n", pIfFull->Info.Name, addrStr));
     returnStatus = CosaDmlIpIfGetStats(pMyObject->hSbContext, pIfFull->Cfg.InstanceNumber, pIPStats);
 
     if( returnStatus != ANSC_STATUS_SUCCESS )
@@ -6107,7 +6115,7 @@ SUCCESS:
     return TRUE;
 
 FAILED:
-    CcspTraceInfo(("########## Prashant....6\n"));
+    CcspTraceInfo(("########## Prashant....6: FAILED - Cannot return stats for interface %s (IP: %s)\n", pIfFull->Info.Name, addrStr));
     AnscFreeMemory(pIPStats);
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
