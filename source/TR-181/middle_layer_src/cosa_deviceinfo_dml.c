@@ -10995,7 +10995,7 @@ Feature_SetParamIntValue
         }
         else
         {
-            if (commonSyseventSet("dhcp_server-restart", NULL) != 0)
+            if (commonSyseventSet("dhcp_server-restart", "") != 0)
             {
                 CcspTraceError(("Failed to set dhcp_server-restart sysevent\n"));
                 return FALSE;
