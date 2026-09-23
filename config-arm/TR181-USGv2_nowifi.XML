@@ -1865,8 +1865,6 @@
                                 <syntax>bool</syntax>
                                 <writable>true</writable>
                             </parameter>
-<?endif?>
-<?ifdef BCI?>
                             <parameter>
                                 <name>EDNSPacketSize</name>
                                 <type>int</type>
