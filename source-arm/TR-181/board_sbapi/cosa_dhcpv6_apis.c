@@ -8917,8 +8917,12 @@ void CosaDmlDhcpv6sRebootServer()
         CcspTraceWarning(("%s: DBG calling  gw_lan_refresh\n", __func__));
         pandm_refresh_log("before_gw_lan_refresh_from_dhcpv6_refresh_count");
         {
+            pandm_refresh_log("dhcpv6_refresh_count_before_v_secure_system");
             int refreshStatus = v_secure_system("gw_lan_refresh >> /tmp/pandm_gw_lan_refresh.log 2>&1");
+            pandm_refresh_log("dhcpv6_refresh_count_after_v_secure_system");
             pandm_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_dhcpv6_refresh_count_ok" : "after_gw_lan_refresh_from_dhcpv6_refresh_count_failed");
+            pandm_refresh_log("dhcpv6_refresh_count_returning_to_callback");
+            pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_refresh_count_handoff");
         }
     }
 

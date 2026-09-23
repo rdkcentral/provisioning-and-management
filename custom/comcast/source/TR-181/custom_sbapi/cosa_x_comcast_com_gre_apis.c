@@ -101,6 +101,22 @@ static void pandm_hotspot_log(const char *stage, const char *interfaces)
     fclose(logFile);
 }
 
+static void pandm_hotspot_trace(const char *stage, const char *detail)
+{
+    char trace[256];
+
+    snprintf(trace, sizeof(trace), "pid=%ld ppid=%ld detail=%s", (long)getpid(), (long)getppid(), detail != NULL ? detail : "<null>");
+    pandm_hotspot_log(stage, trace);
+}
+
+static void pandm_hotspot_trace_status(const char *stage, const char *detail, int status)
+{
+    char trace[256];
+
+    snprintf(trace, sizeof(trace), "pid=%ld ppid=%ld status=%d detail=%s", (long)getpid(), (long)getppid(), status, detail != NULL ? detail : "<null>");
+    pandm_hotspot_log(stage, trace);
+}
+
 #if defined(GRETEST)
 
 #ifdef AnscTraceWarning
@@ -314,6 +330,12 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
     int retry_count =0;
     errno_t rc = -1;
     parameterValStruct_t varStruct;
+    char trace[128];
+
+    localinterfaces[0] = '\0';
+    paramname[0] = '\0';
+    circuitid[0] = '\0';
+    outdata[0] = '\0';
     varStruct.parameterName = paramname;
     varStruct.parameterValue = outdata;
 //     /*if (ppComponents == NULL) {
@@ -322,22 +344,30 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
     
     //snprintf(paramname, sizeof(paramname), 
     pandm_hotspot_log("enter_hotspot_update_circuit_ids", NULL);
+    snprintf(trace, sizeof(trace), "greinst=%d queuestart=%d", greinst, queuestart);
+    pandm_hotspot_trace("hotspot_update_circuit_ids_arguments", trace);
     CcspTraceInfo(("entered%s\n","hotspot_update_circuit_ids"));
     if (pthread_mutex_trylock(&circuitid_lock) != 0) {
+     pandm_hotspot_log("hotspot_update_circuit_ids_mutex_busy", NULL);
      CcspTraceInfo(("%s is already running, skip duplicate update\n", __FUNCTION__));
      return circuitSave;
     }
+    pandm_hotspot_log("hotspot_update_circuit_ids_mutex_acquired", NULL);
     retval=GrePsmGetStr(GRE_PARAM_LOCALIFS, greinst, localinterfaces, sizeof(localinterfaces));
+    pandm_hotspot_trace_status("hotspot_localinterfaces_first_read", localinterfaces, retval);
     while(retval == -1 || strnlen(localinterfaces,sizeof(localinterfaces)) < HOTSPOT_INTERFACE_PRE_SECURE_SSID_LEN)
     {
+            pandm_hotspot_trace("hotspot_localinterfaces_retry", "retrying PSM read");
         	CcspTraceError(("could not fetch proper hotspot interface name from psm\n"));
     		sleep(1);
         	retry_count++;
     		retval=GrePsmGetStr(GRE_PARAM_LOCALIFS, greinst, localinterfaces, sizeof(localinterfaces));
+            pandm_hotspot_trace_status("hotspot_localinterfaces_retry_result", localinterfaces, retval);
                 if(retry_count >=5) break;
     }
     if(retval == -1 || strnlen(localinterfaces,sizeof(localinterfaces)) < HOTSPOT_INTERFACE_PRE_SECURE_SSID_LEN)
     {	
+        pandm_hotspot_trace("hotspot_localinterfaces_fallback", "using default interface list");
         CcspTraceError(("could not fetch hotspot interface name from psm after multiple attempts, setting it\n"));
 	strncpy(localinterfaces,LOCALINTERFACES_PRE_SECURE_SSID,sizeof(localinterfaces));
     }
@@ -349,6 +379,7 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
     CcspTraceInfo(("curInt %s\n", curInt));
     
     while (curInt) {
+        pandm_hotspot_log("hotspot_circuit_interface_begin", curInt);
         circuitSave=0;
         //Trim off the trailing dot if it exists
         size = strlen(curInt);
@@ -357,6 +388,7 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
         testcurInt=strrchr(curInt,'.');
         CcspTraceInfo(("testcurInt is %s\n",testcurInt));       
         inst = atoi(strrchr(curInt,'.')+1);
+		pandm_hotspot_trace("hotspot_circuit_interface_index", curInt);
   
 		memset(outdata,0,sizeof(outdata));
         
@@ -364,10 +396,12 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
             AnscTraceError(("fail to get wan_physical_ifname\n"));
             snprintf(paramname, sizeof(paramname), "erouter0");
         }
+        pandm_hotspot_trace("hotspot_wan_interface_resolved", paramname);
         if (get_if_hwaddr(paramname, circuitid, sizeof(circuitid)) != 0) {
             AnscTraceError(("fail to get HW Addr for %s\n", paramname));
             snprintf(circuitid, sizeof(circuitid), "00:00:00:00:00:00");
         }
+        pandm_hotspot_trace("hotspot_hwaddr_resolved", circuitid);
 
         circuitSave = strlen(circuitid);
         circuitSave += snprintf(circuitid + circuitSave, sizeof(circuitid) - circuitSave, ";");
@@ -382,8 +416,10 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 		memset(outdata,0,sizeof(outdata));
 
         snprintf(paramname, sizeof(paramname),"%s.%s", curInt, "SSID");
+        pandm_hotspot_trace("hotspot_ssid_lookup", paramname);
         size = sizeof(outdata);
         retval = COSAGetParamValueByPathName(bus_handle, &varStruct, &size);
+        pandm_hotspot_trace("hotspot_ssid_lookup_complete", varStruct.parameterValue);
         if ((!(strcmp(varStruct.parameterValue,""))) || ( retval != ANSC_STATUS_SUCCESS)) {
             CcspTraceError(("could not fetch proper SSID name\n"));
             pthread_mutex_unlock(&circuitid_lock);
@@ -404,8 +440,10 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 	    memset(outdata,0,sizeof(outdata));
         
         snprintf(paramname, sizeof(paramname), "Device.WiFi.AccessPoint.%d.Security.ModeEnabled", inst);
+        pandm_hotspot_trace("hotspot_security_lookup", paramname);
         size = sizeof(outdata);
         retval = COSAGetParamValueByPathName(bus_handle, &varStruct, &size);
+        pandm_hotspot_trace("hotspot_security_lookup_complete", varStruct.parameterValue);
         if ( retval != ANSC_STATUS_SUCCESS) {
             CcspTraceError(("could not fetch Security Mode\n"));
             pthread_mutex_unlock(&circuitid_lock);
@@ -418,19 +456,22 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
         }
         
         snprintf(paramname, sizeof(paramname), "snooper-queue%d-circuitID", queuestart);
-        
-        sysevent_set(sysevent_fd, sysevent_token, paramname, circuitid, 0);
+        pandm_hotspot_trace("hotspot_circuitid_before_sysevent", paramname);
+        retval = sysevent_set(sysevent_fd, sysevent_token, paramname, circuitid, 0);
+        pandm_hotspot_trace_status("hotspot_circuitid_after_sysevent", circuitid, retval);
         
         snprintf(paramname, sizeof(paramname), "snooper-ssid%d-index", queuestart++);
         snprintf(outdata, sizeof(outdata), "%d", inst);
-        
-        sysevent_set(sysevent_fd, sysevent_token, paramname, outdata, 0);
+        pandm_hotspot_trace("hotspot_ssid_index_before_sysevent", paramname);
+        retval = sysevent_set(sysevent_fd, sysevent_token, paramname, outdata, 0);
+        pandm_hotspot_trace_status("hotspot_ssid_index_after_sysevent", outdata, retval);
         
         //sysevent set snoopereventforcircuitid_queuestart++ circuitid
         
         curInt = strtok_r(NULL, ",", &save);
     }
     pthread_mutex_unlock(&circuitid_lock);
+    pandm_hotspot_trace("hotspot_update_circuit_ids_complete", "mutex released");
     return queuestart;
     ////get_wifi_param(dm, buf);
     //get local interfaces
@@ -448,24 +489,31 @@ int hotspot_update_circuit_ids(int greinst, int queuestart) {
 #if !defined (_HUB4_PRODUCT_REQ_) || (defined (_HUB4_PRODUCT_REQ_) && !defined(RDK_ONEWIFI)) //_HUB4_PRODUCT_REQ_ is enabled for both HUb4 and HUb6
 static void* circuit_id_init_thread(void* arg) {
     UNREFERENCED_PARAMETER(arg);
+    pandm_hotspot_log("circuit_id_init_thread_start", NULL);
 #if !defined (_WNXL11BWL_PRODUCT_REQ_)
     int ret = -1;
     int counter = 0;
     sleep(INITIAL_CIRCUIT_ID_SLEEP);
+    pandm_hotspot_log("circuit_id_init_thread_after_initial_sleep", NULL);
     while ( (access (WIFI_FILE, F_OK) != 0 ) && (counter < CIRCUIT_ID_TIMEOUT) ) {
         sleep(INITIAL_CIRCUIT_ID_SLEEP);
+        pandm_hotspot_trace("circuit_id_init_thread_waiting_for_wifi", "wifi readiness file absent");
         CcspTraceInfo(("%s : Waiting for WiFi to be initialized...\n", __FUNCTION__));
         counter++;
     }
     if (counter == CIRCUIT_ID_TIMEOUT){
         CcspTraceError(("%s : Waiting for WiFi timed out...\n", __FUNCTION__));
     }
+    pandm_hotspot_trace("circuit_id_init_thread_before_update", "calling hotspot_update_circuit_ids");
     ret = hotspot_update_circuit_ids(1, INITIAL_SNOOPER_QUEUE);
+    pandm_hotspot_trace("circuit_id_init_thread_after_update", "returned from hotspot_update_circuit_ids");
     
     
     while (ret < 0) {
         sleep(POLL_CIRCUIT_ID_SLEEP);
+        pandm_hotspot_trace("circuit_id_init_thread_retry_update", "retrying hotspot_update_circuit_ids");
         ret = hotspot_update_circuit_ids(1, INITIAL_SNOOPER_QUEUE);
+        pandm_hotspot_trace("circuit_id_init_thread_after_retry_update", "returned from hotspot_update_circuit_ids");
     }
 #endif
     return NULL;
@@ -897,7 +945,10 @@ CosaDml_GreIfSetLocalInterfaces(ULONG ins, const char *ifs)
         /* inform the scripts about the changing */
         sscanf(br1, GRE_DM_BR_TEMP, &brIns);
         snprintf(brInsStr, sizeof(brInsStr), "%d", brIns);
-        if (sysevent_set(sysevent_fd, sysevent_token, "hotspot-update_bridges", brInsStr, 0) != 0)
+        pandm_hotspot_log("before_hotspot_update_bridges", brInsStr);
+        int hotspotUpdateStatus = sysevent_set(sysevent_fd, sysevent_token, "hotspot-update_bridges", brInsStr, 0);
+        pandm_hotspot_log(hotspotUpdateStatus == 0 ? "after_hotspot_update_bridges_ok" : "after_hotspot_update_bridges_failed", brInsStr);
+        if (hotspotUpdateStatus != 0)
             AnscTraceError(("Fail to set sysevent: %s to %s\n", "hotspot_bridge-update", brInsStr));
     }
 
@@ -917,7 +968,10 @@ CosaDml_GreIfSetLocalInterfaces(ULONG ins, const char *ifs)
         /* inform the scripts about the changing */
         sscanf(br2, GRE_DM_BR_TEMP, &brIns);
         snprintf(brInsStr, sizeof(brInsStr), "%d", brIns);
-        if (sysevent_set(sysevent_fd, sysevent_token, "hotspot-update_bridges", brInsStr, 0) != 0)
+        pandm_hotspot_log("before_hotspot_update_bridges", brInsStr);
+        int hotspotUpdateStatus = sysevent_set(sysevent_fd, sysevent_token, "hotspot-update_bridges", brInsStr, 0);
+        pandm_hotspot_log(hotspotUpdateStatus == 0 ? "after_hotspot_update_bridges_ok" : "after_hotspot_update_bridges_failed", brInsStr);
+        if (hotspotUpdateStatus != 0)
             AnscTraceError(("Fail to set sysevent: %s to %s\n", "hotspot_bridge-update", brInsStr));
     }
 
