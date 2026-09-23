@@ -5817,12 +5817,84 @@ IPv6Prefix_Rollback
 
     IP.Interface.{i}.Stats.
 
+    *  Stats5_Synchronize
     *  Stats5_GetParamBoolValue
     *  Stats5_GetParamIntValue
     *  Stats5_GetParamUlongValue
     *  Stats5_GetParamStringValue
 
 ***********************************************************************/
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        ULONG
+        Stats5_Synchronize
+            (
+                ANSC_HANDLE                 hInsContext
+            );
+
+    description:
+
+        This function is called to synchronize the Stats object.
+        It checks if the associated interface is accessible before
+        allowing parameter retrieval. If interface is not accessible,
+        it returns an error to prevent unnecessary backend calls and
+        reduce error log spam.
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle (context of the Stats object);
+
+    return:     0 (ANSC_STATUS_SUCCESS) if interface is accessible,
+                non-zero if interface is not accessible or on error.
+
+**********************************************************************/
+ULONG
+Stats5_Synchronize
+    (
+        ANSC_HANDLE                 hInsContext
+    )
+{
+    PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
+    PCOSA_DML_IP_IF_FULL2           pIfFull      = (PCOSA_DML_IP_IF_FULL2)pCosaContext->hContext;
+    uint32_t                        ipAddr       = 0;
+    struct in_addr                  tempAddr     = {0};
+    char                            addrStr[INET_ADDRSTRLEN] = {0};
+
+    if( !pIfFull )
+    {
+        CcspTraceError(("Stats5_Synchronize: Invalid interface context\n"));
+        return 1;  /* Return error to prevent parameter retrieval */
+    }
+
+    /* Check interface accessibility ONCE at synchronize time */
+    ipAddr = CosaUtilGetIfAddr(pIfFull->Info.Name);
+    if ( ipAddr == 0 )
+    {
+        snprintf(addrStr, sizeof(addrStr), "0.0.0.0");
+        CcspTraceWarning(("Stats5_Synchronize: Interface '%s' not accessible (IP: %s) - skipping stats retrieval\n", 
+                         pIfFull->Info.Name, addrStr));
+        return 1;  /* Return error: interface not accessible */
+    }
+
+    /* Convert IP address to string for logging */
+    tempAddr.s_addr = ipAddr;
+    if ( inet_ntoa(tempAddr) == NULL )
+    {
+        snprintf(addrStr, sizeof(addrStr), "0.0.0.0");
+    }
+    else
+    {
+        snprintf(addrStr, sizeof(addrStr), "%s", inet_ntoa(tempAddr));
+    }
+
+    CcspTraceInfo(("Stats5_Synchronize: Interface '%s' accessible (IP: %s) - proceeding with stats retrieval\n", 
+                  pIfFull->Info.Name, addrStr));
+    return 0;  /* Return success: interface is accessible, allow parameter retrieval */
+}
+
 /**********************************************************************  
 
     caller:     owner of this object 

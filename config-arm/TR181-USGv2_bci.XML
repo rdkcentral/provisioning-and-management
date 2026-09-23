@@ -6274,6 +6274,8 @@
 
               <functions>
 
+                <func_Synchronize>Stats5_Synchronize</func_Synchronize>
+
                 <func_GetParamBoolValue>Stats5_GetParamBoolValue</func_GetParamBoolValue>
 
                 <func_GetParamIntValue>Stats5_GetParamIntValue</func_GetParamIntValue>
