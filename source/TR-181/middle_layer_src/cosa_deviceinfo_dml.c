@@ -132,6 +132,7 @@ void Send_Notification_Task(char* delay, char* startTime, char* download_status,
 void set_firmware_download_start_time(char *start_time);
 char* get_firmware_download_start_time();
 void *handleBleRestart(void *arg);
+static BOOL valid_url (char *buff);
 #if (defined _COSA_INTEL_XB3_ARM_)
 BOOL CMRt_Isltn_Enable(BOOL status);
 #endif
@@ -1756,6 +1757,8 @@ BOOL
     /* Required for xPC sync */
     if (strcmp(ParamName, "URL") == 0)
     {
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
+      {
         if (syscfg_set_commit(NULL, "TelemetryEndpointURL", pString) != 0)
         {
             CcspTraceError(("syscfg_set failed\n"));
@@ -1765,6 +1768,11 @@ BOOL
         {
             return TRUE;
         }
+      }
+      else
+      {
+	    return FALSE;
+      }
     }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -9411,6 +9419,8 @@ BOOL
 
     if (strcmp(ParamName, "S3SigningUrl") == 0)
     {
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
+      {
         if (syscfg_set_commit(NULL, "CrashUpload_S3SigningUrl", pString) != 0)
         {
             CcspTraceError(("syscfg_set failed\n"));
@@ -9420,6 +9430,11 @@ BOOL
         {
             return TRUE;
         }
+      }
+      else
+      {
+	    return FALSE;
+      }
     }
 
 /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -17285,13 +17300,17 @@ ReverseSSH_SetParamStringValue
     }
 
     if (strcmp(ParamName, "xOpsReverseSshTrigger") == 0) {
-        setXOpsReverseSshTrigger(pString);
-        return TRUE ;
-
+        /* Propagate rejection (e.g. prod-hardened block) instead of always reporting success */
+        if (setXOpsReverseSshTrigger(pString) != 0)
+        {
+            return TRUE;
+        } else {
+            CcspTraceWarning(("Non shorts connection is not supported in prod device \n"));
+        }
+        return FALSE;
     }
 
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
-
     return FALSE;
 }
 
