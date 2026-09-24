@@ -713,6 +713,14 @@ BOOL is_url(char *buff)
     char *str=NULL;
     int len=_ansc_strlen(buff);
     int count=0;
+    const char *scheme_separator;
+    const char *authority;
+    const char *authority_end;
+    const char *userinfo_end;
+    const char *host;
+    const char *port = NULL;
+    const char *character;
+    unsigned long port_number = 0;
     const char spl[] = "-._~:/?#[]@!$&'()*+,;%=";
     while(buff[i] != '\0')
     {
@@ -724,6 +732,47 @@ BOOL is_url(char *buff)
     }    
     if((strncasecmp(buff,"http://",_ansc_strlen("http://"))!=0) && (strncasecmp(buff,"https://",_ansc_strlen("https://"))!=0))
         return FALSE;
+
+    scheme_separator = strstr(buff, "://");
+    if (NULL == scheme_separator)
+        return FALSE;
+
+    authority = scheme_separator + 3;
+    authority_end = strpbrk(authority, "/?#");
+    if (NULL == authority_end)
+        authority_end = buff + len;
+
+    userinfo_end = memchr(authority, '@', authority_end - authority);
+    host = (NULL != userinfo_end) ? userinfo_end + 1 : authority;
+    if (host == authority_end)
+        return FALSE;
+
+    /* IPv6 addresses are not supported. */
+    if ('[' == host[0])
+        return FALSE;
+
+    port = memchr(host, ':', authority_end - host);
+    if (NULL != port)
+        port++;
+
+    if (NULL != port)
+    {
+        if (port == authority_end || authority_end - port > 5)
+            return FALSE;
+
+        for (character = port; character < authority_end; character++)
+        {
+            if (*character < '0' || *character > '9')
+                return FALSE;
+
+            port_number = (port_number * 10) + (*character - '0');
+            if (port_number > 65535)
+                return FALSE;
+        }
+
+        if (0 == port_number)
+            return FALSE;
+    }
 
     if(buff[len-1] == '.')
         return FALSE;
@@ -781,17 +830,16 @@ PcBlkURL_SetParamStringValue
     if (strcmp(ParamName, "Site") == 0)
     {
         len=_ansc_strlen(strValue);
-        if(len > BUFF_SIZE)
+        if((len > BUFF_SIZE) || (!is_url(strValue)))  
+	{
+	    AnscTraceWarning(("%s -- invalid url = %s\n", __FUNCTION__, strValue));
             return FALSE;
-        if(is_url(strValue) || (pBlkUrl->BlockMethod == BLOCK_METHOD_KEYWORD))
+	}
+        if (pBlkUrl->BlockMethod == BLOCK_METHOD_KEYWORD)
         {
             _ansc_snprintf(pBlkUrl->Site, sizeof(pBlkUrl->Site), "%s", strValue);
             return TRUE;
         }
-	else
-	{
-	     AnscTraceWarning(("%s -- invalid url = %s\n", __FUNCTION__, strValue));
-	}
     }
     if (strcmp(ParamName, "StartTime") == 0)
     {
@@ -886,12 +934,16 @@ PcBlkURL_Validate
         ULONG*                      puLength
     )
 {
-    UNREFERENCED_PARAMETER(hInsContext);
-    UNREFERENCED_PARAMETER(pReturnParamName);
-    UNREFERENCED_PARAMETER(puLength);
-#if defined(CONFIG_CISCO_CCSP_PRODUCT_ARES) || defined(CONFIG_CISCO_CCSP_PRODUCT_XB3)
     PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     COSA_DML_BLOCKEDURL             *pBlkUrl    = (COSA_DML_BLOCKEDURL*)pLinkObj->hContext;
+
+    UNREFERENCED_PARAMETER(pReturnParamName);
+    UNREFERENCED_PARAMETER(puLength);
+
+    /* Site is never set when the URL is rejected, so avoid committing an empty entry. */
+    if ('\0' == pBlkUrl->Site[0])
+        return FALSE;
+#if defined(CONFIG_CISCO_CCSP_PRODUCT_ARES) || defined(CONFIG_CISCO_CCSP_PRODUCT_XB3)
     if(!CosaDmlMngSites_Chktime(pBlkUrl))
         return FALSE;
 #endif
