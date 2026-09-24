@@ -79,9 +79,6 @@
 #include <ccsp_psm_helper.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#include <dirent.h>
-#include <ctype.h>
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -115,150 +112,6 @@ static void pandm_refresh_log(const char *stage)
     fclose(logFile);
 }
 
-static void pandm_process_snapshot(const char *stage)
-{
-    DIR *procDir;
-    struct dirent *entry;
-    FILE *snapshotFile;
-    char path[128];
-    char name[64];
-    char state[32];
-    char parentPid[32];
-    char cmdline[256];
-    FILE *procFile;
-    size_t length;
-    time_t currentTime;
-    struct tm localTime;
-    char timestamp[32];
-
-    snapshotFile = fopen("/tmp/pandm_process_snapshot.log", "a");
-    if (snapshotFile == NULL)
-    {
-        return;
-    }
-
-    currentTime = time(NULL);
-    localtime_r(&currentTime, &localTime);
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
-    fprintf(snapshotFile, "SNAPSHOT_BEGIN timestamp=%s stage=%s monitor_pid=%ld\n", timestamp, stage, (long)getpid());
-    procDir = opendir("/proc");
-    if (procDir == NULL)
-    {
-        fprintf(snapshotFile, "SNAPSHOT_ERROR opendir=/proc errno=%d\n", errno);
-        fclose(snapshotFile);
-        return;
-    }
-
-    while ((entry = readdir(procDir)) != NULL)
-    {
-        const char *processId = entry->d_name;
-        if (!isdigit((unsigned char)processId[0]))
-        {
-            continue;
-        }
-
-        snprintf(path, sizeof(path), "/proc/%s/comm", processId);
-        procFile = fopen(path, "r");
-        if (procFile == NULL)
-        {
-            continue;
-        }
-        if (fgets(name, sizeof(name), procFile) == NULL)
-        {
-            fclose(procFile);
-            continue;
-        }
-        fclose(procFile);
-        name[strcspn(name, "\r\n")] = '\0';
-
-        snprintf(path, sizeof(path), "/proc/%s/cmdline", processId);
-        procFile = fopen(path, "r");
-        cmdline[0] = '\0';
-        if (procFile != NULL)
-        {
-            length = fread(cmdline, 1, sizeof(cmdline) - 1, procFile);
-            fclose(procFile);
-            cmdline[length] = '\0';
-            while (length > 0)
-            {
-                if (cmdline[length - 1] == '\0')
-                {
-                    cmdline[length - 1] = ' ';
-                }
-                length--;
-            }
-        }
-
-        state[0] = '\0';
-        parentPid[0] = '\0';
-        snprintf(path, sizeof(path), "/proc/%s/status", processId);
-        procFile = fopen(path, "r");
-        if (procFile != NULL)
-        {
-            char statusLine[128];
-            while (fgets(statusLine, sizeof(statusLine), procFile) != NULL)
-            {
-                if (strncmp(statusLine, "State:", 6) == 0)
-                {
-                    strncpy(state, statusLine + 6, sizeof(state) - 1);
-                    state[sizeof(state) - 1] = '\0';
-                    state[strcspn(state, "\r\n")] = '\0';
-                }
-                else if (strncmp(statusLine, "PPid:", 5) == 0)
-                {
-                    strncpy(parentPid, statusLine + 5, sizeof(parentPid) - 1);
-                    parentPid[sizeof(parentPid) - 1] = '\0';
-                    parentPid[strcspn(parentPid, "\r\n")] = '\0';
-                }
-            }
-            fclose(procFile);
-        }
-
-        {
-            fprintf(snapshotFile, "PROCESS pid=%s ppid=%s state=%s name=%s cmdline=%s\n", processId, parentPid, state, name, cmdline);
-        }
-    }
-    closedir(procDir);
-    currentTime = time(NULL);
-    localtime_r(&currentTime, &localTime);
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
-    fprintf(snapshotFile, "SNAPSHOT_END timestamp=%s stage=%s\n", timestamp, stage);
-    fclose(snapshotFile);
-}
-
-static void pandm_process_monitor(void)
-{
-    int monitorPid = fork();
-    int interval;
-
-    if (monitorPid < 0)
-    {
-        pandm_refresh_log("process_monitor_fork_failed");
-        return;
-    }
-    if (monitorPid != 0)
-    {
-        char monitorStage[64];
-        snprintf(monitorStage, sizeof(monitorStage), "process_monitor_started_pid_%d", monitorPid);
-        pandm_refresh_log(monitorStage);
-        return;
-    }
-
-    for (interval = 0; interval < 10; interval++)
-    {
-        pandm_process_snapshot(interval == 0 ? "after_gw_lan_refresh" : "post_refresh_poll");
-        sleep(1);
-    }
-    {
-        FILE *snapshotFile = fopen("/tmp/pandm_process_snapshot.log", "a");
-        if (snapshotFile != NULL)
-        {
-            fprintf(snapshotFile, "MONITOR_COMPLETE pid=%ld\n", (long)getpid());
-            fclose(snapshotFile);
-        }
-    }
-    _exit(0);
-}
 extern char g_Subsystem[32];
 
 extern int executeCmd(char *cmd);
@@ -9072,7 +8925,7 @@ void CosaDmlDhcpv6sRebootServer()
             pandm_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_dhcpv6_refresh_count_ok" : "after_gw_lan_refresh_from_dhcpv6_refresh_count_failed");
             pandm_refresh_log("dhcpv6_refresh_count_returning_to_callback");
             pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_refresh_count_handoff");
-            pandm_process_monitor();
+            v_secure_system("/bin/sh /usr/ccsp/pam/pandm_process_snapshot.sh &");
         }
     }
 
