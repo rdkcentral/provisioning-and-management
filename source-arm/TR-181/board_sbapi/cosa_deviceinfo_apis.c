@@ -112,7 +112,7 @@
 #define MAX_TIME_FORMAT     5
 #define WHIX_LOG_INTERVAL_DEFAULT_OLD 3600
 #define WHIX_LOG_INTERVAL_DEFAULT_NEW 900
-#define DB_VER_THRESHOLD 100053
+#define DB_VER_THRESHOLD 100054
 #define MAX_PROCESS_NUMBER 300
 
 static int writeToJson(char *data, char *file);
