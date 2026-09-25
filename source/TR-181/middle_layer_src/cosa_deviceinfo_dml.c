@@ -17313,7 +17313,7 @@ ReverseSSH_SetParamStringValue
             return TRUE;
         } else {
             CcspTraceWarning(("[%s] setXOpsReverseSshTrigger('%s') failed\n", __FUNCTION__, pString));
-	    return FALSE;
+	        return FALSE;
         }
     }
 
