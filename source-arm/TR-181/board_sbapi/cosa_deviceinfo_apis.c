@@ -110,7 +110,9 @@
 #define CUSTOM_DATA_MODEL_ENABLED "custom_data_model_enabled"
 #define SYSTEMD "systemd"
 #define MAX_TIME_FORMAT     5
-
+#define WHIX_LOG_INTERVAL_DEFAULT_OLD 3600
+#define WHIX_LOG_INTERVAL_DEFAULT_NEW 900
+#define DB_VER_THRESHOLD 100054
 #define MAX_PROCESS_NUMBER 300
 
 static int writeToJson(char *data, char *file);
@@ -170,7 +172,7 @@ extern  ANSC_HANDLE             bus_handle;
 #define DMSB_TR181_PSM_WHIX_CliStatList                                    "dmsb.device.deviceinfo.X_RDKCENTRAL-COM_WHIX.CliStatList"
 #define DMSB_TR181_PSM_WHIX_TxRxRateList                              "dmsb.device.deviceinfo.X_RDKCENTRAL-COM_WHIX.TxRxRateList"
 #define DMSB_TR181_PSM_WIFI_TELEMETRY_SNRList                 "dmsb.device.deviceinfo.X_RDKCENTRAL-COM_WIFI_TELEMETRY.SNRList"
-
+#define PSM_RFC_WIFI_ACTIVE_MSMT_ENABLE                       "Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.WifiClient.ActiveMeasurements.Enable"
 
 /* Localhost port range for stunnel client to listen/accept */
 #define MIN_PORT_RANGE 3000
@@ -2382,6 +2384,21 @@ int findLocalPortAvailable()
         }
         return -1;
 }
+
+/* Returns TRUE when device.properties BUILD_TYPE=prod and if device.properties file does not exists */
+/* else FALSE */
+BOOL isProdHardened(void)
+{
+    char buildType[6] = {0};
+
+    if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType) - 1, "BUILD_TYPE") != 0)
+        return TRUE;
+
+    buildType[sizeof(buildType) - 1] = '\0';
+
+    return (strcmp(buildType, "prod") == 0) ? TRUE : FALSE;
+}
+
 int setXOpsReverseSshArgs(char* pString) {
     char tempCopy[512] = { "\0" };
     char* tempStr = NULL;
@@ -2487,6 +2504,7 @@ int setXOpsReverseSshTrigger(char *input) {
     }
 
     trigger = strstr(input, "start");
+
     if (trigger) {
     #ifdef ENABLE_SHORTS
         char *trigger_shorts = NULL;
@@ -2498,15 +2516,22 @@ int setXOpsReverseSshTrigger(char *input) {
                 int ret = v_secure_system("/bin/sh %s %d %s %s %d %s %s %s &",stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin);
                 if (ret != 0) {
                     CcspTraceError(("[%s] Stunnel execution failed with return code %d\n", __FUNCTION__, ret));
+                    return NOK;
                 }
         }
 
         else {
     #endif
-                CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
-                int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
-                if (ret != 0) {
-                    CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+                if (!isProdHardened()) {
+                    CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
+                    int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                    if (ret != 0) {
+                        CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+                        return NOK;
+                    }
+                } else {
+                    CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n", __FUNCTION__));
+                    return NOK;
                 }
     #ifdef ENABLE_SHORTS
         }
@@ -2515,6 +2540,7 @@ int setXOpsReverseSshTrigger(char *input) {
         int ret = v_secure_system(sshCommand " stop ");
         if (ret != 0) {
             CcspTraceError(("[%s] Reverse SSH stop failed with return code %d\n", __FUNCTION__, ret));
+            return NOK;
         }
     }
     return OK;
@@ -2949,6 +2975,31 @@ CosaDmlDiGetSyndicationWifiUIBrandingTable
     return ANSC_STATUS_SUCCESS;
 }
 
+static int read_ovsdb_version_from_file(void)
+{
+    int ovsdb_ver_num = DB_VER_THRESHOLD;
+    FILE *vfp = fopen("/tmp/wifi_db_old_version", "r");
+
+    if (vfp != NULL)
+    {
+        if (fscanf(vfp, "%d", &ovsdb_ver_num) == 1)
+        {
+            CcspTraceWarning(("%s-%d :ovsdb_ver_num=%d\n", __FUNCTION__, __LINE__, ovsdb_ver_num));
+        }
+        else
+        {
+            CcspTraceWarning(("%s-%d :failed to read db version\n", __FUNCTION__, __LINE__));
+        }
+        fclose(vfp);
+    }
+    else
+    {
+        CcspTraceWarning(("%s-%d : wifi_db_old_version not found\n", __FUNCTION__, __LINE__));
+    }
+
+    return ovsdb_ver_num;
+}
+
 ANSC_STATUS
 CosaDmlDiWiFiTelemetryInit
   (
@@ -2982,19 +3033,58 @@ CosaDmlDiWiFiTelemetryInit
         }
     }
 
+
+    /* Read previous firmware DB version from /tmp/wifi_db_old_version written by OneWifi */
+    int ovsdb_ver_num = read_ovsdb_version_from_file();
+
     if (PsmGet(DMSB_TR181_PSM_WHIX_LogInterval, val, sizeof(val)) != 0)
     {
-            PWiFi_Telemetry->LogInterval = 3600;
+            PWiFi_Telemetry->LogInterval = WHIX_LOG_INTERVAL_DEFAULT_NEW;
     }
     else
     {
-        if (val[0] != '\0' )
+        if (val[0] != '\0')
         {
-            PWiFi_Telemetry->LogInterval = atoi(val);
+            int psm_interval = atoi(val);
+            if ((ovsdb_ver_num < DB_VER_THRESHOLD) &&
+                (psm_interval == WHIX_LOG_INTERVAL_DEFAULT_OLD))
+            {
+                PWiFi_Telemetry->LogInterval = WHIX_LOG_INTERVAL_DEFAULT_NEW;
+                if (PSM_Set_Record_Value2( g_MessageBusHandle, g_GetSubsystemPrefix(g_pDslhDmlAgent),
+                                       DMSB_TR181_PSM_WHIX_LogInterval, ccsp_string, "900" ) != CCSP_SUCCESS)
+                {
+                    CcspTraceError(("%s-%d : failed to update PSM for WHIX LogInterval\n", __FUNCTION__, __LINE__));
+                }
+            }
+            else
+            {
+                PWiFi_Telemetry->LogInterval = psm_interval;
+            }
         }
         else
         {
-            PWiFi_Telemetry->LogInterval = 3600;
+            PWiFi_Telemetry->LogInterval = WHIX_LOG_INTERVAL_DEFAULT_NEW;
+            if (PSM_Set_Record_Value2( g_MessageBusHandle, g_GetSubsystemPrefix(g_pDslhDmlAgent),
+                                       DMSB_TR181_PSM_WHIX_LogInterval, ccsp_string, "900" ) != CCSP_SUCCESS)
+            {
+                CcspTraceError(("%s-%d : failed to initialize PSM for WHIX LogInterval\n", __FUNCTION__, __LINE__));
+            }
+        }
+    }
+
+    if (PsmGet(PSM_RFC_WIFI_ACTIVE_MSMT_ENABLE, val, sizeof(val)) != 0)
+    {
+        CcspTraceError(("%s-%d : PSMGet failed for ActiveMsmt\n", __FUNCTION__, __LINE__));
+    }
+    else
+    {
+        if (((ovsdb_ver_num < DB_VER_THRESHOLD) && strcmp(val, "1") != 0))
+        {
+            if (PSM_Set_Record_Value2( g_MessageBusHandle, g_GetSubsystemPrefix(g_pDslhDmlAgent),
+                                       PSM_RFC_WIFI_ACTIVE_MSMT_ENABLE, ccsp_string, "1" ) != CCSP_SUCCESS)
+            {
+                CcspTraceError(("%s-%d : failed to update PSM for Wifi Active Measurements Enable\n", __FUNCTION__, __LINE__));
+            }
         }
     }
 
