@@ -1543,6 +1543,7 @@ CosaDmlIpIfMlanSetCfg
 
             pIpIf->Info.LastChange = AnscGetTickInSeconds();
             CosaUtilGetIfStats(pIpIf->Info.Name, &pIpIf->LastStats);
+            CosaUtilApplyIfByteStats64(pIpIf->Info.Name, &pIpIf->LastStats);
         }
         else if ( !(pCfg->bEnabled) && pIpIf->Cfg.bEnabled )
         {
@@ -1559,6 +1560,7 @@ CosaDmlIpIfMlanSetCfg
 
             pIpIf->Info.LastChange = AnscGetTickInSeconds();
             CosaUtilGetIfStats(pIpIf->Info.Name, &pIpIf->LastStats);
+            CosaUtilApplyIfByteStats64(pIpIf->Info.Name, &pIpIf->LastStats);
         }
 
 
@@ -2829,10 +2831,14 @@ CosaDmlIpIfMlanGetStats
     }
     else
     {
+        COSA_DML_IF_STATS tmpStats = {0};
+
         _ansc_memset(pStats, 0, sizeof(*pStats));
 
-        CosaUtilGetIfStats(pIpIf->Info.Name, (PCOSA_DML_IF_STATS)pStats);
-        
+        CosaUtilGetIfStats(pIpIf->Info.Name, &tmpStats);
+        CosaUtilCopyIfStatsToIpStats(&tmpStats, pStats);
+        CosaUtilApplyIpIfByteStats64(pIpIf->Info.Name, pStats);
+
         pStats->BroadcastPacketsReceived    -= pIpIf->LastStats.BroadcastPacketsReceived;
         pStats->BroadcastPacketsSent        -= pIpIf->LastStats.BroadcastPacketsSent;
         pStats->BytesReceived               -= pIpIf->LastStats.BytesReceived;

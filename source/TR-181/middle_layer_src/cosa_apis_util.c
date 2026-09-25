@@ -92,7 +92,7 @@
 #include <net/if.h>
 #include <sys/types.h>
 #include "ansc_platform.h"
-
+#include "cosa_ip_apis.h"
 //$HL 4/30/2013
 #include "ccsp_psm_helper.h"
 
@@ -1792,6 +1792,122 @@ done:
     return (result == 0) ? TRUE : 0;	/* map result to return value (TRUE for success, 0 for failure) */
 }
 #endif
+
+/*
+ * Device.IP.Interface.*.Stats.BytesSent/BytesReceived need full 64-bit values
+ * (TR-181 StatsCounter64). Do not use strtoul_custom here — that wrap is for
+ * other DMs that remain unsignedInt/uint32 (e.g. PPP RDKSI-13803).
+ */
+int CosaUtilGetIfByteStats64(char * ifname, ULONG64 * pBytesSent, ULONG64 * pBytesReceived)
+{
+    FILE * fp;
+    char buf[1024] = {0};
+    char * p;
+    int i;
+    int ret = 0;
+    char BytesReceived[24] = {0};
+    char BytesSent[24] = {0};
+    char skip1[24], skip2[24], skip3[24];
+
+    if (!ifname || !pBytesSent || !pBytesReceived)
+    {
+        return 0;
+    }
+
+    *pBytesSent = 0;
+    *pBytesReceived = 0;
+
+    fp = fopen("/proc/net/dev", "r");
+    if (!fp)
+    {
+        return 0;
+    }
+
+    i = 0;
+    while (fgets(buf, sizeof(buf), fp))
+    {
+        if (++i <= 2) continue;
+
+        if ((p = strchr(buf, ':')))
+        {
+            if (strstr(buf, ifname))
+            {
+                /* rx bytes, rx pkts, rx errs, rx drop, ... tx bytes ... */
+                if (sscanf(p+1, "%23s %23s %23s %23s %*u %*u %*u %*u %23s",
+                           BytesReceived, skip1, skip2, skip3, BytesSent) == 5)
+                {
+                    *pBytesReceived = (ULONG64)strtoull(BytesReceived, NULL, 10);
+                    *pBytesSent = (ULONG64)strtoull(BytesSent, NULL, 10);
+                    ret = TRUE;
+                }
+                break;
+            }
+        }
+    }
+
+    fclose(fp);
+    return ret;
+}
+
+void CosaUtilApplyIfByteStats64(char * ifname, PCOSA_DML_IF_STATS pStats)
+{
+    ULONG64 bytesSent = 0;
+    ULONG64 bytesReceived = 0;
+
+    if (!ifname || !pStats)
+    {
+        return;
+    }
+
+    if (CosaUtilGetIfByteStats64(ifname, &bytesSent, &bytesReceived))
+    {
+        /* IF_STATS Bytes* are ULONG64 so LastStats keeps full counters on ILP32. */
+        pStats->BytesSent = bytesSent;
+        pStats->BytesReceived = bytesReceived;
+    }
+}
+
+void CosaUtilApplyIpIfByteStats64(char * ifname, PCOSA_DML_IP_STATS pStats)
+{
+    ULONG64 bytesSent = 0;
+    ULONG64 bytesReceived = 0;
+
+    if (!ifname || !pStats)
+    {
+        return;
+    }
+
+    if (CosaUtilGetIfByteStats64(ifname, &bytesSent, &bytesReceived))
+    {
+        pStats->BytesSent = bytesSent;
+        pStats->BytesReceived = bytesReceived;
+    }
+}
+
+void CosaUtilCopyIfStatsToIpStats(PCOSA_DML_IF_STATS pIfStats, PCOSA_DML_IP_STATS pIpStats)
+{
+    if (!pIfStats || !pIpStats)
+    {
+        return;
+    }
+
+    pIpStats->PacketsSent                 = pIfStats->PacketsSent;
+    pIpStats->PacketsReceived             = pIfStats->PacketsReceived;
+    pIpStats->ErrorsSent                  = pIfStats->ErrorsSent;
+    pIpStats->ErrorsReceived              = pIfStats->ErrorsReceived;
+    pIpStats->UnicastPacketsSent          = pIfStats->UnicastPacketsSent;
+    pIpStats->UnicastPacketsReceived      = pIfStats->UnicastPacketsReceived;
+    pIpStats->DiscardPacketsSent          = pIfStats->DiscardPacketsSent;
+    pIpStats->DiscardPacketsReceived      = pIfStats->DiscardPacketsReceived;
+    pIpStats->MulticastPacketsSent        = pIfStats->MulticastPacketsSent;
+    pIpStats->MulticastPacketsReceived    = pIfStats->MulticastPacketsReceived;
+    pIpStats->BroadcastPacketsSent        = pIfStats->BroadcastPacketsSent;
+    pIpStats->BroadcastPacketsReceived    = pIfStats->BroadcastPacketsReceived;
+    pIpStats->UnknownProtoPacketsReceived = pIfStats->UnknownProtoPacketsReceived;
+    pIpStats->BytesSent                   = pIfStats->BytesSent;
+    pIpStats->BytesReceived               = pIfStats->BytesReceived;
+}
+
 
 ULONG NetmaskToNumber(char *netmask)
 {
