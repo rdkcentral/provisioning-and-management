@@ -1521,6 +1521,7 @@ IPv6Prefix_Rollback
     *  Stats5_GetParamBoolValue
     *  Stats5_GetParamIntValue
     *  Stats5_GetParamUlongValue
+    *  Stats5_GetParamUint64Value
     *  Stats5_GetParamStringValue
 
 ***********************************************************************/
@@ -1579,6 +1580,14 @@ Stats5_GetParamUlongValue
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
         ULONG*                      pUlong
+    );
+
+BOOL
+Stats5_GetParamUint64Value
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG64*                    puLong64
     );
 
 /**
