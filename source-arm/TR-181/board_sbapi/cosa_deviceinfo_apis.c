@@ -112,7 +112,7 @@
 #define MAX_TIME_FORMAT     5
 #define WHIX_LOG_INTERVAL_DEFAULT_OLD 3600
 #define WHIX_LOG_INTERVAL_DEFAULT_NEW 900
-#define DB_VER_THRESHOLD 100053
+#define DB_VER_THRESHOLD 100054
 #define MAX_PROCESS_NUMBER 300
 
 static int writeToJson(char *data, char *file);
@@ -2384,6 +2384,21 @@ int findLocalPortAvailable()
         }
         return -1;
 }
+
+/* Returns TRUE when device.properties BUILD_TYPE=prod and if device.properties file does not exists */
+/* else FALSE */
+BOOL isProdHardened(void)
+{
+    char buildType[6] = {0};
+
+    if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType) - 1, "BUILD_TYPE") != 0)
+        return TRUE;
+
+    buildType[sizeof(buildType) - 1] = '\0';
+
+    return (strcmp(buildType, "prod") == 0) ? TRUE : FALSE;
+}
+
 int setXOpsReverseSshArgs(char* pString) {
     char tempCopy[512] = { "\0" };
     char* tempStr = NULL;
@@ -2489,6 +2504,7 @@ int setXOpsReverseSshTrigger(char *input) {
     }
 
     trigger = strstr(input, "start");
+
     if (trigger) {
     #ifdef ENABLE_SHORTS
         char *trigger_shorts = NULL;
@@ -2500,15 +2516,22 @@ int setXOpsReverseSshTrigger(char *input) {
                 int ret = v_secure_system("/bin/sh %s %d %s %s %d %s %s %s &",stunnelCommand,stunnelsshargs.localport,stunnelsshargs.host,stunnelsshargs.hostIp,stunnelsshargs.stunnelport,reverseSSHArgs,shortsHostLogin,nonshortsHostLogin);
                 if (ret != 0) {
                     CcspTraceError(("[%s] Stunnel execution failed with return code %d\n", __FUNCTION__, ret));
+                    return NOK;
                 }
         }
 
         else {
     #endif
-                CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
-                int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
-                if (ret != 0) {
-                    CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+                if (!isProdHardened()) {
+                    CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
+                    int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                    if (ret != 0) {
+                        CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+                        return NOK;
+                    }
+                } else {
+                    CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n", __FUNCTION__));
+                    return NOK;
                 }
     #ifdef ENABLE_SHORTS
         }
@@ -2517,6 +2540,7 @@ int setXOpsReverseSshTrigger(char *input) {
         int ret = v_secure_system(sshCommand " stop ");
         if (ret != 0) {
             CcspTraceError(("[%s] Reverse SSH stop failed with return code %d\n", __FUNCTION__, ret));
+            return NOK;
         }
     }
     return OK;

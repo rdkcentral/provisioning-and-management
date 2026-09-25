@@ -150,6 +150,9 @@ RLog_SetParamStringValue(ANSC_HANDLE hInsContext, char *ParamName, char *sValue)
 
     if (strcmp(ParamName, "Host") == 0)
     {
+        if (strlen(sValue) >= sizeof(pDMRLog->RLog.Host))
+            return FALSE;
+
         snprintf(pDMRLog->RLog.Host, sizeof(pDMRLog->RLog.Host), "%s", sValue);
         return TRUE;
     }
