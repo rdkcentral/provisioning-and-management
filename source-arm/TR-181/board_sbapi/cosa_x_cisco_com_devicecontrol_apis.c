@@ -2037,7 +2037,7 @@ void* restoreAllDBs(void* arg)
 #endif
 #if defined(_ARRIS_XB6_PRODUCT_REQ_)
         #define PEER_INTERFACE_IP "192.168.254.253"
-        v_secure_system("/usr/bin/GetConfigFile /tmp/elxrretyt-lxy.swr stdout |  ssh -i /dev/stdin root@"PEER_INTERFACE_IP" "RM_L2_PATH"");
+        v_secure_system("/usr/bin/GetConfigFile /tmp/interchip stdout |  ssh -i /dev/stdin root@"PEER_INTERFACE_IP" "RM_L2_PATH"");
 #endif
 
 /* BCOMB-2272: call "erase" and flag cleanup */
