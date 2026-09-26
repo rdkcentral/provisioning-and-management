@@ -2088,17 +2088,22 @@ void* restoreAllDBs(void* arg)
 	v_secure_system("rm -rf /nvram/certs");
 	v_secure_system("rm -rf /nvram/dl");
 	v_secure_system("touch /nvram/apparmor_factory_reset");
-        CcspTraceError(("FactoryReset: Executing restore_factory_settings.sh to reset contents"));
-        rc = v_secure_system("/bin/sh -x /etc/restore_factory_settings.sh");
-	if (rc != 0)
-	{
-		CcspTraceError(("FactoryReset: data/nvram content cleanup failed; "
-                                  "v_secure_system returned %d\n", rc));
-	}
-        else
-        {
-            CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup completed successfully\n"));
-        }
+        CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup started \n"));
+	v_secure_system("find /nvram -depth -mindepth 1 ! -path '/nvram/.partner_ID' ! -path '/nvram/.apply_partner_defaults' ! -path '/nvram/secure' ! -path '/nvram/secure/*' ! -path '/nvram/6' ! -path '/nvram/6/*' ! -regex '.*/Q[[:xdigit:]]\\{8\\}$' -exec rm -rf {} ';'");
+	v_secure_system("find /nvram2 -depth -mindepth 1 ! -path '/nvram2/logs' ! -path '/nvram2/logs/*' ! -path '/nvram2/preserveLogs' ! -path '/nvram2/preserveLogs/*' -exec rm -rf {} ';'");
+	v_secure_system("find /data -depth -mindepth 1 ! -path '/data/scratchpad' ! -path '/data/core.new' ! -path '/data/core.new/*' ! -path '/data/core.last' ! -path '/data/core.last/*' -exec rm -rf {} ';'");
+        v_secure_system("find /nvram/secure -depth -mindepth 1 ! -path '/nvram/secure/data' ! -path '/nvram/secure/data/*' -exec rm -rf {} ';'");
+	v_secure_system("touch /data/.do_fr_on_boot; "
+                "mkdir -p /nvram/secure/data; "
+                "touch /nvram/secure/data/syscfg.db; "
+                "echo 'X_RDKCENTRAL-COM_LastRebootReason=factory-reset' > /nvram/secure/data/syscfg.db; "
+                "echo 'X_RDKCENTRAL-COM_LastRebootCounter=1' >> /nvram/secure/data/syscfg.db; "
+                "echo 'factory_reset=y' >> /nvram/secure/data/syscfg.db; "
+                "touch /nvram/apparmor_factory_reset; "
+                "sync");
+
+        v_secure_system("sync");
+        CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup completed successfully \n"));
 #endif /* _SCXF11BFL_PRODUCT_REQ_ */
 
 #if defined(_XER2_PRODUCT_REQ_)
