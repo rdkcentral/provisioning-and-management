@@ -1,0 +1,23 @@
+name: Topic Gatekeeper
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - develop
+      - 'release/**'
+      - 'support/**'
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  run-shared-gatekeeper:
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request_review' &&
+       (github.event.pull_request.base.ref == 'develop' ||
+        startsWith(github.event.pull_request.base.ref, 'release/') ||
+        startsWith(github.event.pull_request.base.ref, 'support/')))
+    uses: rdkcentral/build_tools_workflows/.github/workflows/gatekeeper.yml@develop
+    secrets:
+      CROSS_REPO_TOKEN: ${{ secrets.CROSS_REPO_TOKEN }}
