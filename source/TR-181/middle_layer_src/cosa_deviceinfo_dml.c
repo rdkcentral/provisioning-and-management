@@ -9496,6 +9496,17 @@ Feature_GetParamIntValue
              return TRUE;
          }
     }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+         /* collect value */
+char buf[16] = {0};
+         syscfg_get( NULL, "edns_packet_size", buf, sizeof(buf));
+         if( buf [0] != '\0' )
+         {
+             *pint= ( atoi(buf) );
+             return TRUE;
+         }
+    }
     return FALSE;
 }
 /**********************************************************************
@@ -10963,6 +10974,34 @@ Feature_SetParamIntValue
                CcspTraceInfo(("syscfg_set low_queue_reboot_threshold failed\n"));
         }
 	return TRUE;
+    }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+        CcspTraceInfo(("Set EDNSPacketSize \n"));
+        /* EDNS UDP payload size field is 16-bit; reject 0, negative and out-of-range values
+           so that syscfg keeps the default 1232 instead of an invalid dnsmasq -P setting */
+        if ((bValue <= 0) || (bValue > 65535))
+        {
+            CcspTraceInfo(("EDNSPacketSize %d is out of supported range (1-65535), ignoring\n", bValue));
+            return FALSE;
+        }
+        char buf[16]={0};
+        snprintf(buf, sizeof(buf), "%d", bValue);
+
+        if (syscfg_set_commit(NULL, "edns_packet_size", buf) != 0)
+        {
+               CcspTraceInfo(("syscfg_set edns_packet_size failed\n"));
+               return FALSE;
+        }
+        else
+        {
+            if (commonSyseventSet("dhcp_server-restart", "") != 0)
+            {
+                CcspTraceError(("Failed to set dhcp_server-restart sysevent\n"));
+                return FALSE;
+            }
+            return TRUE;
+        }
     }
     return FALSE;
 }
