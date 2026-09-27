@@ -1707,13 +1707,16 @@ CosaDmlBlkURL_DelEntry(ULONG ins)
     int rc = -1;
     UtopiaContext ctx;
 
+            CcspTraceWarning(("%s: Error deleting the file :%ld :%d\n", __FUNCTION__, ins, __LINE__));
     if (!Utopia_Init(&ctx))
         return ANSC_STATUS_FAILURE;
 
+            CcspTraceWarning(("%s: Error deleting the file :%ld :%d\n", __FUNCTION__, ins, __LINE__));
     rc = Utopia_DelBlkURL(&ctx, ins);
     Utopia_GetNumberOfBlkURL(&ctx, &g_NrBlkURL);
 
     Utopia_Free(&ctx, !rc);
+            CcspTraceWarning(("%s: Error deleting the file :%ld :%d\n", __FUNCTION__, ins, __LINE__));
     
     if (rc != 0)
         return ANSC_STATUS_FAILURE;
@@ -1723,6 +1726,7 @@ CosaDmlBlkURL_DelEntry(ULONG ins)
         v_secure_system("ipset destroy %lu", ins);
         v_secure_system("ipset destroy %lu_v6", ins);
 #else
+            CcspTraceWarning(("%s: Error deleting the file :%ld :%d\n", __FUNCTION__, ins, __LINE__));
         char url2ipFilePath[256];
         snprintf(url2ipFilePath, sizeof(url2ipFilePath), URL2IP_PATH, ins);
         /* CID: 104500 fix*/
@@ -1737,6 +1741,7 @@ CosaDmlBlkURL_DelEntry(ULONG ins)
         }
 #endif
 
+            CcspTraceWarning(("%s: Error deleting the file :%ld :%d\n", __FUNCTION__, ins, __LINE__));
         commonSyseventSet("pp_flush", "1");
         commonSyseventSet("firewall-restart", "");
         return ANSC_STATUS_SUCCESS;
