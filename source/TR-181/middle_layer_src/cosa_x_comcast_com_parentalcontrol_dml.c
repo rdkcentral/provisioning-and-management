@@ -733,10 +733,7 @@ BOOL is_url(char *buff)
     if((strncasecmp(buff,"http://",_ansc_strlen("http://"))!=0) && (strncasecmp(buff,"https://",_ansc_strlen("https://"))!=0))
         return FALSE;
 
-    scheme_separator = strstr(buff, "://");
-    if (NULL == scheme_separator)
-        return FALSE;
-
+    scheme_separator = buff + ((strncasecmp(buff, "https://", 8) == 0) ? 5 : 4);
     authority = scheme_separator + 3;
     authority_end = strpbrk(authority, "/?#");
     if (NULL == authority_end)
@@ -830,16 +827,16 @@ PcBlkURL_SetParamStringValue
     if (strcmp(ParamName, "Site") == 0)
     {
         len=_ansc_strlen(strValue);
-        if((len > BUFF_SIZE) || (!is_url(strValue)))  
-	{
-	    AnscTraceWarning(("%s -- invalid url = %s\n", __FUNCTION__, strValue));
+        if(len > BUFF_SIZE)
             return FALSE;
-	}
-        if (pBlkUrl->BlockMethod == BLOCK_METHOD_KEYWORD)
+        if(!is_url(strValue) && (pBlkUrl->BlockMethod != BLOCK_METHOD_KEYWORD))
         {
-            _ansc_snprintf(pBlkUrl->Site, sizeof(pBlkUrl->Site), "%s", strValue);
-            return TRUE;
+            AnscTraceWarning(("%s -- invalid url = %s\n", __FUNCTION__, strValue));
+            return FALSE;
         }
+
+        _ansc_snprintf(pBlkUrl->Site, sizeof(pBlkUrl->Site), "%s", strValue);
+        return TRUE;
     }
     if (strcmp(ParamName, "StartTime") == 0)
     {
@@ -934,16 +931,12 @@ PcBlkURL_Validate
         ULONG*                      puLength
     )
 {
-    PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
-    COSA_DML_BLOCKEDURL             *pBlkUrl    = (COSA_DML_BLOCKEDURL*)pLinkObj->hContext;
-
+    UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(pReturnParamName);
     UNREFERENCED_PARAMETER(puLength);
-
-    /* Site is never set when the URL is rejected, so avoid committing an empty entry. */
-    if ('\0' == pBlkUrl->Site[0])
-        return FALSE;
 #if defined(CONFIG_CISCO_CCSP_PRODUCT_ARES) || defined(CONFIG_CISCO_CCSP_PRODUCT_XB3)
+    PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
+    COSA_DML_BLOCKEDURL             *pBlkUrl    = (COSA_DML_BLOCKEDURL*)pLinkObj->hContext;
     if(!CosaDmlMngSites_Chktime(pBlkUrl))
         return FALSE;
 #endif
