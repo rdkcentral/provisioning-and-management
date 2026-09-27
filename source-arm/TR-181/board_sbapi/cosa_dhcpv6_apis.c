@@ -80,6 +80,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -110,6 +111,63 @@ static void pandm_refresh_log(const char *stage)
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &localTime);
     fprintf(logFile, "%s pid=%ld DHCPV6_STAGE=%s\n", timestamp, (long)getpid(), stage);
     fclose(logFile);
+}
+
+static void *pandm_process_snapshot_thread(void *arg)
+{
+    FILE *outputFile;
+    FILE *processFile;
+    char line[512];
+    int interval;
+
+    UNREFERENCED_PARAMETER(arg);
+
+    outputFile = fopen("/tmp/pandm_process_snapshot.log", "a");
+    if (outputFile == NULL)
+    {
+        return NULL;
+    }
+
+    fprintf(outputFile, "MONITOR_START pid=%ld ppid=%ld duration=10\n", (long)getpid(), (long)getppid());
+    for (interval = 0; interval < 10; interval++)
+    {
+        fprintf(outputFile, "SNAPSHOT_BEGIN interval=%d\n", interval);
+        processFile = v_secure_popen("r", "ps w");
+        if (processFile != NULL)
+        {
+            while (fgets(line, sizeof(line), processFile) != NULL)
+            {
+                fputs(line, outputFile);
+            }
+            v_secure_pclose(processFile);
+        }
+        else
+        {
+            fprintf(outputFile, "ps_open_failed\n");
+        }
+        fprintf(outputFile, "SNAPSHOT_END interval=%d\n", interval);
+        fflush(outputFile);
+        if (interval < 9)
+        {
+            sleep(1);
+        }
+    }
+    fprintf(outputFile, "MONITOR_COMPLETE pid=%ld\n", (long)getpid());
+    fclose(outputFile);
+    return NULL;
+}
+
+static void pandm_start_process_snapshot(void)
+{
+    pthread_t snapshotThread;
+    int snapshotStatus;
+
+    snapshotStatus = pthread_create(&snapshotThread, NULL, pandm_process_snapshot_thread, NULL);
+    if (snapshotStatus == 0)
+    {
+        pthread_detach(snapshotThread);
+    }
+    pandm_refresh_log(snapshotStatus == 0 ? "process_snapshot_start_ok" : "process_snapshot_start_failed");
 }
 
 extern char g_Subsystem[32];
@@ -8925,7 +8983,7 @@ void CosaDmlDhcpv6sRebootServer()
             pandm_refresh_log(refreshStatus == 0 ? "after_gw_lan_refresh_from_dhcpv6_refresh_count_ok" : "after_gw_lan_refresh_from_dhcpv6_refresh_count_failed");
             pandm_refresh_log("dhcpv6_refresh_count_returning_to_callback");
             pandm_refresh_log("after_gw_lan_refresh_from_dhcpv6_refresh_count_handoff");
-            v_secure_system("/bin/sh /usr/ccsp/pam/pandm_process_snapshot.sh &");
+            pandm_start_process_snapshot();
         }
     }
 
