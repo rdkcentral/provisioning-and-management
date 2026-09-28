@@ -17300,21 +17300,7 @@ ReverseSSH_SetParamStringValue
     }
 
     if (strcmp(ParamName, "xOpsReverseSshTrigger") == 0) {
-#ifndef ENABLE_SHORTS
-        if (isProdHardened() && strstr(pString, "start") != NULL)
-        {
-            CcspTraceWarning(("[%s] Rejecting xOpsReverseSshTrigger='%s': non-shorts reverse SSH is disabled on prod-hardened builds\n", __FUNCTION__, pString));
-            return FALSE;
-        }
-#endif
-        /* Propagate rejection (e.g. prod-hardened block) instead of always reporting success */
-        if (setXOpsReverseSshTrigger(pString) != 0)
-        {
-            return TRUE;
-        } else {
-            CcspTraceWarning(("[%s] setXOpsReverseSshTrigger('%s') failed\n", __FUNCTION__, pString));
-	    return FALSE;
-        }
+        setXOpsReverseSshTrigger(pString);
     }
 
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
