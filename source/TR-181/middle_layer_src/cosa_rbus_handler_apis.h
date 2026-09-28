@@ -41,6 +41,7 @@
 
 #define WANMGR_CURRENT_STATUS_TR181	"Device.X_RDK_WanManager.CurrentStatus"
 #define WANMGR_WAN_STATE_EVENT	"Device.X_RDK_WanManager.WanState"
+#define CABLE_MODEM_RF_SIGNAL_STATUS	"Device.X_RDKCENTRAL-COM_CableModem.CableRfSignalStatus"
 
 #define  ARRAY_SZ(x) (sizeof(x) / sizeof((x)[0]))
 #if defined  (WAN_FAILOVER_SUPPORTED) || defined(RDKB_EXTENDER_ENABLED)
