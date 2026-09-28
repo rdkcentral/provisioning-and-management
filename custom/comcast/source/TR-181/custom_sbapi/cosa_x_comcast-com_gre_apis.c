@@ -631,8 +631,12 @@ CosaDml_GreTunnelGetEnable(ULONG tuIns, BOOL *enable)
     if (!enable)
         return ANSC_STATUS_FAILURE;
 
-    if (GrePsmGetBool(GRETU_PARAM_ENABLE, tuIns, enable) != 0)
-        return ANSC_STATUS_FAILURE;
+    if (GrePsmGetBool(GRETU_PARAM_ENABLE, tuIns, enable) != 0) {
+        /* PSM key doesn't exist - default to FALSE (disabled) */
+        *enable = FALSE;
+        CcspTraceWarning(("PSM key %s not found, defaulting Enable to FALSE\n", "dmsb.hotspot.tunnel.*.Enable"));
+        return ANSC_STATUS_SUCCESS;
+    }
 
 	//zqiu: try to read enable from the old config
     BOOL bEnable=FALSE; 

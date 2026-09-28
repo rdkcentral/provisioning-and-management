@@ -53,6 +53,7 @@
 #include "plugin_main_apis.h"
 #include "cosa_x_comcast-com_gre_internal.h"
 #include "cosa_x_comcast-com_gre_apis.h"
+#include "cosa_x_comcast-com_gre_dml.h"
 #include "libHotspotApi.h"
 #include "cosa_deviceinfo_internal.h"
 #define SIZE_OF_IP 40
@@ -218,6 +219,25 @@ void callbackWCConfirmVap(tunnelSet_t *tunnelSet){
    pGreMyObject->GreTu[0].GreTunnelIf[3].ChangeFlag |= GRETUIF_CF_VLANID;
 #endif
    pMyObject->bxfinitywifiEnable = tunnelSet->set_gre_enable;
+
+   /* Commit changes to PSM and DML to keep OneWifi in sync */
+   CcspTraceWarning(("HOTSPOT_LIB: Committing GRE Tunnel changes for OneWifi sync\n"));
+   if (GreTunnel_Commit((ANSC_HANDLE)&pGreMyObject->GreTu[0]) != ANSC_STATUS_SUCCESS)
+   {
+       CcspTraceError(("%s: Failed to commit GRE Tunnel changes\n", __FUNCTION__));
+   }
+
+   /* Commit interface VLAN changes */
+   for (int i = 0; i < MAX_GRE_TUIF; i++)
+   {
+       if (pGreMyObject->GreTu[0].GreTunnelIf[i].ChangeFlag != 0)
+       {
+           if (GreTunnelIf_Commit((ANSC_HANDLE)&pGreMyObject->GreTu[0].GreTunnelIf[i]) != ANSC_STATUS_SUCCESS)
+           {
+               CcspTraceError(("%s: Failed to commit GRE Tunnel Interface %d changes\n", __FUNCTION__, i));
+           }
+       }
+   }
 
    if(0 != pthread_create(&circuitid_thread, NULL, update_circuitID_thread, NULL))
    {
