@@ -2058,12 +2058,12 @@ void* restoreAllDBs(void* arg)
      v_secure_system("syscfg commit");
 #endif     
 
-#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SE501_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SE501_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
   /* wipe out all user data including any debug flags which could produce lot of data.  without invalidate flash memory, /nvram/secure end up corrupting if using rm -rf *. */
 //        v_secure_system("sync; find /nvram /nvram2 /data -mindepth 1 | grep -vE \"Q[[:xdigit:]]{8}$\" | xargs rm -r; sync");  /* remove all files from user directory */
 	v_secure_system("sync;find /nvram /nvram2 /data ! \\( -path '/nvram/.partner_ID' -o -regex '.*/Q[[:xdigit:]]\\{8\\}$' -o -path '/nvram/.apply_partner_defaults' \\) -mindepth 1 | xargs rm -r; sync");
 	// set lastreboot reason directly into db
-#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_)
 /* run another cleanup just to make sure if above script did not clean it */
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         //voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
@@ -2074,7 +2074,7 @@ void* restoreAllDBs(void* arg)
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
        // set factory_reset flag directory into db to restore the db value in bootup case
-#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
+#if defined (_WNXL11BWL_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_)
         v_secure_system("echo \"factory_reset=y\" >> /nvram/secure/data/syscfg.db");
 #endif
 
@@ -2082,6 +2082,28 @@ void* restoreAllDBs(void* arg)
         /* run addition clean up to fix /nvram/secure corruption issue where encryption key didn't get clean up */
         // v_secure_system("/bin/dd if=/dev/zero of=/dev/mmcblk0p7 count=32768");  /* wipe out /nvram mount partition */
 #endif
+
+#if defined(_SCXF11BFL_PRODUCT_REQ_)
+	v_secure_system("rm -rf /nvram/lxy");
+	v_secure_system("rm -rf /nvram/certs");
+	v_secure_system("rm -rf /nvram/dl");
+	CcspTraceInfo(("FactoryReset: Cleaning up /data & /nvram Configurations\n"));
+	v_secure_system("find /nvram -depth -mindepth 1 ! -path '/nvram/.partner_ID' ! -path '/nvram/.apply_partner_defaults' ! -path '/nvram/secure' ! -path '/nvram/secure/*' ! -path '/nvram/6' ! -path '/nvram/6/*' ! -regex '.*/Q[[:xdigit:]]\\{8\\}$' -exec rm -rf {} ';'");
+	v_secure_system("find /nvram2 -depth -mindepth 1 ! -path '/nvram2/logs' ! -path '/nvram2/logs/*' ! -path '/nvram2/preserveLogs' ! -path '/nvram2/preserveLogs/*' -exec rm -rf {} ';'");
+	v_secure_system("find /data -depth -mindepth 1 ! -path '/data/scratchpad' ! -path '/data/core.new' ! -path '/data/core.new/*' ! -path '/data/core.last' ! -path '/data/core.last/*' -exec rm -rf {} ';'");
+	v_secure_system("find /nvram/secure -depth -mindepth 1 ! -path '/nvram/secure/data' ! -path '/nvram/secure/data/*' -exec rm -rf {} ';'");
+	v_secure_system("touch /data/.do_fr_on_boot; "
+                "mkdir -p /nvram/secure/data; "
+                "touch /nvram/secure/data/syscfg.db; "
+                "echo 'X_RDKCENTRAL-COM_LastRebootReason=factory-reset' > /nvram/secure/data/syscfg.db; "
+                "echo 'X_RDKCENTRAL-COM_LastRebootCounter=1' >> /nvram/secure/data/syscfg.db; "
+                "echo 'factory_reset=y' >> /nvram/secure/data/syscfg.db; "
+                "touch /nvram/apparmor_factory_reset; "
+                "sync");
+
+	v_secure_system("sync");
+	CcspTraceInfo(("FactoryReset: /data & /nvram cleanup completed successfully \n"));
+#endif /* _SCXF11BFL_PRODUCT_REQ_ */
 
 #if defined(_XER2_PRODUCT_REQ_)
         v_secure_system("sync; find /nvram /nvram2 /data -mindepth 1 ! \\( -path '/nvram/.partner_ID' -o -regex '.*/Q[[:xdigit:]]\\{8\\}$' -o -path '/nvram/.apply_partner_defaults' \\) -exec rm -rf -- {} +; sync");	
