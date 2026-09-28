@@ -3423,6 +3423,29 @@ Route6_GetInfoByInsNum(int insNum, int *index)
     return NULL;
 }
 
+static RouteInfo6_t *
+Route6_GetInfoByRoute(const char *prefix, const char *gw, const char *dev, int *index)
+{
+    int i;
+
+    if (!prefix || !dev)
+        return NULL;
+
+    for (i = 0; i < g_numRtInfo6; i++)
+    {
+        if ((strcmp(g_routeInfos6[i].prefix, prefix) == 0) &&
+            (strcmp(g_routeInfos6[i].gateway, gw ? gw : "") == 0) &&
+            (strcmp(g_routeInfos6[i].interface, dev) == 0))
+        {
+            if (index)
+                *index = i;
+            return &g_routeInfos6[i];
+        }
+    }
+
+    return NULL;
+}
+
 static int
 Route6_SaveParams(const RouteAlias6_t *alias6)
 {
@@ -4893,9 +4916,13 @@ CosaDmlRoutingDelV6Entry
     if (!pEntry)
         return ANSC_STATUS_FAILURE;
 
-    if ((info6 = Route6_GetInfoByInsNum(pEntry->InstanceNumber, &index)) == NULL) 
+    if ((info6 = Route6_GetInfoByInsNum(pEntry->InstanceNumber, &index)) == NULL)
     {
-		CcspTraceWarning(("%s: instance not exist\n", __FUNCTION__));
+	info6 = Route6_GetInfoByRoute(pEntry->DestIPPrefix, pEntry->NextHop, pEntry->Interface, &index);
+    }
+    if (info6 == NULL)
+    {
+	CcspTraceWarning(("%s: instance not exist\n", __FUNCTION__));
         return ANSC_STATUS_FAILURE;
     }
     alias6 = &info6->alias6;

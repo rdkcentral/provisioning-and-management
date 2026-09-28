@@ -73,6 +73,7 @@
 #include "cosa_deviceinfo_apis.h"
 #include "ansc_string_util.h"
 #include "safec_lib_common.h"
+#include "cosa_apis_busutil.h"
 
 #define REFRESH_INTERVAL 120
 #define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
@@ -3277,6 +3278,15 @@ IPv6Forwarding_AddEntry
       return NULL;
     }
 
+    pEntry->Status           = COSA_DML_ROUTING_STATUS_Enabled;
+    pEntry->Origin           = COSA_DML_ROUTING_IPV6_ORIGIN_Static;
+    pEntry->ForwardingPolicy = -1;
+    rc = sprintf_s(pEntry->ExpirationTime, sizeof(pEntry->ExpirationTime), "9999-12-31T23:59:59Z");
+    if(rc < EOK)
+    {
+      ERR_CHK(rc);
+    }
+
     /* Update the middle layer data */
     if ( TRUE )
     {
@@ -3518,6 +3528,10 @@ IPv6Forwarding_Synchronize
             continue;
         }
         
+        if ( pCxtLink->bNew ){
+            continue;
+        }
+
         /* We  need delete this one no matter whether it's not static*/
         //if ( pEntry->Origin != COSA_DML_ROUTING_IPV6_ORIGIN_Static ){
             AnscSListPopEntryByLink(&pRouter->IPv6ForwardList, pSListEntry2);
@@ -4172,12 +4186,22 @@ IPv6Forwarding_SetParamStringValue
     if((ind == 0) && (rc == EOK))
     {
 		char wrapped_inputparam[64]={0};
+		char  ifname[64]      = {0};
+		ULONG ifnameLen       = sizeof(ifname);
+		char  nameParam[256]  = {0};
+
 		ret=isValidInput(pString,wrapped_inputparam, AnscSizeOfString(pString), sizeof( wrapped_inputparam ));
         if(ANSC_STATUS_SUCCESS != ret)
             return FALSE;
 
-        /* save update to backup */
-        rc = STRCPY_S_NOCLOBBER(pRouterForward->Interface, sizeof(pRouterForward->Interface), wrapped_inputparam);
+        if (strstr(pString, "Device.IP.Interface.") == pString)
+        {
+            snprintf(nameParam, sizeof(nameParam), "%sName", pString);
+            if ((0 == CosaGetParamValueString(nameParam, ifname, &ifnameLen)) && (ifname[0] != '\0'))
+                pString = ifname;
+        }
+        rc = STRCPY_S_NOCLOBBER(pRouterForward->Interface, sizeof(pRouterForward->Interface), pString);
+
         if(rc != EOK)
         {
             ERR_CHK(rc);
