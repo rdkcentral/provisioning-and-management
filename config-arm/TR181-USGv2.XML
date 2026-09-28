@@ -1113,6 +1113,14 @@
         </parameter>
 <?endif?>
 	<!-- placeholder for Xi5 parameter end -->
+<?ifdef _ONESTACK_PRODUCT_REQ_?>
+  <parameter>
+    <name>RouterName</name>
+    <type>string(16)</type>
+    <syntax>string</syntax>
+    <writable>true</writable>
+  </parameter>
+<?endif?>
 <?else?>
         <parameter>
           <name>RouterName</name>
