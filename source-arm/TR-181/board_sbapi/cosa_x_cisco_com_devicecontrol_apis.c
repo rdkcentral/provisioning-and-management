@@ -2088,7 +2088,7 @@ void* restoreAllDBs(void* arg)
 	v_secure_system("rm -rf /nvram/certs");
 	v_secure_system("rm -rf /nvram/dl");
 	v_secure_system("touch /nvram/apparmor_factory_reset");
-        CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup started \n"));
+        CcspTraceInfo(("FactoryReset: Cleaning up /data & /nvram Configurations\n"));
 	v_secure_system("find /nvram -depth -mindepth 1 ! -path '/nvram/.partner_ID' ! -path '/nvram/.apply_partner_defaults' ! -path '/nvram/secure' ! -path '/nvram/secure/*' ! -path '/nvram/6' ! -path '/nvram/6/*' ! -regex '.*/Q[[:xdigit:]]\\{8\\}$' -exec rm -rf {} ';'");
 	v_secure_system("find /nvram2 -depth -mindepth 1 ! -path '/nvram2/logs' ! -path '/nvram2/logs/*' ! -path '/nvram2/preserveLogs' ! -path '/nvram2/preserveLogs/*' -exec rm -rf {} ';'");
 	v_secure_system("find /data -depth -mindepth 1 ! -path '/data/scratchpad' ! -path '/data/core.new' ! -path '/data/core.new/*' ! -path '/data/core.last' ! -path '/data/core.last/*' -exec rm -rf {} ';'");
@@ -2103,7 +2103,7 @@ void* restoreAllDBs(void* arg)
                 "sync");
 
         v_secure_system("sync");
-        CcspTraceInfo(("FactoryReset: /data/nvram/ cleanup completed successfully \n"));
+        CcspTraceInfo(("FactoryReset: /data & /nvram cleanup completed successfully \n"));
 #endif /* _SCXF11BFL_PRODUCT_REQ_ */
 
 #if defined(_XER2_PRODUCT_REQ_)
