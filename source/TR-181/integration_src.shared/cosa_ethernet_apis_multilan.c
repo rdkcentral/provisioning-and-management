@@ -1359,25 +1359,49 @@ CosaDmlEthLinkGetStats
     }
     else
     {
-        _ansc_memset(pStats, 0, sizeof(COSA_DML_ETH_STATS));
+        COSA_DML_IF_STATS               tmpStats;
 
-        CosaUtilGetIfStats(pEthLink->StaticInfo.Name, (PCOSA_DML_IF_STATS)pStats);
-        
-        pStats->BroadcastPacketsReceived    -= pEthLink->LastStats.BroadcastPacketsReceived;
-        pStats->BroadcastPacketsSent        -= pEthLink->LastStats.BroadcastPacketsSent;
-        pStats->BytesReceived               -= pEthLink->LastStats.BytesReceived;
-        pStats->BytesSent                   -= pEthLink->LastStats.BytesSent;
-        pStats->DiscardPacketsReceived      -= pEthLink->LastStats.DiscardPacketsReceived;
-        pStats->DiscardPacketsSent          -= pEthLink->LastStats.DiscardPacketsSent;
-        pStats->ErrorsReceived              -= pEthLink->LastStats.ErrorsReceived;
-        pStats->ErrorsSent                  -= pEthLink->LastStats.ErrorsSent;
-        pStats->MulticastPacketsReceived    -= pEthLink->LastStats.MulticastPacketsReceived;
-        pStats->MulticastPacketsSent        -= pEthLink->LastStats.MulticastPacketsSent;
-        pStats->PacketsReceived             -= pEthLink->LastStats.PacketsReceived;
-        pStats->PacketsSent                 -= pEthLink->LastStats.PacketsSent;
-        pStats->UnicastPacketsReceived      -= pEthLink->LastStats.UnicastPacketsReceived;
-        pStats->UnicastPacketsSent          -= pEthLink->LastStats.UnicastPacketsSent;
-        pStats->UnknownProtoPacketsReceived -= pEthLink->LastStats.UnknownProtoPacketsReceived;
+        /*
+         * COSA_DML_IF_STATS.Bytes* are ULONG64; COSA_DML_ETH_STATS.Bytes* stay
+         * ULONG. Never cast ETH_STATS* to IF_STATS* — that overwrites adjacent
+         * fields on ILP32. Read into a real IF_STATS, then copy (truncate Bytes*).
+         */
+        _ansc_memset(pStats, 0, sizeof(COSA_DML_ETH_STATS));
+        _ansc_memset(&tmpStats, 0, sizeof(tmpStats));
+
+        CosaUtilGetIfStats(pEthLink->StaticInfo.Name, &tmpStats);
+
+        pStats->BytesSent                   = (ULONG)tmpStats.BytesSent;
+        pStats->BytesReceived               = (ULONG)tmpStats.BytesReceived;
+        pStats->PacketsSent                 = tmpStats.PacketsSent;
+        pStats->PacketsReceived             = tmpStats.PacketsReceived;
+        pStats->ErrorsSent                  = tmpStats.ErrorsSent;
+        pStats->ErrorsReceived              = tmpStats.ErrorsReceived;
+        pStats->UnicastPacketsSent          = tmpStats.UnicastPacketsSent;
+        pStats->UnicastPacketsReceived      = tmpStats.UnicastPacketsReceived;
+        pStats->DiscardPacketsSent          = tmpStats.DiscardPacketsSent;
+        pStats->DiscardPacketsReceived      = tmpStats.DiscardPacketsReceived;
+        pStats->MulticastPacketsSent        = tmpStats.MulticastPacketsSent;
+        pStats->MulticastPacketsReceived    = tmpStats.MulticastPacketsReceived;
+        pStats->BroadcastPacketsSent        = tmpStats.BroadcastPacketsSent;
+        pStats->BroadcastPacketsReceived    = tmpStats.BroadcastPacketsReceived;
+        pStats->UnknownProtoPacketsReceived = tmpStats.UnknownProtoPacketsReceived;
+
+        pStats->BroadcastPacketsReceived    -= (ULONG)pEthLink->LastStats.BroadcastPacketsReceived;
+        pStats->BroadcastPacketsSent        -= (ULONG)pEthLink->LastStats.BroadcastPacketsSent;
+        pStats->BytesReceived               -= (ULONG)pEthLink->LastStats.BytesReceived;
+        pStats->BytesSent                   -= (ULONG)pEthLink->LastStats.BytesSent;
+        pStats->DiscardPacketsReceived      -= (ULONG)pEthLink->LastStats.DiscardPacketsReceived;
+        pStats->DiscardPacketsSent          -= (ULONG)pEthLink->LastStats.DiscardPacketsSent;
+        pStats->ErrorsReceived              -= (ULONG)pEthLink->LastStats.ErrorsReceived;
+        pStats->ErrorsSent                  -= (ULONG)pEthLink->LastStats.ErrorsSent;
+        pStats->MulticastPacketsReceived    -= (ULONG)pEthLink->LastStats.MulticastPacketsReceived;
+        pStats->MulticastPacketsSent        -= (ULONG)pEthLink->LastStats.MulticastPacketsSent;
+        pStats->PacketsReceived             -= (ULONG)pEthLink->LastStats.PacketsReceived;
+        pStats->PacketsSent                 -= (ULONG)pEthLink->LastStats.PacketsSent;
+        pStats->UnicastPacketsReceived      -= (ULONG)pEthLink->LastStats.UnicastPacketsReceived;
+        pStats->UnicastPacketsSent          -= (ULONG)pEthLink->LastStats.UnicastPacketsSent;
+        pStats->UnknownProtoPacketsReceived -= (ULONG)pEthLink->LastStats.UnknownProtoPacketsReceived;
 
         return ANSC_STATUS_SUCCESS;
     }
