@@ -81,6 +81,8 @@
 #ifdef _ONESTACK_PRODUCT_REQ_
 #include <rdkb_feature_mode_gate.h>
 #endif
+
+extern void *WebGUIRestart(void *arg);
 /**********************************************************************
                             HELPER FUNCTIONS
 **********************************************************************/
@@ -1982,8 +1984,12 @@ CosaDmlIpIfMlanSetV4Addr
     UNREFERENCED_PARAMETER(hContext);
     int                             iReturnValue    = CCSP_SUCCESS;
     char                            pParamPath[64]  = {0};
+    char                            primary_lan_l3net[16] = {0};
+    unsigned long                   primaryLanL3netInstance = 0;
     unsigned int                    RecordType      = ccsp_string;
     char                            RecordValue[64] = {0};
+    COSA_DML_IP_V4ADDR              previousEntry   = {0};
+    BOOL                            v4AddressUpdateSucceeded = FALSE;
     errno_t                         rc              = -1;
 
     if ( pEntry->InstanceNumber != 1 )
@@ -2002,6 +2008,8 @@ CosaDmlIpIfMlanSetV4Addr
             pEntry->SubnetMask.Dot[0], pEntry->SubnetMask.Dot[1],
             pEntry->SubnetMask.Dot[2], pEntry->SubnetMask.Dot[3]
         ));
+
+    CosaDmlIpIfMlanGetIPv4Addr(ulIpIfInstanceNumber, &previousEntry);
 
     /*
      *  Only saves the parameters below
@@ -2039,6 +2047,10 @@ CosaDmlIpIfMlanSetV4Addr
         if ( iReturnValue != CCSP_SUCCESS )
         {
             AnscTraceWarning(("%s -- failed to set 'V4Addr' parameter, error code %d, type %d\n", __FUNCTION__, iReturnValue, RecordType));
+        }
+        else
+        {
+            v4AddressUpdateSucceeded = TRUE;
         }
     }
 
@@ -2081,6 +2093,18 @@ CosaDmlIpIfMlanSetV4Addr
     }
 
     TR181_Mlan_Sysevent_Resync((int)ulIpIfInstanceNumber);
+
+    if (v4AddressUpdateSucceeded &&
+        previousEntry.IPAddress.Value != pEntry->IPAddress.Value &&
+        pEntry->IPAddress.Value != 0 &&
+        commonSyseventGet("primary_lan_l3net", primary_lan_l3net, sizeof(primary_lan_l3net)) == 0 &&
+        (primaryLanL3netInstance = strtoul(primary_lan_l3net, NULL, 10)) ==
+            (unsigned long)ulIpIfInstanceNumber)
+    {
+        pthread_t tid;
+        CcspTraceInfo(("%s -- primary LAN L3 network IP address changed, restarting Web GUI\n", __FUNCTION__));
+        pthread_create(&tid, NULL, &WebGUIRestart, NULL);
+    }
 
     return  ANSC_STATUS_SUCCESS;
 }
