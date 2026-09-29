@@ -10978,11 +10978,10 @@ Feature_SetParamIntValue
     if (strcmp(ParamName, "EDNSPacketSize") == 0)
     {
         CcspTraceInfo(("Set EDNSPacketSize \n"));
-        /* EDNS UDP payload size field is 16-bit; reject 0, negative and out-of-range values
-           so that syscfg keeps the default 1232 instead of an invalid dnsmasq -P setting */
-        if ((bValue <= 0) || (bValue > 65535))
+        /* EDNS UDP payload size is valid from 512 through 65535 octets. */
+        if ((bValue < 512) || (bValue > 65535))
         {
-            CcspTraceInfo(("EDNSPacketSize %d is out of supported range (1-65535), ignoring\n", bValue));
+            CcspTraceInfo(("EDNSPacketSize %d is out of supported range (512-65535), ignoring\n", bValue));
             return FALSE;
         }
         char buf[16]={0};
