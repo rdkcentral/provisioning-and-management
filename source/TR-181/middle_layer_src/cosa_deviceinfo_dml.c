@@ -2401,7 +2401,7 @@ static BOOL valid_url (char *buff)
     while(buff[i] != '\0')
     {
         //Allowing only integers, alphabets(lower and upper) and certain special characters
-        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~'))
+        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~') || (buff[i]=='_'))
             i++;
         else
             return FALSE;
@@ -17300,14 +17300,8 @@ ReverseSSH_SetParamStringValue
     }
 
     if (strcmp(ParamName, "xOpsReverseSshTrigger") == 0) {
-        /* Propagate rejection (e.g. prod-hardened block) instead of always reporting success */
-        if (setXOpsReverseSshTrigger(pString) != 0)
-        {
-            return TRUE;
-        } else {
-            CcspTraceWarning(("Non shorts connection is not supported in prod device \n"));
-        }
-        return FALSE;
+        setXOpsReverseSshTrigger(pString);
+        return TRUE;
     }
 
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
