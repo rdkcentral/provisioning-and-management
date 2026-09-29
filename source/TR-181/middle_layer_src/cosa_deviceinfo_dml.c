@@ -2401,7 +2401,7 @@ static BOOL valid_url (char *buff)
     while(buff[i] != '\0')
     {
         //Allowing only integers, alphabets(lower and upper) and certain special characters
-        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~'))
+        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~') || (buff[i]=='_'))
             i++;
         else
             return FALSE;
