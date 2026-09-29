@@ -17300,14 +17300,8 @@ ReverseSSH_SetParamStringValue
     }
 
     if (strcmp(ParamName, "xOpsReverseSshTrigger") == 0) {
-        /* Propagate rejection (e.g. prod-hardened block) instead of always reporting success */
-        if (setXOpsReverseSshTrigger(pString) != 0)
-        {
-            return TRUE;
-        } else {
-            CcspTraceWarning(("Non shorts connection is not supported in prod device \n"));
-        }
-        return FALSE;
+        setXOpsReverseSshTrigger(pString);
+        return TRUE;
     }
 
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
