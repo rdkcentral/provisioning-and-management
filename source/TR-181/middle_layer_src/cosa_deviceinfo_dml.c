@@ -17301,8 +17301,7 @@ ReverseSSH_SetParamStringValue
 
     if (strcmp(ParamName, "xOpsReverseSshTrigger") == 0) {
         setXOpsReverseSshTrigger(pString);
-        return TRUE ;
-
+        return TRUE;
     }
 
     CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName));
