@@ -131,6 +131,7 @@ extern int g_boot_cron_mode;
 void Send_Notification_Task(char* delay, char* startTime, char* download_status, char* status, char *system_ready_time, char * priority,  char *current_fw_ver, char *download_fw_ver);
 void set_firmware_download_start_time(char *start_time);
 char* get_firmware_download_start_time();
+static BOOL valid_url (char *buff);
 void *handleBleRestart(void *arg);
 #if (defined _COSA_INTEL_XB3_ARM_)
 BOOL CMRt_Isltn_Enable(BOOL status);
@@ -1756,7 +1757,7 @@ BOOL
     /* Required for xPC sync */
     if (strcmp(ParamName, "URL") == 0)
     {
-      if (pString != NULL && pString[0] != '\0' && strpbrk(pString, ";|&$`()<>") == NULL)
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
       {
         if (syscfg_set_commit(NULL, "TelemetryEndpointURL", pString) != 0)
         {
@@ -2400,7 +2401,7 @@ static BOOL valid_url (char *buff)
     while(buff[i] != '\0')
     {
         //Allowing only integers, alphabets(lower and upper) and certain special characters
-        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~'))
+        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~') || (buff[i]=='_'))
             i++;
         else
             return FALSE;
@@ -9418,7 +9419,7 @@ BOOL
 
     if (strcmp(ParamName, "S3SigningUrl") == 0)
     {
-      if (pString != NULL && pString[0] != '\0' && strpbrk(pString, ";|&$`()<>") == NULL)
+      if (pString != NULL && pString[0] != '\0' && valid_url(pString))
       {
         if (syscfg_set_commit(NULL, "CrashUpload_S3SigningUrl", pString) != 0)
         {
