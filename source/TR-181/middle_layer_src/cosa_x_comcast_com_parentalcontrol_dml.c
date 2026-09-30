@@ -713,6 +713,14 @@ BOOL is_url(char *buff)
     char *str=NULL;
     int len=_ansc_strlen(buff);
     int count=0;
+    const char *scheme_separator;
+    const char *authority;
+    const char *authority_end;
+    const char *userinfo_end;
+    const char *host;
+    const char *port = NULL;
+    const char *character;
+    unsigned long port_number = 0;
     const char spl[] = "-._~:/?#[]@!$&'()*+,;%=";
     while(buff[i] != '\0')
     {
@@ -724,6 +732,44 @@ BOOL is_url(char *buff)
     }    
     if((strncasecmp(buff,"http://",_ansc_strlen("http://"))!=0) && (strncasecmp(buff,"https://",_ansc_strlen("https://"))!=0))
         return FALSE;
+
+    scheme_separator = buff + ((strncasecmp(buff, "https://", 8) == 0) ? 5 : 4);
+    authority = scheme_separator + 3;
+    authority_end = strpbrk(authority, "/?#");
+    if (NULL == authority_end)
+        authority_end = buff + len;
+
+    userinfo_end = memchr(authority, '@', authority_end - authority);
+    host = (NULL != userinfo_end) ? userinfo_end + 1 : authority;
+    if (host == authority_end)
+        return FALSE;
+
+    /* IPv6 addresses are not supported. */
+    if ('[' == host[0])
+        return FALSE;
+
+    port = memchr(host, ':', authority_end - host);
+    if (NULL != port)
+        port++;
+
+    if (NULL != port)
+    {
+        if (port == authority_end || authority_end - port > 5)
+            return FALSE;
+
+        for (character = port; character < authority_end; character++)
+        {
+            if (*character < '0' || *character > '9')
+                return FALSE;
+
+            port_number = (port_number * 10) + (*character - '0');
+            if (port_number > 65535)
+                return FALSE;
+        }
+
+        if (0 == port_number)
+            return FALSE;
+    }
 
     if(buff[len-1] == '.')
         return FALSE;
@@ -777,7 +823,6 @@ PcBlkURL_SetParamStringValue
 
     if((ANSC_STATUS_SUCCESS == is_usg_in_bridge_mode(&pBridgeMode)) && (pBridgeMode == TRUE))
         return FALSE;
-
     if (strcmp(ParamName, "Site") == 0)
     {
         len=_ansc_strlen(strValue);
@@ -790,9 +835,11 @@ PcBlkURL_SetParamStringValue
         }
 	else
 	{
+             _ansc_snprintf(pBlkUrl->Site, sizeof(pBlkUrl->Site), "%s", strValue);
 	     AnscTraceWarning(("%s -- invalid url = %s\n", __FUNCTION__, strValue));
 	}
     }
+
     if (strcmp(ParamName, "StartTime") == 0)
     {
         if(_ansc_sscanf(strValue, "%d:%d %c", &HH,&MM,&dump)==2)
@@ -889,6 +936,7 @@ PcBlkURL_Validate
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(pReturnParamName);
     UNREFERENCED_PARAMETER(puLength);
+
 #if defined(CONFIG_CISCO_CCSP_PRODUCT_ARES) || defined(CONFIG_CISCO_CCSP_PRODUCT_XB3)
     PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     COSA_DML_BLOCKEDURL             *pBlkUrl    = (COSA_DML_BLOCKEDURL*)pLinkObj->hContext;
@@ -909,18 +957,24 @@ PcBlkURL_Commit
     PCOSA_DATAMODEL_PARENTALCONTROL pParCtrl    = (PCOSA_DATAMODEL_PARENTALCONTROL)g_pCosaBEManager->hParentalControl;
 
     AnscTraceWarning(("%s...\n", __FUNCTION__));
-
+AnscTraceWarning(("Commit: bNew=%d Inst=%lu\n",
+                  pLinkObj->bNew,
+                  pBlkUrl->InstanceNumber));
     if (pLinkObj->bNew)
     {
+	    AnscTraceWarning(("%s...%d\n", __FUNCTION__, __LINE__));
         if (CosaDmlBlkURL_AddEntry(pBlkUrl) != ANSC_STATUS_SUCCESS)
             return -1;
+	 AnscTraceWarning(("%s...%d\n", __FUNCTION__, __LINE__));
         CosaPcReg_BlkUrlDelInfo((ANSC_HANDLE)pParCtrl, (ANSC_HANDLE)pLinkObj);
         pLinkObj->bNew = FALSE;
     }
     else
     {
+	    AnscTraceWarning(("%s...%d\n", __FUNCTION__, __LINE__));
         if (CosaDmlBlkURL_SetConf(pBlkUrl->InstanceNumber, pBlkUrl) != ANSC_STATUS_SUCCESS)
         {
+	    AnscTraceWarning(("%s...%d\n", __FUNCTION__, __LINE__));
             CosaDmlBlkURL_GetConf(pBlkUrl->InstanceNumber, pBlkUrl);
             return -1;
         }
@@ -938,9 +992,21 @@ PcBlkURL_Rollback
     PCOSA_CONTEXT_LINK_OBJECT       pLinkObj    = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     COSA_DML_BLOCKEDURL             *pBlkUrl    = (COSA_DML_BLOCKEDURL*)pLinkObj->hContext;
 
+    AnscTraceWarning(("%s...\n", __FUNCTION__));
+
+    AnscTraceWarning(("%s-%d RDKB_PCONTROL[URL]:%lu NewEntry:%d\n", __FUNCTION__, __LINE__, pBlkUrl->InstanceNumber, pLinkObj->bNew));
+    if (pLinkObj->bNew)
+    {
+         CosaDmlBlkURL_DelEntry(pBlkUrl->InstanceNumber);
+	 pLinkObj->bNew = FALSE;
+	 AnscTraceWarning(("Rollback deleting instance %lu\n",
+                  pBlkUrl->InstanceNumber));
+         return 0;
+    }
     if (CosaDmlBlkURL_GetConf(pBlkUrl->InstanceNumber, pBlkUrl) != ANSC_STATUS_SUCCESS)
         return -1;
 
+	    AnscTraceWarning(("%s...%d\n", __FUNCTION__, __LINE__));
     return 0;
 }
 
