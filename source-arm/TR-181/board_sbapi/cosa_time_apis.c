@@ -76,6 +76,11 @@
 #include "safec_lib_common.h"
 #include <errno.h>
 #include <unistd.h>
+#ifdef _USE_TIMEZONE_
+#include <zdump.h>
+char *strptime(const char *restrict s, const char *restrict format, struct tm *restrict tm);
+#endif
+
 
 #define PARTNERS_INFO_FILE              "/nvram/partners_defaults.json"
 #define BOOTSTRAP_INFO_FILE             "/opt/secure/bootstrap.json"
@@ -861,6 +866,96 @@ CosaDmlTimeGetState
     return ANSC_STATUS_SUCCESS;
 }
 
+#ifdef _USE_TIMEZONE_
+ANSC_STATUS getCurrentTimeOffset(char *offset_value)
+{
+    if (offset_value == NULL)
+    {
+        return ANSC_STATUS_FAILURE;
+    }
+    time_t raw_time;
+    time(&raw_time);
+    char val[UTOPIA_TR181_PARAM_SIZE1] = {0};
+    char utcOffsetStr[16] = {0};
+    ANSC_STATUS status = ANSC_STATUS_FAILURE;
+    UtopiaContext ctx;
+    if (!Utopia_Init(&ctx))
+    {
+        return ERR_UTCTX_INIT;
+    }
+    char *regionTime = (char *)calloc(UTOPIA_TR181_PARAM_SIZE1, sizeof(char));
+    if (regionTime == NULL)
+    {
+        Utopia_Free(&ctx, 0);
+        return ANSC_STATUS_FAILURE;
+    }
+    if (Utopia_Get_DeviceTime_LocalTZ(&ctx, val) == UT_SUCCESS)
+    {
+        if (time_translate(val, &regionTime) == 0)
+        {
+            struct tm tm_local = {0};
+            if (strptime(regionTime, "%a %b %d %H:%M:%S %Y", &tm_local) != NULL)
+            {
+                tm_local.tm_isdst = -1;
+            }
+            struct tm *tm_utc = gmtime(&raw_time);
+            time_t t_local = mktime(&tm_local);
+            time_t t_utc = mktime(tm_utc);
+
+            int offset_seconds = (int)difftime(t_local, t_utc);
+            int offset_minutes = offset_seconds / 60;
+            char sign = (offset_minutes >= 0) ? '+' : '-';
+            int abs_offset = abs(offset_minutes);
+            int hours = abs_offset / 60;
+            int minutes = abs_offset % 60;
+
+            //format offset string
+            _ansc_sprintf(utcOffsetStr, "UTC%c%02d:%02d", sign, hours, minutes);
+            _ansc_strcpy(offset_value, utcOffsetStr);
+            CcspTraceWarning(("%s %d: UTC Offset = %s utcOffsetStr = %s\n", __FUNCTION__, __LINE__, offset_value, utcOffsetStr));
+            status = ANSC_STATUS_SUCCESS;
+        }
+    }
+    else
+    {
+        CcspTraceWarning(("%s %d: Failed to get local timezone \n", __FUNCTION__, __LINE__));
+    }
+    free(regionTime);
+    Utopia_Free(&ctx, 0);
+    return status;
+}
+#endif
+
+#ifdef _USE_TIMEZONE_
+void parse_time_offset(const char *pTimeOffset, int *tz_hour, int *tz_min, bool *is_west) {
+    *tz_hour = 0;
+    *tz_min = 0;
+    *is_west = false;
+
+    if (!pTimeOffset || strncmp(pTimeOffset, "UTC", 3) != 0)
+        return;
+
+    // Expected format: UTC+8:00 or UTC-05:30
+    char sign = pTimeOffset[3];
+    *is_west = (sign == '-');
+
+    const char *ptr = pTimeOffset + 4;  // Move past "UTC+" or "UTC-"
+    char *colon = strchr(ptr, ':');
+
+    if (!colon){
+        CcspTraceWarning(("Invalid timeOffset format: %s\n", pTimeOffset));
+        return;
+    }
+
+    // Temporarily null-terminate at colon
+    char hour_buf[4] = {0};
+    strncpy(hour_buf, ptr, colon - ptr);
+
+    *tz_hour = strtol(hour_buf, NULL, 10);
+    *tz_min = strtol(colon + 1, NULL, 10);
+}
+#endif
+
 ANSC_STATUS
 CosaDmlTimeGetLocalTime
     (
@@ -890,6 +985,56 @@ struct tm *pLcltime, temp;
 #endif
     pLcltime = localtime(&t);
 #endif
+#ifdef _USE_TIMEZONE_
+    UNREFERENCED_PARAMETER(pLcltime);
+    UtopiaContext ctx;
+    char val[UTOPIA_TR181_PARAM_SIZE1] = {0};
+
+    // To fetch and parse timeoffset
+    char timeOffset[MAX_COSATIMEOFFSET_SIZE] = {0};
+    int tz_hour = 0, tz_min = 0;
+    bool is_west = false;
+
+    if (CosaDmlTimeGetTimeOffset(NULL, timeOffset) == ANSC_STATUS_SUCCESS)
+    {
+        parse_time_offset(timeOffset, &tz_hour, &tz_min, &is_west);
+    }
+
+    /* Initialize a Utopia Context */
+    if (!Utopia_Init(&ctx))
+        return ERR_UTCTX_INIT;
+    char * regionTime = (char *) calloc(UTOPIA_TR181_PARAM_SIZE1, sizeof(char));
+    if (regionTime == NULL)
+    {
+        Utopia_Free(&ctx, 0);
+        return ANSC_STATUS_FAILURE;
+    }
+    /* Fill Local TZ from SysCfg */
+    if ((Utopia_Get_DeviceTime_LocalTZ(&ctx,val)) == UT_SUCCESS)
+    {
+        /* time_translate() API in zdump library will return region time */
+        if (time_translate(val, &regionTime) == 0)
+        {
+            struct tm tm = {0};
+            if (strptime(regionTime, "%a %b %d %H:%M:%S %Y", &tm) != NULL)
+            {
+                _ansc_sprintf(pCurrLocalTime, "%.4u-%.2u-%.2uT%.2u:%.2u:%.2u%c%.2d:%.2d",
+                      (tm.tm_year) + 1900,
+                      (tm.tm_mon) + 1,
+                      tm.tm_mday,
+                      tm.tm_hour,
+                      tm.tm_min,
+                      tm.tm_sec,
+                      is_west ? '-' : '+',
+                      tz_hour,
+                      tz_min);
+            }
+        }
+    }
+    free(regionTime);
+    /* Free Utopia Context */
+    Utopia_Free(&ctx,0);
+#else
     _ansc_sprintf(pCurrLocalTime, "%.4u-%.2u-%.2u %.2u:%.2u:%.2u",
             (pLcltime->tm_year)+1900,
             (pLcltime->tm_mon)+1,
@@ -897,6 +1042,7 @@ struct tm *pLcltime, temp;
             pLcltime->tm_hour,
             pLcltime->tm_min,
             pLcltime->tm_sec);
+#endif
 
     return ANSC_STATUS_SUCCESS;
 }
@@ -1067,6 +1213,22 @@ CosaDmlTimeGetTimeOffset
 {
     UNREFERENCED_PARAMETER(hContext);
     errno_t safec_rc = -1;
+#ifdef _USE_TIMEZONE_
+    char offset_value[100]={0};
+    if( ANSC_STATUS_SUCCESS == getCurrentTimeOffset(offset_value))
+    {
+        if (('\0' != offset_value[0] ) && ( 0 != strlen(offset_value)))
+        {
+            safec_rc = strcpy_s(pTimeOffset, MAX_COSATIMEOFFSET_SIZE, offset_value);
+            if(safec_rc != EOK)
+            {
+               ERR_CHK(safec_rc);
+            }
+            CcspTraceWarning(("%s: TimeOffset from getCurrentTimeOffset - %s \n", __FUNCTION__,offset_value));
+            return ANSC_STATUS_SUCCESS;
+        }
+    }
+#endif
     if(access("/nvram/ETHWAN_ENABLE", 0))
     {
 	if( platform_hal_getTimeOffSet(pTimeOffset) == RETURN_OK )
