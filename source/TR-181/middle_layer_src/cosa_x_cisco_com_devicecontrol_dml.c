@@ -1385,6 +1385,86 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
     return FALSE;
 }
 
+/**********************************************************************
+
+    helper: IsValidFactoryResetString
+
+    description:
+
+        Validates a comma-separated FactoryReset token string against
+        the set of tokens recognised by CosaDmlDcSetFactoryReset.
+
+        Valid tokens: Router, Wifi, Firewall, VoIP, Docsis, Dect, MoCA
+        Valid tokens (when FEATURE_RDKB_CELLULAR_MANAGER is defined): Cellular
+        Dect and MoCA are accepted for compatibility with legacy internal
+        callers (e.g. CosaDmlDiPartnerIDChangeHandling) but are silently
+        ignored by CosaDmlDcSetFactoryReset in the backend.
+        At least one valid token must be present.
+
+    argument:   const char *pString
+                The value string to validate (must not be NULL).
+
+    return:     TRUE  if every token is valid and at least one is present.
+                FALSE if the string is empty, contains an unknown token,
+                      or contains only whitespace/delimiters.
+
+**********************************************************************/
+static BOOL
+IsValidFactoryResetString
+    (
+        const char *pString
+    )
+{
+    char   tmpBuf[256];
+    char  *tok  = NULL;
+    char  *sv   = NULL;
+    BOOL   valid = FALSE;
+    int    i;
+    static const char * const validTokens[] =
+    {
+        "Router",
+        "Wifi",
+        "Firewall",
+        "VoIP",
+        "Docsis",
+        "Dect",
+        "MoCA",
+#ifdef FEATURE_RDKB_CELLULAR_MANAGER
+        "Cellular",
+#endif
+        NULL
+    };
+
+    if (pString == NULL || pString[0] == '\0')
+    {
+        CcspTraceError(("FactoryReset: empty or NULL value is not valid\n"));
+        return FALSE;
+    }
+
+    snprintf(tmpBuf, sizeof(tmpBuf), "%s", pString);
+    tok = strtok_r(tmpBuf, ",", &sv);
+    while (tok)
+    {
+        for (i = 0; validTokens[i] != NULL; i++)
+        {
+            if (strcmp(tok, validTokens[i]) == 0)
+                break;
+        }
+        if (validTokens[i] != NULL)
+        {
+            valid = TRUE;
+        }
+        else
+        {
+            CcspTraceError(("FactoryReset: invalid token '%s'\n", tok));
+            return FALSE;
+        }
+        tok = strtok_r(NULL, ",", &sv);
+    }
+
+    return valid;
+}
+
 /**********************************************************************  
 
     caller:     owner of this object 
@@ -1453,6 +1533,9 @@ X_CISCO_COM_DeviceControl_SetParamStringValue
     ERR_CHK(rc);
     if((rc == EOK) && (!ind))
     {
+        if (!IsValidFactoryResetString(pString))
+            return FALSE;
+
         rc = STRCPY_S_NOCLOBBER((char *)pMyObject->FactoryReset, sizeof(pMyObject->FactoryReset), pString);
         if(rc != EOK)
         {
