@@ -2424,6 +2424,14 @@ CosaDmlIpIfSetCfg
 {
     if ( pCfg->InstanceNumber >= COSA_USG_IF_NUM )
     {
+#ifdef BRLAN0_MTU_SUPPORT_FEATURE
+        if (strstr(pCfg->LinkName, "brlan0"))
+        {
+            char mtu_str[32] = {0};
+            snprintf(mtu_str, sizeof(mtu_str), "%lu", pCfg->MaxMTUSize);
+            CosaUtilSetBrlan0MTU(pCfg->LinkName, mtu_str);
+        }
+#endif
         return  CosaDmlIpIfMlanSetCfg(hContext, pCfg);
     }
     else
