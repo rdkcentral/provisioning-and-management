@@ -2091,7 +2091,6 @@ void* restoreAllDBs(void* arg)
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootReason=factory-reset\" > /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"X_RDKCENTRAL-COM_LastRebootCounter=1\" >> /nvram/secure/data/syscfg.db");
         v_secure_system("echo \"factory_reset=y\" >> /nvram/secure/data/syscfg.db");
-        v_secure_system("touch /nvram/apparmor_factory_reset");
         v_secure_system("sync");
 #endif /* _XER2_PRODUCT_REQ_ */
 
@@ -2134,10 +2133,6 @@ void* restoreAllDBs(void* arg)
 #else
 	v_secure_system("restoreAllDBs"); //Perform factory reset on other components
 #endif
-#if defined (INTEL_PUMA7) || (defined (_XB6_PRODUCT_REQ_) && defined (_COSA_BCM_ARM_)) || defined (_CBR_PRODUCT_REQ_) || defined (_HUB4_PRODUCT_REQ_) || defined (_SR213_PRODUCT_REQ_) || defined (_CBR2_PRODUCT_REQ_) || defined(_COSA_QCA_ARM_)
-	v_secure_system("touch /nvram/apparmor_factory_reset");
-#endif
-
 	sync();
 
 	return NULL;
