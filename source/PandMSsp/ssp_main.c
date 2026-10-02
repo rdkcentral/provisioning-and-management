@@ -100,7 +100,6 @@ CcspBaseIf_deadlock_detection_log_print
 );
 #endif
 
-
 void get_uptime(long *uptime)
 {
     struct sysinfo info;
