@@ -107,6 +107,7 @@ libCcspPandM_middle_layer_src_la_SOURCES = \
     webui_doc.c \
     webui_webconfig_apis.c \
     webui_webconfig_dml.c \
+    cosa_x_rdk_dns_failover_dml.c \
     cosa_x_rdk_features_dml.c \
     cosa_x_rdk_features_internal.c
 
