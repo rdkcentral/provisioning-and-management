@@ -154,8 +154,7 @@
     </object>
 
     <object>
-      git fetch origin
-      git branch -avv      <name>X_RDK_DNSFailover</name>
+      <name>X_RDK_DNSFailover</name>
       <objectType>object</objectType>
       <functions>
         <func_GetParamUlongValue>DNSFailover_GetParamUlongValue</func_GetParamUlongValue>
