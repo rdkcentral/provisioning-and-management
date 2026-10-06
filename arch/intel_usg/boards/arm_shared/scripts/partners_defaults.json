@@ -2,7 +2,7 @@
    "properties" : {
 
       "comments" : "MANDATORY: !!! Please increment below version value for any new parameter added in this partners_defaults.json !!!",
-      "version" : "8.34"
+      "version" : "8.35"
    },
 
    "comcast" : {
@@ -98,6 +98,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "override" : {
         "CGA4332COM" : {
                      "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.brandname" : "Xfinity" ,
@@ -221,6 +222,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
@@ -320,6 +322,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "true",
       "Device.X_RDK_Features.LostandFound.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
       "Default_VoIP_Configuration_FileName" : "telcovoice_config_default_ITA.json",
       "override" : {
         "SR213" : {
@@ -428,6 +431,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "true",
       "Device.X_RDK_Features.LostandFound.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
       "Default_VoIP_Configuration_FileName" : "telcovoice_config_default_UK.json",
       "override" : {
         "SR300" : {
@@ -641,6 +645,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "override" : {
          "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
@@ -762,6 +767,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "override" : {
          "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
@@ -884,6 +890,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "override" : {
       "CGM4140COM" : {
                 "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.CMVoiceImageSelect" : "pc15mgcp"
@@ -1010,6 +1017,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "override" : {
          "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
@@ -1111,6 +1119,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
@@ -1207,6 +1216,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
@@ -1308,6 +1318,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
