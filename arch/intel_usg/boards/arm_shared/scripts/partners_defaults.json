@@ -322,13 +322,14 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "true",
       "Device.X_RDK_Features.LostandFound.Enable" : "false",
-      "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "Default_VoIP_Configuration_FileName" : "telcovoice_config_default_ITA.json",
       "override" : {
         "SR213" : {
 		"Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.XconfURL" : "https://secure.xconfds.coast.xcal.tv"
         },
         "SCER11BEL" : {
+                "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
                 "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.XconfURL" : "https://secure.xconfds.coast.xcal.tv"
         }
       },
@@ -431,7 +432,7 @@
       "Device.X_RDK_Features.UseWANMACForManagementServices" : "false",
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "true",
       "Device.X_RDK_Features.LostandFound.Enable" : "false",
-      "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
+      "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
       "Default_VoIP_Configuration_FileName" : "telcovoice_config_default_UK.json",
       "override" : {
         "SR300" : {
@@ -449,6 +450,7 @@
                 "Device.X_RDKCENTRAL-COM_Webpa.DNSText.URL" : "fabric.xmidt-eu.comcast.net"
         },
         "SCER11BEL" : {
+                "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
                 "Device.X_RDK_WebConfig.URL" : "https://cpe-config-sky-uk.wp.xdp.comcast.net/api/v1/device/{mac}/config",
                 "Device.X_RDK_WebConfig.SupplementaryServiceUrls.Telemetry" : "https://cpe-profile-sky-uk.wp.xdp.comcast.net/api/v1/device/{mac}/config",
                 "Device.X_RDKCENTRAL-COM_Webpa.Server.URL" : "https://fabric.xmidt-eu.comcast.net:8080",
