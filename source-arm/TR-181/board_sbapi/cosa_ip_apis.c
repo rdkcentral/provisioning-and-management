@@ -4647,13 +4647,20 @@ CosaDmlIpIfGetStats
     }
     else
     {
-       
+        COSA_DML_IF_STATS tmpStats = {0};
+        char *ifname = (char *)g_ipif_names[ulIpIfInstanceNumber-1];
 
-        if (CosaUtilGetIfStats((char *)g_ipif_names[ulIpIfInstanceNumber-1],  (PCOSA_DML_IF_STATS)pStats))
+        if (CosaUtilGetIfStats(ifname, &tmpStats))
+        {
+            /* Field copy avoids IF_STATS cast into IP_STATS; Bytes* refreshed as ULONG64. */
+            AnscZeroMemory(pStats, sizeof(*pStats));
+            CosaUtilCopyIfStatsToIpStats(&tmpStats, pStats);
+            CosaUtilApplyIpIfByteStats64(ifname, pStats);
             return ANSC_STATUS_SUCCESS;
+        }
         else
         {
-            AnscTraceError(("%s -- failed!\n", __FUNCTION__)); 
+            AnscTraceError(("%s -- failed!\n", __FUNCTION__));
             return ANSC_STATUS_FAILURE;
         }
     }
