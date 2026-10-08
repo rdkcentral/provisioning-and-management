@@ -1219,6 +1219,13 @@ Interface2_GetParamUlongValue
             pIPInterface->Cfg.MaxMTUSize = CosaUtilIoctlXXX((char *)pIPInterface->Cfg.LinkName, "mtu", NULL);
         }
 #endif
+
+#ifdef BRLAN0_MTU_SUPPORT_FEATURE
+        if (strstr(pIPInterface->Cfg.LinkName, "brlan0"))
+        {
+            pIPInterface->Cfg.MaxMTUSize = CosaUtilIoctlXXX((char *)pIPInterface->Cfg.LinkName, "mtu", NULL);
+        }
+#endif
         /* collect value */
         *puLong = pIPInterface->Cfg.MaxMTUSize;
 
