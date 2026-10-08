@@ -1,8 +1,10 @@
 #include "cosa_x_rdk_dns_failover_dml.h"
 
+#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -13,6 +15,7 @@
 
 #define DNS_FAILOVER_CONFIG_FILE      "/nvram/dns_failover.conf"
 #define DNS_FAILOVER_CONFIG_TEMP_FILE "/nvram/dns_failover.conf.tmp"
+#define DNS_FAILOVER_MANAGER_PID_FILE "/tmp/dns_failover_manager.pid" /* TODO: replace with the DNS manager's agreed PID-file path. */
 #define DNS_FAILOVER_RESOLVER_SOURCE_SIZE 256
 
 #define DNS_FAILOVER_T2_ENABLED  "SYS_INFO_DNS_failover_config_enabled"
@@ -370,6 +373,79 @@ DNSFailover_WriteConfig(const DNS_FAILOVER_CONFIG* config)
 }
 
 static void
+DNSFailover_NotifyManager(void)
+{
+    char pidText[32];
+    char* end = NULL;
+    long pidValue;
+    int extraByte;
+    FILE* pidFile = fopen(DNS_FAILOVER_MANAGER_PID_FILE, "r");
+
+    if (!pidFile)
+    {
+        CcspTraceWarning(("DNS failover manager PID file %s is unavailable: %s\n",
+            DNS_FAILOVER_MANAGER_PID_FILE, strerror(errno)));
+        return;
+    }
+
+    if (!fgets(pidText, sizeof(pidText), pidFile))
+    {
+        CcspTraceWarning(("DNS failover manager PID file %s is empty or unreadable\n",
+            DNS_FAILOVER_MANAGER_PID_FILE));
+        fclose(pidFile);
+        return;
+    }
+
+    if (!feof(pidFile) && !strchr(pidText, '\n'))
+    {
+        CcspTraceWarning(("DNS failover manager PID in %s is too long\n",
+            DNS_FAILOVER_MANAGER_PID_FILE));
+        fclose(pidFile);
+        return;
+    }
+
+    if (strchr(pidText, '\n') &&
+        ((extraByte = fgetc(pidFile)) != EOF || ferror(pidFile)))
+    {
+        CcspTraceWarning(("DNS failover manager PID file %s contains extra data\n",
+            DNS_FAILOVER_MANAGER_PID_FILE));
+        fclose(pidFile);
+        return;
+    }
+    fclose(pidFile);
+
+    errno = 0;
+    pidValue = strtol(pidText, &end, 10);
+    if (errno == ERANGE || end == pidText || pidValue <= 1 || pidValue > INT_MAX)
+    {
+        CcspTraceWarning(("DNS failover manager PID file %s contains an invalid PID\n",
+            DNS_FAILOVER_MANAGER_PID_FILE));
+        return;
+    }
+
+    while (*end && isspace((unsigned char)*end))
+    {
+        ++end;
+    }
+    if (*end)
+    {
+        CcspTraceWarning(("DNS failover manager PID file %s contains trailing data\n",
+            DNS_FAILOVER_MANAGER_PID_FILE));
+        return;
+    }
+
+    if (kill((pid_t)pidValue, SIGUSR1) != 0)
+    {
+        CcspTraceWarning(("Failed to send SIGUSR1 to DNS failover manager PID %ld: %s\n",
+            pidValue, strerror(errno)));
+        return;
+    }
+
+    CcspTraceInfo(("Sent SIGUSR1 to DNS failover manager PID %ld after config commit\n",
+        pidValue));
+}
+
+static void
 DNSFailover_EnsureLoaded(void)
 {
     BOOL usedOverride = FALSE;
@@ -550,6 +626,9 @@ DNSFailover_Commit(ANSC_HANDLE hInsContext)
 
     previousEnable = g_dnsFailoverActive.Enable;
     g_dnsFailoverActive = g_dnsFailoverCandidate;
+
+    /* The file is committed; notify the manager to reload the complete config. */
+    DNSFailover_NotifyManager();
 
     DNSFailover_CopyString(g_dnsFailoverStatus.State,
         sizeof(g_dnsFailoverStatus.State),
