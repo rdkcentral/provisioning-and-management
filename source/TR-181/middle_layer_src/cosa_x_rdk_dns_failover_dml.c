@@ -16,6 +16,7 @@
 #define DNS_FAILOVER_CONFIG_FILE      "/nvram/dns_failover.conf"
 #define DNS_FAILOVER_CONFIG_TEMP_FILE "/nvram/dns_failover.conf.tmp"
 #define DNS_FAILOVER_MANAGER_PID_FILE "/tmp/dns_failover_manager.pid" /* TODO: replace with the DNS manager's agreed PID-file path. */
+#define DNS_FAILOVER_STATUS_FILE      "/tmp/dns_failover_status.conf"
 #define DNS_FAILOVER_RESOLVER_SOURCE_SIZE 256
 
 #define DNS_FAILOVER_T2_ENABLED  "SYS_INFO_DNS_failover_config_enabled"
@@ -76,14 +77,134 @@ typedef struct
     char  LastVerificationResult[DNS_FAILOVER_STATUS_VALUE_SIZE];
 } DNS_FAILOVER_STATUS;
 
-static DNS_FAILOVER_STATUS g_dnsFailoverStatus =
+static const DNS_FAILOVER_STATUS g_dnsFailoverStatusDefaults =
 {
-    "Healthy",
+    "Disabled",
     0,
     "0001-01-01T00:00:00Z",
     "0001-01-01T00:00:00Z",
     "None"
 };
+
+static DNS_FAILOVER_STATUS g_dnsFailoverStatus =
+{
+    "Disabled",
+    0,
+    "0001-01-01T00:00:00Z",
+    "0001-01-01T00:00:00Z",
+    "None"
+};
+
+static BOOL DNSFailover_CopyString(char* destination, size_t destinationSize, const char* source);
+static BOOL DNSFailover_ParseUlong(const char* value, ULONG* result);
+
+static char*
+DNSFailover_TrimWhitespace(char* value)
+{
+    char* end;
+
+    while (*value && isspace((unsigned char)*value)) value++;
+    end = value + strlen(value);
+    while (end > value && isspace((unsigned char)end[-1])) end--;
+    *end = '\0';
+    return value;
+}
+
+static BOOL
+DNSFailover_IsValidStatusState(const char* state)
+{
+    return strcmp(state, "Disabled") == 0 ||
+        strcmp(state, "Healthy") == 0 ||
+        strcmp(state, "Suspect") == 0 ||
+        strcmp(state, "Failed") == 0 ||
+        strcmp(state, "FailoverActive") == 0;
+}
+
+static BOOL
+DNSFailover_IsValidTimestamp(const char* value)
+{
+    static const ULONG digitPositions[] = {0, 1, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18};
+    static const char separators[] = {'-', '-', 'T', ':', ':', 'Z'};
+    static const ULONG separatorIndexes[] = {4, 7, 10, 13, 16, 19};
+    ULONG i;
+
+    if (strlen(value) != 20) return FALSE;
+
+    for (i = 0; i < sizeof(digitPositions) / sizeof(digitPositions[0]); i++)
+    {
+        if (!isdigit((unsigned char)value[digitPositions[i]])) return FALSE;
+    }
+
+    for (i = 0; i < sizeof(separatorIndexes) / sizeof(separatorIndexes[0]); i++)
+    {
+        if (value[separatorIndexes[i]] != separators[i]) return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void
+DNSFailover_ReadStatusFile(DNS_FAILOVER_STATUS* status)
+{
+    FILE* file;
+    char line[256];
+
+    *status = g_dnsFailoverStatusDefaults;
+    file = fopen(DNS_FAILOVER_STATUS_FILE, "r");
+    if (!file) return;
+
+    while (fgets(line, sizeof(line), file))
+    {
+        char* separator;
+        char* name;
+        char* value;
+
+        if (!strchr(line, '\n') && !feof(file))
+        {
+            int character;
+            while ((character = fgetc(file)) != '\n' && character != EOF) {}
+            continue;
+        }
+
+        name = DNSFailover_TrimWhitespace(line);
+        if (!name[0] || name[0] == '#') continue;
+
+        separator = strchr(name, '=');
+        if (!separator) continue;
+        *separator = '\0';
+        name = DNSFailover_TrimWhitespace(name);
+        value = DNSFailover_TrimWhitespace(separator + 1);
+        if (!value[0]) continue;
+
+        if (strcmp(name, "State") == 0)
+        {
+            if (DNSFailover_IsValidStatusState(value))
+                DNSFailover_CopyString(status->State, sizeof(status->State), value);
+        }
+        else if (strcmp(name, "ActiveResolverCount") == 0)
+        {
+            ULONG resolverCount;
+            if (DNSFailover_ParseUlong(value, &resolverCount))
+                status->ActiveResolverCount = resolverCount;
+        }
+        else if (strcmp(name, "LastFailureTime") == 0 && DNSFailover_IsValidTimestamp(value))
+        {
+            DNSFailover_CopyString(status->LastFailureTime, sizeof(status->LastFailureTime), value);
+        }
+        else if (strcmp(name, "LastRecoveryTime") == 0 && DNSFailover_IsValidTimestamp(value))
+        {
+            DNSFailover_CopyString(status->LastRecoveryTime, sizeof(status->LastRecoveryTime), value);
+        }
+        else if (strcmp(name, "LastVerificationResult") == 0 &&
+            strlen(value) < sizeof(status->LastVerificationResult))
+        {
+            DNSFailover_CopyString(status->LastVerificationResult,
+                sizeof(status->LastVerificationResult), value);
+        }
+    }
+
+    fclose(file);
+}
 
 static void
 DNSFailover_ReportRejected(const char* reason)
@@ -488,6 +609,8 @@ DNSFailover_GetParamUlongValue
         ULONG*      puLong
     )
 {
+    DNS_FAILOVER_STATUS status;
+
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
 
@@ -660,6 +783,8 @@ DNSFailoverStatus_GetParamUlongValue
         ULONG*      puLong
     )
 {
+    DNS_FAILOVER_STATUS status;
+
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
 
@@ -668,7 +793,8 @@ DNSFailoverStatus_GetParamUlongValue
         return FALSE;
     }
 
-    *puLong = g_dnsFailoverStatus.ActiveResolverCount;
+    DNSFailover_ReadStatusFile(&status);
+    *puLong = status.ActiveResolverCount;
     return TRUE;
 }
 
@@ -681,6 +807,7 @@ DNSFailoverStatus_GetParamStringValue
         ULONG*      pUlSize
     )
 {
+    DNS_FAILOVER_STATUS status;
     const char* value = NULL;
 
     UNREFERENCED_PARAMETER(hInsContext);
@@ -688,10 +815,12 @@ DNSFailoverStatus_GetParamStringValue
 
     if (!ParamName) return (ULONG)-1;
 
-    if (strcmp(ParamName, "State") == 0) value = g_dnsFailoverStatus.State;
-    else if (strcmp(ParamName, "LastFailureTime") == 0) value = g_dnsFailoverStatus.LastFailureTime;
-    else if (strcmp(ParamName, "LastRecoveryTime") == 0) value = g_dnsFailoverStatus.LastRecoveryTime;
-    else if (strcmp(ParamName, "LastVerificationResult") == 0) value = g_dnsFailoverStatus.LastVerificationResult;
+    DNSFailover_ReadStatusFile(&status);
+
+    if (strcmp(ParamName, "State") == 0) value = status.State;
+    else if (strcmp(ParamName, "LastFailureTime") == 0) value = status.LastFailureTime;
+    else if (strcmp(ParamName, "LastRecoveryTime") == 0) value = status.LastRecoveryTime;
+    else if (strcmp(ParamName, "LastVerificationResult") == 0) value = status.LastVerificationResult;
     else return (ULONG)-1;
 
     return DNSFailover_ReturnString(value, pValue, pUlSize);
