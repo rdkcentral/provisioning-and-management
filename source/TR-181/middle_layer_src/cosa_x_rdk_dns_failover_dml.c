@@ -609,8 +609,6 @@ DNSFailover_GetParamUlongValue
         ULONG*      puLong
     )
 {
-    DNS_FAILOVER_STATUS status;
-
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
 
