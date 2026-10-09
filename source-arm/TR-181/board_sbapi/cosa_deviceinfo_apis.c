@@ -638,14 +638,6 @@ CosaDmlDiGetProductClass
             return ANSC_STATUS_FAILURE;
         }
     }
-#elif defined(_XER2_PRODUCT_REQ_)
-    {
-       rc = strcpy_s(pValue, *pulSize, "XER2");
-       if ( rc != EOK) {
-            ERR_CHK(rc);
-            return ANSC_STATUS_FAILURE;
-        }
-    }
 #elif defined(MODEM_ONLY_SUPPORT)
     {
         rc = strcpy_s(pValue, *pulSize, "XD4");
@@ -2118,7 +2110,7 @@ CosaDmlDiGetProcessorSpeed
     memset(line, 0, sizeof(line));
 
 #if defined(_COSA_BCM_ARM_) || defined(_COSA_QCA_ARM_)
-#if defined (_SR300_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SR300_PRODUCT_REQ_) || defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
     if(pValue && pulSize)
     {
         if( ANSC_STATUS_SUCCESS == platform_hal_GetCPUSpeed(pValue) )
@@ -2384,21 +2376,6 @@ int findLocalPortAvailable()
         }
         return -1;
 }
-
-/* Returns TRUE when device.properties BUILD_TYPE=prod and if device.properties file does not exists */
-/* else FALSE */
-BOOL isProdHardened(void)
-{
-    char buildType[6] = {0};
-
-    if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType) - 1, "BUILD_TYPE") != 0)
-        return TRUE;
-
-    buildType[sizeof(buildType) - 1] = '\0';
-
-    return (strcmp(buildType, "prod") == 0) ? TRUE : FALSE;
-}
-
 int setXOpsReverseSshArgs(char* pString) {
     char tempCopy[512] = { "\0" };
     char* tempStr = NULL;
@@ -2504,7 +2481,6 @@ int setXOpsReverseSshTrigger(char *input) {
     }
 
     trigger = strstr(input, "start");
-
     if (trigger) {
     #ifdef ENABLE_SHORTS
         char *trigger_shorts = NULL;
@@ -2521,14 +2497,10 @@ int setXOpsReverseSshTrigger(char *input) {
 
         else {
     #endif
-                if (!isProdHardened()) {
-                    CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
-                    int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
-                    if (ret != 0) {
-                        CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
-                    }
-                } else {
-                    CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n", __FUNCTION__));
+                CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
+                int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                if (ret != 0) {
+                    CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
                 }
     #ifdef ENABLE_SHORTS
         }
@@ -3573,11 +3545,11 @@ void FillPartnerIDValues(cJSON *json , char *partnerID , PCOSA_DATAMODEL_RDKB_UI
 						// For Sky, we need to pull the default login from the /tmp/serial.txt file.
 						FILE *fp = NULL;
 						char DefaultPassword[25] = {0};
-#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined(_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_)
 						fp = popen("grep 'WIFI_PASSWORD' /tmp/serial.txt | cut -d '=' -f 2 | tr -d [:space:]", "r");
 #else
 						fp = popen("grep 'WIFIPASSWORD' /tmp/serial.txt | cut -d '=' -f 2 | tr -d [:space:]", "r");
-#endif /** _SCER11BEL_PRODUCT_REQ_ OR _SCXF11BFL_PRODUCT_REQ_ OR _XER2_PRODUCT_REQ_ */
+#endif /** _SCER11BEL_PRODUCT_REQ_ OR _SCXF11BFL_PRODUCT_REQ_ */
 						if (fp == NULL)
 						{
 							CcspTraceWarning(("%s - ERROR Grabbing the default password\n",__FUNCTION__));
