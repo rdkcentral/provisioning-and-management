@@ -79,15 +79,6 @@
 #define COMP_TCP_IPV6_ENABLE "com.cisco.spvtg.ccsp.tdm"
 #define DBUSPATH_TCP_IPV6_ENABLE "/com/cisco/spvtg/ccsp/tdm"
 
-ULONG
-LpmManager_GetParamStringValue
-    (
-        ANSC_HANDLE                 hInsContext,
-        char*                       ParamName,
-        char*                       pValue,
-        ULONG*                      pUlSize
-    );
-
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
 
 #define LOGGING_MODULE           "PAM"

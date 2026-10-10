@@ -424,21 +424,6 @@
 <?endif?>
 <?endif?>
     <object>
-      <name>X_RDK_COMCAST-COM_LPM-MANAGER</name>
-      <objectType>object</objectType>
-      <functions>
-        <func_GetParamStringValue>LpmManager_GetParamStringValue</func_GetParamStringValue>
-      </functions>
-      <parameters>
-        <parameter>
-          <name>LpmStatus</name>
-          <type>string(16)</type>
-          <syntax>string</syntax>
-          <writable>false</writable>
-        </parameter>
-      </parameters>
-    </object>
-    <object>
 
       <name>DeviceInfo</name>
 
