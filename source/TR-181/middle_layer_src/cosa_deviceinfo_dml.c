@@ -104,6 +104,60 @@
 #include "ccsp_base_api.h"
 #include "messagebus_interface_helper.h"
 
+ULONG
+LpmManager_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    rbusHandle_t lpmHandle = NULL;
+    rbusValue_t statusValue = NULL;
+    const char *status;
+    size_t requiredSize;
+    ULONG result = (ULONG)-1;
+
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (!ParamName || strcmp(ParamName, "LpmStatus") != 0 || !pUlSize)
+        return result;
+
+    if (rbus_open(&lpmHandle, "CcspPandMSspLpmStatus") != RBUS_ERROR_SUCCESS)
+        return result;
+
+    if (rbus_get(lpmHandle, "Device.X_RDK_LowPowerMode.Status", &statusValue) != RBUS_ERROR_SUCCESS || !statusValue)
+        goto done;
+
+    if (rbusValue_GetType(statusValue) != RBUS_STRING)
+        goto done;
+
+    status = rbusValue_GetString(statusValue, NULL);
+    if (!status)
+        goto done;
+
+    requiredSize = strlen(status) + 1;
+    if (*pUlSize < requiredSize)
+    {
+        *pUlSize = requiredSize;
+        result = 1;
+        goto done;
+    }
+
+    if (!pValue)
+        goto done;
+
+    memcpy(pValue, status, requiredSize);
+    result = 0;
+
+done:
+    if (statusValue)
+        rbusValue_Release(statusValue);
+    rbus_close(lpmHandle);
+    return result;
+}
+
 #include <stdbool.h>
 #include "cosa_deviceinfo_apis.h"
 #include "ccsp_psm_helper.h"

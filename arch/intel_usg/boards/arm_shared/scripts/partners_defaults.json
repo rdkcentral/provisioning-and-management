@@ -99,7 +99,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "override" : {
         "CGA4332COM" : {
                      "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.CloudUI.brandname" : "Xfinity" ,
@@ -141,7 +141,7 @@
 },
 
  "RDKM" : {
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://wiki.rdkcentral.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://wiki.rdkcentral.com/display/RDK/Download+and+Build+Documentation",
@@ -325,7 +325,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "true",
       "Device.X_RDK_Features.LostandFound.Enable" : "false",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "Default_VoIP_Configuration_FileName" : "telcovoice_config_default_ITA.json",
       "override" : {
         "SR213" : {
@@ -333,7 +333,7 @@
         },
         "SCER11BEL" : {
                 "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
-                "Device.X_RDK_Features.LowPowerMode.IdleTime" : "960",
+                "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
                 "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.XconfURL" : "https://secure.xconfds.coast.xcal.tv"
         }
       },
@@ -437,7 +437,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "true",
       "Device.X_RDK_Features.LostandFound.Enable" : "false",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "Default_VoIP_Configuration_FileName" : "telcovoice_config_default_UK.json",
       "override" : {
         "SR300" : {
@@ -456,7 +456,7 @@
         },
         "SCER11BEL" : {
                 "Device.X_RDK_Features.LowPowerMode.Enable" : "true",
-                "Device.X_RDK_Features.LowPowerMode.IdleTime" : "960",
+                "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
                 "Device.X_RDK_WebConfig.URL" : "https://cpe-config-sky-uk.wp.xdp.comcast.net/api/v1/device/{mac}/config",
                 "Device.X_RDK_WebConfig.SupplementaryServiceUrls.Telemetry" : "https://cpe-profile-sky-uk.wp.xdp.comcast.net/api/v1/device/{mac}/config",
                 "Device.X_RDKCENTRAL-COM_Webpa.Server.URL" : "https://fabric.xmidt-eu.comcast.net:8080",
@@ -569,7 +569,7 @@
 
 
    "cox" : {
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://www.cox.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://www.cox.com/wifisupport",
@@ -692,7 +692,7 @@
 
 
    "rogers" : {
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://www.Rogers.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://www.rogers.com/ignite-tv-support",
@@ -901,7 +901,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "override" : {
       "CGM4140COM" : {
                 "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.CMVoiceImageSelect" : "pc15mgcp"
@@ -945,7 +945,7 @@
    },
 
 "videotron" : {
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://www.videotron.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://videotron.com/apps/helixfi",
@@ -1049,7 +1049,7 @@
       }
    },
 "axb3retail" : {
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "http://www.surfboard.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.CustomerCentralLink" : "http://arris.force.com/consumers/",
@@ -1147,7 +1147,7 @@
       }
   },
    "unknown" : {
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "user guides",
@@ -1246,7 +1246,7 @@
    },
 
     "test-partner" : {
-      "Device.X_RDK_Features.LowPowerMode.IdleTime" : "0",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "http://www.xfinity.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "http://customer.comcast.com/userguides",
