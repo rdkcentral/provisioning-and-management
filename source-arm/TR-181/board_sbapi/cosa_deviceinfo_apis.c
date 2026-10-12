@@ -2497,14 +2497,10 @@ int setXOpsReverseSshTrigger(char *input) {
 
         else {
     #endif
-                if (!isProdHardened()) {
-                    CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
-                    int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
-                    if (ret != 0) {
-                        CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
-                    }
-                } else {
-                    CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n", __FUNCTION__));
+                CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
+                int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                if (ret != 0) {
+                    CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
                 }
     #ifdef ENABLE_SHORTS
         }
