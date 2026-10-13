@@ -15,7 +15,7 @@
 
 #define DNS_FAILOVER_CONFIG_FILE      "/nvram/dns_failover.conf"
 #define DNS_FAILOVER_CONFIG_TEMP_FILE "/nvram/dns_failover.conf.tmp"
-#define DNS_FAILOVER_MANAGER_PID_FILE "/tmp/dns_failover_manager.pid" /* TODO: replace with the DNS manager's agreed PID-file path. */
+#define DNS_FAILOVER_MANAGER_PID_FILE "/tmp/dns_conntrack_failover.pid"
 #define DNS_FAILOVER_STATUS_FILE      "/tmp/dns_conntrack_failover_status.txt"
 #define DNS_FAILOVER_RESOLVER_SOURCE_SIZE 256
 
@@ -609,8 +609,6 @@ DNSFailover_GetParamUlongValue
         ULONG*      puLong
     )
 {
-    
-
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
 
