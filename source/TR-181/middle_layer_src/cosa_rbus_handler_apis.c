@@ -1461,46 +1461,6 @@ static void Cosa_Rbus_Handler_WanStatus_EventHandler(rbusHandle_t handle, rbusEv
     }
 }
 
-#if 0
-#if defined (WAN_FAILOVER_SUPPORTED)
-/* WAN link (DOCSIS) status event handler: preserves logs when the WAN link goes down. */
-static void Cosa_Rbus_Handler_DocsisLinkStatus_EventHandler(rbusHandle_t handle, rbusEvent_t const* event, rbusEventSubscription_t* subscription)
-{
-    (void)handle;
-    (void)subscription;
-
-    if (event == NULL || event->name == NULL)
-    {
-        CcspTraceError(("%s %d : FAILED , event is NULL\n", __FUNCTION__, __LINE__));
-        return;
-    }
-
-    if (0 != strcmp(event->name, DOCSIS_LINK_STATUS_TR181))
-    {
-        CcspTraceWarning(("%s: unexpected eventName %s\n", __FUNCTION__, event->name));
-        return;
-    }
-
-    rbusValue_t value = rbusObject_GetValue(event->data, "value");
-    if (value == NULL || rbusValue_GetType(value) != RBUS_BOOLEAN)
-    {
-        CcspTraceError(("%s %d : FAILED , invalid DOCSIS LinkStatus value\n", __FUNCTION__, __LINE__));
-        return;
-    }
-
-    /* DOCSIS LinkStatus is true when the WAN link is up, false when it is down. */
-    bool linkUp = rbusValue_GetBoolean(value);
-    CcspTraceInfo(("%s: DOCSIS LinkStatus=%s\n", __FUNCTION__, linkUp ? "Up" : "Down"));
-
-    if (!linkUp)
-    {
-        CcspTraceInfo(("%s: WAN link is Down; preserving logs\n", __FUNCTION__));
-        v_secure_system("/rdklogger/backupLogs.sh false '' wan-stopped '' &");
-    }
-}
-#endif /* WAN_FAILOVER_SUPPORTED */
-#endif
-
 #if defined (WAN_FAILOVER_SUPPORTED)
 /* Cable Modem RF signal status event handler: preserves logs on RF outage. */
 static void Cosa_Rbus_Handler_RfSignalStatus_EventHandler(rbusHandle_t handle, rbusEvent_t const* event, rbusEventSubscription_t* subscription)
@@ -1550,9 +1510,11 @@ void Cosa_Rbus_Handler_SubscribeWanStatusEvent( void )
     if(rc != RBUS_ERROR_SUCCESS)
     {
         CcspTraceError(("%s %d - Failed to Subscribe %s, Error=%s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181, rbusError_ToString(rc)));
-       // return;
     }
-    CcspTraceInfo(("%s %d - Successfully subscribed to %s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181));
+    else
+    {
+        CcspTraceInfo(("%s %d - Successfully subscribed to %s\n", __FUNCTION__, __LINE__, WANMGR_CURRENT_STATUS_TR181));
+    }
     #if defined (WAN_FAILOVER_SUPPORTED)
     /* CableRfSignalStatus is provided by CcspCMAgent only on WAN_FAILOVER_SUPPORTED builds. */
     rc = rbusEvent_Subscribe(handle, CABLE_MODEM_RF_SIGNAL_STATUS, Cosa_Rbus_Handler_RfSignalStatus_EventHandler, NULL, 60);
