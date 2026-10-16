@@ -1164,8 +1164,9 @@ CosaDmlDiSetAndProcessDhcpServDetectionFlag
 * @return TRUE if BUILD_TYPE is "prod", FALSE otherwise.
 *
 */
-BOOL isProdHardened(void);
-
+#if !defined(_CBR2_PRODUCT_REQ_)
+    BOOL isProdHardened(void);
+#endif
 /**
 * @brief Trigger XOps reverse SSH connection.
 *
