@@ -2387,6 +2387,7 @@ int findLocalPortAvailable()
 
 /* Returns TRUE when device.properties BUILD_TYPE=prod and if device.properties file does not exists */
 /* else FALSE */
+#if !defined(_CBR2_PRODUCT_REQ_)
 BOOL isProdHardened(void)
 {
     char buildType[6] = {0};
@@ -2398,6 +2399,7 @@ BOOL isProdHardened(void)
 
     return (strcmp(buildType, "prod") == 0) ? TRUE : FALSE;
 }
+#endif
 
 int setXOpsReverseSshArgs(char* pString) {
     char tempCopy[512] = { "\0" };
@@ -2521,6 +2523,7 @@ int setXOpsReverseSshTrigger(char *input) {
 
         else {
     #endif
+    #if !defined(_CBR2_PRODUCT_REQ_)		
                 if (!isProdHardened()) {
                     CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
                     int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
@@ -2529,7 +2532,14 @@ int setXOpsReverseSshTrigger(char *input) {
                     }
                 } else {
                     CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n", __FUNCTION__));
-                }
+                } 
+    #else
+        CcspTraceInfo(("[%s] ReverseSSH arguments = %s %s  \n",__FUNCTION__,reverseSSHArgs,nonshortsHostLogin));
+                int ret = v_secure_system(sshCommand " start %s%s", reverseSSHArgs,nonshortsHostLogin);
+                if (ret != 0) {
+                    CcspTraceError(("[%s] Reverse SSH start failed with return code %d\n", __FUNCTION__, ret));
+		}
+    #endif
     #ifdef ENABLE_SHORTS
         }
     #endif
