@@ -5870,6 +5870,74 @@ Stats5_GetParamBoolValue
     return FALSE;
 }
 
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        Stats5_GetParamUint64Value
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG64*                    puLong64
+            );
+
+    description:
+
+        This function is called to retrieve ULONG64 parameter value;
+
+**********************************************************************/
+BOOL
+Stats5_GetParamUint64Value
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG64*                    puLong64
+    )
+{
+    PCOSA_DATAMODEL_IP              pMyObject    = (PCOSA_DATAMODEL_IP)g_pCosaBEManager->hIP;
+    ANSC_STATUS                     returnStatus  = ANSC_STATUS_SUCCESS;
+    PCOSA_DML_IP_STATS              pIPStats      = (PCOSA_DML_IP_STATS)AnscAllocateMemory(sizeof(COSA_DML_IP_STATS));
+    PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
+    PCOSA_DML_IP_IF_FULL2           pIfFull = (PCOSA_DML_IP_IF_FULL2)pCosaContext->hContext;
+
+    if( !pIPStats || !puLong64 )
+    {
+        if (pIPStats)
+        {
+            AnscFreeMemory(pIPStats);
+        }
+        return FALSE;
+    }
+
+    returnStatus = CosaDmlIpIfGetStats(pMyObject->hSbContext, pIfFull->Cfg.InstanceNumber, pIPStats);
+
+    if( returnStatus != ANSC_STATUS_SUCCESS )
+    {
+        AnscFreeMemory(pIPStats);
+        return FALSE;
+    }
+
+    if( AnscEqualString(ParamName, "BytesSent", TRUE))
+    {
+        *puLong64 = pIPStats->BytesSent;
+        AnscFreeMemory(pIPStats);
+        return TRUE;
+    }
+
+    if( AnscEqualString(ParamName, "BytesReceived", TRUE))
+    {
+        *puLong64 = pIPStats->BytesReceived;
+        AnscFreeMemory(pIPStats);
+        return TRUE;
+    }
+
+    AnscFreeMemory(pIPStats);
+    return FALSE;
+}
+
 /**********************************************************************  
 
     caller:     owner of this object 
@@ -5974,19 +6042,7 @@ Stats5_GetParamUlongValue
     }
 
     /* check the parameter name and return the corresponding value */
-    if (strcmp(ParamName, "BytesSent") == 0)
-    {
-        /* collect value */
-        *puLong = pIPStats->BytesSent;
-        goto SUCCESS;
-    }
-
-    if (strcmp(ParamName, "BytesReceived") == 0)
-    {
-        /* collect value */
-        *puLong = pIPStats->BytesReceived;
-        goto SUCCESS;
-    }
+    /* BytesSent/BytesReceived served by Stats5_GetParamUint64Value */
 
     if (strcmp(ParamName, "PacketsSent") == 0)
     {
