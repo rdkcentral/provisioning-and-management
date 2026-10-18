@@ -30,6 +30,9 @@
 #include "syscfg/syscfg.h"
 #include "secure_wrapper.h"
 
+#if defined (TP_ENABLED)
+#include "rdk_otlp_instrumentation.h"
+#endif
 #if defined (RBUS_WAN_IP)
 #include "cosa_deviceinfo_dml.h"
 #endif /*RBUS_WAN_IP*/
@@ -713,11 +716,17 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
             return RBUS_ERROR_INVALID_INPUT;
         }
 
+#if defined (TP_ENABLED)
+        rdk_otlp_start_distributed_trace(propertyName, "set");
+#endif
         strncpy(RRDIssueType, str, sizeof(RRDIssueType)-1);
         CcspTraceInfo(("[%s]: RemotedebuggerIssueType String Value is %s\n", __FUNCTION__,RRDIssueType));
         if(syscfg_set_commit(NULL, "RemoteDebuggerIssueType", RRDIssueType) != 0)
         {
             CcspTraceError(("[%s]: RemotedebuggerIssueType as %s syscfg_set Failed!!!\n",__FUNCTION__,RRDIssueType));
+#if defined (TP_ENABLED)
+            rdk_otlp_finish_distributed_trace();
+#endif
             return RBUS_ERROR_BUS_ERROR;
         }
 
@@ -731,6 +740,9 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         {
             CcspTraceInfo(("%s: RBUS Publish event success for %s !!! \n ", __FUNCTION__, propertyName));
         }
+#if defined (TP_ENABLED)
+        rdk_otlp_finish_distributed_trace();
+#endif
     }
 
     CcspTraceInfo(("Exit %s \n", __FUNCTION__));
