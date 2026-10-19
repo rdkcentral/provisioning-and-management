@@ -141,7 +141,6 @@
 },
 
  "RDKM" : {
-      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://wiki.rdkcentral.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://wiki.rdkcentral.com/display/RDK/Download+and+Build+Documentation",
@@ -225,6 +224,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
@@ -569,7 +569,6 @@
 
 
    "cox" : {
-      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://www.cox.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://www.cox.com/wifisupport",
@@ -655,6 +654,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "override" : {
          "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
@@ -945,7 +945,6 @@
    },
 
 "videotron" : {
-      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://www.videotron.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://videotron.com/apps/helixfi",
@@ -1030,6 +1029,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "override" : {
          "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
@@ -1049,7 +1049,6 @@
       }
    },
 "axb3retail" : {
-      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "http://www.surfboard.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.CustomerCentralLink" : "http://arris.force.com/consumers/",
@@ -1133,6 +1132,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
@@ -1147,7 +1147,6 @@
       }
   },
    "unknown" : {
-      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "user guides",
@@ -1231,6 +1230,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
@@ -1246,7 +1246,6 @@
    },
 
     "test-partner" : {
-      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "http://www.xfinity.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "http://customer.comcast.com/userguides",
@@ -1334,6 +1333,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "apply_value_to_sysevent" : {
             "Device.X_RDK_Features.NTPHealthCheck" : "false",
             "Device.X_RDK_Features.SelfhelpWANConnectionDiag" : "false",
