@@ -692,7 +692,6 @@
 
 
    "rogers" : {
-      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
 
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.PartnerLink" : "https://www.Rogers.com",
       "Device.DeviceInfo.X_RDKCENTRAL-COM_Syndication.RDKB_UIBranding.Footer.UserGuideLink" : "https://www.rogers.com/ignite-tv-support",
@@ -778,6 +777,7 @@
       "Device.X_RDK_Features.InterfaceVLANMarkingSupport" : "false",
       "Device.X_RDK_Features.LostandFound.Enable" : "true",
       "Device.X_RDK_Features.LowPowerMode.Enable" : "false",
+      "Device.X_RDK_Features.LowPowerMode.TriggerWaitTime" : "960",
       "override" : {
          "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
