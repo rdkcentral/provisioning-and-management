@@ -55,9 +55,7 @@ test_common_includes = -I$(PKG_CONFIG_SYSROOT_DIR)$(includedir)/gtest \
                        -I$(top_srcdir)/source-arm/TR-181/board_sbapi \
                        -I$(top_srcdir)/source-arm/TR-181/board_ml
 
-# Defines shared by both configurations; each target adds the one that
-# distinguishes the extender (-DRDKB_EXTENDER_ENABLED) from the non-extender
-# RBUS (-DRBUS_BUILD_FLAG_ENABLE) build.
+# Defines shared by every test binary.
 test_common_defines = -DRBUS_WAN_IP \
                       -DFEATURE_SUPPORT_SPEED_BOOST \
                       -DWAN_FAILOVER_SUPPORTED \
@@ -115,10 +113,10 @@ CcspPandMSsp_gtest_bin_LDFLAGS = $(test_common_ldflags)
 CcspPandMSsp_gtest_bin_LDADD = $(test_common_ldadd) \
                                $(HOME)/usr/local/lib/libmock_secure_wrapper.la
 
-# Non-extender RBUS configuration: compiles the WAN status and RF signal outage
-# handlers so they can be regression tested. It omits libmock_secure_wrapper and
-# provides its own v_secure_system mock via secureWrapperMock.cpp.
-CcspPandMSsp_wanfailover_gtest_bin_CPPFLAGS = $(test_common_includes) $(test_common_defines) -DRBUS_BUILD_FLAG_ENABLE
+# wan-status log preservation tests. Same configuration as above, but provides
+# its own v_secure_system mock via secureWrapperMock.cpp instead of
+# libmock_secure_wrapper so the backup script invocation can be verified.
+CcspPandMSsp_wanfailover_gtest_bin_CPPFLAGS = $(test_common_includes) $(test_common_defines) -DRDKB_EXTENDER_ENABLED
 CcspPandMSsp_wanfailover_gtest_bin_SOURCES = $(test_common_sources) \
                                  wan_failover_log_test.cpp \
                                  mocks/secureWrapperMock.cpp

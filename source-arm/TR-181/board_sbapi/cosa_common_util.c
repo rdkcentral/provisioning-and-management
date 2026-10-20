@@ -75,6 +75,7 @@
 #include "safec_lib_common.h"
 #include "dslh_definitions_database.h"
 #include "cosa_nat_apis.h"
+#include "secure_wrapper.h"
 
 #define IPV6_PREFIX "Device.IP.Interface.1.IPv6Prefix.1.Prefix"
 #define IPV6_PREFIX_EVENT "tr_erouter0_dhcpv6_client_v6pref"
@@ -804,6 +805,32 @@ EvtDispterWanIpv6AddrsCallback(char *ip_addrs)
      }
 }
 #endif /*RBUS_WAN_IP*/
+
+/*
+ * Handle a wan-status sysevent update. wan-status is set for every WAN mode
+ * (DOCSIS, EthWAN, DSL, ...), so logs are preserved on any started -> stopped transition.
+ */
+int
+EvtDispterWanStatusCallback(const char *value)
+{
+    if (!strncmp(value, "started", 7))
+    {
+        gWanStatus = true;
+        return EVENT_WAN_STARTED;
+    }
+    if (!strncmp(value, "stopped", 7))
+    {
+        if (gWanStatus)
+        {
+            CcspTraceInfo(("%s: wan-status changed to stopped; preserving logs\n", __FUNCTION__));
+            v_secure_system("/rdklogger/backupLogs.sh false '' wan-stopped '' &");
+        }
+        gWanStatus = false;
+        return EVENT_WAN_STOPPED;
+    }
+    return EVENT_TIMEOUT;
+}
+
 /*
  * Initialize sysevnt 
  *   return 0 if success and -1 if failture.
@@ -985,16 +1012,7 @@ EvtDispterEventListen(void)
             }
             else if(!strcmp(name_str, "wan-status"))
             {
-                if (!strncmp(value_str, "started", 7))
-                {
-                    gWanStatus = true;
-                    ret = EVENT_WAN_STARTED;
-                }
-                else if (!strncmp(value_str, "stopped", 7)) 
-                {
-                    gWanStatus = false;
-                    ret = EVENT_WAN_STOPPED;
-                }
+                ret = EvtDispterWanStatusCallback(value_str);
             }
             else if(!strcmp(name_str, "ipv4_wan_ipaddr"))
             {
