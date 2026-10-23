@@ -461,8 +461,12 @@ CosaDmlDiGetXfinityWiFiEnable
 {
     char val[64];
 
-    if (PsmGet(HOTSPOT_PSM_EANBLE, val, sizeof(val)) != 0)
-        return ANSC_STATUS_FAILURE;
+    if (PsmGet(HOTSPOT_PSM_EANBLE, val, sizeof(val)) != 0) {
+        /* PSM key doesn't exist - default to FALSE (disabled) */
+        *pValue = FALSE;
+        CcspTraceWarning(("PSM key %s not found, defaulting Enable to FALSE\n", HOTSPOT_PSM_EANBLE));
+        return ANSC_STATUS_SUCCESS;
+    }
 
     *pValue = (atoi(val) == 1) ? TRUE : FALSE;
     return ANSC_STATUS_SUCCESS;
