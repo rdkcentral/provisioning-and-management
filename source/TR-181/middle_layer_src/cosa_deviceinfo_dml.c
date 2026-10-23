@@ -10978,10 +10978,10 @@ Feature_SetParamIntValue
     if (strcmp(ParamName, "EDNSPacketSize") == 0)
     {
         CcspTraceInfo(("Set EDNSPacketSize \n"));
-        /* EDNS UDP payload size is valid from 512 through 65535 octets. */
-        if ((bValue < 512) || (bValue > 65535))
+        /* EDNS UDP payload size is valid from 512 through 4096 octets. */
+        if ((bValue < 512) || (bValue > 4096))
         {
-            CcspTraceInfo(("EDNSPacketSize %d is out of supported range (512-65535), ignoring\n", bValue));
+            CcspTraceInfo(("EDNSPacketSize %d is out of supported range (512-4096), ignoring\n", bValue));
             return FALSE;
         }
         char buf[16]={0};
