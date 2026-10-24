@@ -19594,6 +19594,10 @@ RDKB_Control_SetParamBoolValue
 	{
 		CcspTraceWarning(("%s: Clearing PartnerId and device going Factory Reset  \n", __FUNCTION__));
 		v_secure_system( "rm -rf  /nvram/.partner_ID" );
+#if defined(_ONESTACK_PRODUCT_REQ_)
+		/* Back to factory partner: drop devicemode chosen by a previous activation */
+		unlink( "/nvram/.devicemode" );
+#endif
 		pthread_create ( &tid, NULL, &CosaDmlDiPartnerIDChangeHandling, NULL );
 		return TRUE;
 	}
