@@ -10980,21 +10980,18 @@ RDKDownloadManager_GetParamIntValue
     {
         return FALSE;
     }
-
-    char *strValue = NULL;
-    if (PSM_Get_Record_Value2(
-            bus_handle,
-            g_Subsystem,
-            "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
-            NULL,
-            &strValue) == CCSP_SUCCESS && strValue != NULL)
+    char buf[16] = {0};
+    if (syscfg_get(NULL, "PackageExpiryTime", buf, sizeof(buf)) == 0)
     {
-        *pint = _ansc_atoi(strValue);
-        ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+        *pint = atoi(buf);
+        if (*pint <= 0)
+        {
+            *pint = 3600;
+        }
     }
     else
     {
-        *pint = 0;
+        *pint = 3600;
     }
     return TRUE;
 }
@@ -11008,6 +11005,7 @@ RDKDownloadManager_SetParamIntValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
+
     if (!ParamName || strcmp(ParamName, "PackageExpiryTime") != 0)
     {
         return FALSE;
@@ -11020,14 +11018,22 @@ RDKDownloadManager_SetParamIntValue
     }
 
     char value[16] = {0};
+
     snprintf(value, sizeof(value), "%d", iValue);
-    return PSM_Set_Record_Value2(
-        bus_handle,
-        g_Subsystem,
-        "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime",
-        ccsp_string,
-        value) == CCSP_SUCCESS;
+
+    if (syscfg_set(NULL, "PackageExpiryTime", value) != 0)
+    {
+        return FALSE;
+    }
+
+	 if (syscfg_commit() != 0)
+     {
+         return FALSE;
+     }
+
+    return TRUE;
 }
+
 /**********************************************************************
 
     caller:     owner of this object
@@ -14821,20 +14827,16 @@ RDKDownloadManager_SetParamStringValue
         return FALSE;
     }
 
-    if (tool != NULL)
-    {
-        const char* ttlParam = "Device.DeviceInfo.X_RDKCENTRAL-COM_RDKDownloadManager.PackageExpiryTime";
-        char *ttlValue = NULL;
+    if (tool != NULL) {
         int ttl = 3600;
+        char ttlValue[16] = {0};
 
-        if (PSM_Get_Record_Value2(bus_handle, g_Subsystem, ttlParam, NULL, &ttlValue) == CCSP_SUCCESS && ttlValue != NULL)
-        {
-            int configuredTtl = _ansc_atoi(ttlValue);
-            if (configuredTtl > 0)
-            {
+        if (!syscfg_get(NULL, "PackageExpiryTime", ttlValue, sizeof(ttlValue))) {
+            int configuredTtl = atoi(ttlValue);
+
+            if (configuredTtl > 0) {
                 ttl = configuredTtl;
             }
-            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(ttlValue);
         }
 
         /* Store an absolute expiry time. RDM performs cleanup from cron. */
