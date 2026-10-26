@@ -2749,14 +2749,113 @@ ANSC_STATUS setCMVoiceImg(char* pValue)
 }
 #endif
 
+#if defined(_ONESTACK_PRODUCT_REQ_)
+/*
+ * Write "<mode>:<rawPartner>" to DEVICEMODE_FILE for the PartnerID being activated
+ * (read from PARTNERID_FILE, set via TR-181 PartnerId).
+ * "<x>Business" -> business, anything else -> residential.
+ * syscfg is not touched: activation resets syscfg and apply_system_defaults
+ * derives syscfg devicemode from this file on the next boot.
+ */
+static ANSC_STATUS saveActivatedDeviceMode(void)
+{
+	char        rawPartner[DEVICEMODE_PARTNER_LEN] = {0};
+	char        partnerId[DEVICEMODE_PARTNER_LEN]  = {0};
+	const char *mode = NULL;
+	FILE       *fp   = fopen(PARTNERID_FILE, "r");
+
+	if (fp == NULL)
+	{
+		CcspTraceError(("%s - Unable to open %s\n", __FUNCTION__, PARTNERID_FILE));
+		return ANSC_STATUS_FAILURE;
+	}
+	if (fgets(rawPartner, sizeof(rawPartner), fp) != NULL)
+		rawPartner[strcspn(rawPartner, "\r\n")] = '\0';
+	fclose(fp);
+
+	if (rawPartner[0] == '\0')
+	{
+		CcspTraceError(("%s - Empty PartnerID in %s\n", __FUNCTION__, PARTNERID_FILE));
+		return ANSC_STATUS_FAILURE;
+	}
+
+	/* Strip on a copy; the file keeps the raw partner (e.g. comcastBusiness) */
+	snprintf(partnerId, sizeof(partnerId), "%s", rawPartner);
+	mode = onestackutils_strip_business_suffix(partnerId) ? DEVICEMODE_BUSINESS : DEVICEMODE_RESIDENTIAL;
+
+	/* Validates input, writes tmp + fsync + rename; existing file untouched on failure */
+	if (0 != onestackutils_set_file_devicemode(mode, rawPartner))
+		return ANSC_STATUS_FAILURE;
+
+	CcspTraceInfo(("%s - PartnerID '%s' activated, devicemode '%s'\n", __FUNCTION__, rawPartner, mode));
+	return ANSC_STATUS_SUCCESS;
+}
+
+/* Restore previous DEVICEMODE_FILE content (raw, may be old/invalid format) */
+static void restoreDeviceModeFile(int hadPrev, const char *prevContent)
+{
+	const char *tmpFile = DEVICEMODE_FILE ".tmp";
+	FILE       *fp      = NULL;
+
+	if (!hadPrev)
+	{
+		unlink(DEVICEMODE_FILE);
+		return;
+	}
+	fp = fopen(tmpFile, "w");
+	if (fp != NULL)
+	{
+		int ok = (fprintf(fp, "%s", prevContent) >= 0) && (fflush(fp) == 0) && (fsync(fileno(fp)) == 0);
+
+		if ((fclose(fp) == 0) && ok && (rename(tmpFile, DEVICEMODE_FILE) == 0))
+			return;
+	}
+	unlink(tmpFile);
+	unlink(DEVICEMODE_FILE);   /* no file is safer than a wrong one */
+	CcspTraceError(("%s - Rollback failed, %s removed\n", __FUNCTION__, DEVICEMODE_FILE));
+}
+#endif // _ONESTACK_PRODUCT_REQ_
+
 ANSC_STATUS activatePartnerId()
 {
 	pthread_t tid;
 
 	if ( access( PARTNERID_FILE , F_OK ) == 0 )	 
 	{
+#if defined(_ONESTACK_PRODUCT_REQ_)
+		char  prevContent[DEVICEMODE_RECORD_LEN] = {0};
+		int   hadPrev = 0;
+		FILE *fp      = fopen(DEVICEMODE_FILE, "r");
+
+		/* Keep previous content for rollback if activation cannot start */
+		if (fp != NULL)
+		{
+			if (fgets(prevContent, sizeof(prevContent), fp) != NULL)
+			{
+				prevContent[strcspn(prevContent, "\r\n")] = '\0';
+				hadPrev = 1;
+			}
+			fclose(fp);
+		}
+
+		/* Must be written before the change handler resets syscfg and reboots */
+		if (ANSC_STATUS_SUCCESS != saveActivatedDeviceMode())
+		{
+			AnscTraceWarning(("%s: %s not written, aborting activation\n", __FUNCTION__, DEVICEMODE_FILE));
+			return ANSC_STATUS_FAILURE;
+		}
+
+		if (pthread_create(&tid, NULL, &CosaDmlDiPartnerIDChangeHandling, NULL) != 0)
+		{
+			AnscTraceWarning(("%s: pthread_create failed, rolling back %s\n", __FUNCTION__, DEVICEMODE_FILE));
+			restoreDeviceModeFile(hadPrev, prevContent);
+			return ANSC_STATUS_FAILURE;
+		}
+		return ANSC_STATUS_SUCCESS;
+#else
 		pthread_create(&tid, NULL, &CosaDmlDiPartnerIDChangeHandling, NULL);
 		return ANSC_STATUS_SUCCESS;
+#endif // _ONESTACK_PRODUCT_REQ_
 	}
 	AnscTraceWarning(("%s: Partner ID set %s File not exist, so cannot activate partnerID  \n", __FUNCTION__,PARTNERID_FILE));
 	return ANSC_STATUS_FAILURE;	
