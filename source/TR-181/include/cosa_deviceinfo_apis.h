@@ -1165,6 +1165,7 @@ CosaDmlDiSetAndProcessDhcpServDetectionFlag
 *
 */
 BOOL isProdHardened(void);
+
 /**
 * @brief Trigger XOps reverse SSH connection.
 *
