@@ -5766,25 +5766,28 @@ void __cosa_dhcpsv6_refresh_config()
 				ULONG  iapd_pretm, iapd_vldtm =0;
 			
 #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
-                /* This pTmp1 is IP.Interface.{i}.IPv6Prefix.{i}., Fetch Interface Name from it*/
                 int index, prefixIndex;
                 char dmName[256] ={0};
                 char dmValue[64] ={0};
                 char sysEventName[256] ={0};
 
-                sscanf (pTmp1,"Device.IP.Interface.%d.IPv6Prefix.%d.", &index, &prefixIndex);
-
-                rc = sprintf_s((char*)dmName, sizeof(dmName), "Device.IP.Interface.%d.Name",index);
-                if(rc < EOK)
+                commonSyseventGet("current_wan_ifname", dmValue, sizeof(dmValue));
+                if (dmValue[0] == '\0')
                 {
-                    ERR_CHK(rc);
-                }
+                    sscanf (pTmp1,"Device.IP.Interface.%d.IPv6Prefix.%d.", &index, &prefixIndex);
 
-                uSize = sizeof(dmValue);
-                returnValue = g_GetParamValueString(g_pDslhDmlAgent, dmName, dmValue, &uSize);
-                if ( returnValue != 0 )
-                {
-                    CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
+                    rc = sprintf_s((char*)dmName, sizeof(dmName), "Device.IP.Interface.%d.Name",index);
+                    if(rc < EOK)
+                    {
+                        ERR_CHK(rc);
+                    }
+
+                    uSize = sizeof(dmValue);
+                    returnValue = g_GetParamValueString(g_pDslhDmlAgent, dmName, dmValue, &uSize);
+                    if ( returnValue != 0 )
+                    {
+                        CcspTraceWarning(("_cosa_dhcpsv6_refresh_config -- g_GetParamValueString for iana:%d\n", returnValue));
+                    }
                 }
 
                 memset( sysEventName, 0, sizeof(sysEventName));
