@@ -2535,7 +2535,7 @@ int setXOpsReverseSshTrigger(char *input) {
                     }
                 } else {
                     CcspTraceError(("[%s] SHORTS_MANDATORY_NON_SHORTS_BLOCKED : plain reverse SSH trigger rejected on prod-built device \n", __FUNCTION__));
-                } 
+                }
     #ifdef ENABLE_SHORTS
         }
     #endif
