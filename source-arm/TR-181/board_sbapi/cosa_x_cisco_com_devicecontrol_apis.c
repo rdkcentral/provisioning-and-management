@@ -2734,6 +2734,7 @@ CosaDmlDcSetFactoryReset
 		pthread_create(&logs, NULL, &backuplogs, NULL);
 	}
 #ifdef RDK_ONEWIFI
+    PALAKSHA GOWDA KOTTIGANAHALLI LOKESH
 	if( (factory_reset_mask & FR_ROUTER) && (factory_reset_mask & FR_WIFI)){
 		CcspTraceWarning(("FactoryReset:%d  case is both WIFI and Router removing DB\n",__LINE__));
 		v_secure_system("rm -f /nvram/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
