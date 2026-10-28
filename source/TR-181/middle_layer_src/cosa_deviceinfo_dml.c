@@ -10991,8 +10991,14 @@ Feature_SetParamIntValue
             return FALSE;
         }
         char buf[16]={0};
+		char currentValue[16] = {0};
         snprintf(buf, sizeof(buf), "%d", bValue);
-
+		
+    	if ((syscfg_get(NULL, "edns_packet_size", currentValue, sizeof(currentValue)) == 0) && (strcmp(currentValue, buf) == 0))
+    	{
+    	    CcspTraceInfo(("EDNSPacketSize unchanged, skipping update and DHCP restart\n"));
+        	return TRUE;
+	    }
         if (syscfg_set_commit(NULL, "edns_packet_size", buf) != 0)
         {
                CcspTraceInfo(("syscfg_set edns_packet_size failed\n"));
