@@ -9500,12 +9500,18 @@ Feature_GetParamIntValue
     {
          /* collect value */
 char buf[16] = {0};
-         syscfg_get( NULL, "edns_packet_size", buf, sizeof(buf));
-         if( buf [0] != '\0' )
+         syscfg_get(NULL, "edns_packet_size", buf, sizeof(buf));
+         char *end = NULL;
+         long value = strtol(buf, &end, 10);
+         if (buf[0] == '\0' || *end != '\0' || value < 512 || value > 4096)
          {
-             *pint= ( atoi(buf) );
-             return TRUE;
+             *pint = 1232;
          }
+         else
+         {
+             *pint = (int)value;
+         }
+         return TRUE;
     }
     return FALSE;
 }
