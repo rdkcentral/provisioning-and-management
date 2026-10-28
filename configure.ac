@@ -186,6 +186,18 @@ AC_ARG_ENABLE([cpufreqsupport],
              [echo "cpu freq support is disabled"])
 AM_CONDITIONAL(CPU_FREQ_SUPPORT, test "x$CPU_FREQ_SUPPORT" = xtrue)
 
+AC_ARG_ENABLE([tp],
+             AS_HELP_STRING([--enable-tp],[enable distributed tracing support (default is no)]),
+             [
+              case "${enableval}" in
+               yes) TP_SUPPORT_ENABLED=true;;
+               no)  TP_SUPPORT_ENABLED=false;;
+               *) AC_MSG_ERROR([bad value ${enableval} for --enable-tp]);;
+              esac
+             ],
+             [echo "tracing support is disabled"])
+AM_CONDITIONAL(TP_ENABLED, test "x$TP_SUPPORT_ENABLED" = xtrue)
+
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 
