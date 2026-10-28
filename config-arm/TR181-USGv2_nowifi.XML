@@ -1808,10 +1808,8 @@
                         <functions>
                             <func_GetParamBoolValue>Feature_GetParamBoolValue</func_GetParamBoolValue>
                             <func_SetParamBoolValue>Feature_SetParamBoolValue</func_SetParamBoolValue>
-<?ifdef BCI?>
                                 <func_GetParamIntValue>Feature_GetParamIntValue</func_GetParamIntValue>
                         	<func_SetParamIntValue>Feature_SetParamIntValue</func_SetParamIntValue>
-<?endif?>
                         </functions>
                         <parameters>
 <?ifdef MOCA_HOME_ISOLATION?>
@@ -1838,6 +1836,12 @@
                                 <name>CodebigSupport</name>
                                 <type>boolean</type>
                                 <syntax>bool</syntax>
+                                <writable>true</writable>
+                            </parameter>
+                            <parameter>
+                                <name>EDNSPacketSize</name>
+                                <type>int</type>
+                                <syntax>int</syntax>
                                 <writable>true</writable>
                             </parameter>
 <?ifdef _XB6_PRODUCT_REQ_ & !BCI?>

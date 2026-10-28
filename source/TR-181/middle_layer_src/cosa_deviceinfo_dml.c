@@ -9496,6 +9496,23 @@ Feature_GetParamIntValue
              return TRUE;
          }
     }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+         /* collect value */
+char buf[16] = {0};
+         syscfg_get(NULL, "edns_packet_size", buf, sizeof(buf));
+         char *end = NULL;
+         long value = strtol(buf, &end, 10);
+         if (buf[0] == '\0' || *end != '\0' || value < 512 || value > 4096)
+         {
+             *pint = 1232;
+         }
+         else
+         {
+             *pint = (int)value;
+         }
+         return TRUE;
+    }
     return FALSE;
 }
 /**********************************************************************
@@ -10963,6 +10980,39 @@ Feature_SetParamIntValue
                CcspTraceInfo(("syscfg_set low_queue_reboot_threshold failed\n"));
         }
 	return TRUE;
+    }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+        CcspTraceInfo(("Set EDNSPacketSize \n"));
+        /* EDNS UDP payload size is valid from 512 through 4096 octets. */
+        if ((bValue < 512) || (bValue > 4096))
+        {
+            CcspTraceInfo(("EDNSPacketSize %d is out of supported range (512-4096), ignoring\n", bValue));
+            return FALSE;
+        }
+        char buf[16]={0};
+		char currentValue[16] = {0};
+        snprintf(buf, sizeof(buf), "%d", bValue);
+		
+    	if ((syscfg_get(NULL, "edns_packet_size", currentValue, sizeof(currentValue)) == 0) && (strcmp(currentValue, buf) == 0))
+    	{
+    	    CcspTraceInfo(("EDNSPacketSize unchanged, skipping update and DHCP restart\n"));
+        	return TRUE;
+	    }
+        if (syscfg_set_commit(NULL, "edns_packet_size", buf) != 0)
+        {
+               CcspTraceInfo(("syscfg_set edns_packet_size failed\n"));
+               return FALSE;
+        }
+        else
+        {
+            if (commonSyseventSet("dhcp_server-restart", "") != 0)
+            {
+                CcspTraceError(("Failed to set dhcp_server-restart sysevent\n"));
+                return FALSE;
+            }
+            return TRUE;
+        }
     }
     return FALSE;
 }
