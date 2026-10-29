@@ -2401,7 +2401,7 @@ static BOOL valid_url (char *buff)
     while(buff[i] != '\0')
     {
         //Allowing only integers, alphabets(lower and upper) and certain special characters
-        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~'))
+        if(((buff[i] >= '-') && (buff[i] <= ':')) || ((buff[i]>='A') && (buff[i]<='Z')) || ((buff[i]>='a') && (buff[i]<='z')) || (buff[i]=='#') || (buff[i]=='@') || (buff[i]=='~') || (buff[i]=='_'))
             i++;
         else
             return FALSE;
@@ -14863,6 +14863,103 @@ RDKDownloadManager_SetParamStringValue
 
 #endif
 
+#define DISTRIBUTED_TRACING_SYSCFG_KEY "DistributedTracingEnabled"
+#define DISTRIBUTED_TRACING_FLAG_FILE  "/tmp/rdk_distributed_tracing_enabled"
+
+/**********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Enable
+
+    *  DistributedTracing_GetParamBoolValue
+    *  DistributedTracing_SetParamBoolValue
+
+    The value is persisted in syscfg (default false). The flag file is what
+    librdk_otlp watches at runtime; the collector service follows the value.
+
+**********************************************************************/
+BOOL
+DistributedTracing_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    char buf[6] = { 0 };
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        *pBool = FALSE;
+
+        if (syscfg_get(NULL, DISTRIBUTED_TRACING_SYSCFG_KEY, buf, sizeof(buf)) == 0 &&
+            strncmp(buf, "true", 4) == 0)
+        {
+            *pBool = TRUE;
+        }
+
+        return TRUE;
+    }
+
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return FALSE;
+}
+
+BOOL
+DistributedTracing_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    char buf[6] = { 0 };
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        char *value = (bValue == TRUE) ? "true" : "false";
+
+        if (syscfg_get(NULL, DISTRIBUTED_TRACING_SYSCFG_KEY, buf, sizeof(buf)) == 0 &&
+            strcmp(buf, value) == 0)
+        {
+            return TRUE;
+        }
+
+        if (syscfg_set_commit(NULL, DISTRIBUTED_TRACING_SYSCFG_KEY, value) != 0)
+        {
+            CcspTraceWarning(("%s: syscfg_set failed on %s\n", __FUNCTION__, DISTRIBUTED_TRACING_SYSCFG_KEY));
+            return FALSE;
+        }
+
+        if (bValue == TRUE)
+        {
+            FILE *fp = fopen(DISTRIBUTED_TRACING_FLAG_FILE, "w");
+            if (fp)
+            {
+                fclose(fp);
+            }
+            else
+            {
+                CcspTraceWarning(("%s: Failed to create %s\n", __FUNCTION__, DISTRIBUTED_TRACING_FLAG_FILE));
+            }
+            v_secure_system("systemctl start rdk-otel-collector.service");
+        }
+        else
+        {
+            remove(DISTRIBUTED_TRACING_FLAG_FILE);
+            v_secure_system("systemctl stop rdk-otel-collector.service");
+        }
+
+        return TRUE;
+    }
+
+    CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+    return FALSE;
+}
+
 #ifdef FEATURE_ONEWIFI_TESTSUITE
 /**********************************************************************
 
@@ -19709,6 +19806,10 @@ RDKB_Control_SetParamBoolValue
 	{
 		CcspTraceWarning(("%s: Clearing PartnerId and device going Factory Reset  \n", __FUNCTION__));
 		v_secure_system( "rm -rf  /nvram/.partner_ID" );
+#if defined(_ONESTACK_PRODUCT_REQ_)
+		/* Back to factory partner: drop devicemode chosen by a previous activation */
+		unlink( "/nvram/.devicemode" );
+#endif
 		pthread_create ( &tid, NULL, &CosaDmlDiPartnerIDChangeHandling, NULL );
 		return TRUE;
 	}

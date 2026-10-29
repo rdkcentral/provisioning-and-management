@@ -151,6 +151,11 @@ endif
 
 libCcspPandM_middle_layer_src_la_LDFLAGS = -lccsp_common -lmsgpackc -lwebconfig_framework -lhal_platform
 
+if TP_ENABLED
+libCcspPandM_middle_layer_src_la_CPPFLAGS += -DTP_ENABLED
+libCcspPandM_middle_layer_src_la_LDFLAGS += -lrdk_otlp
+endif
+
 if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_middle_layer_src_la_LDFLAGS += -lnet
 endif
