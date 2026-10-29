@@ -7,7 +7,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "safec_lib_common.h"
@@ -43,15 +42,6 @@ static const DNS_FAILOVER_STATUS g_dnsFailoverStatusDefaults =
     "None"
 };
 
-static DNS_FAILOVER_STATUS g_dnsFailoverStatus =
-{
-    "Disabled",
-    0,
-    "0001-01-01T00:00:00Z",
-    "0001-01-01T00:00:00Z",
-    "None"
-};
-
 DNS_FAILOVER_CONFIG*
 DNSFailover_GetActiveConfig(void)
 {
@@ -62,12 +52,6 @@ DNS_FAILOVER_CONFIG*
 DNSFailover_GetCandidateConfig(void)
 {
     return &g_dnsFailoverCandidate;
-}
-
-DNS_FAILOVER_STATUS*
-DNSFailover_GetRuntimeStatus(void)
-{
-    return &g_dnsFailoverStatus;
 }
 
 static char*
@@ -199,19 +183,6 @@ DNSFailover_CopyString(char* destination, size_t destinationSize, const char* so
     return TRUE;
 }
 
-void
-DNSFailover_SetTimestamp(char* destination, size_t destinationSize)
-{
-    time_t currentTime = time(NULL);
-    struct tm utcTime;
-
-    if (currentTime == (time_t)-1 || !gmtime_r(&currentTime, &utcTime) ||
-        strftime(destination, destinationSize, "%Y-%m-%dT%H:%M:%SZ", &utcTime) == 0)
-    {
-        DNSFailover_CopyString(destination, destinationSize, "0001-01-01T00:00:00Z");
-    }
-}
-
 ULONG
 DNSFailover_ReturnString(const char* source, char* destination, ULONG* destinationSize)
 {
@@ -242,7 +213,7 @@ DNSFailover_ParseUlong(const char* value, ULONG* result)
 
     errno = 0;
     parsed = strtoul(value, &end, 10);
-    if (errno != 0 || end == value || *end != '\0' || parsed > ULONG_MAX)
+    if (errno != 0 || end == value || *end != '\0')
     {
         return FALSE;
     }
@@ -558,10 +529,6 @@ DNSFailover_EnsureLoaded(void)
 
     g_dnsFailoverCandidate = g_dnsFailoverActive;
     g_dnsFailoverLoaded = TRUE;
-
-    DNSFailover_CopyString(g_dnsFailoverStatus.State,
-        sizeof(g_dnsFailoverStatus.State),
-        g_dnsFailoverActive.Enable ? "Healthy" : "Disabled");
 
     if (g_dnsFailoverActive.Enable)
     {

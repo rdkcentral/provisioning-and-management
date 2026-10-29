@@ -135,7 +135,6 @@ DNSFailover_Commit(ANSC_HANDLE hInsContext)
 {
     DNS_FAILOVER_CONFIG* active = DNSFailover_GetActiveConfig();
     DNS_FAILOVER_CONFIG* candidate = DNSFailover_GetCandidateConfig();
-    DNS_FAILOVER_STATUS* status = DNSFailover_GetRuntimeStatus();
     const char* invalidParameter = NULL;
     ULONG previousEnable;
 
@@ -159,9 +158,6 @@ DNSFailover_Commit(ANSC_HANDLE hInsContext)
 
     /* The file is committed; notify the manager to reload the complete config. */
     DNSFailover_NotifyManager();
-
-    DNSFailover_CopyString(status->State, sizeof(status->State),
-        active->Enable ? "Healthy" : "Disabled");
 
     if (previousEnable != active->Enable)
     {
@@ -229,101 +225,4 @@ DNSFailoverStatus_GetParamStringValue
     else return (ULONG)-1;
 
     return DNSFailover_ReturnString(value, pValue, pUlSize);
-}
-
-BOOL
-DNSFailoverStatus_SetState(const char* state)
-{
-    DNS_FAILOVER_STATUS* status = DNSFailover_GetRuntimeStatus();
-
-    DNSFailover_EnsureLoaded();
-
-    if (!state ||
-        (strcmp(state, "Disabled") != 0 &&
-         strcmp(state, "Healthy") != 0 &&
-         strcmp(state, "Suspect") != 0 &&
-         strcmp(state, "Failed") != 0 &&
-         strcmp(state, "FailoverActive") != 0))
-    {
-        CcspTraceError(("Invalid DNS failover runtime state: %s\n",
-            state ? state : "null"));
-        return FALSE;
-    }
-
-    return DNSFailover_CopyString(status->State, sizeof(status->State), state);
-}
-
-void
-DNSFailoverStatus_SetActiveResolverCount(ULONG resolverCount)
-{
-    DNSFailover_EnsureLoaded();
-    DNSFailover_GetRuntimeStatus()->ActiveResolverCount = resolverCount;
-}
-
-void
-DNSFailoverTelemetry_ReportFailure(ULONG resolverCount, const char* addressFamilies)
-{
-    DNS_FAILOVER_STATUS* status = DNSFailover_GetRuntimeStatus();
-
-    DNSFailover_EnsureLoaded();
-    status->ActiveResolverCount = resolverCount;
-    DNSFailover_CopyString(status->State, sizeof(status->State), "Failed");
-    DNSFailover_SetTimestamp(status->LastFailureTime, sizeof(status->LastFailureTime));
-
-    CcspTraceWarning(("DNS complete failure confirmed: resolvers=%lu families=%s time=%s\n",
-        resolverCount, addressFamilies ? addressFamilies : "unknown",
-        status->LastFailureTime));
-    t2_event_d(DNS_FAILOVER_T2_FAILURE, 1);
-}
-
-void
-DNSFailoverTelemetry_ReportVerification
-    (
-        const char* result,
-        const char* resolverIp,
-        const char* addressFamily
-    )
-{
-    DNS_FAILOVER_STATUS* status = DNSFailover_GetRuntimeStatus();
-
-    DNSFailover_EnsureLoaded();
-
-    if (!result || !result[0] || strlen(result) >= sizeof(status->LastVerificationResult))
-    {
-        CcspTraceError(("DNS active verification reported an invalid result\n"));
-        return;
-    }
-
-    DNSFailover_CopyString(status->LastVerificationResult,
-        sizeof(status->LastVerificationResult), result);
-    CcspTraceWarning(("DNS active verification: result=%s resolver=%s family=%s\n",
-        result, resolverIp ? resolverIp : "unknown",
-        addressFamily ? addressFamily : "unknown"));
-}
-
-void
-DNSFailoverTelemetry_ReportUnboundFailover(BOOL enabled)
-{
-    DNS_FAILOVER_STATUS* status = DNSFailover_GetRuntimeStatus();
-
-    DNSFailover_EnsureLoaded();
-    DNSFailover_CopyString(status->State, sizeof(status->State), enabled ? "FailoverActive" : "Healthy");
-    CcspTraceWarning(("DNS Unbound failover %s\n", enabled ? "started" : "stopped"));
-    t2_event_d(enabled ? DNS_FAILOVER_T2_STARTED : DNS_FAILOVER_T2_STOPPED, 1);
-}
-
-void
-DNSFailoverTelemetry_ReportRecovery(const char* resolverIp, const char* addressFamily)
-{
-    DNS_FAILOVER_STATUS* status = DNSFailover_GetRuntimeStatus();
-
-    DNSFailover_EnsureLoaded();
-    DNSFailover_CopyString(status->State, sizeof(status->State), "Healthy");
-    DNSFailover_SetTimestamp(status->LastRecoveryTime, sizeof(status->LastRecoveryTime));
-
-    CcspTraceWarning(("DNS resolver recovered: resolver=%s family=%s time=%s\n",
-        resolverIp ? resolverIp : "unknown",
-        addressFamily ? addressFamily : "unknown",
-        status->LastRecoveryTime));
-    t2_event_d(DNS_FAILOVER_T2_RECOVERED, 1);
 }

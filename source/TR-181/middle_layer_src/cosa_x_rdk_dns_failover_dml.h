@@ -64,11 +64,4 @@ DNSFailoverStatus_GetParamStringValue
         ULONG*      pUlSize
     );
 
-BOOL DNSFailoverStatus_SetState(const char* state);
-void DNSFailoverStatus_SetActiveResolverCount(ULONG resolverCount);
-void DNSFailoverTelemetry_ReportFailure(ULONG resolverCount, const char* addressFamilies);
-void DNSFailoverTelemetry_ReportVerification(const char* result, const char* resolverIp, const char* addressFamily);
-void DNSFailoverTelemetry_ReportUnboundFailover(BOOL enabled);
-void DNSFailoverTelemetry_ReportRecovery(const char* resolverIp, const char* addressFamily);
-
 #endif
