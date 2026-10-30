@@ -715,6 +715,22 @@ EvtDispterIpv6PrefixCallback( char *prefix )
      }
 
 }
+void *
+WebGUIRestart(void *arg)
+{
+    UNREFERENCED_PARAMETER(arg);
+    pthread_detach(pthread_self());
+    CcspTraceInfo(("%s:%d, WebGUIRestart called\n", __FUNCTION__, __LINE__));
+
+#if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+    system("/bin/systemctl restart CcspWebUI.service");
+#else
+    system("/bin/sh /etc/webgui.sh &");
+#endif
+
+    return NULL;
+}
+
 static void
 EvtDispterWanIpAddrsCallback(char *ip_addrs)
 {
@@ -736,11 +752,14 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
     vsystem("/usr/sbin/sec_pushown.sh --ip4 \"%s\"", ip_addrs);
 #endif
 
-     if (strcmp(ip_addrs,"0.0.0.0") != 0 ) {
+     if (ip_addrs != NULL && strcmp(ip_addrs, "0.0.0.0") != 0) {
+        pthread_t tid;
 
         CcspTraceInfo(("%s Setting current_wan_ipaddr and restarting firewall %d \n", __FUNCTION__,__LINE__)); 
 	    sysevent_set(se_fd, token, "current_wan_ipaddr", ip_addrs, 0);
 	    sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
+        CcspTraceInfo(("%s -- WAN IPv4 address update is creating WebGUI restart thread\n", __FUNCTION__));
+        pthread_create(&tid, NULL, &WebGUIRestart, NULL);
     }
 #if defined (RBUS_WAN_IP)
     if (strcmp(previous_ip, ip_addrs) != 0) {
