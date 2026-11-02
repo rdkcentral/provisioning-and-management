@@ -3553,6 +3553,22 @@
                         </parameters>
                 </object>
                 <object>
+                        <name>DistributedTracing</name>
+                        <objectType>object</objectType>
+                        <functions>
+                                <func_GetParamBoolValue>DistributedTracing_GetParamBoolValue</func_GetParamBoolValue>
+                                <func_SetParamBoolValue>DistributedTracing_SetParamBoolValue</func_SetParamBoolValue>
+                        </functions>
+                        <parameters>
+                                <parameter>
+                                        <name>Enable</name>
+                                        <type>boolean</type>
+                                        <syntax>bool</syntax>
+                                        <writable>true</writable>
+                                </parameter>
+                        </parameters>
+                </object>
+                <object>
                   <name>meminsight</name>
                     <objectType>object</objectType>
 

@@ -2738,7 +2738,7 @@ CosaDmlDcSetFactoryReset
 		CcspTraceWarning(("FactoryReset:%d  case is both WIFI and Router removing DB\n",__LINE__));
 		v_secure_system("rm -f /nvram/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
 		v_secure_system("rm -f /opt/secure/wifi/rdkb-wifi.db"); //Need to remove wifi-db for Onewifi
-#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_)
+#if defined (_SCER11BEL_PRODUCT_REQ_) || defined (_SCXF11BFL_PRODUCT_REQ_) || defined (_XER2_PRODUCT_REQ_) || defined(_SR213_PRODUCT_REQ_)
 /* clean up BRCM nvram */
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");

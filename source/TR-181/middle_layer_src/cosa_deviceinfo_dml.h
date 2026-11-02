@@ -2643,6 +2643,18 @@ BOOL RDKDownloadManager_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamNam
 
  APIs for Object:
 
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Enable
+
+    *  DistributedTracing_GetParamBoolValue
+    *  DistributedTracing_SetParamBoolValue
+***********************************************************************/
+BOOL DistributedTracing_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool);
+BOOL DistributedTracing_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+
+/***********************************************************************
+
+ APIs for Object:
+
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Enable
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Trigger
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Args

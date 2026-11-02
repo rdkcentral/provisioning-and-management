@@ -1102,7 +1102,10 @@ EvtDispterEventListen(void)
             }
         } else {
             CcspTraceWarning(("Received msg that is not a SE_MSG_NOTIFICATION (%d)\n", msg_type));
-	    if (  0 != system("pidof syseventd")) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattribute-warning"
+            if (  0 != system("pidof syseventd")) {
+#pragma GCC diagnostic pop
 
            	CcspTraceWarning(("%s syseventd not running ,breaking the receive notification loop \n",__FUNCTION__));
 		ret = EVENT_HANDLE_EXIT;
@@ -1336,7 +1339,10 @@ EvtDispterHandleEventAsync(void)
 int executeCmd(char *cmd)
 {
 	int l_iSystem_Res;
-	l_iSystem_Res = system(cmd);
+    #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattribute-warning"
+    l_iSystem_Res = system(cmd);
+#pragma GCC diagnostic pop
     if (0 != l_iSystem_Res && ECHILD != errno)
     {
         CcspTraceError(("%s: %s command didnt execute successfully\n", __FUNCTION__,cmd));
@@ -1409,7 +1415,10 @@ void* RegenerateUla(void *arg)
     }
     else
     {
+        #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattribute-warning"
         system("killall zebra");
+#pragma GCC diagnostic pop
     }
 
     if(pIpv6_enable != NULL)
