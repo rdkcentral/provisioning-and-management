@@ -768,11 +768,10 @@ EvtDispterWanIpv6RestartCallback(const char *pIpAddress)
 static void
 EvtDispterWanIpAddrsCallback(char *ip_addrs)
 {
-    static char previous_ip[16] = "0.0.0.0";
+    static char cPreviousIp[16] = "0.0.0.0";
 
-#if !defined (RBUS_WAN_IP)
-    UNREFERENCED_PARAMETER(previous_ip);
-#endif
+    if (ip_addrs == NULL || ip_addrs[0] == '\0')
+        return;
 
 #ifdef DUAL_CORE_XB3
     CcspTraceInfo(("%s vsystem %d \n", __FUNCTION__,__LINE__)); 
@@ -787,40 +786,42 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
 #endif
 
      if (ip_addrs != NULL && strcmp(ip_addrs, "0.0.0.0") != 0) {
-        pthread_t tid;
-
         CcspTraceInfo(("%s Setting current_wan_ipaddr and restarting firewall %d \n", __FUNCTION__,__LINE__)); 
 	    sysevent_set(se_fd, token, "current_wan_ipaddr", ip_addrs, 0);
 	    sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
-        CcspTraceInfo(("%s -- WAN IPv4 address update is creating WebGUI restart thread\n", __FUNCTION__));
-        pthread_create(&tid, NULL, &WebGUIRestart, NULL);
+        if (strcmp(cPreviousIp, ip_addrs) != 0)
+        {
+            pthread_t tid;
+            CcspTraceInfo(("%s -- WAN IPv4 address changed from %s to %s, creating WebGUI restart thread\n", __FUNCTION__, cPreviousIp, ip_addrs));
+            if (pthread_create(&tid, NULL, &WebGUIRestart, NULL) != 0)
+                CcspTraceError(("%s -- failed to create WebGUI restart thread\n", __FUNCTION__));
+        }
     }
 #if defined (RBUS_WAN_IP)
-    if (strcmp(previous_ip, ip_addrs) != 0) {
-        CcspTraceInfo(("%s New IPv4 address detected: %s, Previous IPv4 address: %s\n", __FUNCTION__, ip_addrs, previous_ip));
+    if (strcmp(cPreviousIp, ip_addrs) != 0) {
+        CcspTraceInfo(("%s New IPv4 address detected: %s, Previous IPv4 address: %s\n", __FUNCTION__, ip_addrs, cPreviousIp));
 
-        if (publishWanIpAddr(PRIMARY_WAN_IP_ADDRESS, ip_addrs, previous_ip)== RBUS_ERROR_SUCCESS){
+        if (publishWanIpAddr(PRIMARY_WAN_IP_ADDRESS, ip_addrs, cPreviousIp)== RBUS_ERROR_SUCCESS){
             CcspTraceInfo(("%s publishWanIpAddr success for IPv4 : %d \n", __FUNCTION__,__LINE__)); 
         }
         else{
             CcspTraceError(("%s publishWanIpAddr failed for IPv4 : %d \n", __FUNCTION__,__LINE__)); 
         }
   
-        int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IP_ADDRESS, ip_addrs, previous_ip);
+        int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IP_ADDRESS, ip_addrs, cPreviousIp);
         if(ret == EVENT_OK){
             CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv4 and Set_Notifi_ParamName will be called. %d, ret: %d \n", __FUNCTION__,__LINE__, ret));
         }
         else{
             CcspTraceError(("%s: Send_WebPANotification_WANIP failed for IPv4 %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
         }
-        // Storing new IPv4 address
-        strncpy(previous_ip, ip_addrs, sizeof(previous_ip) - 1);
      }
      else
      {
-        CcspTraceInfo(("%s IPv4 address remains the same: %s\n", __FUNCTION__, previous_ip));
+        CcspTraceInfo(("%s IPv4 address remains the same: %s\n", __FUNCTION__, cPreviousIp));
      }
 #endif /*RBUS_WAN_IP*/
+    snprintf(cPreviousIp, sizeof(cPreviousIp), "%s", ip_addrs);
 }
 
 #if defined (RBUS_WAN_IP)
