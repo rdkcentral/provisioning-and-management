@@ -62,6 +62,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 #include <utapi.h>
 #include <mqueue.h>
 #include "cosa_common_util.h"
@@ -430,6 +431,7 @@ static token_t token;
 
 static async_id_t async_id[7];
 static async_id_t lan2wanAsync_id;
+static async_id_t wanIpv6RestartAsync_id;
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
@@ -732,6 +734,38 @@ WebGUIRestart(void *arg)
 }
 
 static void
+EvtDispterWanIpv6RestartCallback(const char *pIpAddress)
+{
+    static struct in6_addr previous_address = IN6ADDR_ANY_INIT;
+    struct in6_addr address;
+    pthread_t thread_id;
+
+    if (pIpAddress == NULL || inet_pton(AF_INET6, pIpAddress, &address) != 1)
+    {
+        CcspTraceError(("%s -- Invalid IPv6 address: %s\n", __FUNCTION__, pIpAddress));
+        return;
+    }
+
+    if (memcmp(&previous_address, &address, sizeof(address)) == 0)
+    {
+        CcspTraceInfo(("%s -- WAN IPv6 address remains the same: %s\n", __FUNCTION__, pIpAddress));
+        return;
+    }
+
+    previous_address = address;
+    if (IN6_IS_ADDR_UNSPECIFIED(&address) || IN6_IS_ADDR_LINKLOCAL(&address) ||
+        IN6_IS_ADDR_MULTICAST(&address) || IN6_IS_ADDR_LOOPBACK(&address))
+    {
+        CcspTraceInfo(("%s -- WAN IPv6 address is unspecified, link-local, multicast, or loopback: %s\n", __FUNCTION__, pIpAddress));
+        return;
+    }
+
+    CcspTraceInfo(("%s -- WAN IPv6 address changed to %s, creating WebGUI restart thread\n", __FUNCTION__, pIpAddress));
+    if (pthread_create(&thread_id, NULL, WebGUIRestart, NULL) != 0)
+        CcspTraceError(("%s -- failed to create WebGUI restart thread\n", __FUNCTION__));
+}
+
+static void
 EvtDispterWanIpAddrsCallback(char *ip_addrs)
 {
     static char previous_ip[16] = "0.0.0.0";
@@ -870,6 +904,10 @@ EvtDispterEventInits(void)
     if (rc) {
        return(EVENT_ERROR);
     }
+     rc = sysevent_setnotification(se_fd, token, "wan6_ipaddr", &wanIpv6RestartAsync_id);
+     if (rc) {
+         return(EVENT_ERROR);
+     }
     //register tr_erouter0_dhcpv6_client_v6pref event
     rc = sysevent_setnotification(se_fd, token, IPV6_PREFIX_EVENT, &async_id[6]);
     if (rc) {
@@ -1020,6 +1058,11 @@ EvtDispterEventListen(void)
                 EvtDispterWanIpAddrsCallback(value_str);
                 ret = EVENT_WAN_IPV4_RECD;
             }
+            else if(!strcmp(name_str, "wan6_ipaddr"))
+            {
+                EvtDispterWanIpv6RestartCallback(value_str);
+                ret = EVENT_OK;
+            }
             else if(!strcmp(name_str,IPV6_PREFIX_EVENT))
             {
                 EvtDispterIpv6PrefixCallback(value_str);
@@ -1125,6 +1168,7 @@ EvtDispterEventClose(void)
     sysevent_rmnotification(se_fd, token, async_id[0]);
     sysevent_rmnotification(se_fd, token, async_id[1]);
     sysevent_rmnotification(se_fd, token, async_id[2]);
+    sysevent_rmnotification(se_fd, token, wanIpv6RestartAsync_id);
 #if defined (RBUS_WAN_IP)
     sysevent_rmnotification(se_fd, token, async_id[3]);
 #endif /*RBUS_WAN_IP*/
@@ -1194,6 +1238,10 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
 #endif
 
     /*ipv4_wan_ipaddr*/
+    if (0 == sysevent_get(fd, token, "wan6_ipaddr", evtValue, sizeof(evtValue)))
+    {
+        EvtDispterWanIpv6RestartCallback(evtValue);
+    }
     if ( 0 == sysevent_get(fd, token, "ipv4_wan_ipaddr", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
     {
         EvtDispterWanIpAddrsCallback(evtValue);
