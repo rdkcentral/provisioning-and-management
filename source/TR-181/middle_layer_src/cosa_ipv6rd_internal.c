@@ -264,7 +264,7 @@ CosaIPv6rdRemove(
     if (AnscSListQueryDepth(&pMyObject->IfList) != 0)
     {
         pSLinkEntry = AnscSListGetFirstEntry(&pMyObject->IfList);
-        while (!pSLinkEntry)
+        while (pSLinkEntry)
         {
             pLinkObject = ACCESS_COSA_CONTEXT_LINK_OBJECT(pSLinkEntry);
             /* TODO: deref pSLinkEntry, while condition should be != NULL*/
