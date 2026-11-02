@@ -3432,6 +3432,7 @@ EXIT1:
         pPoamIrepFoEnumPool->Remove((ANSC_HANDLE)pPoamIrepFoEnumPool);
     
 
+    /*CID 53921 Logically dead code - goto EXIT only hit in NULL Case*/
     if ( pPoamIrepFoEnumStaticAddress)
         pPoamIrepFoEnumStaticAddress->Remove((ANSC_HANDLE)pPoamIrepFoEnumStaticAddress);
     
