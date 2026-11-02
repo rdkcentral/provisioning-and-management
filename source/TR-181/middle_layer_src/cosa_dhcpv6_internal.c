@@ -1488,7 +1488,8 @@ ClientEnd:
     for ( ulIndex = 0; ulIndex < ulEntryCount; ulIndex++ )
     {
         /* Get i in pool.{i} */
-        pFolderName =
+        /* coverity[deadcode] INTENTIONAL: PSM not used for DHCPv6 server; loop retained for future use */
+    pFolderName =
             pPoamIrepFoPool->EnumFolder
                 (
                     (ANSC_HANDLE)pPoamIrepFoPool,
@@ -2493,8 +2494,9 @@ EXIT1:
         pPoamIrepFoPoolOption   ->Remove((ANSC_HANDLE)pPoamIrepFoPoolOption   );
 
     if ( pPoamIrepFoEnumPoolOption   )
-        pPoamIrepFoEnumPoolOption   ->Remove((ANSC_HANDLE)pPoamIrepFoEnumPoolOption   );
-
+        /* coverity[deadcode] INTENTIONAL: pPoamIrepFoEnumPoolOption is NULL when PSM loop is disabled; retained for future use */
+pPoamIrepFoEnumPoolOption   ->Remove((ANSC_HANDLE)pPoamIrepFoEnumPoolOption   );
+    
     pPoamIrepFoDhcpv6->EnableFileSync((ANSC_HANDLE)pPoamIrepFoDhcpv6, TRUE);
 
     return returnStatus;
