@@ -509,8 +509,13 @@ CosaDmlTSIPLoadMappingFile
         {
             pType = pEntryToken->Name;
             pSeparator = _ansc_strstr(pEntryToken->Name, " ");
-            *pSeparator++ = '\0';
-            ulType =_ansc_atoi(pType);
+            if ( !pSeparator )
+            {
+        AnscFreeMemory(pEntryToken);
+        continue;
+        }
+        *pSeparator++ = '\0';
+        ulType =_ansc_atoi(pType);
             pMapping[ulIndex].Type = ulType;
             rc = strcpy_s(pMapping[ulIndex].FullPath, sizeof(pMapping[ulIndex].FullPath), pSeparator);
             ERR_CHK(rc);
@@ -681,12 +686,15 @@ CosaDmlTSIPApplyConfigFileTask
     }
     
     fseek(fpConfig, 0L, SEEK_END);
-    len = ftell(fpConfig);
-    if ( len <= 0 )
     {
+    long lenTmp = ftell(fpConfig);
+    if ( lenTmp <= 0 )
+        {
         AnscTraceWarning(("CosaDmlTSIPApplyConfigFile: Config file is empty!\n"));
         fclose(fpConfig);
-        return ANSC_STATUS_FAILURE;
+    return ANSC_STATUS_FAILURE;
+    }
+    len = (ULONG)lenTmp;
     }
 
     pBuffer  = (char*)AnscAllocateMemory(len + 1);
