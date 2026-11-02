@@ -1153,9 +1153,6 @@ EXIT1:
         pSlapVariable = NULL;
     }
 
-    if ( pPoamIrepFoEnumNat )
-        pPoamIrepFoEnumNat->Remove((ANSC_HANDLE)pPoamIrepFoEnumNat);
-
     pPoamIrepFoNat->EnableFileSync((ANSC_HANDLE)pPoamIrepFoNat, TRUE);
 
     return returnStatus;
