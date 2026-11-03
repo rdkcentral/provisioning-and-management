@@ -80,7 +80,7 @@ ANSC_STATUS CosaGetSysCfgString(char* setting, char* pValue, PULONG pulSize )
     {
       /*CID: 59107 Array compared against 0*/
       /*CID: 59338 Logically dead code*/
-       strncpy(pValue ,buf,strlen(buf));
+           strcpy(pValue, buf);
        *pulSize = AnscSizeOfString(pValue);
        return ANSC_STATUS_SUCCESS;
     }
