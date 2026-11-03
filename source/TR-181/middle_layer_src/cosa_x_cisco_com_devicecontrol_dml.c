@@ -1415,11 +1415,12 @@ IsValidFactoryResetString
         const char *pString
     )
 {
-    char   tmpBuf[256];
+    char   tmpBuf[49];
     char  *tok  = NULL;
     char  *sv   = NULL;
     BOOL   valid = FALSE;
     int    i;
+    size_t len;
     static const char * const validTokens[] =
     {
         "Router",
@@ -1441,7 +1442,16 @@ IsValidFactoryResetString
         return FALSE;
     }
 
-    snprintf(tmpBuf, sizeof(tmpBuf), "%s", pString);
+    /* The backend copies at most 49 bytes into value[50] without explicitly
+     * terminating it. Keep the input to 48 bytes so its copy is terminated. */
+    len = strnlen(pString, sizeof(tmpBuf));
+    if (len >= sizeof(tmpBuf))
+    {
+        CcspTraceError(("FactoryReset: value exceeds backend buffer size\n"));
+        return FALSE;
+    }
+
+    memcpy(tmpBuf, pString, len + 1);
     tok = strtok_r(tmpBuf, ",", &sv);
     while (tok)
     {
