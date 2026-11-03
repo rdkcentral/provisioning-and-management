@@ -1779,6 +1779,36 @@ BOOL
     return FALSE;
 }
 
+static BOOL g_systemdAnalyzeEnable = FALSE;
+
+BOOL xSystemdAnalyze_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "Enable") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    g_systemdAnalyzeEnable = bValue;
+    return TRUE;
+}
+
+BOOL xSystemdAnalyze_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+
+    if (strcmp(ParamName, "Enable") != 0)
+    {
+        CcspTraceError(("%s: Unknown parameter %s\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    *pBool = g_systemdAnalyzeEnable;
+    return TRUE;
+}
+
 /**
  * RFC Features for xMemInsight
  */

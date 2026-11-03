@@ -3569,6 +3569,24 @@
                         </parameters>
                 </object>
                 <object>
+                  <name>systemd-analyze</name>
+                    <objectType>object</objectType>
+
+                    <functions>
+                        <func_GetParamBoolValue>xSystemdAnalyze_GetParamBoolValue</func_GetParamBoolValue>
+                        <func_SetParamBoolValue>xSystemdAnalyze_SetParamBoolValue</func_SetParamBoolValue>
+                    </functions>
+
+                    <parameters>
+                        <parameter>
+                            <name>Enable</name>
+                            <type>boolean</type>
+                            <syntax>bool</syntax>
+                            <writable>true</writable>
+                        </parameter>
+                    </parameters>
+                </object>
+                <object>
                   <name>meminsight</name>
                     <objectType>object</objectType>
 
