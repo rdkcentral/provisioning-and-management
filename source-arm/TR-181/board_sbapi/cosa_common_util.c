@@ -61,7 +61,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 #include <utapi.h>
 #include <mqueue.h>
 #include "cosa_common_util.h"
@@ -430,6 +432,8 @@ static token_t token;
 
 static async_id_t async_id[7];
 static async_id_t lan2wanAsync_id;
+static async_id_t wanIpv6RestartAsync_id;
+static async_id_t webuiRestartAsync_id;
 
 #if defined(FEATURE_MAPT) || defined(FEATURE_SUPPORT_MAPT_NAT46)
 
@@ -715,14 +719,103 @@ EvtDispterIpv6PrefixCallback( char *prefix )
      }
 
 }
+static pthread_mutex_t webui_restart_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool webui_restart_pending = false;
+
+void *
+WebGUIRestart(void *arg)
+{
+    unsigned int remaining = 60;
+    int restart_result;
+
+    UNREFERENCED_PARAMETER(arg);
+    pthread_detach(pthread_self());
+    CcspTraceInfo(("%s -- waiting 60 seconds before restarting WebUI\n", __FUNCTION__));
+    while (remaining != 0)
+        remaining = sleep(remaining);
+
+#if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+    restart_result = system("/bin/systemctl restart CcspWebUI.service");
+#else
+    restart_result = system("/bin/sh /etc/webgui.sh");
+#endif
+
+    if (restart_result != 0)
+    {
+        CcspTraceError(("%s -- WebUI restart failed: %d\n", __FUNCTION__, restart_result));
+    }
+    else
+    {
+        CcspTraceInfo(("%s -- WebUI restart completed\n", __FUNCTION__));
+    }
+
+    pthread_mutex_lock(&webui_restart_mutex);
+    webui_restart_pending = false;
+    pthread_mutex_unlock(&webui_restart_mutex);
+    return NULL;
+}
+
+static void
+RequestWebUIRestart(void)
+{
+    pthread_t thread_id;
+    int create_result;
+
+    pthread_mutex_lock(&webui_restart_mutex);
+    if (webui_restart_pending)
+    {
+        pthread_mutex_unlock(&webui_restart_mutex);
+        CcspTraceInfo(("%s -- restart already pending; request merged without extending timer\n", __FUNCTION__));
+        return;
+    }
+
+    webui_restart_pending = true;
+    create_result = pthread_create(&thread_id, NULL, WebGUIRestart, NULL);
+    if (create_result != 0)
+    {
+        webui_restart_pending = false;
+        CcspTraceError(("%s -- failed to create WebUI restart thread: %d\n", __FUNCTION__, create_result));
+    }
+    pthread_mutex_unlock(&webui_restart_mutex);
+}
+
+static void
+EvtDispterWanIpv6RestartCallback(const char *pIpAddress)
+{
+    static struct in6_addr previous_address = IN6ADDR_ANY_INIT;
+    struct in6_addr address;
+
+    if (pIpAddress == NULL || inet_pton(AF_INET6, pIpAddress, &address) != 1)
+    {
+        CcspTraceError(("%s -- Invalid IPv6 address: %s\n", __FUNCTION__, pIpAddress ? pIpAddress : "NULL"));
+        return;
+    }
+
+    if (memcmp(&previous_address, &address, sizeof(address)) == 0)
+    {
+        CcspTraceInfo(("%s -- WAN IPv6 address remains the same: %s\n", __FUNCTION__, pIpAddress));
+        return;
+    }
+
+    previous_address = address;
+    if (IN6_IS_ADDR_UNSPECIFIED(&address) || IN6_IS_ADDR_LINKLOCAL(&address) ||
+        IN6_IS_ADDR_MULTICAST(&address) || IN6_IS_ADDR_LOOPBACK(&address))
+    {
+        CcspTraceInfo(("%s -- WAN IPv6 address is unspecified, link-local, multicast, or loopback: %s\n", __FUNCTION__, pIpAddress));
+        return;
+    }
+
+    CcspTraceInfo(("%s -- WAN IPv6 address changed to %s, requesting WebUI restart\n", __FUNCTION__, pIpAddress));
+    RequestWebUIRestart();
+}
+
 static void
 EvtDispterWanIpAddrsCallback(char *ip_addrs)
 {
-    static char previous_ip[16] = "0.0.0.0";
+    static char cPreviousIp[16] = "0.0.0.0";
 
-#if !defined (RBUS_WAN_IP)
-    UNREFERENCED_PARAMETER(previous_ip);
-#endif
+    if (ip_addrs == NULL || ip_addrs[0] == '\0')
+        return;
 
 #ifdef DUAL_CORE_XB3
     CcspTraceInfo(("%s vsystem %d \n", __FUNCTION__,__LINE__)); 
@@ -736,38 +829,45 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
     vsystem("/usr/sbin/sec_pushown.sh --ip4 \"%s\"", ip_addrs);
 #endif
 
-     if (strcmp(ip_addrs,"0.0.0.0") != 0 ) {
-
+     if (ip_addrs != NULL && strcmp(ip_addrs, "0.0.0.0") != 0) {
         CcspTraceInfo(("%s Setting current_wan_ipaddr and restarting firewall %d \n", __FUNCTION__,__LINE__)); 
 	    sysevent_set(se_fd, token, "current_wan_ipaddr", ip_addrs, 0);
 	    sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
+        if (strcmp(cPreviousIp, ip_addrs) != 0)
+        {
+            struct in_addr address;
+            if (inet_pton(AF_INET, ip_addrs, &address) == 1)
+            {
+                CcspTraceInfo(("%s -- WAN IPv4 address changed from %s to %s, requesting WebUI restart\n", __FUNCTION__, cPreviousIp, ip_addrs));
+                RequestWebUIRestart();
+            }
+        }
     }
 #if defined (RBUS_WAN_IP)
-    if (strcmp(previous_ip, ip_addrs) != 0) {
-        CcspTraceInfo(("%s New IPv4 address detected: %s, Previous IPv4 address: %s\n", __FUNCTION__, ip_addrs, previous_ip));
+    if (strcmp(cPreviousIp, ip_addrs) != 0) {
+        CcspTraceInfo(("%s New IPv4 address detected: %s, Previous IPv4 address: %s\n", __FUNCTION__, ip_addrs, cPreviousIp));
 
-        if (publishWanIpAddr(PRIMARY_WAN_IP_ADDRESS, ip_addrs, previous_ip)== RBUS_ERROR_SUCCESS){
+        if (publishWanIpAddr(PRIMARY_WAN_IP_ADDRESS, ip_addrs, cPreviousIp)== RBUS_ERROR_SUCCESS){
             CcspTraceInfo(("%s publishWanIpAddr success for IPv4 : %d \n", __FUNCTION__,__LINE__)); 
         }
         else{
             CcspTraceError(("%s publishWanIpAddr failed for IPv4 : %d \n", __FUNCTION__,__LINE__)); 
         }
   
-        int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IP_ADDRESS, ip_addrs, previous_ip);
+        int ret = Send_WebPANotification_WANIP(PRIMARY_WAN_IP_ADDRESS, ip_addrs, cPreviousIp);
         if(ret == EVENT_OK){
             CcspTraceInfo(("%s: Send_WebPANotification_WANIP completed for IPv4 and Set_Notifi_ParamName will be called. %d, ret: %d \n", __FUNCTION__,__LINE__, ret));
         }
         else{
             CcspTraceError(("%s: Send_WebPANotification_WANIP failed for IPv4 %d, ret: %d \n", __FUNCTION__,__LINE__, ret)); 
         }
-        // Storing new IPv4 address
-        strncpy(previous_ip, ip_addrs, sizeof(previous_ip) - 1);
      }
      else
      {
-        CcspTraceInfo(("%s IPv4 address remains the same: %s\n", __FUNCTION__, previous_ip));
+        CcspTraceInfo(("%s IPv4 address remains the same: %s\n", __FUNCTION__, cPreviousIp));
      }
 #endif /*RBUS_WAN_IP*/
+    snprintf(cPreviousIp, sizeof(cPreviousIp), "%s", ip_addrs);
 }
 
 #if defined (RBUS_WAN_IP)
@@ -845,12 +945,22 @@ EvtDispterEventInits(void)
        return(EVENT_ERROR);
     } 
 
+     sysevent_set_options(se_fd, token, "webui-restart", TUPLE_FLAG_EVENT);
+     rc = sysevent_setnotification(se_fd, token, "webui-restart", &webuiRestartAsync_id);
+     if (rc) {
+         return(EVENT_ERROR);
+     }
+
 	//register ipv4_wan_ipaddr event
     //sysevent_set_options(se_fd, token, "ipv4_wan_ipaddr", TUPLE_FLAG_EVENT);
     rc = sysevent_setnotification(se_fd, token, "ipv4_wan_ipaddr", &async_id[2]);
     if (rc) {
        return(EVENT_ERROR);
     }
+     rc = sysevent_setnotification(se_fd, token, "wan6_ipaddr", &wanIpv6RestartAsync_id);
+     if (rc) {
+         return(EVENT_ERROR);
+     }
     //register tr_erouter0_dhcpv6_client_v6pref event
     rc = sysevent_setnotification(se_fd, token, IPV6_PREFIX_EVENT, &async_id[6]);
     if (rc) {
@@ -1001,6 +1111,17 @@ EvtDispterEventListen(void)
                 EvtDispterWanIpAddrsCallback(value_str);
                 ret = EVENT_WAN_IPV4_RECD;
             }
+            else if(!strcmp(name_str, "wan6_ipaddr"))
+            {
+                EvtDispterWanIpv6RestartCallback(value_str);
+                ret = EVENT_OK;
+            }
+            else if(!strcmp(name_str, "webui-restart"))
+            {
+                CcspTraceInfo(("%s -- WebUI restart requested by %s\n", __FUNCTION__, value_str));
+                RequestWebUIRestart();
+                ret = EVENT_OK;
+            }
             else if(!strcmp(name_str,IPV6_PREFIX_EVENT))
             {
                 EvtDispterIpv6PrefixCallback(value_str);
@@ -1106,6 +1227,8 @@ EvtDispterEventClose(void)
     sysevent_rmnotification(se_fd, token, async_id[0]);
     sysevent_rmnotification(se_fd, token, async_id[1]);
     sysevent_rmnotification(se_fd, token, async_id[2]);
+    sysevent_rmnotification(se_fd, token, wanIpv6RestartAsync_id);
+    sysevent_rmnotification(se_fd, token, webuiRestartAsync_id);
 #if defined (RBUS_WAN_IP)
     sysevent_rmnotification(se_fd, token, async_id[3]);
 #endif /*RBUS_WAN_IP*/
@@ -1135,6 +1258,9 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
 {
     char evtValue[256] = {0};
     int  returnStatus = ANSC_STATUS_SUCCESS;
+
+    if (sysevent_get(fd, token, "webui-restart", evtValue, sizeof(evtValue)) == 0 && evtValue[0] != '\0')
+        RequestWebUIRestart();
 
     /*lan-status event*/
     if( 0 == sysevent_get(fd, token, "lan-status", evtValue, sizeof(evtValue)) && '\0' != evtValue[0] )
@@ -1175,6 +1301,10 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
 #endif
 
     /*ipv4_wan_ipaddr*/
+    if (0 == sysevent_get(fd, token, "wan6_ipaddr", evtValue, sizeof(evtValue)))
+    {
+        EvtDispterWanIpv6RestartCallback(evtValue);
+    }
     if ( 0 == sysevent_get(fd, token, "ipv4_wan_ipaddr", evtValue, sizeof(evtValue)) && '\0' != evtValue[0])
     {
         EvtDispterWanIpAddrsCallback(evtValue);
@@ -1257,6 +1387,8 @@ EvtDispterEventHandler(void *arg)
         ret = EvtDispterEventListen();
         switch (ret)
         {
+            case EVENT_OK:
+                break;
             case EVENT_LAN_STARTED:
                 EvtDispterCallFuncByEvent("lan-status");
                 break;
