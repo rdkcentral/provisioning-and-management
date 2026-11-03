@@ -508,9 +508,9 @@ generate_6rd_delegated_prefix(
         o++;
     }
 
-    if (32 - v4masklen - b > 0) {
-        m = (32 - v4masklen - b) >> 3;
-        n = (32 - v4masklen - b) & 0x7;
+    if ((int)v4masklen + b < 32) {
+        m = (32 - (int)v4masklen - b) >> 3;
+        n = (32 - (int)v4masklen - b) & 0x7;
 
         uiv4addr <<= b;
 
