@@ -1394,19 +1394,25 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
         Validates a comma-separated FactoryReset token string against
         the set of tokens recognised by CosaDmlDcSetFactoryReset.
 
-        Valid tokens: Router, Wifi, Firewall, VoIP, Docsis, Dect, MoCA
-        Valid tokens (when FEATURE_RDKB_CELLULAR_MANAGER is defined): Cellular
+        Reset tokens: Router, Wifi, Firewall, VoIP, Docsis
+        Cellular is also a reset token when FEATURE_RDKB_CELLULAR_MANAGER
+        is defined.
+
         Dect and MoCA are accepted for compatibility with legacy internal
-        callers (e.g. CosaDmlDiPartnerIDChangeHandling) but are silently
-        ignored by CosaDmlDcSetFactoryReset in the backend.
-        At least one valid token must be present.
+        callers (e.g. CosaDmlDiPartnerIDChangeHandling), but
+        CosaDmlDcSetFactoryReset ignores them: a value containing only
+        Dect and/or MoCA sets no mask bit, so the backend fails the call.
+        At least one reset token must therefore also be present.
 
     argument:   const char *pString
                 The value string to validate (must not be NULL).
 
-    return:     TRUE  if every token is valid and at least one is present.
+    return:     TRUE  if every token is valid and at least one reset token
+                      is present.
                 FALSE if the string is empty, contains an unknown token,
-                      or contains only whitespace/delimiters.
+                      contains only whitespace/delimiters, or contains
+                      only legacy-compatibility tokens (Dect/MoCA) that
+                      the backend would silently drop.
 
 **********************************************************************/
 static BOOL
@@ -1415,10 +1421,13 @@ IsValidFactoryResetString
         const char *pString
     )
 {
-    char   tmpBuf[49];
+    /* Matches the size of the FactoryReset[256] datamodel field in
+     * cosa_x_cisco_com_devicecontrol_internal.h. */
+    char   tmpBuf[256];
     char  *tok  = NULL;
     char  *sv   = NULL;
     BOOL   valid = FALSE;
+    BOOL   resetToken = FALSE;
     int    i;
     size_t len;
     static const char * const validTokens[] =
@@ -1435,6 +1444,18 @@ IsValidFactoryResetString
 #endif
         NULL
     };
+    static const char * const resetTokens[] =
+    {
+        "Router",
+        "Wifi",
+        "Firewall",
+        "VoIP",
+        "Docsis",
+#ifdef FEATURE_RDKB_CELLULAR_MANAGER
+        "Cellular",
+#endif
+        NULL
+    };
 
     if (pString == NULL || pString[0] == '\0')
     {
@@ -1442,12 +1463,10 @@ IsValidFactoryResetString
         return FALSE;
     }
 
-    /* The backend copies at most 49 bytes into value[50] without explicitly
-     * terminating it. Keep the input to 48 bytes so its copy is terminated. */
     len = strnlen(pString, sizeof(tmpBuf));
     if (len >= sizeof(tmpBuf))
     {
-        CcspTraceError(("FactoryReset: value exceeds backend buffer size\n"));
+        CcspTraceError(("FactoryReset: value exceeds datamodel buffer size\n"));
         return FALSE;
     }
 
@@ -1457,19 +1476,31 @@ IsValidFactoryResetString
     {
         for (i = 0; validTokens[i] != NULL; i++)
         {
-            if (strcmp(tok, validTokens[i]) == 0)
+            if (strncmp(tok, validTokens[i], strlen(validTokens[i]) + 1) == 0)
                 break;
         }
-        if (validTokens[i] != NULL)
-        {
-            valid = TRUE;
-        }
-        else
+        if (validTokens[i] == NULL)
         {
             CcspTraceError(("FactoryReset: invalid token '%s'\n", tok));
             return FALSE;
         }
+        valid = TRUE;
+
+        for (i = 0; resetTokens[i] != NULL; i++)
+        {
+            if (strncmp(tok, resetTokens[i], strlen(resetTokens[i]) + 1) == 0)
+            {
+                resetToken = TRUE;
+                break;
+            }
+        }
         tok = strtok_r(NULL, ",", &sv);
+    }
+
+    if (valid && !resetToken)
+    {
+        CcspTraceError(("FactoryReset: value contains no reset token recognised by the backend\n"));
+        return FALSE;
     }
 
     return valid;
