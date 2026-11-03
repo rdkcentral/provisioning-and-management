@@ -2743,6 +2743,9 @@ CosaDmlDcSetFactoryReset
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
 #endif
+#if defined(_SR213_PRODUCT_REQ_)
+        v_secure_system("rm -rf /data/.kernel_nvram.setting");
+#endif
 	}
 #endif
 
