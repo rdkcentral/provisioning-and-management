@@ -75,7 +75,6 @@
 #include "safec_lib_common.h"
 #include "dslh_definitions_database.h"
 #include "cosa_nat_apis.h"
-#include "secure_wrapper.h"
 
 #define IPV6_PREFIX "Device.IP.Interface.1.IPv6Prefix.1.Prefix"
 #define IPV6_PREFIX_EVENT "tr_erouter0_dhcpv6_client_v6pref"
@@ -823,7 +822,7 @@ EvtDispterWanStatusCallback(const char *value)
         if (gWanStatus)
         {
             CcspTraceInfo(("%s: wan-status changed to stopped; preserving logs\n", __FUNCTION__));
-            v_secure_system("/rdklogger/backupLogs.sh false '' wan-stopped '' &");
+            system("/rdklogger/backupLogs.sh false '' wan-stopped '' &");
         }
         gWanStatus = false;
         return EVENT_WAN_STOPPED;
@@ -1102,10 +1101,7 @@ EvtDispterEventListen(void)
             }
         } else {
             CcspTraceWarning(("Received msg that is not a SE_MSG_NOTIFICATION (%d)\n", msg_type));
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattribute-warning"
             if (  0 != system("pidof syseventd")) {
-#pragma GCC diagnostic pop
 
            	CcspTraceWarning(("%s syseventd not running ,breaking the receive notification loop \n",__FUNCTION__));
 		ret = EVENT_HANDLE_EXIT;
@@ -1339,10 +1335,7 @@ EvtDispterHandleEventAsync(void)
 int executeCmd(char *cmd)
 {
 	int l_iSystem_Res;
-    #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattribute-warning"
     l_iSystem_Res = system(cmd);
-#pragma GCC diagnostic pop
     if (0 != l_iSystem_Res && ECHILD != errno)
     {
         CcspTraceError(("%s: %s command didnt execute successfully\n", __FUNCTION__,cmd));
@@ -1415,10 +1408,7 @@ void* RegenerateUla(void *arg)
     }
     else
     {
-        #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattribute-warning"
         system("killall zebra");
-#pragma GCC diagnostic pop
     }
 
     if(pIpv6_enable != NULL)

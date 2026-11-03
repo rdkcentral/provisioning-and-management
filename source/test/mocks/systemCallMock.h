@@ -17,23 +17,25 @@
 * limitations under the License.
 *******************************************************************************/
 
-#include "secureWrapperMock.h"
-#include <cstdarg>
-#include <cstdio>
+#ifndef SYSTEM_CALL_MOCK_H
+#define SYSTEM_CALL_MOCK_H
 
-secure_wrapperMock* g_secure_wrapperMock = nullptr;
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-extern "C" int v_secure_system(const char* format, ...)
-{
-    char command[1024] = {0};
-    va_list args;
-    va_start(args, format);
-    vsnprintf(command, sizeof(command), format, args);
-    va_end(args);
+class systemCallInterface {
+public:
+        virtual ~systemCallInterface() {}
+        virtual int system(const char* command) = 0;
+};
 
-    if (g_secure_wrapperMock)
-    {
-        return g_secure_wrapperMock->v_secure_system(command);
-    }
-    return 0;
-}
+class systemCallMock : public systemCallInterface {
+public:
+        virtual ~systemCallMock() {}
+        MOCK_METHOD1(system, int(const char* command));
+};
+
+extern systemCallMock* g_systemCallMock;
+
+#endif /* SYSTEM_CALL_MOCK_H */
+

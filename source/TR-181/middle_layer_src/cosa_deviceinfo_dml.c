@@ -23991,6 +23991,11 @@ SecureWebUI_SetParamBoolValue
         else
         {
             v_secure_system("sysevent set dhcp_server-restart");
+#if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+            v_secure_system("/bin/systemctl restart CcspWebUI.service &");
+#else
+            v_secure_system("/bin/sh /etc/webgui.sh &");
+#endif
         }
         return TRUE;
     }

@@ -17,26 +17,16 @@
 * limitations under the License.
 *******************************************************************************/
 
-#ifndef SECURE_WRAPPER_MOCK_H
-#define SECURE_WRAPPER_MOCK_H
+#include "systemCallMock.h"
 
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
+systemCallMock* g_systemCallMock = nullptr;
 
-/* The real v_secure_system() is variadic; the shim in secureWrapperMock.cpp
-   formats the command into a single string before forwarding here. */
-class secure_wrapperInterface {
-public:
-        virtual ~secure_wrapperInterface() {}
-        virtual int v_secure_system(const char* command) = 0;
-};
+extern "C" int system(const char* command)
+{
+    if (g_systemCallMock)
+    {
+        return g_systemCallMock->system(command);
+    }
+    return 0;
+}
 
-class secure_wrapperMock : public secure_wrapperInterface {
-public:
-        virtual ~secure_wrapperMock() {}
-        MOCK_METHOD1(v_secure_system, int(const char* command));
-};
-
-extern secure_wrapperMock* g_secure_wrapperMock;
-
-#endif /* SECURE_WRAPPER_MOCK_H */

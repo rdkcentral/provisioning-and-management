@@ -114,11 +114,11 @@ CcspPandMSsp_gtest_bin_LDADD = $(test_common_ldadd) \
                                $(HOME)/usr/local/lib/libmock_secure_wrapper.la
 
 # wan-status log preservation tests. Same configuration as above, but provides
-# its own v_secure_system mock via secureWrapperMock.cpp instead of
+# its own system() mock via systemCallMock.cpp instead of
 # libmock_secure_wrapper so the backup script invocation can be verified.
 CcspPandMSsp_wanfailover_gtest_bin_CPPFLAGS = $(test_common_includes) $(test_common_defines) -DRDKB_EXTENDER_ENABLED
 CcspPandMSsp_wanfailover_gtest_bin_SOURCES = $(test_common_sources) \
                                  wan_failover_log_test.cpp \
-                                 mocks/secureWrapperMock.cpp
+                                 mocks/systemCallMock.cpp
 CcspPandMSsp_wanfailover_gtest_bin_LDFLAGS = $(test_common_ldflags)
 CcspPandMSsp_wanfailover_gtest_bin_LDADD = $(test_common_ldadd)

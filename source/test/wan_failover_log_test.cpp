@@ -24,7 +24,7 @@
  */
 
 #include "pandmssp_mock.h"
-#include "mocks/secureWrapperMock.h"
+#include "mocks/systemCallMock.h"
 
 using namespace testing;
 
@@ -49,13 +49,13 @@ protected:
     void SetUp() override
     {
         PandMSSPTestFixture::SetUp();
-        g_secure_wrapperMock = new secure_wrapperMock();
+        g_systemCallMock = new systemCallMock();
     }
 
     void TearDown() override
     {
-        delete g_secure_wrapperMock;
-        g_secure_wrapperMock = nullptr;
+        delete g_systemCallMock;
+        g_systemCallMock = nullptr;
         gWanStatus = false;
         PandMSSPTestFixture::TearDown();
     }
@@ -65,7 +65,7 @@ protected:
 TEST_F(WanFailoverLogTest, WanStatusStopped_AfterStarted_PreservesLogs)
 {
     gWanStatus = true;
-    EXPECT_CALL(*g_secure_wrapperMock, v_secure_system(HasSubstr(kBackupCmd))).Times(1);
+    EXPECT_CALL(*g_systemCallMock, system(HasSubstr(kBackupCmd))).Times(1);
 
     EvtDispterWanStatusCallback("stopped");
 
@@ -76,7 +76,7 @@ TEST_F(WanFailoverLogTest, WanStatusStopped_AfterStarted_PreservesLogs)
 TEST_F(WanFailoverLogTest, WanStatusStopped_WhenAlreadyStopped_DoesNotPreserveLogs)
 {
     gWanStatus = false;
-    EXPECT_CALL(*g_secure_wrapperMock, v_secure_system(_)).Times(0);
+    EXPECT_CALL(*g_systemCallMock, system(_)).Times(0);
 
     EvtDispterWanStatusCallback("stopped");
 
@@ -87,7 +87,7 @@ TEST_F(WanFailoverLogTest, WanStatusStopped_WhenAlreadyStopped_DoesNotPreserveLo
 TEST_F(WanFailoverLogTest, WanStatusStarted_DoesNotPreserveLogs)
 {
     gWanStatus = false;
-    EXPECT_CALL(*g_secure_wrapperMock, v_secure_system(_)).Times(0);
+    EXPECT_CALL(*g_systemCallMock, system(_)).Times(0);
 
     EvtDispterWanStatusCallback("started");
 
@@ -98,7 +98,7 @@ TEST_F(WanFailoverLogTest, WanStatusStarted_DoesNotPreserveLogs)
 TEST_F(WanFailoverLogTest, WanStatusIntermediate_DoesNotPreserveLogs)
 {
     gWanStatus = true;
-    EXPECT_CALL(*g_secure_wrapperMock, v_secure_system(_)).Times(0);
+    EXPECT_CALL(*g_systemCallMock, system(_)).Times(0);
 
     EvtDispterWanStatusCallback("stopping");
     EvtDispterWanStatusCallback("starting");
@@ -109,7 +109,7 @@ TEST_F(WanFailoverLogTest, WanStatusIntermediate_DoesNotPreserveLogs)
 /* Each WAN down after recovery must preserve logs. */
 TEST_F(WanFailoverLogTest, WanStatusFlap_PreservesLogsOnEachDown)
 {
-    EXPECT_CALL(*g_secure_wrapperMock, v_secure_system(HasSubstr(kBackupCmd))).Times(2);
+    EXPECT_CALL(*g_systemCallMock, system(HasSubstr(kBackupCmd))).Times(2);
 
     EvtDispterWanStatusCallback("started");
     EvtDispterWanStatusCallback("stopped");
