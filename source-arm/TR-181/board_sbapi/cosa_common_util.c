@@ -61,6 +61,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -721,18 +722,27 @@ EvtDispterIpv6PrefixCallback( char *prefix )
 }
 static pthread_mutex_t webui_restart_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool webui_restart_pending = false;
+static uintptr_t webui_restart_generation = 0;
 
-void *
+static void *
 WebGUIRestart(void *arg)
 {
-    unsigned int remaining = 60;
+    uintptr_t requested_generation = (uintptr_t)arg;
+    unsigned int remaining = arg != NULL ? 60 : 0;
     int restart_result;
 
-    UNREFERENCED_PARAMETER(arg);
     pthread_detach(pthread_self());
-    CcspTraceInfo(("%s -- waiting 60 seconds before restarting WebUI\n", __FUNCTION__));
+    CcspTraceInfo(("%s -- WebUI restart delay: %u seconds\n", __FUNCTION__, remaining));
     while (remaining != 0)
         remaining = sleep(remaining);
+
+    pthread_mutex_lock(&webui_restart_mutex);
+    if (arg != NULL && requested_generation != webui_restart_generation)
+    {
+        pthread_mutex_unlock(&webui_restart_mutex);
+        CcspTraceInfo(("%s -- delayed restart superseded by a manual request\n", __FUNCTION__));
+        return NULL;
+    }
 
 #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
     restart_result = system("/bin/systemctl restart CcspWebUI.service");
@@ -748,13 +758,13 @@ WebGUIRestart(void *arg)
     {
         CcspTraceInfo(("%s -- WebUI restart completed\n", __FUNCTION__));
     }
-    pthread_mutex_lock(&webui_restart_mutex);
-    webui_restart_pending = false;
+    if (arg != NULL)
+        webui_restart_pending = false;
     pthread_mutex_unlock(&webui_restart_mutex);
     return NULL;
 }
 
-static void
+void
 RequestWebUIRestart(void)
 {
     pthread_t thread_id;
@@ -769,12 +779,32 @@ RequestWebUIRestart(void)
     }
 
     webui_restart_pending = true;
-    create_result = pthread_create(&thread_id, NULL, WebGUIRestart, NULL);
+    if (++webui_restart_generation == 0)
+        ++webui_restart_generation;
+    create_result = pthread_create(&thread_id, NULL, WebGUIRestart, (void *)webui_restart_generation);
     if (create_result != 0)
     {
         webui_restart_pending = false;
         CcspTraceError(("%s -- failed to create WebUI restart thread: %d\n", __FUNCTION__, create_result));
     }
+    pthread_mutex_unlock(&webui_restart_mutex);
+}
+
+void
+RequestWebUIRestartNow(void)
+{
+    pthread_t thread_id;
+    int create_result;
+
+    pthread_mutex_lock(&webui_restart_mutex);
+    create_result = pthread_create(&thread_id, NULL, WebGUIRestart, NULL);
+    if (create_result == 0)
+    {
+        ++webui_restart_generation;
+        webui_restart_pending = false;
+    }
+    else
+        CcspTraceError(("%s -- failed to create immediate WebUI restart thread: %d\n", __FUNCTION__, create_result));
     pthread_mutex_unlock(&webui_restart_mutex);
 }
 
