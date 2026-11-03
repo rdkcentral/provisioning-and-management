@@ -7988,8 +7988,8 @@ void _cosa_dhcpsv6_get_client()
             {
                 t1 = timeStamp;
                 t1 += atoi(pTmp3);
-
-                if ((unsigned int)t1 == 0xffffffff)
+    
+                if (t1 == 0xffffffff)
                 {
                     rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                     ERR_CHK(rc);
@@ -8012,8 +8012,8 @@ void _cosa_dhcpsv6_get_client()
             {
                 t1 = timeStamp;
                 t1 += atoi(pTmp3);
-
-                if ((unsigned int)t1 == 0xffffffff)
+    
+                if (t1 == 0xffffffff)
                 {
                     rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                     ERR_CHK(rc);
@@ -8069,8 +8069,8 @@ void _cosa_dhcpsv6_get_client()
                 {
                     t1 = timeStamp;
                     t1 += atoi(pTmp3);
-
-                    if ((unsigned int)t1 == 0xffffffff)
+    
+                    if (t1 == 0xffffffff)
                     {
                         rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                         ERR_CHK(rc);
@@ -8095,8 +8095,8 @@ void _cosa_dhcpsv6_get_client()
             {
                 t1 = timeStamp;
                 t1 += atoi(pTmp3);
-
-                if ((unsigned int)t1 == 0xffffffff)
+    
+                if (t1 == 0xffffffff)
                 {
                     rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                     ERR_CHK(rc);
