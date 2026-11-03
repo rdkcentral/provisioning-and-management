@@ -737,12 +737,13 @@ static void
 EvtDispterWanIpv6RestartCallback(const char *pIpAddress)
 {
     static struct in6_addr previous_address = IN6ADDR_ANY_INIT;
+    static bool bIsInitialAddressSeen = false;
     struct in6_addr address;
     pthread_t thread_id;
 
     if (pIpAddress == NULL || inet_pton(AF_INET6, pIpAddress, &address) != 1)
     {
-        CcspTraceError(("%s -- Invalid IPv6 address: %s\n", __FUNCTION__, pIpAddress));
+        CcspTraceError(("%s -- Invalid IPv6 address: %s\n", __FUNCTION__, pIpAddress ? pIpAddress : "NULL"));
         return;
     }
 
@@ -760,6 +761,13 @@ EvtDispterWanIpv6RestartCallback(const char *pIpAddress)
         return;
     }
 
+    if (false == bIsInitialAddressSeen)
+    {
+        bIsInitialAddressSeen = true;
+        CcspTraceInfo(("%s -- initial WAN IPv6 address %s recorded; skipping WebUI restart\n", __FUNCTION__, pIpAddress));
+        return;
+    }
+
     CcspTraceInfo(("%s -- WAN IPv6 address changed to %s, creating WebGUI restart thread\n", __FUNCTION__, pIpAddress));
     if (pthread_create(&thread_id, NULL, WebGUIRestart, NULL) != 0)
         CcspTraceError(("%s -- failed to create WebGUI restart thread\n", __FUNCTION__));
@@ -769,6 +777,7 @@ static void
 EvtDispterWanIpAddrsCallback(char *ip_addrs)
 {
     static char cPreviousIp[16] = "0.0.0.0";
+    static bool bIsInitialAddressSeen = false;
 
     if (ip_addrs == NULL || ip_addrs[0] == '\0')
         return;
@@ -791,10 +800,22 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
 	    sysevent_set(se_fd, token, "firewall-restart", NULL, 0);
         if (strcmp(cPreviousIp, ip_addrs) != 0)
         {
-            pthread_t tid;
-            CcspTraceInfo(("%s -- WAN IPv4 address changed from %s to %s, creating WebGUI restart thread\n", __FUNCTION__, cPreviousIp, ip_addrs));
-            if (pthread_create(&tid, NULL, &WebGUIRestart, NULL) != 0)
-                CcspTraceError(("%s -- failed to create WebGUI restart thread\n", __FUNCTION__));
+            struct in_addr address;
+            if (inet_pton(AF_INET, ip_addrs, &address) == 1)
+            {
+                if (false == bIsInitialAddressSeen)
+                {
+                    bIsInitialAddressSeen = true;
+                    CcspTraceInfo(("%s -- initial WAN IPv4 address %s recorded; skipping WebUI restart\n", __FUNCTION__, ip_addrs));
+                }
+                else
+                {
+                    pthread_t tid;
+                    CcspTraceInfo(("%s -- WAN IPv4 address changed from %s to %s, creating WebGUI restart thread\n", __FUNCTION__, cPreviousIp, ip_addrs));
+                    if (pthread_create(&tid, NULL, &WebGUIRestart, NULL) != 0)
+                        CcspTraceError(("%s -- failed to create WebGUI restart thread\n", __FUNCTION__));
+                }
+            }
         }
     }
 #if defined (RBUS_WAN_IP)
