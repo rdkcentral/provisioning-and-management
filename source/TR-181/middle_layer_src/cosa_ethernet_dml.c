@@ -2273,6 +2273,7 @@ Link_GetParamStringValue
                         pEntry->StaticInfo.Name,
                         &ulNameBufSize
                     );
+                pEntry->StaticInfo.Name[sizeof(pEntry->StaticInfo.Name) - 1] = '\0';
 
             if ( returnStatus != ANSC_STATUS_SUCCESS )
             {
