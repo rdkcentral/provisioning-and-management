@@ -733,6 +733,7 @@ WebGUIRestart(void *arg)
 
     pthread_detach(pthread_self());
     CcspTraceInfo(("%s -- WebUI restart delay: %u seconds\n", __FUNCTION__, remaining));
+    /* sleep() returns early with the unslept time when interrupted by a signal. */
     while (remaining != 0)
         remaining = sleep(remaining);
 
@@ -779,8 +780,10 @@ RequestWebUIRestart(void)
     }
 
     webui_restart_pending = true;
-    if (++webui_restart_generation == 0)
-        ++webui_restart_generation;
+    /* Zero is reserved for immediate requests, which pass NULL as the thread argument. */
+    webui_restart_generation++;
+    if (webui_restart_generation == 0)
+        webui_restart_generation = 1;
     create_result = pthread_create(&thread_id, NULL, WebGUIRestart, (void *)webui_restart_generation);
     if (create_result != 0)
     {
