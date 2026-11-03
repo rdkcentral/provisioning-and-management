@@ -1357,6 +1357,7 @@ static void readDHCPv4ServerPoolFromPSM()
             AnscSListInitializeHeader(&(pPoolLinkObj->StaticAddressList)); 
             AnscSListInitializeHeader(&(pPoolLinkObj->OptionList));
 
+                /* coverity[leaked_storage] - pPoolLinkObj from prior iteration may be overwritten on continue paths; ownership of prior allocation is ambiguous without cross-iteration analysis */
             pPool = &(pPoolLinkObj->SPool);
             DHCPV4_POOL_SET_DEFAULTVALUE(pPool);
 
