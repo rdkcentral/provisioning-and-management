@@ -4776,7 +4776,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
             pLanMngm->LanIPAddress.Value != 0)
         {
             CcspTraceInfo(("%s -- LAN management IP address changed, requesting WebUI restart\n", __FUNCTION__));
-            RequestWebUIRestartNow();
+            RequestWebUIRestart(true);
         }
 
         char l_cSecWebUI_Enabled[8] = {0};

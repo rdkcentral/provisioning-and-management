@@ -722,107 +722,96 @@ EvtDispterIpv6PrefixCallback( char *prefix )
 
 }
 static pthread_mutex_t webui_restart_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t webui_restart_cond = PTHREAD_COND_INITIALIZER;
-static bool webui_restart_pending = false;
-static bool webui_restart_immediate = false;
+
+static bool bWebuiRestartPending = false;
+static bool bWebuiRestartImmediate = false;
 
 static void *
 WebGUIRestart(void *arg)
 {
-    struct timespec deadline;
-    int restart_result;
-
     UNREFERENCED_PARAMETER(arg);
     pthread_detach(pthread_self());
+
+    /* Wait for 60 seconds */
+    sleep(60);
+
     pthread_mutex_lock(&webui_restart_mutex);
-    if (!webui_restart_immediate)
+
+    /* Check whether immediate restart was already performed */
+    if (bWebuiRestartImmediate)
     {
-        clock_gettime(CLOCK_REALTIME, &deadline);
-        deadline.tv_sec += 60;
-        while (!webui_restart_immediate)
-        {
-            int wait_result = pthread_cond_timedwait(&webui_restart_cond, &webui_restart_mutex, &deadline);
-            if (wait_result == ETIMEDOUT)
-                break;
-            if (wait_result != 0)
-            {
-                CcspTraceError(("%s -- timed wait for WebUI restart failed: %d\n", __FUNCTION__, wait_result));
-                webui_restart_pending = false;
-                pthread_mutex_unlock(&webui_restart_mutex);
-                return NULL;
-            }
-        }
+        bWebuiRestartPending = false;
+        bWebuiRestartImmediate = false;
+
+        pthread_mutex_unlock(&webui_restart_mutex);
+        return NULL;
     }
+
+    bWebuiRestartPending = false;
+
     pthread_mutex_unlock(&webui_restart_mutex);
 
-#if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
-    restart_result = system("/bin/systemctl restart CcspWebUI.service");
+#if defined PRODUCT_REQ_
+    system("/bin/systemctl restart WebUI.service");
 #else
-    restart_result = system("/bin/sh /etc/webgui.sh");
+    system("/bin/sh /etc/webgui.sh");
 #endif
 
-    if (restart_result != 0)
-    {
-        CcspTraceError(("%s -- WebUI restart failed: %d\n", __FUNCTION__, restart_result));
-    }
-    else
-    {
-        CcspTraceInfo(("%s -- WebUI restart completed\n", __FUNCTION__));
-    }
-
-    pthread_mutex_lock(&webui_restart_mutex);
-    webui_restart_pending = false;
-    webui_restart_immediate = false;
-    pthread_mutex_unlock(&webui_restart_mutex);
     return NULL;
 }
 
-static void
-startWebUIRestartLocked(bool immediate)
+void
+RequestWebUIRestart(bool immediate)
 {
     pthread_t thread_id;
-    int create_result;
 
-    webui_restart_pending = true;
-    webui_restart_immediate = immediate;
-    create_result = pthread_create(&thread_id, NULL, WebGUIRestart, NULL);
-    if (create_result != 0)
-    {
-        webui_restart_pending = false;
-        webui_restart_immediate = false;
-        CcspTraceError(("%s -- failed to create WebUI restart thread: %d\n", __FUNCTION__, create_result));
-    }
-}
-
-void
-RequestWebUIRestart(void)
-{
     pthread_mutex_lock(&webui_restart_mutex);
-    if (webui_restart_pending)
+
+    if (bWebuiRestartPending)
     {
+        if (immediate)
+        {
+            bWebuiRestartImmediate = true;
+
+            pthread_mutex_unlock(&webui_restart_mutex);
+
+            /* Restart WebUI immediately */
+#if defined PRODUCT_REQ_
+            system("/bin/systemctl restart WebUI.service");
+#else
+            system("/bin/sh /etc/webgui.sh");
+#endif
+            return;
+        }
+
         pthread_mutex_unlock(&webui_restart_mutex);
-        CcspTraceInfo(("%s -- restart already pending; request merged without extending timer\n", __FUNCTION__));
         return;
     }
 
-    startWebUIRestartLocked(false);
-    pthread_mutex_unlock(&webui_restart_mutex);
-}
-
-void
-RequestWebUIRestartNow(void)
-{
-    pthread_mutex_lock(&webui_restart_mutex);
-    if (webui_restart_pending)
+    if (immediate)
     {
-        webui_restart_immediate = true;
-        pthread_cond_signal(&webui_restart_cond);
         pthread_mutex_unlock(&webui_restart_mutex);
-        CcspTraceInfo(("%s -- pending restart promoted to immediate\n", __FUNCTION__));
+
+        /* Restart WebUI immediately */
+#if defined PRODUCT_REQ_
+        system("/bin/systemctl restart WebUI.service");
+#else
+        system("/bin/sh /etc/webgui.sh");
+#endif
         return;
     }
 
-    startWebUIRestartLocked(true);
+    bWebuiRestartPending = true;
+    bWebuiRestartImmediate = false;
+
+    if (pthread_create(&thread_id, NULL, WebGUIRestart, NULL) != 0)
+    {
+        bWebuiRestartPending = false;
+
+        CcspTraceError(("%s -- Failed to create WebUI restart thread\n",
+                        __FUNCTION__));
+    }
+
     pthread_mutex_unlock(&webui_restart_mutex);
 }
 
@@ -853,7 +842,7 @@ EvtDispterWanIpv6RestartCallback(const char *pIpAddress)
     }
 
     CcspTraceInfo(("%s -- WAN IPv6 address changed to %s, requesting WebUI restart\n", __FUNCTION__, pIpAddress));
-    RequestWebUIRestart();
+    RequestWebUIRestart(false);
 }
 
 static void
@@ -886,7 +875,7 @@ EvtDispterWanIpAddrsCallback(char *ip_addrs)
             if (inet_pton(AF_INET, ip_addrs, &address) == 1)
             {
                 CcspTraceInfo(("%s -- WAN IPv4 address changed from %s to %s, requesting WebUI restart\n", __FUNCTION__, cPreviousIp, ip_addrs));
-                RequestWebUIRestart();
+                RequestWebUIRestart(false);
             }
         }
     }
@@ -1166,7 +1155,7 @@ EvtDispterEventListen(void)
             else if(!strcmp(name_str, "webui-restart"))
             {
                 CcspTraceInfo(("%s -- WebUI restart requested by %s\n", __FUNCTION__, value_str));
-                RequestWebUIRestart();
+                RequestWebUIRestart(false);
                 ret = EVENT_OK;
             }
             else if(!strcmp(name_str,IPV6_PREFIX_EVENT))
@@ -1307,7 +1296,7 @@ EvtDispterCheckEvtStatus(int fd, token_t token)
     int  returnStatus = ANSC_STATUS_SUCCESS;
 
     if (sysevent_get(fd, token, "webui-restart", evtValue, sizeof(evtValue)) == 0 && evtValue[0] != '\0')
-        RequestWebUIRestart();
+        RequestWebUIRestart(false);
 
     /*lan-status event*/
     if( 0 == sysevent_get(fd, token, "lan-status", evtValue, sizeof(evtValue)) && '\0' != evtValue[0] )

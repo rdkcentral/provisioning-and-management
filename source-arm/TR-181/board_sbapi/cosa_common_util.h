@@ -193,8 +193,7 @@ void * EvtDispterEventHandler(void *arg);
 int EvtDispterCheckEvtStatus(int fd, token_t token);
 /*Create a thread to handle the sysevent asynchronously*/
 void EvtDispterHandleEventAsync(void);
-void RequestWebUIRestart(void);
-void RequestWebUIRestartNow(void);
+void RequestWebUIRestart(bool immediate);
 #if defined (RBUS_WAN_IP)
 void free_args_struct(arg_struct_t *param);
 #endif
