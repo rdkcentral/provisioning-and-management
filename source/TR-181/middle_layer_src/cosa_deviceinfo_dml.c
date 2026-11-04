@@ -10803,22 +10803,18 @@ WPA3_Personal_Compatibility_RFC_GetParamBoolValue
             return FALSE;
         }
 
-        CcspTraceInfo(("valStructs[0]->parameterValue = %s\n",valStructs[0]->parameterValue));
+        // DEBUG log level is set here as this prop is constantly polled by the CCSP rbus value-change thread
+        CcspTraceDebug(("valStructs[0]->parameterValue = %s\n",valStructs[0]->parameterValue));
         rc = strcmp_s("true",strlen("true"),valStructs[0]->parameterValue,&ind);
         ERR_CHK(rc);
-
-        if ((ind == 0) && (rc == EOK))
+        free_parameterValStruct_t(bus_handle, valNum, valStructs);
+        if (rc != EOK)
         {
-            free_parameterValStruct_t(bus_handle, valNum, valStructs);
-            *pBool = TRUE;
-            return TRUE;
-        }
-        else
-        {
-            free_parameterValStruct_t(bus_handle, valNum, valStructs);
             *pBool = FALSE;
             return FALSE;
         }
+        *pBool = (ind == 0) ? TRUE : FALSE;
+        return TRUE;
 #else
         *pBool = FALSE;
         return FALSE;
