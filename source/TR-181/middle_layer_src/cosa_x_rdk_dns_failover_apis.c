@@ -432,6 +432,11 @@ DNSFailover_WriteConfig(const DNS_FAILOVER_CONFIG* config)
         unlink(DNS_FAILOVER_CONFIG_TEMP_FILE);
         return FALSE;
     }
+    CcspTraceInfo(("DNS failover config written to NVRAM file %s: Enable=%lu, ResolverSource=%s, ReplyDeadline=%lu, FailureEpisodeGap=%lu, FailureThreshold=%lu, MonitorTick=%lu, VerifyTimeout=%lu, VerifyAttempts=%lu, VerifyCooldown=%lu, RecoveryInitial=%lu, RecoveryMax=%lu, RecoverySuccessThreshold=%lu, ResolverReload=%lu\n",
+        DNS_FAILOVER_CONFIG_FILE, config->Enable, config->ResolverSource, config->ReplyDeadline,
+        config->FailureEpisodeGap, config->FailureThreshold, config->MonitorTick, config->VerifyTimeout,
+        config->VerifyAttempts, config->VerifyCooldown, config->RecoveryInitial, config->RecoveryMax,
+        config->RecoverySuccessThreshold, config->ResolverReload));
 
     return TRUE;
 }

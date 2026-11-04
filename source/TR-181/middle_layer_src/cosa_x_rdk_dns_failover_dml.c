@@ -13,11 +13,18 @@ DNSFailover_GetParamUlongValue
         ULONG*      puLong
     )
 {
+    BOOL result;
+
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
 
     if (!ParamName || !puLong) return FALSE;
-    return DNSFailover_GetUlongByName(DNSFailover_GetCandidateConfig(), ParamName, puLong);
+    result = DNSFailover_GetUlongByName(DNSFailover_GetCandidateConfig(), ParamName, puLong);
+    if (result)
+    {
+        CcspTraceInfo(("DNS failover config get: %s = %lu\n", ParamName, *puLong));
+    }
+    return result;
 }
 
 ULONG
@@ -29,6 +36,8 @@ DNSFailover_GetParamStringValue
         ULONG*      pUlSize
     )
 {
+    ULONG result;
+
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
 
@@ -37,7 +46,12 @@ DNSFailover_GetParamStringValue
         return (ULONG)-1;
     }
 
-    return DNSFailover_ReturnString(DNSFailover_GetCandidateConfig()->ResolverSource, pValue, pUlSize);
+    result = DNSFailover_ReturnString(DNSFailover_GetCandidateConfig()->ResolverSource, pValue, pUlSize);
+    if (result == 0)
+    {
+        CcspTraceInfo(("DNS failover config get: %s = %s\n", ParamName, pValue));
+    }
+    return result;
 }
 
 BOOL
@@ -69,6 +83,7 @@ DNSFailover_SetParamUlongValue
         return FALSE;
     }
 
+    CcspTraceInfo(("DNS failover config staged: %s = %lu\n", ParamName, uValue));
     return TRUE;
 }
 
@@ -93,7 +108,13 @@ DNSFailover_SetParamStringValue
         return FALSE;
     }
 
-    return DNSFailover_CopyString(candidate->ResolverSource, sizeof(candidate->ResolverSource), pString);
+    if (!DNSFailover_CopyString(candidate->ResolverSource, sizeof(candidate->ResolverSource), pString))
+    {
+        return FALSE;
+    }
+
+    CcspTraceInfo(("DNS failover config staged: %s = %s\n", ParamName, pString));
+    return TRUE;
 }
 
 BOOL
@@ -113,6 +134,7 @@ DNSFailover_Validate
 
     if (DNSFailover_ValidateConfig(candidate, &invalidParameter))
     {
+        CcspTraceInfo(("DNS failover config validation passed\n"));
         return TRUE;
     }
 
@@ -164,6 +186,12 @@ DNSFailover_Commit(ANSC_HANDLE hInsContext)
         t2_event_s(active->Enable ? DNS_FAILOVER_T2_ENABLED : DNS_FAILOVER_T2_DISABLED, "override");
     }
 
+    CcspTraceInfo(("DNS failover config committed to NVRAM: Enable=%lu, ResolverSource=%s, ReplyDeadline=%lu, FailureEpisodeGap=%lu, FailureThreshold=%lu, MonitorTick=%lu, VerifyTimeout=%lu, VerifyAttempts=%lu, VerifyCooldown=%lu, RecoveryInitial=%lu, RecoveryMax=%lu, RecoverySuccessThreshold=%lu, ResolverReload=%lu\n",
+        active->Enable, active->ResolverSource, active->ReplyDeadline, active->FailureEpisodeGap,
+        active->FailureThreshold, active->MonitorTick, active->VerifyTimeout, active->VerifyAttempts,
+        active->VerifyCooldown, active->RecoveryInitial, active->RecoveryMax, active->RecoverySuccessThreshold,
+        active->ResolverReload));
+
     return 0;
 }
 
@@ -173,6 +201,7 @@ DNSFailover_Rollback(ANSC_HANDLE hInsContext)
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
     *DNSFailover_GetCandidateConfig() = *DNSFailover_GetActiveConfig();
+    CcspTraceInfo(("DNS failover config rolled back to active config\n"));
     return 0;
 }
 
@@ -196,6 +225,7 @@ DNSFailoverStatus_GetParamUlongValue
 
     DNSFailover_ReadStatusFile(&status);
     *puLong = status.ActiveResolverCount;
+    CcspTraceInfo(("DNS failover status get: %s = %lu\n", ParamName, *puLong));
     return TRUE;
 }
 
@@ -224,5 +254,6 @@ DNSFailoverStatus_GetParamStringValue
     else if (strcmp(ParamName, "LastVerificationResult") == 0) value = status.LastVerificationResult;
     else return (ULONG)-1;
 
+    CcspTraceInfo(("DNS failover status get: %s = %s\n", ParamName, value));
     return DNSFailover_ReturnString(value, pValue, pUlSize);
 }
