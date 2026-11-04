@@ -69,6 +69,7 @@ DNSFailover_SetParamUlongValue
 
     if (!ParamName || !DNSFailover_SetUlongByName(candidate, ParamName, uValue))
     {
+        CcspTraceError(("DNS failover config set failed: ParamName=%s, Value=%lu, Reason: unsupported numeric parameter\n", ParamName, uValue));
         DNSFailover_ReportRejected("unsupported numeric parameter");
         return FALSE;
     }
@@ -77,9 +78,16 @@ DNSFailover_SetParamUlongValue
         (strcmp(ParamName, "Enable") != 0 && uValue == 0))
     {
         *candidate = *DNSFailover_GetActiveConfig();
-        DNSFailover_ReportRejected(strcmp(ParamName, "Enable") == 0 ?
-            "Enable must be 0 or 1" :
-            "numeric configuration values must be greater than zero");
+        if (strcmp(ParamName, "Enable") == 0)
+        {
+            CcspTraceError(("DNS failover config set failed: ParamName=%s, Value=%lu, Reason: Enable must be 0 or 1\n", ParamName, uValue));
+            DNSFailover_ReportRejected("Enable must be 0 or 1");
+        }
+        else
+        {
+            CcspTraceError(("DNS failover config set failed: ParamName=%s, Value=%lu, Reason: numeric configuration values must be greater than zero\n", ParamName, uValue));
+            DNSFailover_ReportRejected("numeric configuration values must be greater than zero");
+        }
         return FALSE;
     }
 
@@ -104,12 +112,14 @@ DNSFailover_SetParamStringValue
         strlen(pString) >= sizeof(candidate->ResolverSource) ||
         strchr(pString, '\n') || strchr(pString, '\r') || strchr(pString, '='))
     {
+        CcspTraceError(("DNS failover config set failed: ParamName=%s, Value=%s, Reason: invalid ResolverSource (empty, too long, or contains invalid chars)\n", ParamName, pString ? pString : "NULL"));
         DNSFailover_ReportRejected("ResolverSource");
         return FALSE;
     }
 
     if (!DNSFailover_CopyString(candidate->ResolverSource, sizeof(candidate->ResolverSource), pString))
     {
+        CcspTraceError(("DNS failover config set failed: ParamName=%s, Value=%s, Reason: string copy failed\n", ParamName, pString));
         return FALSE;
     }
 
@@ -138,6 +148,7 @@ DNSFailover_Validate
         return TRUE;
     }
 
+    CcspTraceError(("DNS failover config validation failed: InvalidParameter=%s, Reason=%s\n", invalidParameter, DNSFailover_GetValidationReason(candidate, invalidParameter)));
     DNSFailover_ReportRejected(DNSFailover_GetValidationReason(candidate, invalidParameter));
     if (pReturnParamName && puLength)
     {
@@ -165,12 +176,14 @@ DNSFailover_Commit(ANSC_HANDLE hInsContext)
 
     if (!DNSFailover_ValidateConfig(candidate, &invalidParameter))
     {
+        CcspTraceError(("DNS failover config commit failed: InvalidParameter=%s, Reason=%s\n", invalidParameter, DNSFailover_GetValidationReason(candidate, invalidParameter)));
         DNSFailover_ReportRejected(DNSFailover_GetValidationReason(candidate, invalidParameter));
         return 1;
     }
 
     if (!DNSFailover_WriteConfig(candidate))
     {
+        CcspTraceError(("DNS failover config commit failed: NVRAM write operation failed\n"));
         DNSFailover_ReportRejected("NVRAM write failed");
         return 1;
     }
@@ -241,19 +254,4 @@ DNSFailoverStatus_GetParamStringValue
     DNS_FAILOVER_STATUS status;
     const char* value = NULL;
 
-    UNREFERENCED_PARAMETER(hInsContext);
-    DNSFailover_EnsureLoaded();
-
-    if (!ParamName) return (ULONG)-1;
-
-    DNSFailover_ReadStatusFile(&status);
-
-    if (strcmp(ParamName, "State") == 0) value = status.State;
-    else if (strcmp(ParamName, "LastFailureTime") == 0) value = status.LastFailureTime;
-    else if (strcmp(ParamName, "LastRecoveryTime") == 0) value = status.LastRecoveryTime;
-    else if (strcmp(ParamName, "LastVerificationResult") == 0) value = status.LastVerificationResult;
-    else return (ULONG)-1;
-
-    CcspTraceInfo(("DNS failover status get: %s = %s\n", ParamName, value));
-    return DNSFailover_ReturnString(value, pValue, pUlSize);
-}
+    UNREFEREN
