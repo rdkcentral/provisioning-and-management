@@ -254,4 +254,19 @@ DNSFailoverStatus_GetParamStringValue
     DNS_FAILOVER_STATUS status;
     const char* value = NULL;
 
-    UNREFEREN
+    UNREFERENCED_PARAMETER(hInsContext);
+    DNSFailover_EnsureLoaded();
+
+    if (!ParamName) return (ULONG)-1;
+
+    DNSFailover_ReadStatusFile(&status);
+
+    if (strcmp(ParamName, "State") == 0) value = status.State;
+    else if (strcmp(ParamName, "LastFailureTime") == 0) value = status.LastFailureTime;
+    else if (strcmp(ParamName, "LastRecoveryTime") == 0) value = status.LastRecoveryTime;
+    else if (strcmp(ParamName, "LastVerificationResult") == 0) value = status.LastVerificationResult;
+    else return (ULONG)-1;
+
+    CcspTraceInfo(("DNS failover status get: %s = %s\n", ParamName, value));
+    return DNSFailover_ReturnString(value, pValue, pUlSize);
+}
