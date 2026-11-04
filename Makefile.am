@@ -42,5 +42,9 @@ libtr181_la_LDFLAGS += -L${PKG_CONFIG_SYSROOT_DIR}$(libdir)
 libtr181_la_LIBADD += -ldevicemode -lrdkb_feature_mode_gate
 endif
 
+if TP_ENABLED
+libtr181_la_LDFLAGS += -lrdk_otlp
+endif
+
 #libtr181_la_LDFLAGS += -Wl,--no-undefined -Wl,--no-allow-shlib-undefined
 endif
