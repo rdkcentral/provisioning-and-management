@@ -2128,6 +2128,7 @@ CosaDmlDhcpv6Init
         Utopia_RawSet(&utctx,NULL,"router_managed_flag","1");
         SETI_INTO_UTOPIA(DHCPV6S_NAME,  "", 0, "", 0, "servertype", g_dhcpv6_server_type)
 
+       CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=first_boot_switch_to_stateful_DHCPv6\n", (long)getpid(), __FILE__, __LINE__, __func__));
        v_secure_system("sysevent set zebra-restart");
     }
 #endif
@@ -7628,7 +7629,7 @@ CosaDmlDhcpv6sSetPoolCfg
 	// Check whether static DNS got enabled or not. If enabled then we need to restart the zebra process
 	if( bNeedZebraRestart )
 	{
-        CcspTraceWarning(("%s Restarting Zebra Process\n", __FUNCTION__));
+        CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=pool_static_DNS_changed\n", (long)getpid(), __FILE__, __LINE__, __func__));
         commonSyseventSet("zebra-restart", "");
 	}
 
@@ -8577,6 +8578,7 @@ CosaDmlDhcpv6sSetOption
                         ( _ansc_strcmp((const char*)sDhcpv6ServerPoolOption[Index][Index2].Value, (const char*)pEntry->Value) &&
                                   !_ansc_strlen((const char*)pEntry->PassthroughClient) ) ) )
                     {
+                        CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=DHCPv6_option_23_DNS_or_passthrough_changed pool=%lu\n", (long)getpid(), __FILE__, __LINE__, __func__, (unsigned long)ulPoolInstanceNumber));
                         v_secure_system("sysevent set zebra-restart");
                     }
 
@@ -9304,6 +9306,7 @@ int handle_MocaIpv6(char *status)
     }
     if (restart_zebra)
     {
+        CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=home_isolation_IPv6_interface_list_changed status=%s\n", (long)getpid(), __FILE__, __LINE__, __func__, status));
         v_secure_system("sysevent set zebra-restart");
     }
 	if(NULL != Inf_name){
@@ -9987,6 +9990,7 @@ dhcpv6s_dbg_thrd(void * in)
                             }
                             commonSyseventSet(sysEventOut, InterfacePrefix);
                             enable_IPv6(interface_name);
+                            CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=DHCPv6_server_restart_fifo_IPv6_subprefix_interface interface=%s prefix=%s\n", (long)getpid(), __FILE__, __LINE__, __func__, interface_name, InterfacePrefix));
                             commonSyseventSet("zebra-restart","");
                         }
                     }
@@ -11222,12 +11226,14 @@ dhcpv6c_dbg_thrd(void * in)
                         }
                         else
                         {
+                            CcspTraceInfo(("%s : IPv6 prefix set in PAM DHCPV6 \n", __FUNCTION__));
                             v_secure_system("sysevent set ipv6_prefix %s ",v6pref);
                         }
 #else
 #ifndef _HUB4_PRODUCT_REQ_
                         v_secure_system("sysevent set ipv6_prefix %s ",v6pref);
 #else
+                        CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=HUB4_DHCPv6_client_delegated_prefix_route_setup\n", (long)getpid(), __FILE__, __LINE__, __func__));
                         v_secure_system("sysevent set zebra-restart ");
 #endif
 #endif /** _SCER11BEL_PRODUCT_REQ_ || _XER2_PRODUCT_REQ_ */
@@ -11366,6 +11372,7 @@ dhcpv6c_dbg_thrd(void * in)
     if (!isFeatureSupportedInCurrentMode(FEATURE_IPV6_DELEGATION))
 #endif
     {
+        CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=DHCPv6_client_event_processing_completed\n", (long)getpid(), __FILE__, __LINE__, __func__));
         v_secure_system("sysevent set zebra-restart");
     }
 #endif
@@ -11473,6 +11480,7 @@ void SwitchToGlobalIpv6()
         commonSyseventSet("ula_ipv6_enabled","0");
         commonSyseventSet("mode_switched","GLOBAL_IPV6");
         commonSyseventSet("disable_old_prefix_ra","true");
+        CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=switch_to_global_IPv6\n", (long)getpid(), __FILE__, __LINE__, __func__));
         commonSyseventSet("zebra-restart","");
         commonSyseventSet("firewall-restart","");   
     }
@@ -11485,6 +11493,7 @@ void SwitchToULAIpv6()
     commonSyseventSet("ula_ipv6_enabled","1");
     commonSyseventSet("mode_switched","ULA_IPV6");
     commonSyseventSet("disable_old_prefix_ra","true");
+    CcspTraceWarning(("ZEBRA_RESTART_TRACE component=provisioning-and-management pid=%ld site=%s:%d function=%s reason=switch_to_ULA_IPv6\n", (long)getpid(), __FILE__, __LINE__, __func__));
     commonSyseventSet("zebra-restart","");
     commonSyseventSet("firewall-restart","");
 }

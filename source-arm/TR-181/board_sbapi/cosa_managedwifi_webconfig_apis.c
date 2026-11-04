@@ -2344,7 +2344,7 @@ void processManageWifiData(backupLanconfig_t * pLanConfig, char cFlag, pErr pErr
     if ((!(cFlag & (1 << 0))) && (cFlag & (1 << 4)))
     {
         CcspTraceInfo(("%s:%d, Restarting the zebra\n",__FUNCTION__,__LINE__));
-        if (0 != commonSyseventSet("zebra-restart", ""))
+       if (0 != commonSyseventSet("zebra-restart", ""))
         {
             CcspTraceError(("%s:%d, commonSyseventSet failed for zebra-restart\n",__FUNCTION__,__LINE__));
             snprintf(pErrRetVal->ErrorMsg, BUFF_LEN_128,"sysevent set failed for zebra-restart \n");
