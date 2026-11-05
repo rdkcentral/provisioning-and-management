@@ -898,12 +898,20 @@ ANSC_STATUS getCurrentTimeOffset(char *offset_value)
             {
                 tm_local.tm_isdst = -1;
             }
-            struct tm *tm_utc = gmtime(&raw_time);
-            time_t t_local = mktime(&tm_local);
-            time_t t_utc = mktime(tm_utc);
+            /* Convert regional time to UTC for offset calculation */
+            time_t region_as_utc = timegm(&tm_local);
+            if (region_as_utc == (time_t)-1)
+            {
+                CcspTraceWarning(("%s: Failed to convert region time\n", __FUNCTION__));
+                free(regionTime);
+                Utopia_Free(&ctx, 0);
+                return ANSC_STATUS_FAILURE;
+            }
 
-            int offset_seconds = (int)difftime(t_local, t_utc);
-            int offset_minutes = offset_seconds / 60;
+            int offset_seconds = (int)difftime(region_as_utc, raw_time);
+            int offset_minutes = (offset_seconds >= 0)
+                               ? (offset_seconds + 30) / 60
+                               : (offset_seconds - 30) / 60;
             char sign = (offset_minutes >= 0) ? '+' : '-';
             int abs_offset = abs(offset_minutes);
             int hours = abs_offset / 60;
