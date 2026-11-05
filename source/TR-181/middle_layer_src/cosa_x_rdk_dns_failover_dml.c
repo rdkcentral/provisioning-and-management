@@ -63,9 +63,11 @@ DNSFailover_SetParamUlongValue
     )
 {
     DNS_FAILOVER_CONFIG* candidate = DNSFailover_GetCandidateConfig();
+    DNS_FAILOVER_CONFIG previous;
 
     UNREFERENCED_PARAMETER(hInsContext);
     DNSFailover_EnsureLoaded();
+    previous = *candidate;
 
     if (!ParamName || !DNSFailover_SetUlongByName(candidate, ParamName, uValue))
     {
@@ -77,7 +79,8 @@ DNSFailover_SetParamUlongValue
     if ((strcmp(ParamName, "Enable") == 0 && uValue > 1) ||
         (strcmp(ParamName, "Enable") != 0 && uValue == 0))
     {
-        *candidate = *DNSFailover_GetActiveConfig();
+        /* Undo only this setter's change; other staged fields are kept until Commit/Rollback */
+        *candidate = previous;
         if (strcmp(ParamName, "Enable") == 0)
         {
             CcspTraceError(("DNS failover config set failed: ParamName=%s, Value=%lu, Reason: Enable must be 0 or 1\n", ParamName, uValue));
