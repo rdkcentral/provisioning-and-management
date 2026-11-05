@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <signal.h>
@@ -379,6 +380,33 @@ DNSFailover_LoadConfig(DNS_FAILOVER_CONFIG* config, BOOL* usedOverride)
     return TRUE;
 }
 
+static BOOL
+DNSFailover_SyncConfigDirectory(void)
+{
+    BOOL success = TRUE;
+    int dirFd = open(DNS_FAILOVER_CONFIG_DIR, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+
+    if (dirFd < 0)
+    {
+        CcspTraceError(("Failed to open directory %s: %s\n", DNS_FAILOVER_CONFIG_DIR, strerror(errno)));
+        return FALSE;
+    }
+
+    if (fsync(dirFd) != 0)
+    {
+        CcspTraceError(("Failed to fsync directory %s: %s\n", DNS_FAILOVER_CONFIG_DIR, strerror(errno)));
+        success = FALSE;
+    }
+
+    if (close(dirFd) != 0)
+    {
+        CcspTraceError(("Failed to close directory %s: %s\n", DNS_FAILOVER_CONFIG_DIR, strerror(errno)));
+        success = FALSE;
+    }
+
+    return success;
+}
+
 BOOL
 DNSFailover_WriteConfig(const DNS_FAILOVER_CONFIG* config)
 {
@@ -432,6 +460,19 @@ DNSFailover_WriteConfig(const DNS_FAILOVER_CONFIG* config)
         unlink(DNS_FAILOVER_CONFIG_TEMP_FILE);
         return FALSE;
     }
+
+    /*
+     * Persist the rename itself so the new directory entry survives power loss.
+     * The rename has already replaced the visible file, so a directory sync
+     * failure cannot be rolled back; report it as an error, but keep the commit
+     * so the in-memory config stays consistent with the file readers observe.
+     */
+    if (!DNSFailover_SyncConfigDirectory())
+    {
+        CcspTraceError(("Failed to sync directory %s after updating %s; change may not survive power loss\n",
+            DNS_FAILOVER_CONFIG_DIR, DNS_FAILOVER_CONFIG_FILE));
+    }
+
     CcspTraceInfo(("DNS failover config written to NVRAM file %s: Enable=%lu, ResolverSource=%s, ReplyDeadline=%lu, FailureEpisodeGap=%lu, FailureThreshold=%lu, MonitorTick=%lu, VerifyTimeout=%lu, VerifyAttempts=%lu, VerifyCooldown=%lu, RecoveryInitial=%lu, RecoveryMax=%lu, RecoverySuccessThreshold=%lu, ResolverReload=%lu\n",
         DNS_FAILOVER_CONFIG_FILE, config->Enable, config->ResolverSource, config->ReplyDeadline,
         config->FailureEpisodeGap, config->FailureThreshold, config->MonitorTick, config->VerifyTimeout,

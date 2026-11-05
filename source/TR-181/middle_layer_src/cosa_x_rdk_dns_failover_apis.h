@@ -3,6 +3,7 @@
 
 #include "cosa_apis.h"
 
+#define DNS_FAILOVER_CONFIG_DIR       "/nvram"
 #define DNS_FAILOVER_CONFIG_FILE      "/nvram/dns_failover.conf"
 #define DNS_FAILOVER_CONFIG_TEMP_FILE "/nvram/dns_failover.conf.tmp"
 #define DNS_FAILOVER_MANAGER_PID_FILE "/tmp/dns_failover_manager.pid"
