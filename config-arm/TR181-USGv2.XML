@@ -153,6 +153,7 @@
 
     </object>
 
+<?ifdef DNS_FAILOVER_SUPPORT?>
     <object>
       <name>X_RDK_DNSFailover</name>
       <objectType>object</objectType>
@@ -283,6 +284,7 @@
         </object>
       </objects>
     </object>
+<?endif?>
 
     <object>
      <name>X_RDK_Features</name>
