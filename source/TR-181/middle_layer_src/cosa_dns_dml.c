@@ -71,6 +71,10 @@
 #include "cosa_dns_dml.h"
 #include "cosa_dns_internal.h"
 #include "safec_lib_common.h"
+#include "ccsp_psm_helper.h"
+
+extern char g_Subsystem[32];
+extern ANSC_HANDLE bus_handle;
 
 /***********************************************************************
  IMPORTANT NOTE:
@@ -1607,7 +1611,7 @@ Server1_SetParamStringValue
 
     if (strcmp(ParamName, "DNSServer") == 0)
     {
-        if(( COSA_DML_DNS_ADDR_SRC_Static  == pDnsServer->Type ) && pDnsServer->InstanceNumber <= 2)
+        if( COSA_DML_DNS_ADDR_SRC_Static  == pDnsServer->Type )
         {
             rc = STRCPY_S_NOCLOBBER(pDnsServer->DNSServer, sizeof(pDnsServer->DNSServer),pString);
             if(rc != EOK)
@@ -1852,23 +1856,18 @@ Relay_GetParamBoolValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    COSA_DML_DNS_STATUS             eRelayStatus     = COSA_DML_DNS_STATUS_Disabled;
-    
+    PCOSA_DATAMODEL_DNS             pDns         = (PCOSA_DATAMODEL_DNS)g_pCosaBEManager->hDNS;
+    PCOSA_DML_DNS_RELAY             pRelay       = &pDns->Relay;
+
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
         /* collect value */
-        eRelayStatus = CosaDmlIpDnsGetRelayStatus(NULL);
-        if ( eRelayStatus == COSA_DML_DNS_STATUS_Enabled )
-        {
-            *pBool = TRUE;
-        }else
-        {
-            *pBool = FALSE;
-        }
+        CosaDmlIpDnsGetRelayEnable(NULL, pRelay);
+        *pBool = pRelay->bEnabled;
+
         return TRUE;
     }
-
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1960,14 +1959,15 @@ Relay_GetParamUlongValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
+    PCOSA_DATAMODEL_DNS             pDns         = (PCOSA_DATAMODEL_DNS)g_pCosaBEManager->hDNS;
+    PCOSA_DML_DNS_RELAY             pRelay       = &pDns->Relay;
+
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "Status") == 0)
     {
-        /* collect value */
-        *puLong = (ULONG)CosaDmlIpDnsGetRelayStatus(NULL);
+        *puLong = (ULONG)CosaDmlIpDnsGetRelayStatus(NULL, pRelay);
         return TRUE;
     }
-
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -2069,15 +2069,16 @@ Relay_SetParamBoolValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
+    PCOSA_DATAMODEL_DNS             pDns         = (PCOSA_DATAMODEL_DNS)g_pCosaBEManager->hDNS;
+    PCOSA_DML_DNS_RELAY             pRelay       = &pDns->Relay;
+
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "Enable") == 0)
     {
         /* save update to backup */
-        CosaDmlDnsEnableRelay(NULL, (BOOLEAN)bValue);
+        pRelay->bEnabled = (BOOLEAN)bValue;
         return TRUE;
     }
-
-
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -2264,6 +2265,32 @@ Relay_Validate
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(pReturnParamName);
     UNREFERENCED_PARAMETER(puLength);
+
+    PCOSA_DATAMODEL_DNS             pDns         = (PCOSA_DATAMODEL_DNS)g_pCosaBEManager->hDNS;
+    PCOSA_DML_DNS_RELAY             pRelay       = &pDns->Relay;
+
+    char* dns_relay_1 = NULL;
+    char* dns_relay_2 = NULL;
+    char* dns_relay_3 = NULL;
+    char* dns_relay_4 = NULL;
+    int retPsmGet = CCSP_SUCCESS;
+
+    retPsmGet = PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.1.dnsserver", NULL, &dns_relay_1);
+    if (retPsmGet == CCSP_SUCCESS && dns_relay_1 != NULL)
+    {
+        if(pRelay && (pRelay->bEnabled == TRUE)) {
+            PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.2.dnsserver", NULL, &dns_relay_2);
+            PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.3.dnsserver", NULL, &dns_relay_3);
+            PSM_Get_Record_Value2(bus_handle, g_Subsystem, "dmsb.dns.forwarding.4.dnsserver", NULL, &dns_relay_4);
+
+            if((strlen(dns_relay_1) <= 1) && (strlen(dns_relay_2) <= 1) && (strlen(dns_relay_3) <= 1) && (strlen(dns_relay_4) <= 1))
+            {
+                CcspTraceWarning(("Realy_Validate() failed dns server is empty.\n"));
+                pRelay->bEnabled = FALSE;
+                return FALSE;
+            }
+        }
+    }
     return TRUE;
 }
 
@@ -2296,7 +2323,9 @@ Relay_Commit
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    return 0;
+    PCOSA_DATAMODEL_DNS pDns = (PCOSA_DATAMODEL_DNS)g_pCosaBEManager->hDNS;
+    PCOSA_DML_DNS_RELAY pRelay = &pDns->Relay;
+    return CosaDmlDnsEnableRelay(NULL, pRelay->bEnabled);
 }
 
 
@@ -2330,7 +2359,13 @@ Relay_Rollback
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    return 0;
+    PCOSA_DATAMODEL_DNS pDns = (PCOSA_DATAMODEL_DNS)g_pCosaBEManager->hDNS;
+    PCOSA_DML_DNS_RELAY pRelay = &pDns->Relay;
+
+    if (CosaDmlIpDnsGetRelayStatus(NULL, pRelay) == COSA_DML_DNS_STATUS_Error)
+        return ANSC_STATUS_FAILURE;
+
+    return ANSC_STATUS_SUCCESS;
 }
 
 
@@ -2595,18 +2630,25 @@ Forwarding_DelEntry
 
     CcspTraceInfo(("Forwarding_DelEntry...\n"));
 
-    CosaDmlDnsRelayDelServer(NULL, pForward->InstanceNumber);
-
-    AnscSListPopEntryByLink(pForwardHead, &pCosaContext->Linkage);
-
-    if ( pCosaContext->bNew )
+    if ( COSA_DML_DNS_ADDR_SRC_Static  == pForward->Type )
     {
-        CosaDNSRegDelInfo(NULL, (ANSC_HANDLE)pCosaContext);
+        CcspTraceWarning(("Entries can't be deleted when Type is Static \n"));
+        return ANSC_STATUS_FAILURE;
     }
-    
-    AnscFreeMemory(pForward);
-    AnscFreeMemory(pCosaContext);
+    else
+    {
+       CosaDmlDnsRelayDelServer(NULL, pForward->InstanceNumber);
 
+       AnscSListPopEntryByLink(pForwardHead, &pCosaContext->Linkage);
+
+       if ( pCosaContext->bNew )
+       {
+            CosaDNSRegDelInfo(NULL, (ANSC_HANDLE)pCosaContext);
+       }
+
+       AnscFreeMemory(pForward);
+       AnscFreeMemory(pCosaContext);
+    }
     return 0;
 }
 
@@ -2775,9 +2817,8 @@ Forwarding_Synchronize
 
             CcspTraceInfo
                 ((
-                    "Forwarding_Synchronize -- new entry %d.%d.%d.%d with instance number %lu.\n",
-                    pForward2->DNSServer.Dot[0], pForward2->DNSServer.Dot[1],
-                    pForward2->DNSServer.Dot[2], pForward2->DNSServer.Dot[3],
+                    "Forwarding_Synchronize -- new entry %s with instance number %lu.\n",
+                    pForward2->DNSServer,
                     pForward2->InstanceNumber
                 ));
 
@@ -2951,12 +2992,6 @@ Forwarding_GetParamUlongValue
         return TRUE;
     }
 
-    if (strcmp(ParamName, "DNSServer") == 0)
-    {
-        *puLong = pForward->DNSServer.Value;
-        return TRUE;
-    }
-
     if (strcmp(ParamName, "Type") == 0)
     {
         *puLong = pForward->Type;
@@ -3042,6 +3077,16 @@ Forwarding_GetParamStringValue
         return 0;
     }
 
+    if (strcmp(ParamName, "DNSServer") == 0)
+    {
+        rc = strcpy_s(pValue, *pUlSize, pForward->DNSServer);
+        if(rc != EOK)
+        {
+           ERR_CHK(rc);
+           return -1;
+        }
+        return 0;
+    }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return -1;
@@ -3185,22 +3230,10 @@ Forwarding_SetParamUlongValue
         ULONG                       uValue
     )
 {
-    PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
-    PCOSA_DML_DNS_RELAY_ENTRY       pForward     = (PCOSA_DML_DNS_RELAY_ENTRY)pCosaContext->hContext;
 
-    /* check the parameter name and set the corresponding value */
-    if (strcmp(ParamName, "DNSServer") == 0)
-    {
-        if ( COSA_DML_DNS_ADDR_SRC_Static  == pForward->Type )
-        {
-            pForward->DNSServer.Value = uValue;
-            return TRUE;
-        }
-
-         CcspTraceWarning(("DNSServer is only writable when Type is Static \n"));
-         return FALSE;
-    }
-
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(uValue);
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -3278,6 +3311,22 @@ Forwarding_SetParamStringValue
          return FALSE;
     }
 
+    if (strcmp(ParamName, "DNSServer") == 0)
+    {
+        if ( COSA_DML_DNS_ADDR_SRC_Static  == pForward->Type )
+        {
+            rc = STRCPY_S_NOCLOBBER(pForward->DNSServer, sizeof(pForward->DNSServer), pString);
+            if(rc != EOK)
+            {
+               ERR_CHK(rc);
+               return FALSE;
+            }
+            return TRUE;
+        }
+
+        CcspTraceWarning(("DNSServer is only writable when Type is Static \n"));
+        return FALSE;
+    }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -3321,6 +3370,9 @@ Forwarding_Validate
         ULONG*                      puLength
     )
 {
+
+/* Uncommemt when alias has scope */
+#if 0
     PCOSA_DATAMODEL_DNS             pMyObject     = (PCOSA_DATAMODEL_DNS)g_pCosaBEManager->hDNS;     
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext  = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext2 = (PCOSA_CONTEXT_LINK_OBJECT)NULL;
@@ -3355,7 +3407,10 @@ Forwarding_Validate
             return FALSE;
         }
     }
-        
+#endif
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(pReturnParamName);
+    UNREFERENCED_PARAMETER(puLength);
     return TRUE;
 }
 
