@@ -1357,7 +1357,6 @@ static void readDHCPv4ServerPoolFromPSM()
             AnscSListInitializeHeader(&(pPoolLinkObj->StaticAddressList)); 
             AnscSListInitializeHeader(&(pPoolLinkObj->OptionList));
 
-                /* coverity[leaked_storage] - pPoolLinkObj from prior iteration may be overwritten on continue paths; ownership of prior allocation is ambiguous without cross-iteration analysis */
             pPool = &(pPoolLinkObj->SPool);
             DHCPV4_POOL_SET_DEFAULTVALUE(pPool);
 
@@ -1369,6 +1368,7 @@ static void readDHCPv4ServerPoolFromPSM()
             if(rc < EOK)
             {
                 ERR_CHK(rc);
+                AnscFreeMemory(pPoolLinkObj);
                 continue;
             }
 
@@ -1388,6 +1388,7 @@ static void readDHCPv4ServerPoolFromPSM()
             if(rc < EOK)
             {
                 ERR_CHK(rc);
+                AnscFreeMemory(pPoolLinkObj);
                 continue;
             }
             retPsmGet1 = PsmGetNextLevelInstances(bus_handle, g_Subsystem, param_name, &optionCnt, &optionList);
@@ -1424,7 +1425,7 @@ static void readDHCPv4ServerPoolFromPSM()
             }
             // push pool to the end of list
             AnscSListPushEntryAtBack(&g_dhcpv4_server_pool_list, &pPoolLinkObj->Linkage);   
-
+            pPoolLinkObj = NULL;
         }// poolCnt
 
 
