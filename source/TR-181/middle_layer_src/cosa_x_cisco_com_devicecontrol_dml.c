@@ -1385,6 +1385,127 @@ X_CISCO_COM_DeviceControl_SetParamUlongValue
     return FALSE;
 }
 
+/**********************************************************************
+
+    helper: IsValidFactoryResetString
+
+    description:
+
+        Validates a comma-separated FactoryReset token string against
+        the set of tokens recognised by CosaDmlDcSetFactoryReset.
+
+        Reset tokens: Router, Wifi, Firewall, VoIP, Docsis
+        Cellular is also a reset token when FEATURE_RDKB_CELLULAR_MANAGER
+        is defined.
+
+        Dect and MoCA are accepted for compatibility with legacy internal
+        callers (e.g. CosaDmlDiPartnerIDChangeHandling), but
+        CosaDmlDcSetFactoryReset ignores them: a value containing only
+        Dect and/or MoCA sets no mask bit, so the backend fails the call.
+        At least one reset token must therefore also be present.
+
+    argument:   const char *pString
+                The value string to validate (must not be NULL).
+
+    return:     TRUE  if every token is valid and at least one reset token
+                      is present.
+                FALSE if the string is empty, contains an unknown token,
+                      contains only whitespace/delimiters, or contains
+                      only legacy-compatibility tokens (Dect/MoCA) that
+                      the backend would silently drop.
+
+**********************************************************************/
+static BOOL
+IsValidFactoryResetString
+    (
+        const char *pString
+    )
+{
+    /* Matches the size of the FactoryReset[256] datamodel field in
+     * cosa_x_cisco_com_devicecontrol_internal.h. */
+    char   tmpBuf[256];
+    char  *tok  = NULL;
+    char  *sv   = NULL;
+    BOOL   valid = FALSE;
+    BOOL   resetToken = FALSE;
+    int    i;
+    size_t len;
+    static const char * const validTokens[] =
+    {
+        "Router",
+        "Wifi",
+        "Firewall",
+        "VoIP",
+        "Docsis",
+        "Dect",
+        "MoCA",
+#ifdef FEATURE_RDKB_CELLULAR_MANAGER
+        "Cellular",
+#endif
+        NULL
+    };
+    static const char * const resetTokens[] =
+    {
+        "Router",
+        "Wifi",
+        "Firewall",
+        "VoIP",
+        "Docsis",
+#ifdef FEATURE_RDKB_CELLULAR_MANAGER
+        "Cellular",
+#endif
+        NULL
+    };
+
+    if (pString == NULL || pString[0] == '\0')
+    {
+        CcspTraceError(("FactoryReset: empty or NULL value is not valid\n"));
+        return FALSE;
+    }
+
+    len = strnlen(pString, sizeof(tmpBuf));
+    if (len >= sizeof(tmpBuf))
+    {
+        CcspTraceError(("FactoryReset: value exceeds datamodel buffer size\n"));
+        return FALSE;
+    }
+
+    memcpy(tmpBuf, pString, len + 1);
+    tok = strtok_r(tmpBuf, ",", &sv);
+    while (tok)
+    {
+        for (i = 0; validTokens[i] != NULL; i++)
+        {
+            if (strncmp(tok, validTokens[i], strlen(validTokens[i]) + 1) == 0)
+                break;
+        }
+        if (validTokens[i] == NULL)
+        {
+            CcspTraceError(("FactoryReset: invalid token '%s'\n", tok));
+            return FALSE;
+        }
+        valid = TRUE;
+
+        for (i = 0; resetTokens[i] != NULL; i++)
+        {
+            if (strncmp(tok, resetTokens[i], strlen(resetTokens[i]) + 1) == 0)
+            {
+                resetToken = TRUE;
+                break;
+            }
+        }
+        tok = strtok_r(NULL, ",", &sv);
+    }
+
+    if (valid && !resetToken)
+    {
+        CcspTraceError(("FactoryReset: value contains no reset token recognised by the backend\n"));
+        return FALSE;
+    }
+
+    return valid;
+}
+
 /**********************************************************************  
 
     caller:     owner of this object 
@@ -1453,6 +1574,9 @@ X_CISCO_COM_DeviceControl_SetParamStringValue
     ERR_CHK(rc);
     if((rc == EOK) && (!ind))
     {
+        if (!IsValidFactoryResetString(pString))
+            return FALSE;
+
         rc = STRCPY_S_NOCLOBBER((char *)pMyObject->FactoryReset, sizeof(pMyObject->FactoryReset), pString);
         if(rc != EOK)
         {
