@@ -32,6 +32,9 @@ static int pf_cache_size = 0;
 static int pf_cache_size_bkup = 0;
 
 static int gpfEnable = 0;
+static int gpfEnable_bkup = 0;
+/* Set once a webconfig transaction starts modifying syscfg, so rollback only restores real changes. */
+static int pf_database_changed = 0;
 
 int  get_base64_decodedbuffer(char *pString, char **buffer, int *size)
 {
@@ -271,42 +274,55 @@ void print_pf_cache(t_cache *tmp_pf_cache)
 }
 
 /* API to unset the entries from DB */
-int clear_pf_cache_DB(t_cache *tmp_pf_cache)
+int clear_pf_cache_DB(t_cache *tmp_pf_cache, int cache_size)
 {
-	int i = 0;
-    	for(i = 0; i < pf_cache_size; i++)
-    	{
+    int i = 0;
 
-        	if (syscfg_unset(NULL, tmp_pf_cache[i].cmd) != 0)
-        	{
-               		CcspTraceError(("syscfg_set failed for %s %s\n",tmp_pf_cache[i].cmd,tmp_pf_cache[i].val));
-                    return SYSCFG_FAILURE;
+    if ( (tmp_pf_cache == NULL) || (cache_size < 0) || (cache_size > PORTMAP_CACHE_SIZE) )
+    {
+        return SYSCFG_FAILURE;
+    }
 
-               		//break;
-        	}
-        	memset(tmp_pf_cache[i].cmd,0,BLOCK_SIZE);
-        	memset(tmp_pf_cache[i].val,0,VAL_BLOCK_SIZE);
-    	}
-
-        if (syscfg_commit() != 0)
+    for(i = 0; i < cache_size; i++)
+    {
+        if (tmp_pf_cache[i].cmd[0] == '\0')
         {
-                CcspTraceError(("syscfg_commit failed apply_cache_ToDB\n"));
-                return SYSCFG_FAILURE;
+            continue;
         }
 
-    	system("sysevent set firewall-restart");
+        if (syscfg_unset(NULL, tmp_pf_cache[i].cmd) != 0)
+        {
+            CcspTraceError(("syscfg_unset failed for %s\n",tmp_pf_cache[i].cmd));
+            return SYSCFG_FAILURE;
+        }
+    }
+
+    if (syscfg_commit() != 0)
+    {
+        CcspTraceError(("syscfg_commit failed clear_pf_cache_DB\n"));
+        return SYSCFG_FAILURE;
+    }
 
     return 0;
-
 }
 
 /* API to back up the cache */
 void backup_pf_cache(t_cache *tmp_pf_cache,t_cache *tmp_pf_cache_bkup,int cache_size)
 {
-    UNREFERENCED_PARAMETER(cache_size);
 	int i = 0;
     errno_t rc = -1;
-    	for(i = 0; i < pf_cache_size; i++)
+
+    if ( (tmp_pf_cache == NULL) || (tmp_pf_cache_bkup == NULL) || (cache_size < 0) )
+    {
+        return;
+    }
+
+    if (cache_size > PORTMAP_CACHE_SIZE)
+    {
+        cache_size = PORTMAP_CACHE_SIZE;
+    }
+
+    for(i = 0; i < cache_size; i++)
     	{
 
 			memset(tmp_pf_cache_bkup[i].cmd,0,BLOCK_SIZE);
@@ -330,19 +346,25 @@ void backup_pf_cache(t_cache *tmp_pf_cache,t_cache *tmp_pf_cache_bkup,int cache_
 int apply_pf_cache_ToDB(t_cache *tmp_pf_cache, int cache_size,int pmapEnable)
 {
 	    int i = 0;
-        if ( gpfEnable !=  pmapEnable )
+
+        if ( (tmp_pf_cache == NULL) || (cache_size < 0) || (cache_size > PORTMAP_CACHE_SIZE) )
         {
-                if (syscfg_set("CosaNAT", "port_forward_enabled", (pmapEnable == 1) ? "1" : "0" ) != 0)
-                {
-                    CcspTraceError(("syscfg_set failed to set %s::%s parameter\n", "CosaNAT", "port_forward_enabled"));
-                    return SYSCFG_FAILURE;
-                }    
+            return SYSCFG_FAILURE;
+        }
+
+        /* Always write the flag: rollback must restore it even if a failed apply changed it. */
+        if (syscfg_set("CosaNAT", "port_forward_enabled", (pmapEnable == 1) ? "1" : "0" ) != 0)
+        {
+            CcspTraceError(("syscfg_set failed to set %s::%s parameter\n", "CosaNAT", "port_forward_enabled"));
+            return SYSCFG_FAILURE;
         }
 
     	for(i = 0;i <cache_size ; i++)
     	{
-        	//printf("pf_cache[%d].cmd - %s\n",i,tmp_pf_cache[i].cmd);
-        	//printf("pf_cache[%d].val - %s\n",i,tmp_pf_cache[i].val);
+        if (tmp_pf_cache[i].cmd[0] == '\0')
+        {
+            continue;
+        }
 
         	if (syscfg_set(NULL, tmp_pf_cache[i].cmd, tmp_pf_cache[i].val) != 0)
         	{
@@ -461,6 +483,16 @@ int set_portmap_conf(portmappingdoc_t *rpm)
     	char alias_pre[8];
         errno_t  rc   = -1;
         printf("Port map entries %zu\n",rpm->entries_count);
+
+        /* Each entry needs at most 11 slots, plus 2 slots for the count keys. */
+        if ( rpm->entries_count > (size_t)((PORTMAP_CACHE_SIZE - 2) / 11) )
+        {
+            CcspTraceError(("%s: too many port mapping entries %zu\n", __FUNCTION__, rpm->entries_count));
+            return -1;
+        }
+
+        clear_pf_cache(pf_cache);
+        pf_cache_size = 0;
     	//printf("SinglePortForwardCount = %d\n", rpm->entries_count);
     	//count = rpm->entries_count + 1;
     	for(i = 1,j =0; i < rpm->entries_count+1; i++, j++ )
@@ -586,108 +618,147 @@ int set_portmap_conf(portmappingdoc_t *rpm)
     return 0;
 }
 
-/* Initialize cache , this API will be called once in boot up */
-void init_pf_cache(t_cache *tmp_pf_cache)
+static int add_pf_snapshot_entry(t_cache *tmp_pf_cache, int *index, const char *cmd, int required)
 {
-    int i, j;
+    int len;
+
+    if (*index >= PORTMAP_CACHE_SIZE)
+    {
+        CcspTraceError(("%s: port forwarding cache is full\n", __FUNCTION__));
+        return -1;
+    }
+
+    len = snprintf(tmp_pf_cache[*index].cmd, BLOCK_SIZE, "%s", cmd);
+    if ( (len < 0) || (len >= BLOCK_SIZE) )
+    {
+        CcspTraceError(("%s: syscfg key %s is too long\n", __FUNCTION__, cmd));
+        return -1;
+    }
+
+    if (syscfg_get(NULL, tmp_pf_cache[*index].cmd, tmp_pf_cache[*index].val, VAL_BLOCK_SIZE) != 0)
+    {
+        if (!required)
+        {
+            /* Key is absent in syscfg; do not recreate it during rollback. */
+            memset(&tmp_pf_cache[*index], 0, sizeof(t_cache));
+            return 0;
+        }
+        snprintf(tmp_pf_cache[*index].val, VAL_BLOCK_SIZE, "0");
+    }
+
+    (*index)++;
+    return 0;
+}
+
+static int add_pf_snapshot_rule(t_cache *tmp_pf_cache, int *index, const char *alias_key, const char **suffixes, int suffix_count)
+{
+    int alias_index = *index;
+    int k;
+    char cmd[BLOCK_SIZE + 1];
+    int len;
+
+    if (add_pf_snapshot_entry(tmp_pf_cache, index, alias_key, 0) != 0)
+    {
+        return -1;
+    }
+
+    if ( (*index == alias_index) || (tmp_pf_cache[alias_index].val[0] == '\0') )
+    {
+        return 0;
+    }
+
+    for (k = 0; k < suffix_count; k++)
+    {
+        len = snprintf(cmd, sizeof(cmd), "%s%s", tmp_pf_cache[alias_index].val, suffixes[k]);
+        if ( (len < 0) || (len >= BLOCK_SIZE) )
+        {
+            CcspTraceError(("%s: syscfg key for alias %s is too long\n", __FUNCTION__, tmp_pf_cache[alias_index].val));
+            return -1;
+        }
+        if (add_pf_snapshot_entry(tmp_pf_cache, index, cmd, 0) != 0)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* Take a complete snapshot (keys and values) of the port forwarding configuration stored in syscfg */
+static int snapshot_pf_cache_from_DB(t_cache *tmp_pf_cache, int *cache_size, int *pfEnable)
+{
+    static const char *spf_suffixes[] = {
+        ALIAS_POS_EXT_PORT, ALIAS_POS_IP, ALIAS_POS_NAME, ALIAS_POS_ENABLE, ALIAS_POS_PROTO,
+        ALIAS_POS_INT_PORT, ALIAS_POS_IPV6, ALIAS_POS_PREV_STATE
+    };
+    static const char *pfr_suffixes[] = {
+        ALIAS_POS_EXT_PORT_RANGE, ALIAS_PFR_PUBLIC_IP, ALIAS_PFR_INT_RANGE, ALIAS_POS_IP, ALIAS_POS_NAME,
+        ALIAS_POS_ENABLE, ALIAS_POS_PROTO, ALIAS_POS_INT_PORT, ALIAS_POS_IPV6, ALIAS_POS_PREV_STATE
+    };
+    char buf[VAL_BLOCK_SIZE] = {0};
+    char key[BLOCK_SIZE];
+    int index = 0;
     int spf_count;
     int pfr_count;
-    bool commit = false;
-    /*CID: 144097 fix*/
-    errno_t rc = -1;
+    int j;
 
-    syscfg_get("CosaNAT", "port_forward_enabled", tmp_pf_cache[0].val, sizeof(tmp_pf_cache[0].val));
-
-    gpfEnable = atoi(tmp_pf_cache[0].val);
-
-    if (syscfg_get(NULL, "SinglePortForwardCount", tmp_pf_cache[0].val, VAL_BLOCK_SIZE) != 0)
+    if ( (tmp_pf_cache == NULL) || (cache_size == NULL) || (pfEnable == NULL) )
     {
-        rc = strcpy_s(tmp_pf_cache[0].val, sizeof(tmp_pf_cache[0].val), "0");
-        if (rc != EOK)
-        {
-            ERR_CHK(rc);
-        }
+        return -1;
     }
 
-    if (syscfg_get(NULL, "PortRangeForwardCount", tmp_pf_cache[1].val, VAL_BLOCK_SIZE) != 0)
+    clear_pf_cache(tmp_pf_cache);
+    *cache_size = 0;
+
+    *pfEnable = 0;
+    if (syscfg_get("CosaNAT", "port_forward_enabled", buf, sizeof(buf)) == 0)
     {
-        rc = strcpy_s(tmp_pf_cache[1].val, sizeof(tmp_pf_cache[1].val), "0");
-        if (rc != EOK)
-        {
-            ERR_CHK(rc);
-        }
+        *pfEnable = (atoi(buf) == 1) ? 1 : 0;
     }
 
-    i = 2;
+    if ( (add_pf_snapshot_entry(tmp_pf_cache, &index, "SinglePortForwardCount", 1) != 0) ||
+         (add_pf_snapshot_entry(tmp_pf_cache, &index, "PortRangeForwardCount", 1) != 0) )
+    {
+        return -1;
+    }
 
     spf_count = atoi(tmp_pf_cache[0].val);
-
-    for (j = 1; j < (spf_count + 1); j++)
-    {
-        if (i + 9 > PORTMAP_CACHE_SIZE)
-        {
-            spf_count = j - 1;
-            snprintf(tmp_pf_cache[0].val, VAL_BLOCK_SIZE, "%d", spf_count);
-            syscfg_set(NULL, "SinglePortForwardCount", tmp_pf_cache[0].val);
-            commit = true;
-            break;
-        }
-
-        snprintf(tmp_pf_cache[i].cmd, BLOCK_SIZE, "SinglePortForward_%d", j);
-        syscfg_get(NULL, tmp_pf_cache[i].cmd, tmp_pf_cache[i].val, VAL_BLOCK_SIZE);
-
-        printf("alias_pre = %s\n", tmp_pf_cache[i].val);
-
-        snprintf(tmp_pf_cache[i + 1].cmd, BLOCK_SIZE, "%s" ALIAS_POS_EXT_PORT,   tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 2].cmd, BLOCK_SIZE, "%s" ALIAS_POS_IP,         tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 3].cmd, BLOCK_SIZE, "%s" ALIAS_POS_NAME,       tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 4].cmd, BLOCK_SIZE, "%s" ALIAS_POS_ENABLE,     tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 5].cmd, BLOCK_SIZE, "%s" ALIAS_POS_PROTO,      tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 6].cmd, BLOCK_SIZE, "%s" ALIAS_POS_INT_PORT,   tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 7].cmd, BLOCK_SIZE, "%s" ALIAS_POS_IPV6,       tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 8].cmd, BLOCK_SIZE, "%s" ALIAS_POS_PREV_STATE, tmp_pf_cache[i].val);
-
-        i += 9;
-    }
-
     pfr_count = atoi(tmp_pf_cache[1].val);
+    if (spf_count < 0)
+        spf_count = 0;
+    if (pfr_count < 0)
+        pfr_count = 0;
 
-    for (j = 1; j < (pfr_count + 1); j++)
+    for (j = 1; j <= spf_count; j++)
     {
-        if (i + 11 > PORTMAP_CACHE_SIZE)
+        snprintf(key, sizeof(key), ALIAS_SPF "%d", j);
+        if (add_pf_snapshot_rule(tmp_pf_cache, &index, key, spf_suffixes,
+                                 (int)(sizeof(spf_suffixes) / sizeof(spf_suffixes[0]))) != 0)
         {
-            pfr_count = j - 1;
-            snprintf(tmp_pf_cache[1].val, VAL_BLOCK_SIZE, "%d", pfr_count);
-            syscfg_set(NULL, "PortRangeForwardCount", tmp_pf_cache[1].val);
-            commit = true;
-            break;
+            clear_pf_cache(tmp_pf_cache);
+            return -1;
         }
-
-        snprintf(tmp_pf_cache[i].cmd, BLOCK_SIZE, "PortRangeForward_%d", j);
-        syscfg_get(NULL, tmp_pf_cache[i].cmd, tmp_pf_cache[i].val, VAL_BLOCK_SIZE);
-
-        printf("alias_pre = %s\n", tmp_pf_cache[i].val);
-
-        snprintf(tmp_pf_cache[i + 1].cmd, BLOCK_SIZE, "%s" ALIAS_POS_EXT_PORT_RANGE, tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 2].cmd, BLOCK_SIZE, "%s" ALIAS_PFR_PUBLIC_IP,      tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 3].cmd, BLOCK_SIZE, "%s" ALIAS_PFR_INT_RANGE,      tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 4].cmd, BLOCK_SIZE, "%s" ALIAS_POS_IP,             tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 5].cmd, BLOCK_SIZE, "%s" ALIAS_POS_NAME,           tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 6].cmd, BLOCK_SIZE, "%s" ALIAS_POS_ENABLE,         tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 7].cmd, BLOCK_SIZE, "%s" ALIAS_POS_PROTO,          tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 8].cmd, BLOCK_SIZE, "%s" ALIAS_POS_INT_PORT,       tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 9].cmd, BLOCK_SIZE, "%s" ALIAS_POS_IPV6,           tmp_pf_cache[i].val);
-        snprintf(tmp_pf_cache[i + 10].cmd, BLOCK_SIZE, "%s" ALIAS_POS_PREV_STATE,    tmp_pf_cache[i].val);
-
-        i += 11;
     }
 
-    pf_cache_size = i;
-
-    if (commit)
+    for (j = 1; j <= pfr_count; j++)
     {
-        syscfg_commit();
+        snprintf(key, sizeof(key), ALIAS_PFR "%d", j);
+        if (add_pf_snapshot_rule(tmp_pf_cache, &index, key, pfr_suffixes,
+                                 (int)(sizeof(pfr_suffixes) / sizeof(pfr_suffixes[0]))) != 0)
+        {
+            clear_pf_cache(tmp_pf_cache);
+            return -1;
+        }
     }
+
+    *cache_size = index;
+    return 0;
+}
+
+/* Initialize cache from syscfg; called at boot, each webconfig request refreshes its own snapshot */
+int init_pf_cache(t_cache *tmp_pf_cache)
+{
+    return snapshot_pf_cache_from_DB(tmp_pf_cache, &pf_cache_size, &gpfEnable);
 }
 
 /* CallBack API to execute Portforwarding Blob request */
@@ -714,22 +785,19 @@ pErr Process_PF_WebConfigRequest(void *Data)
     	CcspTraceWarning(("Portmap configurartion recieved\n"));
 
 
-    	backup_pf_cache(pf_cache,pf_cache_bkup,pf_cache_size);
-    	pf_cache_size_bkup = pf_cache_size;
-    	
-        if ( SYSCFG_FAILURE == clear_pf_cache_DB(pf_cache) )
+        pf_database_changed = 0;
+
+        /* Refresh the rollback snapshot from syscfg; UI/TR-181 may have changed it since boot. */
+        if ( 0 != snapshot_pf_cache_from_DB(pf_cache_bkup, &pf_cache_size_bkup, &gpfEnable_bkup) )
         {
-                CcspTraceError(("%s: Failed to clear_pf_cache_DB\n",__FUNCTION__));
-             //   portmappingdoc_destroy( rpm ); 
-
+                CcspTraceError(("%s: Failed to snapshot current port forwarding configuration\n",__FUNCTION__));
                 execRetVal->ErrorCode = SYSCFG_FAILURE;
-
-                strncpy(execRetVal->ErrorMsg,"sysconfig failure while clearing old entries",sizeof(execRetVal->ErrorMsg)-1);
-
+                strncpy(execRetVal->ErrorMsg,"sysconfig failure while reading old entries",sizeof(execRetVal->ErrorMsg)-1);
                 return execRetVal;
-
         }
+        gpfEnable = gpfEnable_bkup;
 
+        /* Validate and build the new configuration before touching syscfg. */
         int ret  = set_portmap_conf(rpm) ; 
     	if ( 0 != ret )
         {
@@ -768,6 +836,13 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
             }
 #endif
+            else
+            {
+                CcspTraceError(("%s : Failed to process port mapping entries, ret %d\n",__FUNCTION__, ret));
+                execRetVal->ErrorCode = SYSCFG_FAILURE;
+
+                strncpy(execRetVal->ErrorMsg,"Failed to process port mapping entries",sizeof(execRetVal->ErrorMsg)-1);
+            }
 
             //portmappingdoc_destroy( rpm ); 
 
@@ -776,7 +851,17 @@ pErr Process_PF_WebConfigRequest(void *Data)
         }
         if ( rpm->entries_count > 0 )
                 lpfEnable = 1 ;
-        
+
+        pf_database_changed = 1;
+
+        if ( SYSCFG_FAILURE == clear_pf_cache_DB(pf_cache_bkup, pf_cache_size_bkup) )
+        {
+                CcspTraceError(("%s: Failed to clear_pf_cache_DB\n",__FUNCTION__));
+                execRetVal->ErrorCode = SYSCFG_FAILURE;
+                strncpy(execRetVal->ErrorMsg,"sysconfig failure while clearing old entries",sizeof(execRetVal->ErrorMsg)-1);
+                return execRetVal;
+        }
+
     	if ( SYSCFG_FAILURE == apply_pf_cache_ToDB(pf_cache,pf_cache_size, lpfEnable ) )
     	{
             	CcspTraceError(("Failed to apply Portmap configurartion\n"));
@@ -816,11 +901,35 @@ int rollback_PortForwarding()
     CcspTraceInfo((" Entering %s \n",__FUNCTION__));
 
     int ret = 0;
-    ret = apply_pf_cache_ToDB(pf_cache_bkup,pf_cache_size_bkup,  gpfEnable ) ;
 
-    backup_pf_cache(pf_cache_bkup,pf_cache,pf_cache_size_bkup);
+    if (pf_database_changed)
+    {
+        int i;
 
+        /* Drop keys written by the failed request; keys that are absent are not an error here. */
+        for (i = 0; i < pf_cache_size && i < PORTMAP_CACHE_SIZE; i++)
+        {
+            if (pf_cache[i].cmd[0] != '\0')
+            {
+                syscfg_unset(NULL, pf_cache[i].cmd);
+            }
+        }
+
+        ret = apply_pf_cache_ToDB(pf_cache_bkup, pf_cache_size_bkup, gpfEnable_bkup);
+        if (ret == 0)
+        {
+            pf_database_changed = 0;
+        }
+    }
+    else
+    {
+        CcspTraceInfo(("%s: syscfg was not modified, nothing to restore\n",__FUNCTION__));
+    }
+
+    clear_pf_cache(pf_cache);
+    backup_pf_cache(pf_cache_bkup, pf_cache, pf_cache_size_bkup);
     pf_cache_size = pf_cache_size_bkup;
+    gpfEnable = gpfEnable_bkup;
 
     return ret ;
 }

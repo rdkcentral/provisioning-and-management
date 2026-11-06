@@ -298,7 +298,10 @@ CosaNatInitialize
     clear_pf_cache(pf_cache);
     clear_pf_cache(pf_cache_bkup);
 
-    init_pf_cache(pf_cache);
+    if (init_pf_cache(pf_cache) != 0)
+    {
+        CcspTraceError(("%s: init_pf_cache failed\n", __FUNCTION__));
+    }
 
     clear_dmz_cache(dmz_cache);
     clear_dmz_cache(dmz_cache_bkup);

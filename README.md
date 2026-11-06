@@ -499,3 +499,13 @@ CcspPandM integrates with multiple HAL interfaces to provide hardware abstractio
 |--------------------|---------|-------------------|
 | `CcspPam.cfg` | Component registration and RBus configuration | Environment variables, command line args |
 | `/etc/utopia/service.d/pam.conf` | System service configuration and dependencies | Systemd service overrides |
+
+### Port-forwarding WebConfig rollback
+
+The `portforwarding` WebConfig subdoc replaces the whole syscfg port-forwarding table (`SinglePortForward_*`, `PortRangeForward_*`, `spf_*`/`pfr_*`, including 1:1 NAT entries that use `pfr_N::public_ip`). `Process_PF_WebConfigRequest` validates the subdoc and builds the new table before it writes to syscfg. At the start of each request it also takes a complete snapshot of the current keys and values; this snapshot includes entries that the WebUI or TR-181 added after boot. If the subdoc is rejected, syscfg and the firewall are not touched. If writing to syscfg fails, `rollback_PortForwarding` removes the partial keys, restores the exact snapshot and restarts the firewall.
+
+Host regression test (needs `gcc` with ASan/UBSan):
+
+```sh
+python3 source/test/portforwarding_rollback_test.py
+```

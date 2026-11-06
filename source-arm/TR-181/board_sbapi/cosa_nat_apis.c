@@ -2164,6 +2164,33 @@ static inline int _CHECK_PORTMAPPING_RULE_TYPE_U_RANGE(portFwdRange_t *pEntry)
         return RULE_PORTMAPPING_TYPE_HS; 
 }
 
+/* Convert a syscfg IPv4 string; empty/invalid/broadcast values (e.g. left by a corrupt entry) map to 0
+ * instead of 255.255.255.255 so they are not reported as a real client or as 1:1 NAT. */
+static ULONG _PortMappingIPv4ToValue(const char *ip, const char *field, ULONG ruleId)
+{
+    struct in_addr addr;
+
+    if ( (ip == NULL) || (ip[0] == '\0') )
+        return 0;
+
+    if ( (inet_pton(AF_INET, ip, &addr) != 1) || (addr.s_addr == INADDR_NONE) )
+    {
+        CcspTraceWarning(("%s: ignoring invalid %s '%s' for port mapping rule %lu\n", __FUNCTION__, field, ip, ruleId));
+        return 0;
+    }
+
+    return addr.s_addr;
+}
+
+static void _PortMappingCheckClient(PCOSA_DML_NAT_PMAPPING pEntry, const char *destIpv6)
+{
+    if ( (pEntry->InternalClient.Value == 0) && ((destIpv6 == NULL) || (destIpv6[0] == '\0')) )
+    {
+        CcspTraceWarning(("%s: port mapping rule %lu has no valid internal client\n", __FUNCTION__, pEntry->InstanceNumber));
+        pEntry->Status = COSA_DML_NAT_STATUS_Error_Misconfigured;
+    }
+}
+
 static inline int _CHECK_PORTMAPPING_RULE_TYPE_UTOPAI_SINGLE(portFwdSingle_t *pEntry)
 {
     if(pEntry->internal_port == 0)
@@ -2439,10 +2466,11 @@ CosaDmlNatGetPortMapping
         pNatPMapping->LeaseDuration = 0;
         pNatPMapping->Protocol = U_2_SB_PF_PROTOCOL(rangeInfo.protocol);
         pNatPMapping->RemoteHost.Value = 0;
-        pNatPMapping->PublicIP.Value = inet_addr(rangeInfo.public_ip);
+        pNatPMapping->PublicIP.Value = _PortMappingIPv4ToValue(rangeInfo.public_ip, "PublicIP", rangeInfo.rule_id);
         pNatPMapping->Status = (rangeInfo.enabled ? COSA_DML_NAT_STATUS_Enabled : COSA_DML_NAT_STATUS_Disabled);
-        pNatPMapping->InternalClient.Value = inet_addr(rangeInfo.dest_ip);
+        pNatPMapping->InternalClient.Value = _PortMappingIPv4ToValue(rangeInfo.dest_ip, "InternalClient", rangeInfo.rule_id);
         pNatPMapping->InstanceNumber = rangeInfo.rule_id;
+        _PortMappingCheckClient(pNatPMapping, rangeInfo.dest_ipv6);
         safec_rc = strcpy_s(pNatPMapping->Description,sizeof(pNatPMapping->Description), rangeInfo.name);
         ERR_CHK(safec_rc);
         pNatPMapping->X_CISCO_COM_Origin = COSA_DML_NAT_PMAPPING_Origin_Static;
@@ -2464,8 +2492,9 @@ CosaDmlNatGetPortMapping
         pNatPMapping->RemoteHost.Value = 0;
         pNatPMapping->PublicIP.Value = 0; 
         pNatPMapping->Status = (singleInfo.enabled ? COSA_DML_NAT_STATUS_Enabled : COSA_DML_NAT_STATUS_Disabled);
-        pNatPMapping->InternalClient.Value = inet_addr(singleInfo.dest_ip);
+        pNatPMapping->InternalClient.Value = _PortMappingIPv4ToValue(singleInfo.dest_ip, "InternalClient", singleInfo.rule_id);
         pNatPMapping->InstanceNumber = singleInfo.rule_id;
+        _PortMappingCheckClient(pNatPMapping, singleInfo.dest_ipv6);
         safec_rc = strcpy_s(pNatPMapping->Description,sizeof(pNatPMapping->Description), singleInfo.name);
         ERR_CHK(safec_rc);
         pNatPMapping->X_CISCO_COM_Origin = COSA_DML_NAT_PMAPPING_Origin_Static;
@@ -2721,8 +2750,9 @@ CosaDmlNatGetPortMappings
             pNatPMapping[ulIndex].RemoteHost.Value = 0;
             pNatPMapping[ulIndex].PublicIP.Value = 0; 
             pNatPMapping[ulIndex].Status = (singleInfo[i].enabled ? COSA_DML_NAT_STATUS_Enabled : COSA_DML_NAT_STATUS_Disabled);
-            pNatPMapping[ulIndex].InternalClient.Value = inet_addr(singleInfo[i].dest_ip);
+            pNatPMapping[ulIndex].InternalClient.Value = _PortMappingIPv4ToValue(singleInfo[i].dest_ip, "InternalClient", singleInfo[i].rule_id);
             pNatPMapping[ulIndex].InstanceNumber = singleInfo[i].rule_id;
+            _PortMappingCheckClient(&pNatPMapping[ulIndex], singleInfo[i].dest_ipv6);
             pNatPMapping[ulIndex].X_CISCO_COM_Origin = COSA_DML_NAT_PMAPPING_Origin_Static;
             safec_rc = strcpy_s(pNatPMapping[ulIndex].Description,sizeof(pNatPMapping[ulIndex].Description), singleInfo[i].name);
             ERR_CHK(safec_rc);
@@ -2745,10 +2775,11 @@ CosaDmlNatGetPortMappings
             pNatPMapping[ulIndex].LeaseDuration = 0;
             pNatPMapping[ulIndex].Protocol = U_2_SB_PF_PROTOCOL(rangeInfo[i].protocol);
             pNatPMapping[ulIndex].RemoteHost.Value = 0;
-            pNatPMapping[ulIndex].PublicIP.Value = inet_addr(rangeInfo[i].public_ip);
+            pNatPMapping[ulIndex].PublicIP.Value = _PortMappingIPv4ToValue(rangeInfo[i].public_ip, "PublicIP", rangeInfo[i].rule_id);
             pNatPMapping[ulIndex].Status = (rangeInfo[i].enabled ? COSA_DML_NAT_STATUS_Enabled : COSA_DML_NAT_STATUS_Disabled);
-            pNatPMapping[ulIndex].InternalClient.Value = inet_addr(rangeInfo[i].dest_ip);
+            pNatPMapping[ulIndex].InternalClient.Value = _PortMappingIPv4ToValue(rangeInfo[i].dest_ip, "InternalClient", rangeInfo[i].rule_id);
             pNatPMapping[ulIndex].InstanceNumber = rangeInfo[i].rule_id;
+            _PortMappingCheckClient(&pNatPMapping[ulIndex], rangeInfo[i].dest_ipv6);
             pNatPMapping[ulIndex].X_CISCO_COM_Origin = COSA_DML_NAT_PMAPPING_Origin_Static;
             safec_rc = strcpy_s(pNatPMapping[ulIndex].Description,sizeof(pNatPMapping[ulIndex].Description), rangeInfo[i].name);
             ERR_CHK(safec_rc);

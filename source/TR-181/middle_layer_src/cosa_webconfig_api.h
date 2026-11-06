@@ -146,15 +146,17 @@ void print_pf_cache(t_cache *tmp_pf_cache);
 /**
  * @brief Clears port forwarding entries from the persistent database.
  *
- * This function removes port forwarding cache entries from the PSM database.
+ * This function removes the given port forwarding syscfg keys and commits the change.
+ * It does not restart the firewall; the following apply/rollback does that.
  *
  * @param[in] tmp_pf_cache Pointer to port forwarding cache specifying entries to clear.
+ * @param[in] cache_size Number of entries in the cache.
  *
  * @return status of operation
  * @retval 0 on success.
  * @retval non-zero error code on failure.
  */
-int clear_pf_cache_DB(t_cache *tmp_pf_cache);
+int clear_pf_cache_DB(t_cache *tmp_pf_cache, int cache_size);
 /**
  * @brief Applies port forwarding cache entries to the persistent database.
  *
@@ -197,13 +199,16 @@ void backup_pf_cache(t_cache *tmp_pf_cache,t_cache *tmp_pf_cache_bkup,int cache_
 /**
  * @brief Initializes the port forwarding cache from persistent storage.
  *
- * This function loads port forwarding configuration from PSM database into cache.
+ * This function loads a complete snapshot (keys and values) of the port forwarding
+ * configuration from syscfg into the cache.
  *
  * @param[out] tmp_pf_cache Pointer to port forwarding cache to initialize.
  *
- * @return void
+ * @return status of operation
+ * @retval 0 on success.
+ * @retval -1 if the configuration does not fit in the cache or a key is too long.
  */
-void init_pf_cache(t_cache *tmp_pf_cache);
+int init_pf_cache(t_cache *tmp_pf_cache);
 
 /**
  * @brief Processes a port forwarding webconfig request.
@@ -221,8 +226,8 @@ pErr Process_PF_WebConfigRequest(void *Data);
 /**
  * @brief Rolls back port forwarding configuration to previous state.
  *
- * This function restores port forwarding configuration from backup cache when
- * a configuration update fails.
+ * This function restores the syscfg snapshot taken at the start of the failed request.
+ * If the request failed before syscfg was modified, nothing is written.
  *
  * @return status of operation
  * @retval 0 on success.
