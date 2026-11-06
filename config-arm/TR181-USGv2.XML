@@ -3558,12 +3558,28 @@
                         <functions>
                                 <func_GetParamBoolValue>DistributedTracing_GetParamBoolValue</func_GetParamBoolValue>
                                 <func_SetParamBoolValue>DistributedTracing_SetParamBoolValue</func_SetParamBoolValue>
+                                <func_GetParamStringValue>DistributedTracing_GetParamStringValue</func_GetParamStringValue>
+                                <func_SetParamStringValue>DistributedTracing_SetParamStringValue</func_SetParamStringValue>
+                                <func_GetParamUlongValue>DistributedTracing_GetParamUlongValue</func_GetParamUlongValue>
+                                <func_SetParamUlongValue>DistributedTracing_SetParamUlongValue</func_SetParamUlongValue>
                         </functions>
                         <parameters>
                                 <parameter>
                                         <name>Enable</name>
                                         <type>boolean</type>
                                         <syntax>bool</syntax>
+                                        <writable>true</writable>
+                                </parameter>
+                                <parameter>
+                                        <name>URL</name>
+                                        <type>string(512)</type>
+                                        <syntax>string</syntax>
+                                        <writable>true</writable>
+                                </parameter>
+                                <parameter>
+                                        <name>Interval</name>
+                                        <type>unsignedInt</type>
+                                        <syntax>uint32</syntax>
                                         <writable>true</writable>
                                 </parameter>
                         </parameters>
