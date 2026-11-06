@@ -666,10 +666,11 @@ CosaDmlEthLinkLoadPsm
             }
         }
 
+        pEthLink->StaticInfo.Name[sizeof(pEthLink->StaticInfo.Name) - 1] = '\0';
         if ( _ansc_strlen(pEthLink->StaticInfo.Name) > 0 )
-        {
-            _getMac(pEthLink->StaticInfo.Name,(char *) pEthLink->StaticInfo.MacAddress);
-        }
+            {
+        _getMac(pEthLink->StaticInfo.Name,(char *) pEthLink->StaticInfo.MacAddress);
+            }
 
         /* Fetch DynamicInfo */
         pEthLink->DynamicInfo.LastChange = AnscGetTickInSeconds();
