@@ -79,6 +79,8 @@
 #include <ccsp_psm_helper.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <limits.h>
+#include <stdint.h>
 #ifdef _ONESTACK_PRODUCT_REQ_
 #include <rdkb_feature_mode_gate.h>
 #endif
@@ -7767,7 +7769,7 @@ void _cosa_dhcpsv6_get_client()
     time_t t1    = 0;
     struct tm t2 = {0};
     CHAR  buf[128] = {0};
-    ULONG  timeStamp = 0;    
+    uint64_t timeStamp = 0;
     errno_t rc = -1;
     PCOSA_DML_DHCPSV6_CLIENT_OPTION          pOption1 = NULL;
     PCOSA_DML_DHCPSV6_CLIENT_IPV6ADDRESS     pIPv6Address1 = NULL;
@@ -7980,22 +7982,22 @@ void _cosa_dhcpsv6_get_client()
             ERR_CHK(rc);
         }else if ( _ansc_strcmp(pTmp1, "Timestamp") == 0 )
         {
-            timeStamp = atoi(pTmp3);
+            timeStamp = strtoull(pTmp3, NULL, 10);
         }else if ( _ansc_strcmp(pTmp1, "Prefered") == 0 )
         {
             /* CID: 73916 Explicit null dereferenced*/
             if ( g_dhcps6v_clientcontent && g_dhcps6v_clientcontent[Index].NumberofIPv6Address )
             {
-                t1 = timeStamp;
-                t1 += atoi(pTmp3);
-    
-                if (t1 == 0xffffffff)
+                uint64_t expiry = timeStamp + strtoull(pTmp3, NULL, 10);
+
+                if (expiry == UINT64_C(0xffffffff))
                 {
                     rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                     ERR_CHK(rc);
                 }
                 else
                 {
+                    t1 = (time_t)expiry;
                     localtime_r(&t1, &t2);
                     snprintf(buf, sizeof(buf), "%d-%d-%dT%02d:%02d:%02dZ%c", 
                          1900+t2.tm_year, t2.tm_mon+1, t2.tm_mday,
@@ -8010,16 +8012,16 @@ void _cosa_dhcpsv6_get_client()
         {
             if ( g_dhcps6v_clientcontent[Index].NumberofIPv6Address )
             {
-                t1 = timeStamp;
-                t1 += atoi(pTmp3);
-    
-                if (t1 == 0xffffffff)
+                uint64_t expiry = timeStamp + strtoull(pTmp3, NULL, 10);
+
+                if (expiry == UINT64_C(0xffffffff))
                 {
                     rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                     ERR_CHK(rc);
                 }
                 else
                 {
+                    t1 = (time_t)expiry;
                     localtime_r(&t1, &t2);
                     snprintf(buf, sizeof(buf), "%d-%d-%dT%02d:%02d:%02dZ%c", 
                          1900+t2.tm_year, t2.tm_mon+1, t2.tm_mday,
@@ -8060,23 +8062,23 @@ void _cosa_dhcpsv6_get_client()
 
         }else if ( _ansc_strcmp(pTmp1, "pdTimestamp") == 0 )
         {
-            timeStamp = atoi(pTmp3);
+            timeStamp = strtoull(pTmp3, NULL, 10);
         }else if ( _ansc_strcmp(pTmp1, "pdPrefered") == 0 )
         {
             /* CID 73916 Explicit null dereferenced : fix */
             if ( g_dhcps6v_clientcontent != NULL ) {
                 if ( g_dhcps6v_clientcontent[Index].NumberofIPv6Prefix )
                 {
-                    t1 = timeStamp;
-                    t1 += atoi(pTmp3);
-    
-                    if (t1 == 0xffffffff)
+                    uint64_t expiry = timeStamp + strtoull(pTmp3, NULL, 10);
+
+                    if (expiry == UINT64_C(0xffffffff))
                     {
                         rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                         ERR_CHK(rc);
                     }
                     else
                     {
+                        t1 = (time_t)expiry;
                         localtime_r(&t1, &t2);
                         snprintf(buf, sizeof(buf), "%d-%d-%dT%02d:%02d:%02dZ%c", 
                             1900+t2.tm_year, t2.tm_mon+1, t2.tm_mday,
@@ -8093,16 +8095,16 @@ void _cosa_dhcpsv6_get_client()
         {
             if ( g_dhcps6v_clientcontent[Index].NumberofIPv6Prefix )
             {
-                t1 = timeStamp;
-                t1 += atoi(pTmp3);
-    
-                if (t1 == 0xffffffff)
+                uint64_t expiry = timeStamp + strtoull(pTmp3, NULL, 10);
+
+                if (expiry == UINT64_C(0xffffffff))
                 {
                     rc = strcpy_s(buf, sizeof(buf), "9999-12-31T23:59:59Z");
                     ERR_CHK(rc);
                 }
                 else
                 {
+                    t1 = (time_t)expiry;
                     localtime_r(&t1, &t2);
                     snprintf(buf, sizeof(buf), "%d-%d-%dT%02d:%02d:%02dZ%c", 
                          1900+t2.tm_year, t2.tm_mon+1, t2.tm_mday,

@@ -658,24 +658,20 @@ CosaDmlUIIPRangeDelEntry
 
         snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_alias", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-        strncpy(pEntry->Alias, utVal, sizeof(pEntry->Alias) - 1);
-pEntry->Alias[sizeof(pEntry->Alias) - 1] = '\0';
+        snprintf(pEntry->Alias, sizeof(pEntry->Alias), "%s", utVal);
 
         snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_startIP", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-strncpy(pEntry->StartIP, utVal, sizeof(pEntry->StartIP) - 1);
-        pEntry->StartIP[sizeof(pEntry->StartIP) - 1] = '\0';
+        snprintf(pEntry->StartIP, sizeof(pEntry->StartIP), "%s", utVal);
 
         snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_endIP", i+1);
-Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-        strncpy(pEntry->EndIP, utVal, sizeof(pEntry->EndIP) - 1);
-        pEntry->EndIP[sizeof(pEntry->EndIP) - 1] = '\0';
+        Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
+        snprintf(pEntry->EndIP, sizeof(pEntry->EndIP), "%s", utVal);
 
         snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_desp", i+1);
         utVal[0] = '\0';
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-        strncpy(pEntry->Desp, utVal, sizeof(pEntry->Desp) - 1);
-        pEntry->Desp[sizeof(pEntry->Desp) - 1] = '\0';
+        snprintf(pEntry->Desp, sizeof(pEntry->Desp), "%s", utVal);
 
         //move elements
         snprintf(utKey, sizeof(utKey), IPRANGE_UTKEY_PREFIX"%lu_ins", i);
