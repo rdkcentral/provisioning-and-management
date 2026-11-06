@@ -1989,7 +1989,7 @@ int parseProcfileParams(char* lineToParse,ifv6Details *detailsToParse,char* inte
                UINT iCount =0;
                for (iCount=0; (iCount< ( detailsToParse->bitsToMask%16 ? (detailsToParse->bitsToMask/16+1):detailsToParse->bitsToMask/16)) && iCount<8; iCount++)
                {
-                  rc = sprintf_s(detailsToParse->prefix_v6+strlen(detailsToParse->prefix_v6),sizeof(detailsToParse->prefix_v6), "%s:",splitv6[iCount]);
+                       rc = sprintf_s(detailsToParse->prefix_v6+strlen(detailsToParse->prefix_v6),sizeof(detailsToParse->prefix_v6) - strlen(detailsToParse->prefix_v6), "%s:",splitv6[iCount]);
                   if(rc < EOK)
                   {
                     ERR_CHK(rc);
