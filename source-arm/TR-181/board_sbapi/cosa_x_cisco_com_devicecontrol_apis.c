@@ -2498,7 +2498,7 @@ CosaDmlDcSetFactoryReset
     if (factory_reset_mask & FR_FW) {
         int rc = -1;
         UtopiaContext ctx;
-        firewall_t fw;
+        firewall_t fw = {0};
    		CcspTraceWarning(("FactoryReset:%s Resetting Firewall to factory defaults ...\n",__FUNCTION__));
         fwSync = 1; //inform middle layer to get data from backend not cache
         if (!Utopia_Init(&ctx))
