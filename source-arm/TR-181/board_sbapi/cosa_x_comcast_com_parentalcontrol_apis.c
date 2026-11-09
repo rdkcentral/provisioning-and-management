@@ -1359,13 +1359,12 @@ ANSC_STATUS CosaDmlBlkURL_Migration()
     int rc = -1;
     char start_time[25];
     char end_time[25];
-    char rb_end_time[25];
+    char rb_end_time[25] = {0};
 	int sRet = 0,eRet = 0;
 	int                             InsNum                 = 0;
 	char eTime_block_days[64];
 	errno_t safec_rc = -1;
-    memset(rb_end_time, 0, sizeof(rb_end_time));
-AnscTraceWarning(("<<< %s -- ...\n", __FUNCTION__));
+    AnscTraceWarning(("<<< %s -- ...\n", __FUNCTION__));
     for(index = 0;index < g_NrBlkURL; index++)
     {
      AnscTraceWarning(("<<< %s -- index %d ...\n", __FUNCTION__,index));
@@ -2231,13 +2230,12 @@ ANSC_STATUS CosaDmlMSServ_Migration()
     int rc = -1;
     char start_time[25];
     char end_time[25];
-	char rb_end_time[25];
+	char rb_end_time[25] = {0};
 	int sRet = 0,eRet = 0;
 	int InsNum                 = 0;
 	char eTime_block_days[64];
     errno_t safec_rc = -1;
-    memset(rb_end_time, 0, sizeof(rb_end_time));
-AnscTraceWarning(("<<< %s -- ...\n", __FUNCTION__));
+    AnscTraceWarning(("<<< %s -- ...\n", __FUNCTION__));
     for(index = 0;index < g_NrMSServs; index++)
     {
      AnscTraceWarning(("<<< %s -- index %d ...\n", __FUNCTION__,index));
@@ -3016,14 +3014,13 @@ ANSC_STATUS CosaDmlMDDev_Migration()
     int rc = -1;
     char start_time[25];
     char end_time[25];
-	char rb_end_time[25];
+	char rb_end_time[25] = {0};
 	int sRet = 0,eRet = 0;
 	int                             InsNum                 = 0;
 	char eTime_block_days[64];
     errno_t safec_rc = -1;
-memset(rb_end_time, 0, sizeof(rb_end_time));
 AnscTraceWarning(("<<< %s -- ...\n", __FUNCTION__));
-    for(index = 0;index < g_NrMDDevs; index++)
+for(index = 0;index < g_NrMDDevs; index++)
 {
     if (index >= g_NrMDDevs || !Utopia_Init(&ctx))
         return ANSC_STATUS_FAILURE;
