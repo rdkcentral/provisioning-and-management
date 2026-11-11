@@ -64,7 +64,7 @@
       "Device.X_RDKCENTRAL-COM_EthernetWAN_MTA.IPv6SecondaryDhcpServerOptions" : "FFFFFFFF",   
       "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceSupport.Enabled" : "true",
       "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceSupport.InterfaceName" : "mta0",
-      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceSupport.Mode" : "IPv6_Only",
+      "Device.X_RDKCENTRAL-COM_Epon_MTA.VoiceSupport.Mode" : "IPv4_Only",
       "Device.Time.NTPServer1" : "time1.xfinity.com",
       "Device.Time.NTPServer2" : "time2.xfinity.com",
       "Device.Time.NTPServer3" : "time3.xfinity.com",
@@ -108,7 +108,35 @@
         },
         "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
-        }
+        },
+        "SCER11BEL" : {
+            "dmsb.voicesupport.Interface.IP.DHCPV4Interface" : "Device.DHCPv4.Client.4",
+            "dmsb.dhcpmanager.ClientNoOfEntries" : "4",
+            "dmsb.dhcpmanager.Client.4.Alias" : "VoiceSupport",
+            "dmsb.dhcpmanager.Client.4.ReqOptionNoOfEntries" : "9",
+            "dmsb.dhcpmanager.Client.4.ReqOption.1.Tag" : "125",
+            "dmsb.dhcpmanager.Client.4.ReqOption.1.Order" : "1",
+            "dmsb.dhcpmanager.Client.4.ReqOption.2.Tag" : "122",
+            "dmsb.dhcpmanager.Client.4.ReqOption.2.Order" : "2",
+            "dmsb.dhcpmanager.Client.4.ReqOption.3.Tag" : "54",
+            "dmsb.dhcpmanager.Client.4.ReqOption.3.Order" : "3",
+            "dmsb.dhcpmanager.Client.4.ReqOption.4.Tag" : "43",
+            "dmsb.dhcpmanager.Client.4.ReqOption.4.Order" : "4",
+            "dmsb.dhcpmanager.Client.4.ReqOption.5.Tag" : "123",
+            "dmsb.dhcpmanager.Client.4.ReqOption.5.Order" : "5",
+            "dmsb.dhcpmanager.Client.4.ReqOption.6.Tag" : "99",
+            "dmsb.dhcpmanager.Client.4.ReqOption.6.Order" : "6",
+            "dmsb.dhcpmanager.Client.4.ReqOption.7.Tag" : "7",
+            "dmsb.dhcpmanager.Client.4.ReqOption.7.Order" : "7",
+            "dmsb.dhcpmanager.Client.4.ReqOption.8.Tag" : "4",
+            "dmsb.dhcpmanager.Client.4.ReqOption.8.Order" : "8",
+            "dmsb.dhcpmanager.Client.4.ReqOption.9.Tag" : "2",
+            "dmsb.dhcpmanager.Client.4.ReqOption.9.Order" : "9",
+            "dmsb.dhcpmanager.Client.4.SendOptionNoOfEntries" : "2",
+            "dmsb.dhcpmanager.Client.4.SendOption.1.Tag" : "60",
+            "dmsb.dhcpmanager.Client.4.SendOption.1.Value" : "",
+            "dmsb.dhcpmanager.Client.4.SendOption.2.Tag" : "43",
+            "dmsb.dhcpmanager.Client.4.SendOption.2.Value" : ""
       },
       "no_apply_system_default" : {
          "WNXL11BWL" : {
@@ -784,6 +812,20 @@
       "override" : {
          "WNXL11BWL" : {
             "Device.Time.NTPServer1" : "global-time.xfinity.com"
+        },
+        "SCER11BEL" : {
+            "dmsb.voicesupport.Interface.IP.DHCPV6Interface" : "Device.DHCPv6.Client.3",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.Alias" : "VoiceSupport",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.ReqAddr" : "TRUE",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.ReqPrefix" : "FALSE",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.RequestedOptions" : "39 , 23 , 17 , 37 , 123",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.SentOptNoOfEntries" : "2",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.SentOption.1.Alias" : "class-id",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.SentOption.1.Tag" : "16",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.SentOption.1.Value" : "",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.SentOption.2.Alias" : "vendor-specific-info",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.SentOption.2.Tag" : "17",
+            "dmsb.dhcpmanager.dhcpv6.Client.3.SentOption.2.Value" : ""
         }
       },
       "no_apply_system_default" : {
