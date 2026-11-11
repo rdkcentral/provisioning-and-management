@@ -1784,6 +1784,10 @@ PortMapping_DelEntry
     else
     {
         returnStatus = CosaDmlNatDelPortMapping(NULL, pNatPMapping->InstanceNumber);
+        if (returnStatus == ANSC_STATUS_SUCCESS)
+        {
+            (void)update_one_to_one_nat_cache();
+        }
     }
 
     if ( returnStatus == ANSC_STATUS_SUCCESS )
@@ -2736,6 +2740,11 @@ PortMapping_Commit
         UpdateList(NULL);
         //CGWTDETS-8737 : Usable Statics will no longer support 1-1 NAT :: END
 #endif
+    }
+
+    if (returnStatus == ANSC_STATUS_SUCCESS)
+    {
+        (void)update_one_to_one_nat_cache();
     }
 
     AnscZeroMemory( pNat->AliasOfPortMapping, sizeof(pNat->AliasOfPortMapping) );

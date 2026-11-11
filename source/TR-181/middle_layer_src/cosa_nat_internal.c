@@ -299,6 +299,7 @@ CosaNatInitialize
     clear_pf_cache(pf_cache_bkup);
 
     init_pf_cache(pf_cache);
+    update_one_to_one_nat_cache();
 
     clear_dmz_cache(dmz_cache);
     clear_dmz_cache(dmz_cache_bkup);

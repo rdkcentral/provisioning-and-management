@@ -21,6 +21,7 @@
 #include "webconfig_framework.h"
 #include <trower-base64/base64.h>
 #include "safec_lib_common.h"
+#include <pthread.h>
 
 t_cache pf_cache[PORTMAP_CACHE_SIZE];
 t_cache pf_cache_bkup[PORTMAP_CACHE_SIZE];
@@ -32,6 +33,9 @@ static int pf_cache_size = 0;
 static int pf_cache_size_bkup = 0;
 
 static int gpfEnable = 0;
+static t_one_to_one_nat_cache one_to_one_nat_cache;
+static t_one_to_one_nat_cache one_to_one_nat_cache_bkup;
+static pthread_mutex_t one_to_one_nat_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 
 int  get_base64_decodedbuffer(char *pString, char **buffer, int *size)
 {
@@ -451,6 +455,80 @@ void print_portmap_entry()
 
 #endif
 
+static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
+{
+    static const char *suffixes[] = {
+        ALIAS_POS_ENABLE, ALIAS_POS_NAME, ALIAS_POS_PROTO, ALIAS_POS_IP,
+        ALIAS_POS_INT_PORT, ALIAS_POS_IPV6, ALIAS_POS_PREV_STATE,
+        ALIAS_POS_EXT_PORT_RANGE, ALIAS_PFR_PUBLIC_IP, ALIAS_PFR_INT_RANGE
+    };
+    char key[BLOCK_SIZE], alias[VAL_BLOCK_SIZE], value[VAL_BLOCK_SIZE], *end;
+    int index, field, len;
+    long count;
+    struct in_addr public_ip;
+
+    memset(nat_cache, 0, sizeof(*nat_cache));
+    if (syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) != 0)
+        return 0;
+    count = strtol(value, &end, 10);
+    if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
+        return SYSCFG_FAILURE;
+    for (index = 1; index <= count; index++)
+    {
+        snprintf(key, sizeof(key), ALIAS_PFR "%d", index);
+        if (syscfg_get(NULL, key, alias, sizeof(alias)) != 0 || alias[0] == '\0')
+            return SYSCFG_FAILURE;
+        len = snprintf(key, sizeof(key), "%s" ALIAS_PFR_PUBLIC_IP, alias);
+        if (len < 0 || len >= (int)sizeof(key))
+            return SYSCFG_FAILURE;
+        if (syscfg_get(NULL, key, value, sizeof(value)) != 0 ||
+            inet_pton(AF_INET, value, &public_ip) != 1 ||
+            public_ip.s_addr == INADDR_ANY || public_ip.s_addr == INADDR_NONE)
+            continue;
+
+        if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
+            return SYSCFG_FAILURE;
+        snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE,
+                 ALIAS_PFR "%d", index);
+        snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", alias);
+        for (field = 0; field < (int)(sizeof(suffixes) / sizeof(suffixes[0])); field++)
+        {
+            len = snprintf(key, sizeof(key), "%s%s", alias, suffixes[field]);
+            if (len < 0 || len >= (int)sizeof(key))
+                return SYSCFG_FAILURE;
+            if (syscfg_get(NULL, key, value, sizeof(value)) != 0)
+                continue;
+            if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
+                return SYSCFG_FAILURE;
+            snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE, "%s", key);
+            snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", value);
+        }
+        nat_cache->mapping_count++;
+    }
+    return 0;
+}
+
+int update_one_to_one_nat_cache(void)
+{
+    t_one_to_one_nat_cache *nat = calloc(1, sizeof(*nat));
+    int ret = SYSCFG_FAILURE;
+
+    if (nat != NULL)
+        ret = read_one_to_one_nat_cache(nat);
+    if (ret == 0)
+    {
+        pthread_mutex_lock(&one_to_one_nat_cache_lock);
+        one_to_one_nat_cache = *nat;
+        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
+    }
+    else
+    {
+        CcspTraceError(("%s: failed to refresh 1:1 NAT cache from syscfg\n", __FUNCTION__));
+    }
+    free(nat);
+    return ret;
+}
+
 /* Read blob entries into a cache */
 int set_portmap_conf(portmappingdoc_t *rpm)
 {
@@ -714,9 +792,13 @@ pErr Process_PF_WebConfigRequest(void *Data)
     	CcspTraceWarning(("Portmap configurartion recieved\n"));
 
 
-    	backup_pf_cache(pf_cache,pf_cache_bkup,pf_cache_size);
-    	pf_cache_size_bkup = pf_cache_size;
-    	
+       backup_pf_cache(pf_cache,pf_cache_bkup,pf_cache_size);
+       pf_cache_size_bkup = pf_cache_size;
+
+        pthread_mutex_lock(&one_to_one_nat_cache_lock);
+        one_to_one_nat_cache_bkup = one_to_one_nat_cache;
+        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
+
         if ( SYSCFG_FAILURE == clear_pf_cache_DB(pf_cache) )
         {
                 CcspTraceError(("%s: Failed to clear_pf_cache_DB\n",__FUNCTION__));
@@ -790,6 +872,9 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
     	}	
 
+        pthread_mutex_lock(&one_to_one_nat_cache_lock);
+        one_to_one_nat_cache = one_to_one_nat_cache_bkup;
+        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
      	CcspTraceWarning(("Portmap configurartion applied\n"));
         gpfEnable = lpfEnable;
     	int i;                  
@@ -821,6 +906,10 @@ int rollback_PortForwarding()
     backup_pf_cache(pf_cache_bkup,pf_cache,pf_cache_size_bkup);
 
     pf_cache_size = pf_cache_size_bkup;
+    pthread_mutex_lock(&one_to_one_nat_cache_lock);
+    one_to_one_nat_cache = one_to_one_nat_cache_bkup;
+    pthread_mutex_unlock(&one_to_one_nat_cache_lock);
+
 
     return ret ;
 }

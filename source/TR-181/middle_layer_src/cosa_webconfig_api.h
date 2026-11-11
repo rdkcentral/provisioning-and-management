@@ -81,6 +81,19 @@ typedef struct {
     char val[VAL_BLOCK_SIZE];
 } t_cache;
 
+typedef struct {
+    t_cache entries[PORTMAP_CACHE_SIZE];
+    int cache_size;
+    int mapping_count;
+} t_one_to_one_nat_cache;
+
+/**
+ * Refreshes the 1:1 NAT cache from syscfg, including disabled mappings.
+ * Called at boot time and after persistent port-mapping changes.
+ * Returns 0 on success; logs and returns SYSCFG_FAILURE on failure.
+ */
+int update_one_to_one_nat_cache(void);
+
 extern t_cache pf_cache[PORTMAP_CACHE_SIZE];
 extern t_cache pf_cache_bkup[PORTMAP_CACHE_SIZE];
 
@@ -221,7 +234,7 @@ pErr Process_PF_WebConfigRequest(void *Data);
 /**
  * @brief Rolls back port forwarding configuration to previous state.
  *
- * This function restores port forwarding configuration from backup cache when
+ * This function restores port forwarding configuration and 1:1 NAT cache from backup cache when
  * a configuration update fails.
  *
  * @return status of operation
