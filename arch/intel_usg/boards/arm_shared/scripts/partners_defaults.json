@@ -815,6 +815,7 @@
         },
         "SCER11BEL" : {
             "dmsb.voicesupport.Interface.IP.DHCPV6Interface" : "Device.DHCPv6.Client.3",
+            "dmsb.dhcpmanager.dhcpv6.ClientNoOfEntries" : "3",
             "dmsb.dhcpmanager.dhcpv6.Client.3.Alias" : "VoiceSupport",
             "dmsb.dhcpmanager.dhcpv6.Client.3.ReqAddr" : "TRUE",
             "dmsb.dhcpmanager.dhcpv6.Client.3.ReqPrefix" : "FALSE",
