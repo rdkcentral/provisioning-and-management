@@ -36,6 +36,7 @@ static int gpfEnable = 0;
 static t_one_to_one_nat_cache one_to_one_nat_cache;
 static t_one_to_one_nat_cache one_to_one_nat_cache_bkup;
 static pthread_mutex_t one_to_one_nat_cache_lock = PTHREAD_MUTEX_INITIALIZER;
+static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat);
 
 int  get_base64_decodedbuffer(char *pString, char **buffer, int *size)
 {
@@ -345,6 +346,10 @@ int apply_pf_cache_ToDB(t_cache *tmp_pf_cache, int cache_size,int pmapEnable)
 
     	for(i = 0;i <cache_size ; i++)
     	{
+            if (tmp_pf_cache[i].cmd[0] == '\0')
+            {
+                continue;
+            }
         	//printf("pf_cache[%d].cmd - %s\n",i,tmp_pf_cache[i].cmd);
         	//printf("pf_cache[%d].val - %s\n",i,tmp_pf_cache[i].val);
 
@@ -355,6 +360,8 @@ int apply_pf_cache_ToDB(t_cache *tmp_pf_cache, int cache_size,int pmapEnable)
               		// break;
         	}
     	}
+        if (restore_one_to_one_nat_to_DB(&one_to_one_nat_cache_bkup) != 0)
+            return SYSCFG_FAILURE;
     	if (syscfg_commit() != 0)
     	{
         	CcspTraceError(("syscfg_commit failed apply_cache_ToDB\n"));
@@ -529,6 +536,83 @@ int update_one_to_one_nat_cache(void)
     return ret;
 }
 
+static int nat_rule_id(const char *alias, unsigned long *id)
+{
+    char *end;
+    if (strncmp(alias, ALIAS_PRE_PFR, strlen(ALIAS_PRE_PFR)) != 0)
+        return SYSCFG_FAILURE;
+    *id = strtoul(alias + strlen(ALIAS_PRE_PFR), &end, 10);
+    if (end == alias + strlen(ALIAS_PRE_PFR) || *end != '\0' ||
+        *id == 0 || *id > PORTMAP_CACHE_SIZE)
+        return SYSCFG_FAILURE;
+    return 0;
+}
+
+/* Merge saved NAT references with the table written by apply or rollback. */
+static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat)
+{
+    unsigned char present[PORTMAP_CACHE_SIZE + 1] = {0};
+    unsigned long id;
+    char key[BLOCK_SIZE], value[VAL_BLOCK_SIZE], *end;
+    int total = 0, old_count = 0, i;
+    long count;
+    int ret = SYSCFG_FAILURE;
+
+    if (nat->mapping_count == 0)
+        return 0;
+    if (syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) == 0)
+    {
+        count = strtol(value, &end, 10);
+        if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
+            goto exit;
+        old_count = (int)count;
+    }
+    for (i = 1; i <= old_count; i++)
+    {
+        snprintf(key, sizeof(key), ALIAS_PFR "%d", i);
+        if (syscfg_get(NULL, key, value, sizeof(value)) != 0 ||
+            nat_rule_id(value, &id) != 0)
+            goto exit;
+        present[id] = 1;
+    }
+    for (i = 0; i < nat->cache_size; i++)
+    {
+        if (strncmp(nat->entries[i].cmd, ALIAS_PFR, strlen(ALIAS_PFR)) == 0)
+        {
+            if (nat_rule_id(nat->entries[i].val, &id) != 0)
+                goto exit;
+            present[id] = 1;
+            continue;
+        }
+        if (syscfg_set(NULL, nat->entries[i].cmd, nat->entries[i].val) != 0)
+            goto exit;
+    }
+    /* Ascending IDs also preserve Utopia's ordering for subsequent additions. */
+    for (id = 1; id <= PORTMAP_CACHE_SIZE; id++)
+    {
+        if (!present[id])
+            continue;
+        snprintf(key, sizeof(key), ALIAS_PFR "%d", ++total);
+        snprintf(value, sizeof(value), ALIAS_PRE_PFR "%lu", id);
+        if (syscfg_set(NULL, key, value) != 0)
+            goto exit;
+    }
+    for (i = total + 1; i <= old_count; i++)
+    {
+        snprintf(key, sizeof(key), ALIAS_PFR "%d", i);
+        if (syscfg_unset(NULL, key) != 0)
+            goto exit;
+    }
+    snprintf(value, sizeof(value), "%d", total);
+    if (syscfg_set(NULL, "PortRangeForwardCount", value) != 0)
+        goto exit;
+    ret = 0;
+exit:
+    if (ret != 0)
+        CcspTraceError(("%s: failed to restore saved 1:1 NAT to syscfg\n", __FUNCTION__));
+    return ret;
+}
+
 /* Read blob entries into a cache */
 int set_portmap_conf(portmappingdoc_t *rpm)
 {
@@ -539,9 +623,37 @@ int set_portmap_conf(portmappingdoc_t *rpm)
     	char alias_pre[8];
         errno_t  rc   = -1;
         printf("Port map entries %zu\n",rpm->entries_count);
+        unsigned long first_id = 1, saved_id;
+        int k;
+        char longest_key[BLOCK_SIZE];
+        if (rpm->entries_count > (PORTMAP_CACHE_SIZE - 2) / 11)
+        {
+            CcspTraceError(("%s: too many forwarding entries\n", __FUNCTION__));
+            return SYSCFG_FAILURE;
+        }
+        for (k = 0; k < one_to_one_nat_cache_bkup.cache_size; k++)
+        {
+            if (strncmp(one_to_one_nat_cache_bkup.entries[k].cmd, ALIAS_PFR, strlen(ALIAS_PFR)) != 0)
+                continue;
+            if (nat_rule_id(one_to_one_nat_cache_bkup.entries[k].val, &saved_id) != 0)
+            {
+                CcspTraceError(("%s: invalid saved NAT ID\n", __FUNCTION__));
+                return SYSCFG_FAILURE;
+            }
+            if (saved_id >= first_id)
+                first_id = saved_id + 1;
+        }
+        int length = snprintf(longest_key, sizeof(longest_key),
+                              ALIAS_PRE_PFR "%lu" ALIAS_POS_PREV_STATE,
+                              first_id + (unsigned long)rpm->entries_count - 1);
+        if (length < 0 || length >= BLOCK_SIZE)
+        {
+            CcspTraceError(("%s: forwarding key exceeds cache key size\n", __FUNCTION__));
+            return SYSCFG_FAILURE;
+        }
     	//printf("SinglePortForwardCount = %d\n", rpm->entries_count);
     	//count = rpm->entries_count + 1;
-    	for(i = 1,j =0; i < rpm->entries_count+1; i++, j++ )
+        for(i = first_id,j =0; j < (int)rpm->entries_count; i++, j++ )
     	{
         	memset(alias_pre,0,8);
 
@@ -850,6 +962,12 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
             }
 #endif
+            else
+            {
+                execRetVal->ErrorCode = SYSCFG_FAILURE;
+                strncpy(execRetVal->ErrorMsg, "Failed to build port mapping configuration",
+                        sizeof(execRetVal->ErrorMsg)-1);
+            }
 
             //portmappingdoc_destroy( rpm ); 
 

@@ -171,7 +171,7 @@ int clear_pf_cache_DB(t_cache *tmp_pf_cache);
 /**
  * @brief Applies port forwarding cache entries to the persistent database.
  *
- * This function writes port forwarding configuration from cache to PSM database and activates rules.
+ * This function writes port forwarding configuration and restores saved 1:1 NAT fields from cache to PSM database and activates rules.
  *
  * @param[in] tmp_pf_cache Pointer to port forwarding cache to apply.
  * @param[in] cache_size Number of entries in the cache.
