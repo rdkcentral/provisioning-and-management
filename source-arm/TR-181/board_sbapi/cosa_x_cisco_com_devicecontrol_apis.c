@@ -82,6 +82,7 @@
 #endif
 #include "secure_wrapper.h"
 #include "cosa_drg_common.h"
+#include "cosa_common_util.h"
 #include "ccsp_psm_helper.h"
 #include "safec_lib_common.h"
 
@@ -2743,6 +2744,9 @@ CosaDmlDcSetFactoryReset
         v_secure_system("rm -rf /data/.comcast_config_set.done /data/nvram_cfg.txt /data/psi* /data/.nvram_restore_cfg.txt /data/psi_wifi /data/.user_nvram.setting /data/onewifi_downgrade_required /data/.sky_config_set.done /nvram/.bcmwifi_xhs_lnf_enabled /nvram/secure/wifi/* /nvram/wifi/*");
         v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
 #endif
+#if defined(_SR213_PRODUCT_REQ_)
+        v_secure_system("rm -rf /data/.kernel_nvram.setting");
+#endif
 	}
 #endif
 
@@ -4767,6 +4771,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 		setLanMgmtUpnp(&utctx, pLanMngm->LanUpnp);
         Utopia_Free(&utctx, 1);
         pLanMngm->LanNetwork.Value = _CALC_NETWORK(pLanMngm->LanIPAddress.Value, pLanMngm->LanSubnetMask.Value);
+
         char l_cSecWebUI_Enabled[8] = {0};
         syscfg_get(NULL, "SecureWebUI_Enable", l_cSecWebUI_Enabled, sizeof(l_cSecWebUI_Enabled));
         if (!strncmp(l_cSecWebUI_Enabled, "true", 4)) { 
@@ -4776,7 +4781,20 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
                  pthread_t tid;
                  pthread_create( &tid, NULL, &WebGuiRestart, NULL);
              }
-         }    
+         }
+        else
+        {
+            if (orgLanMngm.LanIPAddress.Value != pLanMngm->LanIPAddress.Value &&
+            pLanMngm->LanIPAddress.Value != 0)
+            {
+                CcspTraceInfo(("%s -- LAN management IP address changed, requesting WebUI restart\n", __FUNCTION__));
+                pthread_t thread_id;
+                if (pthread_create(&thread_id, NULL, WebGuiRestart, NULL) != 0)
+                {
+                    CcspTraceError(("%s -- Failed to create WebUI restart thread\n", __FUNCTION__));
+                }
+            }
+        }
         
 
 #ifdef _HUB4_PRODUCT_REQ_
