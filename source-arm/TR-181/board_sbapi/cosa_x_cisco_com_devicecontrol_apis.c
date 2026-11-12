@@ -569,14 +569,24 @@ bool IsPortOverlapWithPTPorts(int mgmtport)
 
 void* WebGuiRestart( void *arg )
 {
+    int restart_result;
+
     UNREFERENCED_PARAMETER(arg);
     pthread_detach(pthread_self());
+    CcspTraceInfo(("%s -- LAN restart worker started; waiting 30 seconds\n", __FUNCTION__));
     sleep(30);
-    #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
-        v_secure_system("/bin/systemctl restart CcspWebUI.service");
+    //#if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
+    #if defined (_XB6_PRODUCT_REQ_)
+        CcspTraceInfo(("%s -- X_CISCO invoking systemd restart for CcspWebUI.service\n", __FUNCTION__));
+        restart_result = v_secure_system("/bin/systemctl restart CcspWebUI.service");
     #else
-        v_secure_system("/bin/sh /etc/webgui.sh &");
+        CcspTraceInfo(("%s -- X_CISCO invoking legacy WebGUI launcher /etc/webgui.sh\n", __FUNCTION__));
+        restart_result = v_secure_system("/bin/sh /etc/webgui.sh &");
     #endif
+    if (restart_result != 0)
+    {    CcspTraceError(("%s -- X_CISCO WebUI restart command returned status %d\n", __FUNCTION__, restart_result));  }
+    else
+    {    CcspTraceInfo(("%s -- X_CISCO WebUI restart command returned success\n", __FUNCTION__));  }
     return NULL;
 }
 
@@ -587,11 +597,13 @@ void* WebServRestart( void *arg )
     pthread_detach(pthread_self());
     #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
         if (v_secure_system("/bin/systemctl restart CcspWebUI.service") != 0) {
+		CcspTraceInfo(("%s -- X_CISCO invoking systemd restart for CcspWebUI.service\n", __FUNCTION__));
             fprintf(stderr, "%s: fail to restart CcspWebUI.service\n", __FUNCTION__);
             return NULL;
         }
     #else
         if (v_secure_system("/bin/sh /etc/webgui.sh") != 0) {
+		CcspTraceInfo(("%s -- X_CISCO invoking legacy WebGUI launcher /etc/webgui.sh\n", __FUNCTION__));
             fprintf(stderr, "%s: fail to restart webgui.sh\n", __FUNCTION__);
             return NULL;
         }
