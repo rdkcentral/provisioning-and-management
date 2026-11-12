@@ -6414,6 +6414,8 @@
 
                 <func_GetParamUlongValue>Stats5_GetParamUlongValue</func_GetParamUlongValue>
 
+                <func_GetParamUint64Value>Stats5_GetParamUint64Value</func_GetParamUint64Value>
+
                 <func_GetParamStringValue>Stats5_GetParamStringValue</func_GetParamStringValue>
 
               </functions>
@@ -6424,9 +6426,10 @@
 
               <name>BytesSent</name>
 
-              <type>unsignedInt</type>
+              <type>unsignedLong</type>
 
-              <syntax>uint32</syntax>
+
+              <syntax>uint64</syntax>
 
               <notify>off</notify>
 
@@ -6436,9 +6439,10 @@
 
               <name>BytesReceived</name>
 
-              <type>unsignedInt</type>
+              <type>unsignedLong</type>
 
-              <syntax>uint32</syntax>
+
+              <syntax>uint64</syntax>
 
               <notify>off</notify>
 
