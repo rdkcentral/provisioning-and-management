@@ -1989,7 +1989,8 @@ int parseProcfileParams(char* lineToParse,ifv6Details *detailsToParse,char* inte
                UINT iCount =0;
                for (iCount=0; (iCount< ( detailsToParse->bitsToMask%16 ? (detailsToParse->bitsToMask/16+1):detailsToParse->bitsToMask/16)) && iCount<8; iCount++)
                {
-                  rc = sprintf_s(detailsToParse->prefix_v6+strlen(detailsToParse->prefix_v6),sizeof(detailsToParse->prefix_v6), "%s:",splitv6[iCount]);
+                  size_t len = strlen(detailsToParse->prefix_v6);
+                  rc = sprintf_s(detailsToParse->prefix_v6 + len,sizeof(detailsToParse->prefix_v6) - len, (iCount == 0) ? "%s" : ":%s",splitv6[iCount]);
                   if(rc < EOK)
                   {
                     ERR_CHK(rc);
@@ -2071,7 +2072,8 @@ int CosaUtilGetIpv6AddrInfo (char * ifname, ipv6_addr_info_t ** pp_info, int * p
                 CcspTraceInfo(("%s,Interface ipv6 prefix is NULL\n",__FUNCTION__));
             }
 
-            rc = sprintf_s(p_ai->v6pre+strlen(p_ai->v6pre), sizeof(p_ai->v6pre)-strlen(p_ai->v6pre),":/%d", v6Details.bitsToMask);
+            const char *suffix = (v6Details.bitsToMask > 112) ? "/%d" : "::/%d";
+            rc = sprintf_s(p_ai->v6pre+strlen(p_ai->v6pre), sizeof(p_ai->v6pre)-strlen(p_ai->v6pre),suffix, v6Details.bitsToMask);
             if(rc < EOK)
             {
                ERR_CHK(rc);
