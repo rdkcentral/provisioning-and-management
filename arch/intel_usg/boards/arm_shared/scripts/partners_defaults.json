@@ -137,6 +137,7 @@
             "dmsb.dhcpmanager.Client.4.SendOption.1.Value" : "",
             "dmsb.dhcpmanager.Client.4.SendOption.2.Tag" : "43",
             "dmsb.dhcpmanager.Client.4.SendOption.2.Value" : ""
+        }
       },
       "no_apply_system_default" : {
          "WNXL11BWL" : {
@@ -1393,5 +1394,4 @@
             "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
       }
    }
-
 }
