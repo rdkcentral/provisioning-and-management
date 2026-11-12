@@ -673,7 +673,7 @@ CosaDmlTimeSetCfg
            syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
            if (strcmp(chronyEnabled, "true") == 0)
            {
-               CcspTraceWarning(("%s: chrony active in Else part - triggering event to restart chronyd \n", __FUNCTION__));
+               CcspTraceWarning(("%s: chrony is the active NTP client - triggering event to restart chronyd \n", __FUNCTION__));
                commonSyseventSet("chronyd-restart", "");
            }
     pthread_t ntp_thread;
