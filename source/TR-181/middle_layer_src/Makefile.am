@@ -110,6 +110,12 @@ libCcspPandM_middle_layer_src_la_SOURCES = \
     cosa_x_rdk_features_dml.c \
     cosa_x_rdk_features_internal.c
 
+if DNS_FAILOVER_SUPPORT
+libCcspPandM_middle_layer_src_la_SOURCES += \
+    cosa_x_rdk_dns_failover_dml.c \
+    cosa_x_rdk_dns_failover_apis.c
+endif
+
 if FEATURE_HOTSPOT_SUPPORT
 libCcspPandM_middle_layer_src_la_SOURCES += \
     cosa_GRE_dml.c \
