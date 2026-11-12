@@ -569,14 +569,23 @@ bool IsPortOverlapWithPTPorts(int mgmtport)
 
 void* WebGuiRestart( void *arg )
 {
+    int restart_result;
+
     UNREFERENCED_PARAMETER(arg);
     pthread_detach(pthread_self());
+    CcspTraceInfo(("%s -- LAN restart worker started; waiting 30 seconds\n", __FUNCTION__));
     sleep(30);
     #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
-        v_secure_system("/bin/systemctl restart CcspWebUI.service");
+        CcspTraceInfo(("%s -- invoking systemd restart for CcspWebUI.service\n", __FUNCTION__));
+        restart_result = v_secure_system("/bin/systemctl restart CcspWebUI.service");
     #else
-        v_secure_system("/bin/sh /etc/webgui.sh &");
+        CcspTraceInfo(("%s -- invoking legacy WebGUI launcher /etc/webgui.sh\n", __FUNCTION__));
+        restart_result = v_secure_system("/bin/sh /etc/webgui.sh &");
     #endif
+    if (restart_result != 0)
+    {    CcspTraceError(("%s -- WebUI restart command returned status %d\n", __FUNCTION__, restart_result));  }
+    else
+    {    CcspTraceInfo(("%s -- WebUI restart command returned success\n", __FUNCTION__));  }
     return NULL;
 }
 

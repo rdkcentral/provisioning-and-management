@@ -728,17 +728,29 @@ static bool bWebuiRestartPending = false;
 static void *
 WebGUIRestart(void *arg)
 {
+    int restart_result;
+
     UNREFERENCED_PARAMETER(arg);
     pthread_detach(pthread_self());
 
-    /* Wait for 60 seconds */
+    CcspTraceInfo(("%s -- restart worker started; waiting 60 seconds\n", __FUNCTION__));
     sleep(60);
+    CcspTraceInfo(("%s -- restart delay completed\n", __FUNCTION__));
 
     #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
-    system("/bin/systemctl restart CcspWebUI.service");
+    CcspTraceInfo(("%s -- invoking systemd restart for CcspWebUI.service\n", __FUNCTION__));
+    restart_result = system("/bin/systemctl restart CcspWebUI.service");
     #else
-    system("/bin/sh /etc/webgui.sh &");
+    CcspTraceInfo(("%s -- invoking legacy WebGUI launcher /etc/webgui.sh\n", __FUNCTION__));
+    restart_result = system("/bin/sh /etc/webgui.sh &");
     #endif
+    if (restart_result == -1)
+    {    CcspTraceError(("%s -- failed to launch WebUI restart command\n", __FUNCTION__));
+    }
+    else if (restart_result != 0)
+    {    CcspTraceError(("%s -- WebUI restart command returned status %d\n", __FUNCTION__, restart_result));  }
+    else
+    {    CcspTraceInfo(("%s -- WebUI restart command returned success\n", __FUNCTION__));   }
 
     pthread_mutex_lock(&webui_restart_mutex);
     bWebuiRestartPending = false;
@@ -750,6 +762,7 @@ static void
 RequestWebUIRestart(void)
 {
     pthread_t thread_id;
+    int create_result;
 
     pthread_mutex_lock(&webui_restart_mutex);
 
@@ -761,13 +774,16 @@ RequestWebUIRestart(void)
     }
 
     bWebuiRestartPending = true;
+    CcspTraceInfo(("%s -- accepted WebUI restart request; creating delayed worker\n", __FUNCTION__));
 
-    if (pthread_create(&thread_id, NULL, WebGUIRestart, NULL) != 0)
+    create_result = pthread_create(&thread_id, NULL, WebGUIRestart, NULL);
+    if (create_result != 0)
     {
         bWebuiRestartPending = false;
-        CcspTraceError(("%s -- Failed to create WebUI restart thread\n",
-                        __FUNCTION__));
+        CcspTraceError(("%s -- failed to create WebUI restart thread: %d\n", __FUNCTION__, create_result));
     }
+    else
+    {    CcspTraceInfo(("%s -- delayed WebUI restart worker created\n", __FUNCTION__));  }
 
     pthread_mutex_unlock(&webui_restart_mutex);
 }
@@ -941,8 +957,10 @@ EvtDispterEventInits(void)
      sysevent_set_options(se_fd, token, "webui-restart", TUPLE_FLAG_EVENT);
      rc = sysevent_setnotification(se_fd, token, "webui-restart", &webuiRestartAsync_id);
      if (rc) {
+         CcspTraceError(("%s -- failed to register webui-restart notification: %d\n", __FUNCTION__, rc));
          return(EVENT_ERROR);
      }
+     CcspTraceInfo(("%s -- registered webui-restart notification\n", __FUNCTION__));
 
 	//register ipv4_wan_ipaddr event
     //sysevent_set_options(se_fd, token, "ipv4_wan_ipaddr", TUPLE_FLAG_EVENT);
