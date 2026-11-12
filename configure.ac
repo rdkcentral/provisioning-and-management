@@ -77,6 +77,22 @@ AC_ARG_ENABLE([maptunificationsupport],
              [echo "mapt unification is disabled"])
 AM_CONDITIONAL(MAPT_UNIFICATION_ENABLED, test "x$MAPT_UNIFICATION_SUPPORT_ENABLED" = xtrue)
 
+# DNS failover support (Device.X_RDK_DNSFailover TR-181 object).
+# Enabled from the recipe when DISTRO_FEATURES contains dns-failover-support.
+AC_ARG_ENABLE([dns-failover],
+             AS_HELP_STRING([--enable-dns-failover],[enable DNS failover support (default is no)]),
+             [
+              case "${enableval}" in
+               yes) DNS_FAILOVER_SUPPORT_ENABLED=true;;
+               no)  DNS_FAILOVER_SUPPORT_ENABLED=false;;
+               *) AC_MSG_ERROR([bad value ${enableval} for --enable-dns-failover ]);;
+              esac
+             ],
+             [echo "dns failover is disabled"])
+AM_CONDITIONAL(DNS_FAILOVER_SUPPORT, test "x$DNS_FAILOVER_SUPPORT_ENABLED" = xtrue)
+AS_IF([test "x$DNS_FAILOVER_SUPPORT_ENABLED" = xtrue],
+      [CPPFLAGS="$CPPFLAGS -DDNS_FAILOVER_SUPPORT"])
+
 SYSTEMD_CFLAGS=" "
 SYSTEMD_LDFLAGS=" "
 AC_ARG_ENABLE([notify],
