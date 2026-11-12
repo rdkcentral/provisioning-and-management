@@ -669,6 +669,13 @@ CosaDmlTimeSetCfg
                commonSyseventSet("ntpd-restart", "");
            }
 #else
+	       char chronyEnabled[8] = {0};
+           syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
+           if (strcmp(chronyEnabled, "true") == 0)
+           {
+               CcspTraceWarning(("%s: chrony active in Else part - triggering event to restart chronyd \n", __FUNCTION__));
+               commonSyseventSet("chronyd-restart", "");
+           }
     pthread_t ntp_thread;
     int err = 0;
     err = pthread_create(&ntp_thread, NULL, startNTP, (void *)pTimeCfg);
