@@ -2931,7 +2931,8 @@ CosaDmlTSIPRuleDelEntry
 
         snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_alias", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-        strncpy(pEntry->Alias, utVal, sizeof(pEntry->Alias));
+        rc = strcpy_s(pEntry->Alias, sizeof(pEntry->Alias), utVal);
+        ERR_CHK(rc);
 
         snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_enabled", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
@@ -2939,7 +2940,8 @@ CosaDmlTSIPRuleDelEntry
 
         snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_name", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-        strncpy(pEntry->Name, utVal, sizeof(pEntry->Name));
+        rc = strcpy_s(pEntry->Name, sizeof(pEntry->Name), utVal);
+        ERR_CHK(rc);
 
         snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_protocol", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
@@ -2953,11 +2955,13 @@ CosaDmlTSIPRuleDelEntry
 
         snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_startIP", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-        strncpy(pEntry->IPRangeMin, utVal, sizeof(pEntry->IPRangeMin));
+        rc = strcpy_s(pEntry->IPRangeMin, sizeof(pEntry->IPRangeMin), utVal);
+        ERR_CHK(rc);
 
         snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_endIP", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
-        strncpy(pEntry->IPRangeMax, utVal, sizeof(pEntry->IPRangeMax));
+        rc = strcpy_s(pEntry->IPRangeMax, sizeof(pEntry->IPRangeMax), utVal);
+        ERR_CHK(rc);
 
         snprintf(utKey, sizeof(utKey), PT_MGMT_PREFIX"%lu_startPort", i+1);
         Utopia_RawGet(&ctx, NULL, utKey, utVal, sizeof(utVal));
