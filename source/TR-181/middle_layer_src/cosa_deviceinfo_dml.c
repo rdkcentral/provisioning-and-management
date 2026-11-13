@@ -14911,18 +14911,27 @@ RDKDownloadManager_SetParamStringValue
 
 #define DISTRIBUTED_TRACING_SYSCFG_KEY "DistributedTracingEnabled"
 #define DISTRIBUTED_TRACING_FLAG_FILE  "/tmp/rdk_distributed_tracing_enabled"
+#define DISTRIBUTED_TRACING_URL_FILE   "/opt/secure/otel-export-endpoint"
+#define DISTRIBUTED_TRACING_INTERVAL_FILE "/opt/secure/otel-export-interval"
 
 /**********************************************************************
 
  APIs for Object:
 
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.URL
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Interval
 
     *  DistributedTracing_GetParamBoolValue
     *  DistributedTracing_SetParamBoolValue
+    *  DistributedTracing_GetParamStringValue
+    *  DistributedTracing_SetParamStringValue
+    *  DistributedTracing_GetParamUlongValue
+    *  DistributedTracing_SetParamUlongValue
 
-    The value is persisted in syscfg (default false). The flag file is what
+    The Enable value is persisted in syscfg (default false). The flag file is what
     librdk_otlp watches at runtime; the collector service follows the value.
+    URL and Interval are persisted to the secure runtime files used by the hostif path.
 
 **********************************************************************/
 BOOL
@@ -15004,6 +15013,194 @@ DistributedTracing_SetParamBoolValue
 
     CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
     return FALSE;
+}
+
+ULONG
+DistributedTracing_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    errno_t rc = -1;
+    FILE *fp = NULL;
+    char url[512] = { 0 };
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "URL") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return -1;
+    }
+
+    fp = fopen(DISTRIBUTED_TRACING_URL_FILE, "r");
+    if (fp == NULL)
+    {
+        CcspTraceWarning(("%s: Unable to open %s for reading\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        return -1;
+    }
+
+    if (fgets(url, sizeof(url), fp) == NULL)
+    {
+        fclose(fp);
+        CcspTraceWarning(("%s: Failed to read %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        return -1;
+    }
+    fclose(fp);
+
+    size_t len = strlen(url);
+    if (len > 0 && url[len - 1] == '\n')
+    {
+        url[len - 1] = '\0';
+        len--;
+    }
+
+    if ((len + 1) > *pUlSize)
+    {
+        *pUlSize = len + 1;
+        CcspTraceWarning(("%s: Buffer too small for URL, required=%lu\n", __FUNCTION__, (unsigned long)(len + 1)));
+        return 1;
+    }
+
+    rc = strcpy_s(pValue, *pUlSize, url);
+    if (rc != EOK)
+    {
+        ERR_CHK(rc);
+        return -1;
+    }
+
+    return 0;
+}
+
+BOOL
+DistributedTracing_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    FILE *fp = NULL;
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "URL") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    if (pString == NULL)
+    {
+        CcspTraceWarning(("%s: NULL value provided for URL\n", __FUNCTION__));
+        return FALSE;
+    }
+
+    fp = fopen(DISTRIBUTED_TRACING_URL_FILE, "w");
+    if (fp == NULL)
+    {
+        CcspTraceWarning(("%s: Failed to create %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        return FALSE;
+    }
+
+    if (fputs(pString, fp) == EOF)
+    {
+        CcspTraceWarning(("%s: Failed to write URL to %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        fclose(fp);
+        return FALSE;
+    }
+
+    fclose(fp);
+    return TRUE;
+}
+
+BOOL
+DistributedTracing_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    )
+{
+    FILE *fp = NULL;
+    char buf[32] = { 0 };
+    unsigned long value = 0;
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Interval") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    fp = fopen(DISTRIBUTED_TRACING_INTERVAL_FILE, "r");
+    if (fp == NULL)
+    {
+        *pUlong = 0;
+        return TRUE;
+    }
+
+    if (fgets(buf, sizeof(buf), fp) == NULL)
+    {
+        fclose(fp);
+        *pUlong = 0;
+        return TRUE;
+    }
+    fclose(fp);
+
+    if (sscanf(buf, "%lu", &value) != 1)
+    {
+        CcspTraceWarning(("%s: Invalid interval value in %s\n", __FUNCTION__, DISTRIBUTED_TRACING_INTERVAL_FILE));
+        *pUlong = 0;
+        return FALSE;
+    }
+
+    *pUlong = (ULONG)value;
+    return TRUE;
+}
+
+BOOL
+DistributedTracing_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       ulValue
+    )
+{
+    FILE *fp = NULL;
+    char buf[32] = { 0 };
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Interval") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    if (ulValue == 0 || ulValue > 71582U)
+    {
+        CcspTraceWarning(("%s: Interval value out of range: %lu\n", __FUNCTION__, (unsigned long)ulValue));
+        return FALSE;
+    }
+
+    snprintf(buf, sizeof(buf), "%lu", (unsigned long)ulValue);
+    fp = fopen(DISTRIBUTED_TRACING_INTERVAL_FILE, "w");
+    if (fp == NULL)
+    {
+        CcspTraceWarning(("%s: Failed to create %s\n", __FUNCTION__, DISTRIBUTED_TRACING_INTERVAL_FILE));
+        return FALSE;
+    }
+
+    if (fputs(buf, fp) == EOF)
+    {
+        CcspTraceWarning(("%s: Failed to write interval to %s\n", __FUNCTION__, DISTRIBUTED_TRACING_INTERVAL_FILE));
+        fclose(fp);
+        return FALSE;
+    }
+
+    fclose(fp);
+    return TRUE;
 }
 
 #ifdef FEATURE_ONEWIFI_TESTSUITE
