@@ -475,38 +475,61 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
     struct in_addr public_ip;
 
     memset(nat_cache, 0, sizeof(*nat_cache));
-    if (syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) != 0)
+    if (!(syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) == 0 && value[0] != '\0'))
+    {
+        CcspTraceInfo(("%s: PortRangeForwardCount is unavailable or empty\n", __FUNCTION__));
         return 0;
+    }
     count = strtol(value, &end, 10);
     if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
+    {
+        CcspTraceInfo(("%s: invalid PortRangeForwardCount value '%s'\n", __FUNCTION__, value));
         return SYSCFG_FAILURE;
+    }
     for (index = 1; index <= count; index++)
     {
         snprintf(key, sizeof(key), ALIAS_PFR "%d", index);
         if (syscfg_get(NULL, key, alias, sizeof(alias)) != 0 || alias[0] == '\0')
+        {
+            CcspTraceInfo(("%s: failed to read %s or alias is empty\n", __FUNCTION__, key));
             return SYSCFG_FAILURE;
+        }
         len = snprintf(key, sizeof(key), "%s" ALIAS_PFR_PUBLIC_IP, alias);
         if (len < 0 || len >= (int)sizeof(key))
+        {
+            CcspTraceInfo(("%s: failed to format public IP key within buffer for alias %s\n", __FUNCTION__, alias));
             return SYSCFG_FAILURE;
+        }
         if (syscfg_get(NULL, key, value, sizeof(value)) != 0 ||
             inet_pton(AF_INET, value, &public_ip) != 1 ||
             public_ip.s_addr == INADDR_ANY || public_ip.s_addr == INADDR_NONE)
             continue;
 
         if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
+        {
+            CcspTraceInfo(("%s: NAT cache is full while caching alias %s\n", __FUNCTION__, alias));
             return SYSCFG_FAILURE;
+        }
         snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE,
                  ALIAS_PFR "%d", index);
         snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", alias);
+
         for (field = 0; field < (int)(sizeof(suffixes) / sizeof(suffixes[0])); field++)
         {
             len = snprintf(key, sizeof(key), "%s%s", alias, suffixes[field]);
             if (len < 0 || len >= (int)sizeof(key))
+            {
+                CcspTraceInfo(("%s: failed to format key within buffer for alias %s, suffix %s\n",
+                               __FUNCTION__, alias, suffixes[field]));
                 return SYSCFG_FAILURE;
+            }
             if (syscfg_get(NULL, key, value, sizeof(value)) != 0)
                 continue;
             if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
+            {
+                CcspTraceInfo(("%s: NAT cache is full while caching key %s\n", __FUNCTION__, key));
                 return SYSCFG_FAILURE;
+            }
             snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE, "%s", key);
             snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", value);
         }
