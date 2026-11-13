@@ -247,9 +247,9 @@
       },
       {
         "name": "common-library",
-        "repo": "https://github.com/rdkcentral/common-library.git",
-        "branch": "develop",
-        "header_paths": [
+        "repo": "https://github.com/SatishKaluvalapalli/common-library.git",
+		"branch": "RDKBDEV-3490-ip-diagnostics-upload-download-speedtest",
+		"header_paths": [
           { "source": "source/ccsp/include", "destination": "$HOME/usr/include/rdkb" },
           { "source": "source/ccsp/components/include", "destination": "$HOME/usr/include/rdkb" },
           { "source": "source/ccsp/custom", "destination": "$HOME/usr/include/rdkb" },
