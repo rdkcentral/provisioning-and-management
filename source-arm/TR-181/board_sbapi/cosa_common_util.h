@@ -191,6 +191,7 @@ int EvtDispterEventListen(void);
 int EvtDispterEventClose(void);
 void * EvtDispterEventHandler(void *arg);
 int EvtDispterCheckEvtStatus(int fd, token_t token);
+int EvtDispterWanStatusCallback(const char *value);
 /*Create a thread to handle the sysevent asynchronously*/
 void EvtDispterHandleEventAsync(void);
 #if defined (RBUS_WAN_IP)
