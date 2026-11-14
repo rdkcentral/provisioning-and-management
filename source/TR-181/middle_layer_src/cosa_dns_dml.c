@@ -1968,7 +1968,6 @@ Relay_GetParamUlongValue
         return TRUE;
     }
 
-
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -2331,6 +2330,130 @@ Relay_Rollback
 {
     UNREFERENCED_PARAMETER(hInsContext);
     return 0;
+}
+
+
+/***********************************************************************
+
+ APIs for Object:
+
+    DNS.Config.
+
+    *  Config_GetParamUlongValue
+    *  Config_SetParamUlongValue
+
+***********************************************************************/
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Config_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      puLong
+            );
+
+    description:
+
+        This function is called to retrieve ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG*                      puLong
+                The buffer of returned ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+Config_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    /* check the parameter name and return the corresponding value */
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_DNSForwardMax") == 0)
+    {
+        /* Get DNS forward max value */
+        *puLong = CosaDmlDnsGetForwardMax();
+        return TRUE;
+    }
+
+    /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
+    return FALSE;
+}
+
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Config_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set ULONG parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                ULONG                       uValue
+                The updated ULONG value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+Config_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    /* check the parameter name and set the corresponding value */
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_DNSForwardMax") == 0)
+    {
+        /* Validate range (1-600) */
+        if (uValue < 1 || uValue > 600)
+        {
+            CcspTraceError(("%s: Invalid DNSForwardMax value %lu (must be 1-600)\n", __FUNCTION__, uValue));
+            return FALSE;
+        }
+        
+        /* Set DNS forward max value */
+        if (CosaDmlDnsSetForwardMax(uValue) == ANSC_STATUS_SUCCESS)
+        {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
+    return FALSE;
 }
 
 
