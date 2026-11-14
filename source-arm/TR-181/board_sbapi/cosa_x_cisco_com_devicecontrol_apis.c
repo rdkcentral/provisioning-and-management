@@ -539,7 +539,7 @@ bool IsPortOverlapWithPTPorts(int mgmtport)
       if (0 != rc || '\0' == portrange[0]) {
          continue;
       } else {
-         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+         if (2 != sscanf(portrange, "%9s %9s", sdport, edport)) {
             continue;
          }
       }
@@ -553,7 +553,7 @@ bool IsPortOverlapWithPTPorts(int mgmtport)
       if (0 != rc || '\0' == portrange[0]) {
          continue;
       } else {
-         if (2 != sscanf(portrange, "%10s %10s", sdport, edport)) {
+         if (2 != sscanf(portrange, "%9s %9s", sdport, edport)) {
             continue;
          }
       }
