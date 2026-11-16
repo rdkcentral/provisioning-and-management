@@ -717,17 +717,22 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         }
 
 #if defined (TP_ENABLED)
-		char inc_traceparent[512] = {0};
+        bool trace_started = false;
+        char inc_traceparent[512] = {0};
         char inc_tracestate[512] = {0};
-		if (rbusHandle_GetTraceContextAsString(handle, inc_traceparent, sizeof(inc_traceparent), inc_tracestate, sizeof(inc_tracestate)) == RBUS_ERROR_SUCCESS && inc_traceparent[0] != '\0')
+        if (rbusHandle_GetTraceContextAsString(handle, inc_traceparent, sizeof(inc_traceparent), inc_tracestate, sizeof(inc_tracestate)) == RBUS_ERROR_SUCCESS && inc_traceparent[0] != '\0')
         {
             rdk_otlp_start_child_from_traceparent(inc_traceparent, propertyName);
+            const char *traceparent = rdk_otlp_get_current_traceparent();
+            if (traceparent != NULL)
+            {
+                trace_started = true;
+                if (rbusHandle_SetTraceContextFromString(handle, traceparent, inc_tracestate) != RBUS_ERROR_SUCCESS)
+                {
+                    CcspTraceWarning(("%s: Failed to set child trace context for event publication\n", __FUNCTION__));
+                }
+            }
         }
-		//const char *traceparent = rdk_otlp_get_current_traceparent();
-        //if (traceparent != NULL)
-        //{
-        rbusHandle_SetTraceContextFromString(handle, inc_traceparent, NULL);
-        //}
 #endif
         strncpy(RRDIssueType, str, sizeof(RRDIssueType)-1);
         CcspTraceInfo(("[%s]: RemotedebuggerIssueType String Value is %s\n", __FUNCTION__,RRDIssueType));
@@ -735,8 +740,11 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         {
             CcspTraceError(("[%s]: RemotedebuggerIssueType as %s syscfg_set Failed!!!\n",__FUNCTION__,RRDIssueType));
 #if defined (TP_ENABLED)
-			rbusHandle_ClearTraceContext(handle);
-            rdk_otlp_finish_child_span();
+            if (trace_started)
+            {
+                rbusHandle_SetTraceContextFromString(handle, inc_traceparent, inc_tracestate);
+                rdk_otlp_finish_child_span();
+            }
 #endif
             return RBUS_ERROR_BUS_ERROR;
         }
@@ -752,8 +760,11 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
             CcspTraceInfo(("%s: RBUS Publish event success for %s !!! \n ", __FUNCTION__, propertyName));
         }
 #if defined (TP_ENABLED)
-		rbusHandle_ClearTraceContext(handle);
-        rdk_otlp_finish_child_span();
+        if (trace_started)
+        {
+            rbusHandle_SetTraceContextFromString(handle, inc_traceparent, inc_tracestate);
+            rdk_otlp_finish_child_span();
+        }
 #endif
     }
 
