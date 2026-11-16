@@ -469,21 +469,24 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
         ALIAS_POS_INT_PORT, ALIAS_POS_IPV6, ALIAS_POS_PREV_STATE,
         ALIAS_POS_EXT_PORT_RANGE, ALIAS_PFR_PUBLIC_IP, ALIAS_PFR_INT_RANGE
     };
-    char key[BLOCK_SIZE], alias[VAL_BLOCK_SIZE], value[VAL_BLOCK_SIZE], *end;
-    int index, field, len;
-    long count;
-    struct in_addr public_ip;
+    char key[BLOCK_SIZE] = {0}, alias[VAL_BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0}, *end = NULL;
+    int index = 0, field = 0, len = 0;
+    long count = 0;
+    struct in_addr public_ip = {0};
 
     memset(nat_cache, 0, sizeof(*nat_cache));
-    if (!(syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) == 0 && value[0] != '\0'))
+    if (syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) == 0 && value[0] != '\0')
+    {
+        count = strtol(value, &end, 10);
+        if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
+        {
+            CcspTraceInfo(("%s: invalid PortRangeForwardCount value '%s'\n", __FUNCTION__, value));
+            return SYSCFG_FAILURE;
+        }
+    }
+    else
     {
         CcspTraceInfo(("%s: PortRangeForwardCount is unavailable or empty\n", __FUNCTION__));
-        return 0;
-    }
-    count = strtol(value, &end, 10);
-    if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
-    {
-        CcspTraceInfo(("%s: invalid PortRangeForwardCount value '%s'\n", __FUNCTION__, value));
         return SYSCFG_FAILURE;
     }
     for (index = 1; index <= count; index++)
@@ -555,17 +558,18 @@ int update_one_to_one_nat_cache(void)
     {
         CcspTraceError(("%s: failed to refresh 1:1 NAT cache from syscfg\n", __FUNCTION__));
     }
-    free(nat);
+    if (nat)
+        free(nat);
     return ret;
 }
 
 static int nat_rule_id(const char *alias, unsigned long *id)
 {
     char *end;
-    if (strncmp(alias, ALIAS_PRE_PFR, strlen(ALIAS_PRE_PFR)) != 0)
+    if (strncmp(alias, ALIAS_PRE_PFR, ALIAS_PRE_PFR_LEN) != 0)
         return SYSCFG_FAILURE;
-    *id = strtoul(alias + strlen(ALIAS_PRE_PFR), &end, 10);
-    if (end == alias + strlen(ALIAS_PRE_PFR) || *end != '\0' ||
+    *id = strtoul(alias + ALIAS_PRE_PFR_LEN, &end, 10);
+    if (end == alias + ALIAS_PRE_PFR_LEN || *end != '\0' ||
         *id == 0 || *id > PORTMAP_CACHE_SIZE)
         return SYSCFG_FAILURE;
     return 0;
@@ -600,7 +604,7 @@ static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat)
     }
     for (i = 0; i < nat->cache_size; i++)
     {
-        if (strncmp(nat->entries[i].cmd, ALIAS_PFR, strlen(ALIAS_PFR)) == 0)
+        if (strncmp(nat->entries[i].cmd, ALIAS_PFR, ALIAS_PFR_LEN) == 0)
         {
             if (nat_rule_id(nat->entries[i].val, &id) != 0)
                 goto exit;
@@ -656,7 +660,7 @@ int set_portmap_conf(portmappingdoc_t *rpm)
         }
         for (k = 0; k < one_to_one_nat_cache_bkup.cache_size; k++)
         {
-            if (strncmp(one_to_one_nat_cache_bkup.entries[k].cmd, ALIAS_PFR, strlen(ALIAS_PFR)) != 0)
+            if (strncmp(one_to_one_nat_cache_bkup.entries[k].cmd, ALIAS_PFR, ALIAS_PFR_LEN) != 0)
                 continue;
             if (nat_rule_id(one_to_one_nat_cache_bkup.entries[k].val, &saved_id) != 0)
             {

@@ -1786,7 +1786,7 @@ PortMapping_DelEntry
         returnStatus = CosaDmlNatDelPortMapping(NULL, pNatPMapping->InstanceNumber);
         if (returnStatus == ANSC_STATUS_SUCCESS)
         {
-            (void)update_one_to_one_nat_cache();
+            update_one_to_one_nat_cache();
         }
     }
 
@@ -2744,7 +2744,7 @@ PortMapping_Commit
 
     if (returnStatus == ANSC_STATUS_SUCCESS)
     {
-        (void)update_one_to_one_nat_cache();
+        update_one_to_one_nat_cache();
     }
 
     AnscZeroMemory( pNat->AliasOfPortMapping, sizeof(pNat->AliasOfPortMapping) );

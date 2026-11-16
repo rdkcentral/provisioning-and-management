@@ -51,6 +51,7 @@
 #define SinglePortForwardCount
 #define ALIAS_PRE_SPF "spf_"
 #define ALIAS_PRE_PFR "pfr_"
+#define ALIAS_PRE_PFR_LEN (sizeof(ALIAS_PRE_PFR) - 1)
 #define ALIAS_POS_PROTO "::protocol"
 #define ALIAS_POS_NAME "::name"
 #define ALIAS_POS_EXT_PORT "::external_port"
@@ -59,6 +60,7 @@
 #define ALIAS_SPF "SinglePortForward_"
 
 #define ALIAS_PFR "PortRangeForward_"
+#define ALIAS_PFR_LEN (sizeof(ALIAS_PFR) - 1)
 #define ALIAS_PFR_INT_RANGE "::internal_port_range_size"
 #define ALIAS_PFR_PUBLIC_IP "::public_ip"
 #define ALIAS_POS_EXT_PORT_RANGE "::external_port_range"
