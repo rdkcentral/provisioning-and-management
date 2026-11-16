@@ -719,7 +719,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
 #if defined (TP_ENABLED)
 		char inc_traceparent[512] = {0};
         char inc_tracestate[512] = {0};
-		if (rbusHandle_GetTraceContextAsString(handle, inc_traceparent, sizeof(inc_traceparent), inc_tracestate, sizeof(inc_tracestate)) == RBUS_ERROR_SUCCESS && traceparent[0] != '\0')
+		if (rbusHandle_GetTraceContextAsString(handle, inc_traceparent, sizeof(inc_traceparent), inc_tracestate, sizeof(inc_tracestate)) == RBUS_ERROR_SUCCESS && inc_traceparent[0] != '\0')
         {
             rdk_otlp_start_child_from_traceparent(inc_traceparent, propertyName);
         }
