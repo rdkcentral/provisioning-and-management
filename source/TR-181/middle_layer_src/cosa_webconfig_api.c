@@ -462,6 +462,66 @@ void print_portmap_entry()
 
 #endif
 
+static int read_port_range_forward_alias(int index, char *alias, size_t alias_size)
+{
+    char key[BLOCK_SIZE] = {0};
+
+    snprintf(key, sizeof(key), ALIAS_PFR "%d", index);
+    if (syscfg_get(NULL, key, alias, alias_size) != 0 || alias[0] == '\0')
+    {
+        CcspTraceInfo(("%s: failed to read %s or alias is empty\n", __FUNCTION__, key));
+        return SYSCFG_FAILURE;
+    }
+    return 0;
+}
+
+static int check_one_to_one_nat_public_ip(const char *alias, int *is_nat)
+{
+    char key[BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0};
+    struct in_addr public_ip = {0};
+    int len = 0;
+
+    *is_nat = 0;
+    len = snprintf(key, sizeof(key), "%s" ALIAS_PFR_PUBLIC_IP, alias);
+    if (len < 0 || len >= (int)sizeof(key))
+    {
+        CcspTraceInfo(("%s: failed to format public IP key within buffer for alias %s\n", __FUNCTION__, alias));
+        return SYSCFG_FAILURE;
+    }
+    if (syscfg_get(NULL, key, value, sizeof(value)) != 0 ||
+        inet_pton(AF_INET, value, &public_ip) != 1 ||
+        public_ip.s_addr == INADDR_ANY || public_ip.s_addr == INADDR_NONE)
+        return 0;
+
+    *is_nat = 1;
+    return 0;
+}
+
+static int read_one_to_one_nat_field(t_one_to_one_nat_cache *nat_cache,
+                                   const char *alias, const char *suffix)
+{
+    char key[BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0};
+    int len = 0;
+
+    len = snprintf(key, sizeof(key), "%s%s", alias, suffix);
+    if (len < 0 || len >= (int)sizeof(key))
+    {
+        CcspTraceInfo(("%s: failed to format key within buffer for alias %s, suffix %s\n",
+                       __FUNCTION__, alias, suffix));
+        return SYSCFG_FAILURE;
+    }
+    if (syscfg_get(NULL, key, value, sizeof(value)) != 0)
+        return 0;
+    if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
+    {
+        CcspTraceInfo(("%s: NAT cache is full while caching key %s\n", __FUNCTION__, key));
+        return SYSCFG_FAILURE;
+    }
+    snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE, "%s", key);
+    snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", value);
+    return 0;
+}
+
 static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
 {
     static const char *suffixes[] = {
@@ -469,10 +529,9 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
         ALIAS_POS_INT_PORT, ALIAS_POS_IPV6, ALIAS_POS_PREV_STATE,
         ALIAS_POS_EXT_PORT_RANGE, ALIAS_PFR_PUBLIC_IP, ALIAS_PFR_INT_RANGE
     };
-    char key[BLOCK_SIZE] = {0}, alias[VAL_BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0}, *end = NULL;
-    int index = 0, field = 0, len = 0;
+    char alias[VAL_BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0}, *end = NULL;
+    int index = 0, field = 0, is_nat = 0;
     long count = 0;
-    struct in_addr public_ip = {0};
 
     memset(nat_cache, 0, sizeof(*nat_cache));
     if (syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) == 0 && value[0] != '\0')
@@ -480,32 +539,24 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
         count = strtol(value, &end, 10);
         if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
         {
-            CcspTraceInfo(("%s: invalid PortRangeForwardCount value '%s'\n", __FUNCTION__, value));
+            CcspTraceError(("%s: invalid PortRangeForwardCount value '%s'\n", __FUNCTION__, value));
             return SYSCFG_FAILURE;
         }
+        if (count == 0)
+            return 0;
     }
     else
     {
-        CcspTraceInfo(("%s: PortRangeForwardCount is unavailable or empty\n", __FUNCTION__));
+        CcspTraceError(("%s: PortRangeForwardCount is unavailable or empty\n", __FUNCTION__));
         return SYSCFG_FAILURE;
     }
     for (index = 1; index <= count; index++)
     {
-        snprintf(key, sizeof(key), ALIAS_PFR "%d", index);
-        if (syscfg_get(NULL, key, alias, sizeof(alias)) != 0 || alias[0] == '\0')
-        {
-            CcspTraceInfo(("%s: failed to read %s or alias is empty\n", __FUNCTION__, key));
+        if (read_port_range_forward_alias(index, alias, sizeof(alias)) != 0)
             return SYSCFG_FAILURE;
-        }
-        len = snprintf(key, sizeof(key), "%s" ALIAS_PFR_PUBLIC_IP, alias);
-        if (len < 0 || len >= (int)sizeof(key))
-        {
-            CcspTraceInfo(("%s: failed to format public IP key within buffer for alias %s\n", __FUNCTION__, alias));
+        if (check_one_to_one_nat_public_ip(alias, &is_nat) != 0)
             return SYSCFG_FAILURE;
-        }
-        if (syscfg_get(NULL, key, value, sizeof(value)) != 0 ||
-            inet_pton(AF_INET, value, &public_ip) != 1 ||
-            public_ip.s_addr == INADDR_ANY || public_ip.s_addr == INADDR_NONE)
+        if (!is_nat)
             continue;
 
         if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
@@ -519,22 +570,8 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
 
         for (field = 0; field < (int)(sizeof(suffixes) / sizeof(suffixes[0])); field++)
         {
-            len = snprintf(key, sizeof(key), "%s%s", alias, suffixes[field]);
-            if (len < 0 || len >= (int)sizeof(key))
-            {
-                CcspTraceInfo(("%s: failed to format key within buffer for alias %s, suffix %s\n",
-                               __FUNCTION__, alias, suffixes[field]));
+            if (read_one_to_one_nat_field(nat_cache, alias, suffixes[field]) != 0)
                 return SYSCFG_FAILURE;
-            }
-            if (syscfg_get(NULL, key, value, sizeof(value)) != 0)
-                continue;
-            if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
-            {
-                CcspTraceInfo(("%s: NAT cache is full while caching key %s\n", __FUNCTION__, key));
-                return SYSCFG_FAILURE;
-            }
-            snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE, "%s", key);
-            snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", value);
         }
         nat_cache->mapping_count++;
     }
