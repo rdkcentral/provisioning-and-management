@@ -717,12 +717,17 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         }
 
 #if defined (TP_ENABLED)
-        rdk_otlp_start_distributed_trace(propertyName, "set");
-		const char *traceparent = rdk_otlp_get_current_traceparent();
-        if (traceparent != NULL)
+		char inc_traceparent[512] = {0};
+        char inc_tracestate[512] = {0};
+		if (rbusHandle_GetTraceContextAsString(handle, inc_traceparent, sizeof(inc_traceparent), inc_tracestate, sizeof(inc_tracestate)) == RBUS_ERROR_SUCCESS && traceparent[0] != '\0')
         {
-            rbusHandle_SetTraceContextFromString(handle, traceparent, NULL);
+            rdk_otlp_start_child_from_traceparent(inc_traceparent, propertyName);
         }
+		//const char *traceparent = rdk_otlp_get_current_traceparent();
+        //if (traceparent != NULL)
+        //{
+        rbusHandle_SetTraceContextFromString(handle, inc_traceparent, NULL);
+        //}
 #endif
         strncpy(RRDIssueType, str, sizeof(RRDIssueType)-1);
         CcspTraceInfo(("[%s]: RemotedebuggerIssueType String Value is %s\n", __FUNCTION__,RRDIssueType));
@@ -731,7 +736,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
             CcspTraceError(("[%s]: RemotedebuggerIssueType as %s syscfg_set Failed!!!\n",__FUNCTION__,RRDIssueType));
 #if defined (TP_ENABLED)
 			rbusHandle_ClearTraceContext(handle);
-            rdk_otlp_finish_distributed_trace();
+            rdk_otlp_finish_child_span();
 #endif
             return RBUS_ERROR_BUS_ERROR;
         }
@@ -748,7 +753,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         }
 #if defined (TP_ENABLED)
 		rbusHandle_ClearTraceContext(handle);
-        rdk_otlp_finish_distributed_trace();
+        rdk_otlp_finish_child_span();
 #endif
     }
 
