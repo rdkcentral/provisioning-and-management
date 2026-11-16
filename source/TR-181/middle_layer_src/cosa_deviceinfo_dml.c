@@ -14861,8 +14861,8 @@ RDKDownloadManager_SetParamStringValue
 
 #define DISTRIBUTED_TRACING_SYSCFG_KEY "DistributedTracingEnabled"
 #define DISTRIBUTED_TRACING_FLAG_FILE  "/tmp/rdk_distributed_tracing_enabled"
-#define DISTRIBUTED_TRACING_URL_FILE   "/opt/secure/otel-export-endpoint"
-#define DISTRIBUTED_TRACING_INTERVAL_FILE "/opt/secure/otel-export-interval"
+#define DISTRIBUTED_TRACING_URL_FILE   "/nvram/secure/otel-export-endpoint"
+#define DISTRIBUTED_TRACING_INTERVAL_FILE "/nvram/secure/otel-export-interval"
 
 /**********************************************************************
 
