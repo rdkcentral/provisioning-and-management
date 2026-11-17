@@ -93,6 +93,7 @@ typedef struct {
 /**
  * Refreshes the 1:1 NAT cache from syscfg, including disabled mappings.
  * Called at boot time and after persistent port-mapping or global NAT changes.
+ * Serializes the syscfg read and cache publication with WebConfig apply/rollback.
  * Returns 0 on success; logs and returns SYSCFG_FAILURE on failure.
  */
 int update_one_to_one_nat_cache(void);
