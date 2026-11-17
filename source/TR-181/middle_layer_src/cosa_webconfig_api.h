@@ -45,7 +45,7 @@
 #define PORTMAP_CACHE_SIZE 1024
 #define DMZ_CACHE_SIZE 2
 
-#define BLOCK_SIZE 64
+#define BLOCK_SIZE 32
 #define VAL_BLOCK_SIZE 129 // for ipv6 address 128 + 1 size is needed
 
 #define SinglePortForwardCount

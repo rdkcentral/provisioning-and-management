@@ -335,6 +335,7 @@ void backup_pf_cache(t_cache *tmp_pf_cache,t_cache *tmp_pf_cache_bkup,int cache_
 int apply_pf_cache_ToDB(t_cache *tmp_pf_cache, int cache_size,int pmapEnable)
 {
 	    int i = 0;
+        int nat_ret;
         if ( gpfEnable !=  pmapEnable )
         {
                 if (syscfg_set("CosaNAT", "port_forward_enabled", (pmapEnable == 1) ? "1" : "0" ) != 0)
@@ -360,7 +361,10 @@ int apply_pf_cache_ToDB(t_cache *tmp_pf_cache, int cache_size,int pmapEnable)
               		// break;
         	}
     	}
-        if (restore_one_to_one_nat_to_DB(&one_to_one_nat_cache_bkup) != 0)
+        pthread_mutex_lock(&one_to_one_nat_cache_lock);
+        nat_ret = restore_one_to_one_nat_to_DB(&one_to_one_nat_cache_bkup);
+        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
+        if (nat_ret != 0)
             return SYSCFG_FAILURE;
     	if (syscfg_commit() != 0)
     	{
@@ -690,12 +694,14 @@ int set_portmap_conf(portmappingdoc_t *rpm)
         unsigned long first_id = 1, saved_id;
         int k;
         char longest_key[BLOCK_SIZE];
+        pthread_mutex_lock(&one_to_one_nat_cache_lock);
         /* Reserve startup-cache slots for the saved NAT mappings as well. */
         if (rpm->entries_count > (PORTMAP_CACHE_SIZE - 2) / 11 ||
             (size_t)one_to_one_nat_cache_bkup.mapping_count >
                 (PORTMAP_CACHE_SIZE - 2) / 11 - rpm->entries_count)
         {
             CcspTraceError(("%s: forwarding entries and saved NAT mappings exceed cache capacity\n", __FUNCTION__));
+            pthread_mutex_unlock(&one_to_one_nat_cache_lock);
             return SYSCFG_FAILURE;
         }
         for (k = 0; k < one_to_one_nat_cache_bkup.cache_size; k++)
@@ -705,11 +711,13 @@ int set_portmap_conf(portmappingdoc_t *rpm)
             if (nat_rule_id(one_to_one_nat_cache_bkup.entries[k].val, &saved_id) != 0)
             {
                 CcspTraceError(("%s: invalid saved NAT ID\n", __FUNCTION__));
+                pthread_mutex_unlock(&one_to_one_nat_cache_lock);
                 return SYSCFG_FAILURE;
             }
             if (saved_id >= first_id)
                 first_id = saved_id + 1;
         }
+        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
         int length = snprintf(longest_key, sizeof(longest_key),
                               ALIAS_PRE_PFR "%lu" ALIAS_POS_PREV_STATE,
                               first_id + (unsigned long)rpm->entries_count - 1);
@@ -1057,9 +1065,6 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
     	}	
 
-        pthread_mutex_lock(&one_to_one_nat_cache_lock);
-        one_to_one_nat_cache = one_to_one_nat_cache_bkup;
-        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
      	CcspTraceWarning(("Portmap configurartion applied\n"));
         gpfEnable = lpfEnable;
     	int i;                  
@@ -1091,11 +1096,6 @@ int rollback_PortForwarding()
     backup_pf_cache(pf_cache_bkup,pf_cache,pf_cache_size_bkup);
 
     pf_cache_size = pf_cache_size_bkup;
-    pthread_mutex_lock(&one_to_one_nat_cache_lock);
-    one_to_one_nat_cache = one_to_one_nat_cache_bkup;
-    pthread_mutex_unlock(&one_to_one_nat_cache_lock);
-
-
     return ret ;
 }
 
