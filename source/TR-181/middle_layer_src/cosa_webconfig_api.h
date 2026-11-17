@@ -47,6 +47,7 @@
 
 #define BLOCK_SIZE 32
 #define VAL_BLOCK_SIZE 129 // for ipv6 address 128 + 1 size is needed
+#define NAT_KEY_BLOCK_SIZE 64
 
 #define SinglePortForwardCount
 #define ALIAS_PRE_SPF "spf_"
@@ -79,7 +80,7 @@
 #endif
 
 typedef struct {
-    char cmd[BLOCK_SIZE];
+    char cmd[NAT_KEY_BLOCK_SIZE];
     char val[VAL_BLOCK_SIZE];
 } t_cache;
 

@@ -468,12 +468,12 @@ void print_portmap_entry()
 
 static int read_port_range_forward_alias(int index, char *alias, size_t alias_size)
 {
-    char key[BLOCK_SIZE] = {0};
+    char key[NAT_KEY_BLOCK_SIZE] = {0};
 
     snprintf(key, sizeof(key), ALIAS_PFR "%d", index);
     if (syscfg_get(NULL, key, alias, alias_size) != 0 || alias[0] == '\0')
     {
-        CcspTraceInfo(("%s: failed to read %s or alias is empty\n", __FUNCTION__, key));
+        CcspTraceError(("%s: failed to read %s or alias is empty\n", __FUNCTION__, key));
         return SYSCFG_FAILURE;
     }
     return 0;
@@ -481,7 +481,7 @@ static int read_port_range_forward_alias(int index, char *alias, size_t alias_si
 
 static int check_one_to_one_nat_public_ip(const char *alias, int *is_nat)
 {
-    char key[BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0};
+    char key[NAT_KEY_BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0};
     struct in_addr public_ip = {0};
     int len = 0;
 
@@ -489,7 +489,7 @@ static int check_one_to_one_nat_public_ip(const char *alias, int *is_nat)
     len = snprintf(key, sizeof(key), "%s" ALIAS_PFR_PUBLIC_IP, alias);
     if (len < 0 || len >= (int)sizeof(key))
     {
-        CcspTraceInfo(("%s: failed to format public IP key within buffer for alias %s\n", __FUNCTION__, alias));
+        CcspTraceError(("%s: failed to format public IP key within buffer for alias %s\n", __FUNCTION__, alias));
         return SYSCFG_FAILURE;
     }
     if (syscfg_get(NULL, key, value, sizeof(value)) != 0 ||
@@ -504,13 +504,13 @@ static int check_one_to_one_nat_public_ip(const char *alias, int *is_nat)
 static int read_one_to_one_nat_field(t_one_to_one_nat_cache *nat_cache,
                                    const char *alias, const char *suffix)
 {
-    char key[BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0};
+    char key[NAT_KEY_BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0};
     int len = 0;
 
     len = snprintf(key, sizeof(key), "%s%s", alias, suffix);
     if (len < 0 || len >= (int)sizeof(key))
     {
-        CcspTraceInfo(("%s: failed to format key within buffer for alias %s, suffix %s\n",
+        CcspTraceError(("%s: failed to format key within buffer for alias %s, suffix %s\n",
                        __FUNCTION__, alias, suffix));
         return SYSCFG_FAILURE;
     }
@@ -518,10 +518,10 @@ static int read_one_to_one_nat_field(t_one_to_one_nat_cache *nat_cache,
         return 0;
     if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
     {
-        CcspTraceInfo(("%s: NAT cache is full while caching key %s\n", __FUNCTION__, key));
+        CcspTraceError(("%s: NAT cache is full while caching key %s\n", __FUNCTION__, key));
         return SYSCFG_FAILURE;
     }
-    snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE, "%s", key);
+    snprintf(nat_cache->entries[nat_cache->cache_size].cmd, NAT_KEY_BLOCK_SIZE, "%s", key);
     snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", value);
     return 0;
 }
@@ -565,10 +565,10 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat_cache)
 
         if (nat_cache->cache_size >= PORTMAP_CACHE_SIZE)
         {
-            CcspTraceInfo(("%s: NAT cache is full while caching alias %s\n", __FUNCTION__, alias));
+            CcspTraceError(("%s: NAT cache is full while caching alias %s\n", __FUNCTION__, alias));
             return SYSCFG_FAILURE;
         }
-        snprintf(nat_cache->entries[nat_cache->cache_size].cmd, BLOCK_SIZE,
+        snprintf(nat_cache->entries[nat_cache->cache_size].cmd, NAT_KEY_BLOCK_SIZE,
                  ALIAS_PFR "%d", index);
         snprintf(nat_cache->entries[nat_cache->cache_size++].val, VAL_BLOCK_SIZE, "%s", alias);
 
@@ -621,7 +621,7 @@ static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat)
 {
     unsigned char present[PORTMAP_CACHE_SIZE + 1] = {0};
     unsigned long id;
-    char key[BLOCK_SIZE], value[VAL_BLOCK_SIZE], *end;
+    char key[NAT_KEY_BLOCK_SIZE], value[VAL_BLOCK_SIZE], *end;
     int total = 0, old_count = 0, i;
     long count;
     int ret = SYSCFG_FAILURE;
@@ -693,7 +693,7 @@ int set_portmap_conf(portmappingdoc_t *rpm)
         printf("Port map entries %zu\n",rpm->entries_count);
         unsigned long first_id = 1, saved_id;
         int k;
-        char longest_key[BLOCK_SIZE];
+        char longest_key[NAT_KEY_BLOCK_SIZE];
         pthread_mutex_lock(&one_to_one_nat_cache_lock);
         /* Reserve startup-cache slots for the saved NAT mappings as well. */
         if (rpm->entries_count > (PORTMAP_CACHE_SIZE - 2) / 11 ||
@@ -721,7 +721,7 @@ int set_portmap_conf(portmappingdoc_t *rpm)
         int length = snprintf(longest_key, sizeof(longest_key),
                               ALIAS_PRE_PFR "%lu" ALIAS_POS_PREV_STATE,
                               first_id + (unsigned long)rpm->entries_count - 1);
-        if (length < 0 || length >= BLOCK_SIZE)
+        if (length < 0 || length >= NAT_KEY_BLOCK_SIZE)
         {
             CcspTraceError(("%s: forwarding key exceeds cache key size\n", __FUNCTION__));
             return SYSCFG_FAILURE;
