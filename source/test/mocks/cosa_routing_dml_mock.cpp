@@ -86,6 +86,20 @@ ANSC_STATUS is_usg_in_bridge_mode(BOOL *pBridgeMode)
     return ANSC_STATUS_SUCCESS;
 }
 
+int
+CosaGetParamValueString
+    (
+        char*                       pParamName,
+        char*                       pBuffer,
+        PULONG                      pulSize
+    )
+{
+    (void)pParamName;
+    (void)pBuffer;
+    (void)pulSize;
+    return -1;
+}
+
 ANSC_STATUS
 CosaDmlStaticRouteDelEntry
     (
