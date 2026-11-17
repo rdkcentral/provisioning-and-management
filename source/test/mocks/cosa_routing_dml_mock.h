@@ -265,6 +265,14 @@ CosaRoutingRegAddInfo
 ANSC_STATUS
 is_usg_in_bridge_mode(BOOL *pBridgeMode);
 
+int
+CosaGetParamValueString
+    (
+        char*                       pParamName,
+        char*                       pBuffer,
+        PULONG                      pulSize
+    );
+
 ANSC_STATUS
 CosaDmlStaticRouteDelEntry
     (
