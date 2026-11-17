@@ -690,9 +690,12 @@ int set_portmap_conf(portmappingdoc_t *rpm)
         unsigned long first_id = 1, saved_id;
         int k;
         char longest_key[BLOCK_SIZE];
-        if (rpm->entries_count > (PORTMAP_CACHE_SIZE - 2) / 11)
+        /* Reserve startup-cache slots for the saved NAT mappings as well. */
+        if (rpm->entries_count > (PORTMAP_CACHE_SIZE - 2) / 11 ||
+            (size_t)one_to_one_nat_cache_bkup.mapping_count >
+                (PORTMAP_CACHE_SIZE - 2) / 11 - rpm->entries_count)
         {
-            CcspTraceError(("%s: too many forwarding entries\n", __FUNCTION__));
+            CcspTraceError(("%s: forwarding entries and saved NAT mappings exceed cache capacity\n", __FUNCTION__));
             return SYSCFG_FAILURE;
         }
         for (k = 0; k < one_to_one_nat_cache_bkup.cache_size; k++)

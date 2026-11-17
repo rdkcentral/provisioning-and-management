@@ -585,6 +585,11 @@ NAT_Commit
 
     returnStatus = CosaDmlNatSet(NULL, pNat);
 
+    if (returnStatus == ANSC_STATUS_SUCCESS)
+    {
+        update_one_to_one_nat_cache();
+    }
+
     return returnStatus;
 }
 

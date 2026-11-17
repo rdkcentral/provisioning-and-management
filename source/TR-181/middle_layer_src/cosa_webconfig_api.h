@@ -45,7 +45,7 @@
 #define PORTMAP_CACHE_SIZE 1024
 #define DMZ_CACHE_SIZE 2
 
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 64
 #define VAL_BLOCK_SIZE 129 // for ipv6 address 128 + 1 size is needed
 
 #define SinglePortForwardCount
@@ -91,7 +91,7 @@ typedef struct {
 
 /**
  * Refreshes the 1:1 NAT cache from syscfg, including disabled mappings.
- * Called at boot time and after persistent port-mapping changes.
+ * Called at boot time and after persistent port-mapping or global NAT changes.
  * Returns 0 on success; logs and returns SYSCFG_FAILURE on failure.
  */
 int update_one_to_one_nat_cache(void);
