@@ -394,7 +394,7 @@ static int _getLogInfo(FILE* fd, PCOSA_DML_DIAGNOSTICS_ENTRY *info, int *entry_c
                  continue;
              }else{
                  p[i].Level = _Level_str2num(LevelStr);
-                 strncpy(p[i].Tag, user, sizeof(p[i].Tag));
+                 snprintf(p[i].Tag, sizeof(p[i].Tag), "%s", user);
              }
         }else{
              continue;

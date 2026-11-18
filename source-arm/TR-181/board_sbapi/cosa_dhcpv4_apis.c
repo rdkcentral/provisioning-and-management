@@ -1204,7 +1204,7 @@ static void getDHCPv4ServerPoolParametersFromPSM(ULONG instancenum, PCOSA_DML_DH
     if (retPsmGet == CCSP_SUCCESS)
     {
         /*CID: 128145 Out-of-bounds access*/
-        CosaDmlSetIpaddr((PULONG)&pPoolCfg->DNSServers[0], param_value, COSA_DML_DHCP_MAX_ENTRIES);
+        CosaDmlSetIpaddr((PULONG)&pPoolCfg->DNSServers[0], param_value, sizeof(pPoolCfg->DNSServers)/sizeof(pPoolCfg->DNSServers[0]));
         ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(param_value);   
     }
 
@@ -1212,7 +1212,7 @@ static void getDHCPv4ServerPoolParametersFromPSM(ULONG instancenum, PCOSA_DML_DH
     if (retPsmGet == CCSP_SUCCESS)
     {
         /*CID: 128144 Out-of-bounds access*/
-        CosaDmlSetIpaddr((PULONG)&pPoolCfg->IPRouters[0], param_value, COSA_DML_DHCP_MAX_ENTRIES);
+        CosaDmlSetIpaddr((PULONG)&pPoolCfg->IPRouters[0], param_value, sizeof(pPoolCfg->IPRouters)/sizeof(pPoolCfg->IPRouters[0]));
         ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(param_value);   
     }
 
@@ -1368,6 +1368,7 @@ static void readDHCPv4ServerPoolFromPSM()
             if(rc < EOK)
             {
                 ERR_CHK(rc);
+                AnscFreeMemory(pPoolLinkObj);
                 continue;
             }
 
@@ -1387,6 +1388,7 @@ static void readDHCPv4ServerPoolFromPSM()
             if(rc < EOK)
             {
                 ERR_CHK(rc);
+                AnscFreeMemory(pPoolLinkObj);
                 continue;
             }
             retPsmGet1 = PsmGetNextLevelInstances(bus_handle, g_Subsystem, param_name, &optionCnt, &optionList);
@@ -1423,7 +1425,7 @@ static void readDHCPv4ServerPoolFromPSM()
             }
             // push pool to the end of list
             AnscSListPushEntryAtBack(&g_dhcpv4_server_pool_list, &pPoolLinkObj->Linkage);   
-
+            pPoolLinkObj = NULL;
         }// poolCnt
 
 
