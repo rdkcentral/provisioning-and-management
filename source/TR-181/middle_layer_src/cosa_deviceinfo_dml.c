@@ -69,6 +69,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <syscfg/syscfg.h>
 #include "ansc_platform.h"
 #include "cosa_deviceinfo_dml.h"
@@ -15130,6 +15132,7 @@ DistributedTracing_SetParamStringValue
     )
 {
     FILE *fp = NULL;
+    int fd = -1;
 
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "URL") != 0)
@@ -15144,10 +15147,18 @@ DistributedTracing_SetParamStringValue
         return FALSE;
     }
 
-    fp = fopen(DISTRIBUTED_TRACING_URL_FILE, "w");
-    if (fp == NULL)
+    fd = open(DISTRIBUTED_TRACING_URL_FILE, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (fd < 0)
     {
         CcspTraceWarning(("%s: Failed to create %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        return FALSE;
+    }
+
+    fp = fdopen(fd, "w");
+    if (fp == NULL)
+    {
+        CcspTraceWarning(("%s: Failed to open stream for %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        close(fd);
         return FALSE;
     }
 
