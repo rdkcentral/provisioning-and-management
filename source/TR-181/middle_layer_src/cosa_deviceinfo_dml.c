@@ -142,6 +142,7 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 #define MEMINSIGHT_ENABLE_FILE_NVRAM "/nvram/.enable_meminsight"
 #define MEMINSIGHT_ENABLE_FILE_TMP "/tmp/.enable_meminsight"
 #define MEMINSIGHT_SERVICE "meminsight-runner.service"
+#define SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY "SystemdAnalyzeEnable"
 
 #define BOOTSTRAP_INFO_FILE_BACKUP "/nvram/bootstrap.json"
 #define CLEAR_TRACK_FILE "/nvram/ClearUnencryptedData_flags"
@@ -1777,6 +1778,52 @@ BOOL
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
+}
+
+BOOL xSystemdAnalyze_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    int ret = 0;
+
+    if (strcmp(ParamName, "Enable") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    ret = syscfg_set_commit(NULL, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, bValue ? "true" : "false");
+    if (ret != 0)
+    {
+        CcspTraceError(("%s: syscfg_set_commit failed for %s, ret=%d\n",
+                        __FUNCTION__, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, ret));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+BOOL xSystemdAnalyze_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    char value[8] = {'\0'};
+    int ret = 0;
+
+    if (strcmp(ParamName, "Enable") != 0)
+    {
+        CcspTraceError(("%s: Unknown parameter %s\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    ret = syscfg_get(NULL, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, value, sizeof(value));
+    if (ret != 0)
+    {
+        CcspTraceError(("%s: syscfg_get failed for %s, ret=%d\n",
+                        __FUNCTION__, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, ret));
+        return FALSE;
+    }
+
+    *pBool = (strcmp(value, "1") == 0) || (strcasecmp(value, "true") == 0);
+    return TRUE;
 }
 
 /**

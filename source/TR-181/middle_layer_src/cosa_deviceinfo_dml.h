@@ -2665,6 +2665,17 @@ BOOL DistributedTracing_SetParamUlongValue(ANSC_HANDLE hInsContext, char* ParamN
 
  APIs for Object:
 
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.systemd-analyze.Enable
+
+***********************************************************************/
+
+BOOL xSystemdAnalyze_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+BOOL xSystemdAnalyze_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool);
+
+/***********************************************************************
+
+ APIs for Object:
+
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Enable
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Trigger
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Args
