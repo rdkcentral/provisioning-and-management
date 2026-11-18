@@ -15073,7 +15073,7 @@ DistributedTracing_GetParamStringValue
 {
     errno_t rc = -1;
     FILE *fp = NULL;
-    char url[512] = { 0 };
+    char url[513] = { 0 };
 
     UNREFERENCED_PARAMETER(hInsContext);
     if (strcmp(ParamName, "URL") != 0)
