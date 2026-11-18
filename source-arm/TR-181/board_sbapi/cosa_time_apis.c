@@ -669,6 +669,13 @@ CosaDmlTimeSetCfg
                commonSyseventSet("ntpd-restart", "");
            }
 #else
+	       char chronyEnabled[8] = {0};
+           syscfg_get(NULL, "chrony_enabled", chronyEnabled, sizeof(chronyEnabled));
+           if (strcmp(chronyEnabled, "true") == 0)
+           {
+               CcspTraceWarning(("%s: chrony is the active NTP client - triggering event to restart chronyd \n", __FUNCTION__));
+               commonSyseventSet("chronyd-restart", "");
+           } else {
     pthread_t ntp_thread;
     int err = 0;
     err = pthread_create(&ntp_thread, NULL, startNTP, (void *)pTimeCfg);
@@ -679,6 +686,7 @@ CosaDmlTimeSetCfg
     }
     else
         pthread_detach(ntp_thread);
+	}
 
 #endif
 
