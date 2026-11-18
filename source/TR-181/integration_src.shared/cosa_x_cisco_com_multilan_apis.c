@@ -119,6 +119,10 @@ CosaDmlMlanInit
 
     if ( pContext )
     {
+        AnscTraceFlow(("[P&M-MEM] ALLOC: CosaDmMlanInit | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pContext,
+               sizeof(COSA_DATAMODEL_MULTILAN)));
         COSA_DATAMODEL_MULTILAN_Init(pContext);
 
         *phContext = (ANSC_HANDLE)pContext;
@@ -143,6 +147,10 @@ CosaDmlMlanUnload
 
     if ( pContext )
     {
+        AnscTraceFlow(("[P&M-MEM] FREE: CosaDmMlanUnload | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pContext,
+                       sizeof(COSA_DATAMODEL_MULTILAN)));
         COSA_DATAMODEL_MULTILAN_Clean(pContext);
     }
 
