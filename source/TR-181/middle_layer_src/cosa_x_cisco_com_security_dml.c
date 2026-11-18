@@ -2898,6 +2898,7 @@ AccessPolicy_GetParamStringValue
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_IA_POLICY2            pDmlIAPolicy = (PCOSA_DML_IA_POLICY2     )pCosaContext->hContext;
     ULONG                           i            = 0;
+    ULONG                           ulIpAddr     = 0;
     int                             pre_buf_size = 1023;
     errno_t                         rc           = -1;
     
@@ -2979,7 +2980,8 @@ AccessPolicy_GetParamStringValue
             */
             for ( i =0; (i< pDmlIAPolicy->LanHost.IpCount) && (i < COSA_DML_IA_LH_MAX_IP); i++ )
             {
-                AnscGetIpAddrString(&pDmlIAPolicy->LanHost.IpList[i].Ip.Value, pValue);
+                ulIpAddr = pDmlIAPolicy->LanHost.IpList[i].Ip.Value;
+                AnscGetIpAddrString(&ulIpAddr, pValue);
 
                 if ( i < (ULONG)pDmlIAPolicy->LanHost.IpCount - 1 )
                 {
@@ -3010,13 +3012,15 @@ AccessPolicy_GetParamStringValue
             */
             for ( i = 0; (i < pDmlIAPolicy->LanHost.IprCount) && (i < COSA_DML_IA_LH_MAX_IP_RANGE); i++ )
             {
-                AnscGetIpAddrString(&pDmlIAPolicy->LanHost.IprList[i].StartIp.Value, pValue);
+                ulIpAddr = pDmlIAPolicy->LanHost.IprList[i].StartIp.Value;
+                AnscGetIpAddrString(&ulIpAddr, pValue);
                 /*CID: 57476 - Calling risky function */
                 strncat(pValue, "-", (*pUlSize-strlen(pValue)-1));
 
                 pValue = pValue + AnscSizeOfString(pValue);
 
-                AnscGetIpAddrString(&pDmlIAPolicy->LanHost.IprList[i].EndIp.Value, pValue);
+                ulIpAddr = pDmlIAPolicy->LanHost.IprList[i].EndIp.Value;
+                AnscGetIpAddrString(&ulIpAddr, pValue);
 
                 if ( i < (ULONG)pDmlIAPolicy->LanHost.IprCount - 1 )
                 {
