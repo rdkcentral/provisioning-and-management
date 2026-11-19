@@ -73,6 +73,9 @@
 #include "safec_lib_common.h"
 #include "telemetry_busmessage_sender.h"
 
+#if defined(TP_ENABLED)
+#include "rdk_otlp_instrumentation.h"
+#endif
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 // With WAN boot time optimization, in few cases P&M initialization is further delayed
 // Since there is no evidence of P&M APIs being hung, increasing the timeout period to one more minute.
@@ -667,6 +670,9 @@ if(id != 0)
 #endif
 
    t2_init("CcspPandM");
+#if defined(TP_ENABLED)
+   rdk_otlp_init("CcspPandM", "1.0.0");
+#endif
    ret = cmd_dispatch('e');
    if(ret != 0)
    {
@@ -827,6 +833,10 @@ if(id != 0)
 
         g_bActive = FALSE;
     }
+
+#if defined(TP_ENABLED)
+    rdk_otlp_shutdown();
+#endif
 	
 
 

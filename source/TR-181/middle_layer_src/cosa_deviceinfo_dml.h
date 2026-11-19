@@ -2643,6 +2643,39 @@ BOOL RDKDownloadManager_SetParamIntValue(ANSC_HANDLE hInsContext, char* ParamNam
 
  APIs for Object:
 
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.URL
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Interval
+
+    *  DistributedTracing_GetParamBoolValue
+    *  DistributedTracing_SetParamBoolValue
+    *  DistributedTracing_GetParamStringValue
+    *  DistributedTracing_SetParamStringValue
+    *  DistributedTracing_GetParamUlongValue
+    *  DistributedTracing_SetParamUlongValue
+***********************************************************************/
+BOOL DistributedTracing_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool);
+BOOL DistributedTracing_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+ULONG DistributedTracing_GetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pValue, ULONG* pUlSize);
+BOOL DistributedTracing_SetParamStringValue(ANSC_HANDLE hInsContext, char* ParamName, char* pString);
+BOOL DistributedTracing_GetParamUlongValue(ANSC_HANDLE hInsContext, char* ParamName, ULONG* pUlong);
+BOOL DistributedTracing_SetParamUlongValue(ANSC_HANDLE hInsContext, char* ParamName, ULONG ulValue);
+
+/***********************************************************************
+
+ APIs for Object:
+
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.systemd-analyze.Enable
+
+***********************************************************************/
+
+BOOL xSystemdAnalyze_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue);
+BOOL xSystemdAnalyze_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool);
+
+/***********************************************************************
+
+ APIs for Object:
+
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Enable
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Trigger
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.meminsight.Args

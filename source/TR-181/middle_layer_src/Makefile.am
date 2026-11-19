@@ -110,6 +110,12 @@ libCcspPandM_middle_layer_src_la_SOURCES = \
     cosa_x_rdk_features_dml.c \
     cosa_x_rdk_features_internal.c
 
+if DNS_FAILOVER_SUPPORT
+libCcspPandM_middle_layer_src_la_SOURCES += \
+    cosa_x_rdk_dns_failover_dml.c \
+    cosa_x_rdk_dns_failover_apis.c
+endif
+
 if FEATURE_HOTSPOT_SUPPORT
 libCcspPandM_middle_layer_src_la_SOURCES += \
     cosa_GRE_dml.c \
@@ -148,6 +154,11 @@ libCcspPandM_middle_layer_src_la_SOURCES += \
 endif
 
 libCcspPandM_middle_layer_src_la_LDFLAGS = -lccsp_common -lmsgpackc -lwebconfig_framework -lhal_platform
+
+if TP_ENABLED
+libCcspPandM_middle_layer_src_la_CPPFLAGS += -DTP_ENABLED
+libCcspPandM_middle_layer_src_la_LDFLAGS += -lrdk_otlp
+endif
 
 if CORE_NET_LIB_FEATURE_SUPPORT
 libCcspPandM_middle_layer_src_la_LDFLAGS += -lnet

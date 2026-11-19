@@ -35,3 +35,8 @@ CcspPandMSsp_CPPFLAGS = -I$(top_srcdir)/source/TR-181/board_sbapi \
 
 CcspPandMSsp_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c dm_pack_datamodel.c
 CcspPandMSsp_LDFLAGS = -lccsp_common -ldl -rdynamic -lwebconfig_framework -ltelemetry_msgsender -lsecure_wrapper $(SYSTEMD_LDFLAGS) -lsyscfg -lpthread
+
+if TP_ENABLED
+CcspPandMSsp_CPPFLAGS += -DTP_ENABLED
+CcspPandMSsp_LDFLAGS += -lrdk_otlp
+endif
