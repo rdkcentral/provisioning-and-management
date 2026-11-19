@@ -81,6 +81,29 @@ typedef struct {
     char val[VAL_BLOCK_SIZE];
 } t_cache;
 
+#define NAT_KEY_BLOCK_SIZE 64
+
+typedef struct {
+    char cmd[NAT_KEY_BLOCK_SIZE];
+    char val[VAL_BLOCK_SIZE];
+    unsigned long rule_id; /* Nonzero only for range-table references. */
+} t_nat_cache_entry;
+
+typedef struct {
+    t_nat_cache_entry entries[PORTMAP_CACHE_SIZE];
+    int cache_size;
+    int mapping_count;
+    int range_count;
+} t_one_to_one_nat_cache;
+
+/**
+ * Refresh the separate NAT 1:1 cache after boot or persistent NAT changes.
+ * Includes disabled mappings with valid public IPs, internal ports 0-65535,
+ * and external ranges within 1-65535.
+ * Returns 0 on success; logs and returns SYSCFG_FAILURE on failure.
+ */
+int update_one_to_one_nat_cache(void);
+
 extern t_cache pf_cache[PORTMAP_CACHE_SIZE];
 extern t_cache pf_cache_bkup[PORTMAP_CACHE_SIZE];
 
@@ -159,6 +182,8 @@ int clear_pf_cache_DB(t_cache *tmp_pf_cache);
  * @brief Applies port forwarding cache entries to the persistent database.
  *
  * This function writes port forwarding configuration from cache to PSM database and activates rules.
+ * A nonempty NAT backup is restored after the PF write attempt, including PF
+ * write failure. Commit and firewall restart occur only if both writes succeed.
  *
  * @param[in] tmp_pf_cache Pointer to port forwarding cache to apply.
  * @param[in] cache_size Number of entries in the cache.
@@ -210,6 +235,7 @@ void init_pf_cache(t_cache *tmp_pf_cache);
  *
  * This function handles incoming port forwarding configuration from webconfig framework,
  * validates the data, and applies the configuration.
+ * A nonempty NAT 1:1 backup is restored after PF cache writes, before commit.
  *
  * @param[in] Data Pointer to webconfig request data.
  *
@@ -223,6 +249,9 @@ pErr Process_PF_WebConfigRequest(void *Data);
  *
  * This function restores port forwarding configuration from backup cache when
  * a configuration update fails.
+ * A nonempty NAT 1:1 backup is restored with its original aliases immediately
+ * after the PF write attempt, even if a PF write fails. The shared commit and
+ * firewall restart occur only if PF and NAT writes both succeed.
  *
  * @return status of operation
  * @retval 0 on success.

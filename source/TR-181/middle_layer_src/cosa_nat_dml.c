@@ -79,6 +79,7 @@
 #include "dml_tr181_custom_cfg.h"
 #include "safec_lib_common.h"
 #include "cosa_nat_apis.h"
+#include "cosa_webconfig_api.h"
 #include <trower-base64/base64.h>
 #include "cosa_x_comcast_com_parentalcontrol_apis.h"
 
@@ -584,6 +585,9 @@ NAT_Commit
     PCOSA_DML_NAT                   pNat          = &pMyObject->Nat;
 
     returnStatus = CosaDmlNatSet(NULL, pNat);
+
+    if (returnStatus == ANSC_STATUS_SUCCESS)
+        update_one_to_one_nat_cache();
 
     return returnStatus;
 }
@@ -1784,6 +1788,8 @@ PortMapping_DelEntry
     else
     {
         returnStatus = CosaDmlNatDelPortMapping(NULL, pNatPMapping->InstanceNumber);
+        if (returnStatus == ANSC_STATUS_SUCCESS)
+            update_one_to_one_nat_cache();
     }
 
     if ( returnStatus == ANSC_STATUS_SUCCESS )
@@ -2737,6 +2743,9 @@ PortMapping_Commit
         //CGWTDETS-8737 : Usable Statics will no longer support 1-1 NAT :: END
 #endif
     }
+
+    if (returnStatus == ANSC_STATUS_SUCCESS)
+        update_one_to_one_nat_cache();
 
     AnscZeroMemory( pNat->AliasOfPortMapping, sizeof(pNat->AliasOfPortMapping) );
 

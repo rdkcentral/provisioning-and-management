@@ -21,6 +21,9 @@
 #include "webconfig_framework.h"
 #include <trower-base64/base64.h>
 #include "safec_lib_common.h"
+#include <errno.h>
+#include <limits.h>
+#include <pthread.h>
 
 t_cache pf_cache[PORTMAP_CACHE_SIZE];
 t_cache pf_cache_bkup[PORTMAP_CACHE_SIZE];
@@ -32,6 +35,11 @@ static int pf_cache_size = 0;
 static int pf_cache_size_bkup = 0;
 
 static int gpfEnable = 0;
+static t_one_to_one_nat_cache one_to_one_nat_cache;
+static t_one_to_one_nat_cache one_to_one_nat_cache_bkup;
+static pthread_mutex_t one_to_one_nat_cache_lock = PTHREAD_MUTEX_INITIALIZER;
+static unsigned long one_to_one_nat_first_id = 0;
+static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat, unsigned long first_id);
 
 int  get_base64_decodedbuffer(char *pString, char **buffer, int *size)
 {
@@ -335,6 +343,11 @@ int apply_pf_cache_ToDB(t_cache *tmp_pf_cache, int cache_size,int pmapEnable)
                 if (syscfg_set("CosaNAT", "port_forward_enabled", (pmapEnable == 1) ? "1" : "0" ) != 0)
                 {
                     CcspTraceError(("syscfg_set failed to set %s::%s parameter\n", "CosaNAT", "port_forward_enabled"));
+                    if (one_to_one_nat_cache_bkup.cache_size > 0 &&
+                        restore_one_to_one_nat_to_DB(&one_to_one_nat_cache_bkup, 0) != 0)
+                    {
+                        CcspTraceError(("%s: NAT restore also failed after PF enable write failure\n", __FUNCTION__));
+                    }
                     return SYSCFG_FAILURE;
                 }    
         }
@@ -347,10 +360,19 @@ int apply_pf_cache_ToDB(t_cache *tmp_pf_cache, int cache_size,int pmapEnable)
         	if (syscfg_set(NULL, tmp_pf_cache[i].cmd, tmp_pf_cache[i].val) != 0)
         	{
                		CcspTraceError(("syscfg_set failed for %s %s\n",tmp_pf_cache[i].cmd,tmp_pf_cache[i].val));
+                    if (one_to_one_nat_cache_bkup.cache_size > 0 &&
+                        restore_one_to_one_nat_to_DB(&one_to_one_nat_cache_bkup, 0) != 0)
+                    {
+                        CcspTraceError(("%s: NAT restore also failed after PF cache write failure\n", __FUNCTION__));
+                    }
                		return SYSCFG_FAILURE;
               		// break;
         	}
     	}
+        if (one_to_one_nat_cache_bkup.cache_size > 0 &&
+            restore_one_to_one_nat_to_DB(&one_to_one_nat_cache_bkup, one_to_one_nat_first_id) != 0)
+            return SYSCFG_FAILURE;
+
     	if (syscfg_commit() != 0)
     	{
         	CcspTraceError(("syscfg_commit failed apply_cache_ToDB\n"));
@@ -450,6 +472,192 @@ void print_portmap_entry()
 }
 
 #endif
+
+static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat)
+{
+    static const char *suffixes[] = {
+        ALIAS_PFR_PUBLIC_IP, ALIAS_POS_INT_PORT, ALIAS_POS_EXT_PORT_RANGE,
+        ALIAS_POS_ENABLE, ALIAS_POS_NAME, ALIAS_POS_PROTO, ALIAS_POS_IP,
+        ALIAS_POS_IPV6, ALIAS_POS_PREV_STATE, ALIAS_PFR_INT_RANGE
+    };
+    char alias[VAL_BLOCK_SIZE] = {0}, key[NAT_KEY_BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE] = {0}, *end = NULL;
+    struct in_addr public_ip = {0};
+    long count = 0, internal_port = 0;
+    unsigned long rule_id = 0;
+    int index = 0, field = 0, start = 0, length = 0;
+
+    if (syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) != 0)
+        goto failure;
+    count = strtol(value, &end, 10);
+    if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
+        goto failure;
+    nat->range_count = (int)count;
+
+    for (index = 1; index <= count; index++)
+    {
+        snprintf(key, sizeof(key), ALIAS_PFR"%d", index);
+        if (syscfg_get(NULL, key, alias, sizeof(alias)) != 0 || alias[0] == '\0')
+            goto failure;
+        start = nat->cache_size;
+
+        for (field = 0; field < (int)(sizeof(suffixes) / sizeof(suffixes[0])); field++)
+        {
+            length = snprintf(key, sizeof(key), "%s%s", alias, suffixes[field]);
+            if (length < 0 || length >= (int)sizeof(key))
+                goto failure;
+            if (syscfg_get(NULL, key, value, sizeof(value)) != 0)
+            {
+                if (field < 3)
+                    goto failure;
+                CcspTraceWarning(("%s: optional NAT field %s is unavailable\n", __FUNCTION__, key));
+                continue;
+            }
+            if (field == 0)
+            {
+                if (inet_pton(AF_INET, value, &public_ip) != 1 ||
+                    public_ip.s_addr == INADDR_NONE)
+                    goto invalid_mapping;
+                if (public_ip.s_addr == INADDR_ANY)
+                    break;
+                if (nat->cache_size + 1 + (int)(sizeof(suffixes) / sizeof(suffixes[0])) > PORTMAP_CACHE_SIZE)
+                    goto failure;
+                snprintf(nat->entries[start].cmd, NAT_KEY_BLOCK_SIZE, ALIAS_PFR"%d", index);
+                snprintf(nat->entries[start].val, VAL_BLOCK_SIZE, "%s", alias);
+                nat->cache_size++;
+            }
+            else if (field == 1)
+            {
+                internal_port = strtol(value, &end, 10);
+                if (end == value || *end != '\0' || internal_port < 0 || internal_port > 65535)
+                    goto invalid_mapping;
+            }
+            else if (field == 2)
+            {
+                char *last = strchr(value, ' ');
+                if (last == NULL)
+                    goto invalid_mapping;
+                *last = '\0';
+                int port_ret = CheckIfPortsAreValid(value, last + 1);
+                *last = ' ';
+                if (port_ret != 0)
+                    goto invalid_mapping;
+            }
+            snprintf(nat->entries[nat->cache_size].cmd, NAT_KEY_BLOCK_SIZE, "%s", key);
+            snprintf(nat->entries[nat->cache_size++].val, VAL_BLOCK_SIZE, "%s", value);
+        }
+        if (field == 0)
+        {
+            nat->cache_size = start;
+            continue;
+        }
+        if (strncmp(alias, ALIAS_PRE_PFR, sizeof(ALIAS_PRE_PFR) - 1) != 0 ||
+            !isdigit((unsigned char)alias[sizeof(ALIAS_PRE_PFR) - 1]))
+            goto failure;
+        errno = 0;
+        rule_id = strtoul(alias + sizeof(ALIAS_PRE_PFR) - 1, &end, 10);
+        if (errno != 0 || end == alias + sizeof(ALIAS_PRE_PFR) - 1 ||
+            *end != '\0' || rule_id == 0)
+            goto failure;
+        nat->entries[start].rule_id = rule_id;
+        nat->mapping_count++;
+        continue;
+
+invalid_mapping:
+        CcspTraceWarning(("%s: ignoring NAT mapping %s with invalid public IP or ports\n", __FUNCTION__, alias));
+        nat->cache_size = start;
+    }
+    return 0;
+
+failure:
+    CcspTraceError(("%s: failed to read NAT 1:1 configuration\n", __FUNCTION__));
+    return SYSCFG_FAILURE;
+}
+
+int update_one_to_one_nat_cache(void)
+{
+    t_one_to_one_nat_cache *nat = calloc(1, sizeof(*nat));
+    int ret = SYSCFG_FAILURE;
+
+    if (nat != NULL)
+    {
+        pthread_mutex_lock(&one_to_one_nat_cache_lock);
+        ret = read_one_to_one_nat_cache(nat);
+        if (ret == 0)
+            one_to_one_nat_cache = *nat;
+        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
+        free(nat);
+    }
+    if (ret != 0)
+        CcspTraceError(("%s: failed to refresh NAT 1:1 cache\n", __FUNCTION__));
+    return ret;
+}
+
+/* first_id is zero for rollback; otherwise PF owns IDs below first_id. */
+static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat, unsigned long first_id)
+{
+    t_one_to_one_nat_cache *restored = calloc(1, sizeof(*restored));
+    char alias[VAL_BLOCK_SIZE] = {0}, value[VAL_BLOCK_SIZE], *end;
+    unsigned long last_id = first_id ? first_id - 1 : 0;
+    long count = nat->range_count;
+    int i, length, ret = SYSCFG_FAILURE;
+
+    if (restored == NULL)
+        goto exit;
+    if (first_id != 0)
+    {
+        if (syscfg_get(NULL, "PortRangeForwardCount", value, sizeof(value)) != 0)
+            goto exit;
+        count = strtol(value, &end, 10);
+        if (end == value || *end != '\0' || count < 0 || count > PORTMAP_CACHE_SIZE)
+            goto exit;
+    }
+    for (i = 0; i < nat->cache_size; i++)
+    {
+        restored->entries[i] = nat->entries[i];
+        if (nat->entries[i].rule_id != 0)
+        {
+            unsigned long id = nat->entries[i].rule_id;
+            snprintf(alias, sizeof(alias), "%s", nat->entries[i].val);
+            /* Keep references ordered for subsequent Utopia additions. */
+            if (first_id != 0 && id <= last_id)
+            {
+                if (last_id == ULONG_MAX)
+                    goto exit;
+                id = last_id + 1;
+                snprintf(alias, sizeof(alias), ALIAS_PRE_PFR"%lu", id);
+            }
+            last_id = id;
+            if (first_id != 0)
+                snprintf(restored->entries[i].cmd, NAT_KEY_BLOCK_SIZE, ALIAS_PFR"%ld", ++count);
+            snprintf(restored->entries[i].val, VAL_BLOCK_SIZE, "%s", alias);
+            restored->entries[i].rule_id = id;
+        }
+        else
+        {
+            const char *suffix = strstr(nat->entries[i].cmd, "::");
+            if (suffix == NULL || alias[0] == '\0')
+                goto exit;
+            length = snprintf(restored->entries[i].cmd, NAT_KEY_BLOCK_SIZE, "%s%s", alias, suffix);
+            if (length < 0 || length >= NAT_KEY_BLOCK_SIZE)
+                goto exit;
+        }
+        if (syscfg_set(NULL, restored->entries[i].cmd, restored->entries[i].val) != 0)
+            goto exit;
+    }
+    snprintf(value, sizeof(value), "%ld", count);
+    if (syscfg_set(NULL, "PortRangeForwardCount", value) != 0)
+        goto exit;
+    restored->cache_size = nat->cache_size;
+    restored->mapping_count = nat->mapping_count;
+    restored->range_count = (int)count;
+    one_to_one_nat_cache = *restored;
+    ret = 0;
+exit:
+    if (ret != 0)
+        CcspTraceError(("%s: failed to restore NAT 1:1 cache\n", __FUNCTION__));
+    free(restored);
+    return ret;
+}
 
 /* Read blob entries into a cache */
 int set_portmap_conf(portmappingdoc_t *rpm)
@@ -714,8 +922,10 @@ pErr Process_PF_WebConfigRequest(void *Data)
     	CcspTraceWarning(("Portmap configurartion recieved\n"));
 
 
+        pthread_mutex_lock(&one_to_one_nat_cache_lock);
     	backup_pf_cache(pf_cache,pf_cache_bkup,pf_cache_size);
     	pf_cache_size_bkup = pf_cache_size;
+        one_to_one_nat_cache_bkup = one_to_one_nat_cache;
     	
         if ( SYSCFG_FAILURE == clear_pf_cache_DB(pf_cache) )
         {
@@ -726,6 +936,7 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
                 strncpy(execRetVal->ErrorMsg,"sysconfig failure while clearing old entries",sizeof(execRetVal->ErrorMsg)-1);
 
+                pthread_mutex_unlock(&one_to_one_nat_cache_lock);
                 return execRetVal;
 
         }
@@ -768,15 +979,22 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
             }
 #endif
+            else
+            {
+                execRetVal->ErrorCode = SYSCFG_FAILURE;
+                strncpy(execRetVal->ErrorMsg, "Failed to build PF configuration", sizeof(execRetVal->ErrorMsg)-1);
+            }
 
             //portmappingdoc_destroy( rpm ); 
 
 
+            pthread_mutex_unlock(&one_to_one_nat_cache_lock);
             return execRetVal;
         }
         if ( rpm->entries_count > 0 )
                 lpfEnable = 1 ;
         
+        one_to_one_nat_first_id = rpm->entries_count + 1;
     	if ( SYSCFG_FAILURE == apply_pf_cache_ToDB(pf_cache,pf_cache_size, lpfEnable ) )
     	{
             	CcspTraceError(("Failed to apply Portmap configurartion\n"));
@@ -786,6 +1004,7 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
             	strncpy(execRetVal->ErrorMsg,"sysconfig failure while applying",sizeof(execRetVal->ErrorMsg)-1);
 
+                pthread_mutex_unlock(&one_to_one_nat_cache_lock);
             	return execRetVal;
 
     	}	
@@ -805,6 +1024,7 @@ pErr Process_PF_WebConfigRequest(void *Data)
 
       //  portmappingdoc_destroy( rpm );  
 
+        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
     	return execRetVal;
 
 }
@@ -816,11 +1036,15 @@ int rollback_PortForwarding()
     CcspTraceInfo((" Entering %s \n",__FUNCTION__));
 
     int ret = 0;
+    pthread_mutex_lock(&one_to_one_nat_cache_lock);
+    one_to_one_nat_first_id = 0;
     ret = apply_pf_cache_ToDB(pf_cache_bkup,pf_cache_size_bkup,  gpfEnable ) ;
 
     backup_pf_cache(pf_cache_bkup,pf_cache,pf_cache_size_bkup);
 
     pf_cache_size = pf_cache_size_bkup;
+
+    pthread_mutex_unlock(&one_to_one_nat_cache_lock);
 
     return ret ;
 }
