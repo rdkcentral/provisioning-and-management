@@ -59,6 +59,10 @@ BOOL DNSFailover_SetUlongByName(DNS_FAILOVER_CONFIG* config, const char* name, U
 BOOL DNSFailover_GetUlongByName(const DNS_FAILOVER_CONFIG* config, const char* name, ULONG* value);
 
 void DNSFailover_ReadStatusFile(DNS_FAILOVER_STATUS* status);
+/* Disabling requests a stop for both the manager and Unbound.
+ * TRUE means the asynchronous request was accepted or startup was excluded,
+ * not that the service reached the requested state. Safe to retry. */
+BOOL DNSFailover_SetManagerEnabled(BOOL enable);
 void DNSFailover_NotifyManager(void);
 void DNSFailover_ReportRejected(const char* reason);
 
