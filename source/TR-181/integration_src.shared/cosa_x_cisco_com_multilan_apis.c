@@ -207,6 +207,8 @@ CosaDmlMlanGetPrimaryLanIpIf
 
             if ( pContext->pPrimaryLanIpIf )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pPrimaryLanIpIf, ulStrSize, "%s%d", DM_TR181_NAME_IP_IF, (int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -221,6 +223,8 @@ CosaDmlMlanGetPrimaryLanIpIf
 
             if ( pContext->pPrimaryLanIpIf )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pPrimaryLanIpIf, ulStrSize, "%s%s", DM_TR181_NAME_IP_IF, SlapValue.Variant.varString);
                 if(rc < EOK)
                 {
@@ -285,6 +289,8 @@ CosaDmlMlanGetHomeSecurityIpIf
 
             if ( pContext->pHomeSecurityIpIf )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityIpIf, ulStrSize, "%s%d", DM_TR181_NAME_IP_IF, (int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -299,6 +305,8 @@ CosaDmlMlanGetHomeSecurityIpIf
 
             if ( pContext->pHomeSecurityIpIf )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityIpIf, ulStrSize, "%s%s", DM_TR181_NAME_IP_IF, SlapValue.Variant.varString);
                 if(rc < EOK)
                 {
@@ -362,6 +370,8 @@ CosaDmlMlanGetPrimaryLanBridge
 
             if ( pContext->pPrimaryLanBridge )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pPrimaryLanBridge, ulStrSize, "%s%d", DM_TR181_NAME_BRIDGE,(int) SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -376,6 +386,8 @@ CosaDmlMlanGetPrimaryLanBridge
 
             if ( pContext->pPrimaryLanBridge )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pPrimaryLanBridge, ulStrSize, "%s%s", DM_TR181_NAME_BRIDGE, SlapValue.Variant.varString);
                 if(rc < EOK)
                 {
@@ -439,6 +451,8 @@ CosaDmlMlanGetPrimaryLanBridgeHsPorts
 
             if ( pContext->pPrimaryLanBridgeHsPorts )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = strcpy_s(pContext->pPrimaryLanBridgeHsPorts, ulStrSize, SlapValue.Variant.varString);
                 ERR_CHK(rc);
             }
@@ -500,6 +514,8 @@ CosaDmlMlanGetPrimaryLanDhcpv4ServerPool
 
             if ( pContext->pPrimaryLanDhcpv4ServerPool )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pPrimaryLanDhcpv4ServerPool, ulStrSize, "%s%d", DM_TR181_NAME_DHCPv4ServerPool, (int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -564,6 +580,8 @@ CosaDmlMlanGetHomeSecurityBridge
 
             if ( pContext->pHomeSecurityBridge )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityBridge, ulStrSize, "%s%d", DM_TR181_NAME_BRIDGE, (int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -578,6 +596,8 @@ CosaDmlMlanGetHomeSecurityBridge
 
             if ( pContext->pHomeSecurityBridge )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityBridge, ulStrSize, "%s%s", DM_TR181_NAME_BRIDGE, SlapValue.Variant.varString);
                 if(rc < EOK)
                 {
@@ -641,6 +661,8 @@ CosaDmlMlanGetHomeSecurityBridgePorts
 
             if ( pContext->pHomeSecurityBridgePorts )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = strcpy_s(pContext->pHomeSecurityBridgePorts, ulStrSize, SlapValue.Variant.varString);
                 ERR_CHK(rc);
             }
@@ -701,6 +723,8 @@ CosaDmlMlanGetHomeSecurityDhcpv4ServerPool
 
             if ( pContext->pHomeSecurityDHCPv4ServerPool )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",
+               __FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityDHCPv4ServerPool, ulStrSize, "%s%d", DM_TR181_NAME_DHCPv4ServerPool, (int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -715,6 +739,7 @@ CosaDmlMlanGetHomeSecurityDhcpv4ServerPool
 
             if ( pContext->pHomeSecurityDHCPv4ServerPool )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",__FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityDHCPv4ServerPool, ulStrSize, "%s%s", DM_TR181_NAME_DHCPv4ServerPool, SlapValue.Variant.varString);
                 if(rc < EOK)
                 {
@@ -779,6 +804,7 @@ CosaDmlMlanGetHomeSecurityWiFiRadio
 
             if ( pContext->pHomeSecurityWiFiRadio )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",__FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityWiFiRadio, ulStrSize, "%s%d", DM_TR181_NAME_WiFi_Radio,(int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -843,6 +869,7 @@ CosaDmlMlanGetHomeSecurityWiFiSsid
 
             if ( pContext->pHomeSecurityWiFiSsid )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",__FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityWiFiSsid, ulStrSize, "%s%d", DM_TR181_NAME_WiFi_SSID, (int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
@@ -907,6 +934,7 @@ CosaDmlMlanGetHomeSecurityWiFiAp
 
             if ( pContext->pHomeSecurityWiFiAp )
             {
+                AnscTraceFlow(("ALLOC: func=%s size=%zu ptr=%p\n",__FUNCTION__, size, ptr));
                 rc = sprintf_s(pContext->pHomeSecurityWiFiAp, ulStrSize,  "%s%d", DM_TR181_NAME_WiFi_AP, (int)SlapValue.Variant.varUint32);
                 if(rc < EOK)
                 {
