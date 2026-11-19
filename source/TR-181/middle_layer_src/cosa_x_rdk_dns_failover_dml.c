@@ -203,13 +203,9 @@ DNSFailover_Commit(ANSC_HANDLE hInsContext)
     if (!DNSFailover_SetManagerEnabled(active->Enable != 0))
     {
         CcspTraceError(("DNS failover configuration saved, but manager service request failed\n"));
-        return 1;
     }
 
-    if (active->Enable && previousEnable)
-    {
-        DNSFailover_NotifyManager();
-    }
+    DNSFailover_NotifyManager();
 
     CcspTraceInfo(("DNS failover config committed to NVRAM: Enable=%lu, ResolverSource=%s, ReplyDeadline=%lu, FailureEpisodeGap=%lu, FailureThreshold=%lu, MonitorTick=%lu, VerifyTimeout=%lu, VerifyAttempts=%lu, VerifyCooldown=%lu, RecoveryInitial=%lu, RecoveryMax=%lu, RecoverySuccessThreshold=%lu, ResolverReload=%lu\n",
         active->Enable, active->ResolverSource, active->ReplyDeadline, active->FailureEpisodeGap,
