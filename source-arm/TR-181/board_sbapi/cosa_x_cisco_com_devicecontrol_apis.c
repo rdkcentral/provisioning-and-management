@@ -82,6 +82,7 @@
 #endif
 #include "secure_wrapper.h"
 #include "cosa_drg_common.h"
+#include "cosa_common_util.h"
 #include "ccsp_psm_helper.h"
 #include "safec_lib_common.h"
 
@@ -4770,6 +4771,7 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
 		setLanMgmtUpnp(&utctx, pLanMngm->LanUpnp);
         Utopia_Free(&utctx, 1);
         pLanMngm->LanNetwork.Value = _CALC_NETWORK(pLanMngm->LanIPAddress.Value, pLanMngm->LanSubnetMask.Value);
+
         char l_cSecWebUI_Enabled[8] = {0};
         syscfg_get(NULL, "SecureWebUI_Enable", l_cSecWebUI_Enabled, sizeof(l_cSecWebUI_Enabled));
         if (!strncmp(l_cSecWebUI_Enabled, "true", 4)) { 
@@ -4779,7 +4781,20 @@ CosaDmlLanMngm_SetConf(ULONG ins, PCOSA_DML_LAN_MANAGEMENT pLanMngm)
                  pthread_t tid;
                  pthread_create( &tid, NULL, &WebGuiRestart, NULL);
              }
-         }    
+         }
+        else
+        {
+            if (orgLanMngm.LanIPAddress.Value != pLanMngm->LanIPAddress.Value &&
+            pLanMngm->LanIPAddress.Value != 0)
+            {
+                CcspTraceInfo(("%s -- LAN management IP address changed, requesting WebUI restart\n", __FUNCTION__));
+                pthread_t thread_id;
+                if (pthread_create(&thread_id, NULL, WebGuiRestart, NULL) != 0)
+                {
+                    CcspTraceError(("%s -- Failed to create WebUI restart thread\n", __FUNCTION__));
+                }
+            }
+        }
         
 
 #ifdef _HUB4_PRODUCT_REQ_
