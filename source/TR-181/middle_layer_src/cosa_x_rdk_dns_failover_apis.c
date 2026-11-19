@@ -11,7 +11,12 @@
 #include <unistd.h>
 
 #include "safec_lib_common.h"
+#include "secure_wrapper.h"
 #include <telemetry_busmessage_sender.h>
+
+#ifdef RDKB_EXTENDER_ENABLED
+#include <syscfg/syscfg.h>
+#endif
 
 static const DNS_FAILOVER_CONFIG g_dnsFailoverDefaults =
 {
@@ -479,6 +484,49 @@ DNSFailover_WriteConfig(const DNS_FAILOVER_CONFIG* config)
         config->VerifyAttempts, config->VerifyCooldown, config->RecoveryInitial, config->RecoveryMax,
         config->RecoverySuccessThreshold, config->ResolverReload));
 
+    return TRUE;
+}
+
+BOOL
+DNSFailover_SetManagerEnabled(BOOL enable)
+{
+    int rc;
+
+#ifdef RDKB_EXTENDER_ENABLED
+    if (enable)
+    {
+        char mode[8] = {0};
+
+        if (syscfg_get(NULL, "Device_Mode", mode, sizeof(mode)) != 0 ||
+            (strcmp(mode, "0") != 0 && strcmp(mode, "1") != 0))
+        {
+            CcspTraceError(("DNS failover manager start not requested: cannot determine Device_Mode\n"));
+            return FALSE;
+        }
+
+        if (strcmp(mode, "1") == 0)
+        {
+            CcspTraceInfo(("DNS failover manager start skipped in extender mode\n"));
+            return TRUE;
+        }
+    }
+#endif
+
+    /* Startup calls dmcli back into PAM; do not wait for the service job. */
+    if (enable)
+        rc = v_secure_system("systemctl --no-block start dns-failover-manager.service");
+    else
+        rc = v_secure_system("systemctl --no-block stop dns-failover-manager.service");
+
+    if (rc != 0)
+    {
+        CcspTraceError(("DNS failover manager %s request failed: rc=%d\n",
+            enable ? "start" : "stop", rc));
+        return FALSE;
+    }
+
+    CcspTraceInfo(("DNS failover manager %s requested; service completion is asynchronous\n",
+        enable ? "start" : "stop"));
     return TRUE;
 }
 
