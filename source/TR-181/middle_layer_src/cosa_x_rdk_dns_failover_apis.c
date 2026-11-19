@@ -516,17 +516,17 @@ DNSFailover_SetManagerEnabled(BOOL enable)
     if (enable)
         rc = v_secure_system("systemctl --no-block start dns-failover-manager.service");
     else
-        rc = v_secure_system("systemctl --no-block stop dns-failover-manager.service");
+        rc = v_secure_system("systemctl --no-block stop dns-failover-manager.service unbound.service");
 
     if (rc != 0)
     {
-        CcspTraceError(("DNS failover manager %s request failed: rc=%d\n",
-            enable ? "start" : "stop", rc));
+        CcspTraceError(("DNS failover service request failed (%s): rc=%d\n",
+            enable ? "start manager" : "stop manager and Unbound", rc));
         return FALSE;
     }
 
-    CcspTraceInfo(("DNS failover manager %s requested; service completion is asynchronous\n",
-        enable ? "start" : "stop"));
+    CcspTraceInfo(("DNS failover service request accepted (%s); service completion is asynchronous\n",
+        enable ? "start manager" : "stop manager and Unbound"));
     return TRUE;
 }
 
