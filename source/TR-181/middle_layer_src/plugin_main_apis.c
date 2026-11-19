@@ -243,6 +243,10 @@ CosaBackEndManagerCreate
     {
         return  (ANSC_HANDLE)NULL;
     }
+    AnscTraceFlow(("[P&M-MEM] ALLOC: CosaBackEndManagerCreate | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pMyObject,
+               sizeof(COSA_BACKEND_MANAGER_OBJECT)));
 
     /*
      * Initialize the common variables and functions for a container object.
@@ -777,7 +781,10 @@ CosaBackEndManagerRemove
 
     /* Remove self */
     AnscFreeMemory((ANSC_HANDLE)pMyObject);
-
+    AnscTraceFlow(("[P&M-MEM] FREE: CosaBackEndManagerRemove | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pMyObject,
+                       sizeof(COSA_BACKEND_MANAGER_OBJECT)));
     return returnStatus;
 }
 

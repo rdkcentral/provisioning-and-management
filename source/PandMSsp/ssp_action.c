@@ -114,7 +114,10 @@ ssp_create_pnm
     {
         return ANSC_STATUS_RESOURCES;
     }
-
+    AnscTraceFlow(("[P&M-MEM] ALLOC: ssp_create_pnm | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               g_pComponent_Common_Dm,
+               sizeof(COMPONENT_COMMON_DM)));
     ComponentCommonDmInit(g_pComponent_Common_Dm);
 
     g_pComponent_Common_Dm->Name     = AnscCloneString(pStartCfg->ComponentName);
@@ -132,6 +135,10 @@ ssp_create_pnm
         }
         else
         {
+	    AnscTraceFlow(("[P&M-MEM] ALLOC: ssp_create_pnm | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pPnmCcdIf,
+               sizeof(CCSP_CCD_INTERFACE)));
             rc = strcpy_s(pPnmCcdIf->Name, sizeof(pPnmCcdIf->Name), CCSP_CCD_INTERFACE_NAME);
             ERR_CHK(rc);
 
@@ -162,7 +169,10 @@ ssp_create_pnm
     {
         return ANSC_STATUS_RESOURCES;
     }
-
+    AnscTraceFlow(("[P&M-MEM] ALLOC: ssp_create_pnm | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pPnmFcContext,
+               sizeof(CCSP_FC_CONTEXT)));
     pDslhCpeController = DslhCreateCpeController(NULL, NULL, NULL);
 
     if ( !pDslhCpeController )
@@ -273,7 +283,10 @@ ssp_cancel_pnm
     pDslhCpeController->Cancel((ANSC_HANDLE)pDslhCpeController);
     AnscFreeMemory(pDslhCpeController);
     pDslhCpeController = NULL;
-
+    AnscTraceFlow(("[P&M-MEM] FREE: ssp_cancel_pnm | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pDslhCpeController,
+                       sizeof(DSLH_CPE_CONTROLLER_OBJECT)));
     return ANSC_STATUS_SUCCESS;
 }
 
