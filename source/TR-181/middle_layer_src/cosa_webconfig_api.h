@@ -47,10 +47,12 @@
 
 #define BLOCK_SIZE 32
 #define VAL_BLOCK_SIZE 129 // for ipv6 address 128 + 1 size is needed
+#define NAT_KEY_BLOCK_SIZE 64
 
 #define SinglePortForwardCount
 #define ALIAS_PRE_SPF "spf_"
 #define ALIAS_PRE_PFR "pfr_"
+#define ALIAS_PRE_PFR_LEN (sizeof(ALIAS_PRE_PFR) - 1)
 #define ALIAS_POS_PROTO "::protocol"
 #define ALIAS_POS_NAME "::name"
 #define ALIAS_POS_EXT_PORT "::external_port"
@@ -59,6 +61,7 @@
 #define ALIAS_SPF "SinglePortForward_"
 
 #define ALIAS_PFR "PortRangeForward_"
+#define ALIAS_PFR_LEN (sizeof(ALIAS_PFR) - 1)
 #define ALIAS_PFR_INT_RANGE "::internal_port_range_size"
 #define ALIAS_PFR_PUBLIC_IP "::public_ip"
 #define ALIAS_POS_EXT_PORT_RANGE "::external_port_range"
@@ -77,9 +80,23 @@
 #endif
 
 typedef struct {
-    char cmd[BLOCK_SIZE];
+    char cmd[NAT_KEY_BLOCK_SIZE];
     char val[VAL_BLOCK_SIZE];
 } t_cache;
+
+typedef struct {
+    t_cache entries[PORTMAP_CACHE_SIZE];
+    int cache_size;
+    int mapping_count;
+} t_one_to_one_nat_cache;
+
+/**
+ * Refreshes the 1:1 NAT cache from syscfg, including disabled mappings.
+ * Called at boot time and after persistent port-mapping or global NAT changes.
+ * Serializes the syscfg read and cache publication with WebConfig apply/rollback.
+ * Returns 0 on success; logs and returns SYSCFG_FAILURE on failure.
+ */
+int update_one_to_one_nat_cache(void);
 
 extern t_cache pf_cache[PORTMAP_CACHE_SIZE];
 extern t_cache pf_cache_bkup[PORTMAP_CACHE_SIZE];
@@ -158,7 +175,7 @@ int clear_pf_cache_DB(t_cache *tmp_pf_cache);
 /**
  * @brief Applies port forwarding cache entries to the persistent database.
  *
- * This function writes port forwarding configuration from cache to PSM database and activates rules.
+ * This function writes port forwarding configuration and restores saved 1:1 NAT fields from cache to PSM database and activates rules.
  *
  * @param[in] tmp_pf_cache Pointer to port forwarding cache to apply.
  * @param[in] cache_size Number of entries in the cache.
@@ -221,7 +238,7 @@ pErr Process_PF_WebConfigRequest(void *Data);
 /**
  * @brief Rolls back port forwarding configuration to previous state.
  *
- * This function restores port forwarding configuration from backup cache when
+ * This function restores port forwarding configuration and 1:1 NAT cache from backup cache when
  * a configuration update fails.
  *
  * @return status of operation
