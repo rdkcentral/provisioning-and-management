@@ -1430,6 +1430,95 @@ SWDLDirect_SetParamBoolValue
 
  APIs for Object:
 
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.RDKLogSuppressor
+
+    *  RDKLogSuppressor_GetParamBoolValue
+    *  RDKLogSuppressor_SetParamBoolValue
+    *  RDKLogSuppressor_GetParamUlongValue
+    *  RDKLogSuppressor_SetParamUlongValue
+
+***********************************************************************/
+
+/**
+ * @brief Get boolean parameter value from RDKLogSuppressor object.
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name (e.g. "Enable").
+ * @param[out] pBool      - Pointer to store the boolean value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ */
+BOOL
+RDKLogSuppressor_GetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL*                       pBool
+);
+
+/**
+ * @brief Set boolean parameter value for RDKLogSuppressor object.
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name (e.g. "Enable").
+ * @param[in] bValue      - The boolean value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ */
+BOOL
+RDKLogSuppressor_SetParamBoolValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    BOOL                        bValue
+);
+
+/**
+ * @brief Get unsigned long parameter value from RDKLogSuppressor object.
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name (e.g. "MaxPatternLength").
+ * @param[out] puLong     - Pointer to store the unsigned long value.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is found and retrieved successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ */
+BOOL
+RDKLogSuppressor_GetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG*                      puLong
+);
+
+/**
+ * @brief Set unsigned long parameter value for RDKLogSuppressor object.
+ *
+ * @param[in] hInsContext - The instance handle.
+ * @param[in] ParamName   - Pointer to the parameter name (e.g. "MaxPatternLength").
+ * @param[in] uValue      - The unsigned long value to set.
+ *
+ * @return The status of the operation.
+ * @retval TRUE if the parameter is set successfully.
+ * @retval FALSE if the parameter is not found or operation fails.
+ */
+BOOL
+RDKLogSuppressor_SetParamUlongValue
+(
+    ANSC_HANDLE                 hInsContext,
+    char*                       ParamName,
+    ULONG                       uValue
+);
+
+/***********************************************************************
+
+ APIs for Object:
+
 	Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.CognitiveMotionDetection.Enable
 
     *  CognitiveMotionDetection_GetParamBoolValue

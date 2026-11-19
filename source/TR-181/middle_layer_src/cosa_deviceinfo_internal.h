@@ -157,6 +157,9 @@ CosaDeviceInfoCreate
  * @retval ANSC_STATUS_SUCCESS on success
  * @retval error code otherwise
  */
+/* Creates /opt/secure/data/rdklogsuppressor.conf with defaults if missing */
+void CosaDmlRDKLogSuppressorInit(void);
+
 ANSC_STATUS
 CosaDeviceInfoInitialize
     (

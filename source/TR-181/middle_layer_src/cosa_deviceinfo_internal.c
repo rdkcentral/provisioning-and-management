@@ -187,6 +187,7 @@ CosaDeviceInfoInitialize
     CosaDmlDiGetEnableMoCAforXi5Flag( pMyObject , &pMyObject->bEnableMoCAforXi5 );
 #endif
     CosaDmlDiInit(NULL, NULL);
+    CosaDmlRDKLogSuppressorInit();
 #ifdef _CPU_FREQ_SUPPORT_
     CpuFreq_Rbus_Init();
     CpuFreq_RestoreFromSyscfg();

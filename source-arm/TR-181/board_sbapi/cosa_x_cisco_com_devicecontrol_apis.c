@@ -1952,6 +1952,7 @@ void* restoreAllDBs(void* arg)
     v_secure_system("rm -f /nvram/partners_defaults.json");
     v_secure_system("rm -f /nvram/bootstrap.json");
     v_secure_system("rm -f /opt/secure/bootstrap.json");
+    v_secure_system("rm -f /opt/secure/data/rdklogsuppressor.conf");
     v_secure_system( "touch /nvram/.apply_partner_defaults" );
 
     //Need to remove the custom maintenance window

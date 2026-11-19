@@ -67,6 +67,7 @@
 **************************************************************************/
 
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -14522,6 +14523,303 @@ SWDLDirect_SetParamBoolValue
         {
                 AnscTraceWarning(("syscfg_commit failed for SWDLDirectEnable param update\n"));
                 return FALSE;
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/*
+ * RDKLogSuppressor: rdk-logger cannot poll RFC at rdk_logger_init() (the RFC
+ * component itself uses rdk-logger before registering), so PAM persists the
+ * resolved values to a key=value file that rdk-logger reads once at startup.
+ * The file is removed on factory reset; changes apply after reboot.
+ */
+#define RDK_LOG_SUPPRESSOR_CONF                "/opt/secure/data/rdklogsuppressor.conf"
+#define RDK_LOG_SUPPRESSOR_CONF_TMP            RDK_LOG_SUPPRESSOR_CONF ".tmp"
+#define RDK_LOG_SUPPRESSOR_DEFAULT_ENABLE      TRUE
+#define RDK_LOG_SUPPRESSOR_DEFAULT_MAX_PATTERN 10
+#define RDK_LOG_SUPPRESSOR_MAX_PATTERN_LIMIT   20
+
+static char *RDKLogSuppressor_Trim(char *str)
+{
+    char *end;
+    while (*str == ' ' || *str == '\t')
+        str++;
+    end = str + strlen(str);
+    while (end > str && (end[-1] == ' ' || end[-1] == '\t' || end[-1] == '\n' || end[-1] == '\r'))
+        *--end = '\0';
+    return str;
+}
+
+/* Missing file, missing keys or invalid values resolve to defaults. */
+static void RDKLogSuppressor_ReadConf(BOOL *pEnable, ULONG *pMaxLen)
+{
+    BOOL  enable = RDK_LOG_SUPPRESSOR_DEFAULT_ENABLE;
+    ULONG maxLen = RDK_LOG_SUPPRESSOR_DEFAULT_MAX_PATTERN;
+    char  line[128];
+    FILE *fp = fopen(RDK_LOG_SUPPRESSOR_CONF, "r");
+
+    if (fp)
+    {
+        while (fgets(line, sizeof(line), fp) != NULL)
+        {
+            char *eq = strchr(line, '=');
+            char *key, *val;
+            if (line[0] == '#' || !eq)
+                continue;
+            *eq = '\0';
+            key = RDKLogSuppressor_Trim(line);
+            val = RDKLogSuppressor_Trim(eq + 1);
+
+            if (strcmp(key, "Enable") == 0)
+            {
+                if (strcasecmp(val, "true") == 0 || strcmp(val, "1") == 0)
+                    enable = TRUE;
+                else if (strcasecmp(val, "false") == 0 || strcmp(val, "0") == 0)
+                    enable = FALSE;
+            }
+            else if (strcmp(key, "MaxPatternLength") == 0)
+            {
+                char *endp = NULL;
+                unsigned long v = strtoul(val, &endp, 10);
+                if (endp != val && *endp == '\0' &&
+                    v >= 1 && v <= RDK_LOG_SUPPRESSOR_MAX_PATTERN_LIMIT)
+                    maxLen = (ULONG)v;
+            }
+        }
+        fclose(fp);
+    }
+
+    if (pEnable)
+        *pEnable = enable;
+    if (pMaxLen)
+        *pMaxLen = maxLen;
+}
+
+/* Write via temp file + rename so readers never observe a partial file. */
+static BOOL RDKLogSuppressor_WriteConf(BOOL enable, ULONG maxLen)
+{
+    FILE *fp = fopen(RDK_LOG_SUPPRESSOR_CONF_TMP, "w");
+    if (!fp)
+    {
+        CcspTraceError(("%s failed to open %s for write\n", __FUNCTION__, RDK_LOG_SUPPRESSOR_CONF_TMP));
+        return FALSE;
+    }
+    fprintf(fp, "Enable=%s\n", enable ? "true" : "false");
+    fprintf(fp, "MaxPatternLength=%lu\n", (unsigned long)maxLen);
+    if (fflush(fp) != 0 || fsync(fileno(fp)) != 0)
+    {
+        CcspTraceError(("%s failed to flush %s\n", __FUNCTION__, RDK_LOG_SUPPRESSOR_CONF_TMP));
+        fclose(fp);
+        unlink(RDK_LOG_SUPPRESSOR_CONF_TMP);
+        return FALSE;
+    }
+    fclose(fp);
+    if (rename(RDK_LOG_SUPPRESSOR_CONF_TMP, RDK_LOG_SUPPRESSOR_CONF) != 0)
+    {
+        CcspTraceError(("%s failed to rename %s to %s\n", __FUNCTION__,
+                        RDK_LOG_SUPPRESSOR_CONF_TMP, RDK_LOG_SUPPRESSOR_CONF));
+        unlink(RDK_LOG_SUPPRESSOR_CONF_TMP);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+void CosaDmlRDKLogSuppressorInit(void)
+{
+    BOOL  enable;
+    ULONG maxLen;
+
+    if (access(RDK_LOG_SUPPRESSOR_CONF, F_OK) == 0)
+        return;
+
+    RDKLogSuppressor_ReadConf(&enable, &maxLen);
+    if (RDKLogSuppressor_WriteConf(enable, maxLen))
+    {
+        CcspTraceInfo(("RDKLogSuppressor: created %s with defaults (Enable=%s, MaxPatternLength=%lu)\n",
+                       RDK_LOG_SUPPRESSOR_CONF, enable ? "true" : "false", (unsigned long)maxLen));
+    }
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RDKLogSuppressor_GetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL*                       pBool
+            );
+
+    description:
+
+        This function is called to retrieve Boolean parameter value;
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL*                       pBool
+                The buffer of returned boolean value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_GetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL*                       pBool
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        RDKLogSuppressor_ReadConf(pBool, NULL);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RDKLogSuppressor_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value;
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Enable") == 0)
+    {
+        BOOL  curEnable;
+        ULONG curMax;
+
+        RDKLogSuppressor_ReadConf(&curEnable, &curMax);
+        /* Always (re)write so the file exists after RFC provisioning */
+        if (!RDKLogSuppressor_WriteConf(bValue, curMax))
+            return FALSE;
+        if (curEnable != bValue)
+        {
+            CcspTraceInfo(("RDKLogSuppressor RFC Enable updated to %s. Reboot required to apply.\n",
+                           bValue ? "true" : "false"));
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RDKLogSuppressor_GetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG*                      puLong
+            );
+
+    description:
+
+        This function is called to retrieve ULONG parameter value;
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      puLong
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "MaxPatternLength") == 0)
+    {
+        RDKLogSuppressor_ReadConf(NULL, puLong);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**********************************************************************
+
+    caller:     owner of this object
+
+    prototype:
+
+        BOOL
+        RDKLogSuppressor_SetParamUlongValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                ULONG                       uValue
+            );
+
+    description:
+
+        This function is called to set ULONG parameter value;
+
+**********************************************************************/
+BOOL
+RDKLogSuppressor_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "MaxPatternLength") == 0)
+    {
+        BOOL  curEnable;
+        ULONG curMax;
+
+        if (uValue < 1 || uValue > RDK_LOG_SUPPRESSOR_MAX_PATTERN_LIMIT)
+        {
+            CcspTraceWarning(("%s MaxPatternLength value %lu is out of range [1-%d], rejecting\n",
+                              __FUNCTION__, (unsigned long)uValue, RDK_LOG_SUPPRESSOR_MAX_PATTERN_LIMIT));
+            return FALSE;
+        }
+
+        RDKLogSuppressor_ReadConf(&curEnable, &curMax);
+        /* Always (re)write so the file exists after RFC provisioning */
+        if (!RDKLogSuppressor_WriteConf(curEnable, uValue))
+            return FALSE;
+        if (curMax != uValue)
+        {
+            CcspTraceInfo(("RDKLogSuppressor RFC MaxPatternLength updated to %lu. Reboot required to apply.\n",
+                           (unsigned long)uValue));
         }
         return TRUE;
     }
