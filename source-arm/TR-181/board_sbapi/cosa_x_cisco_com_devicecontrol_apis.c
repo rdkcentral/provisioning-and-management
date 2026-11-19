@@ -2323,7 +2323,7 @@ CosaDmlDcSetFactoryReset
     UNREFERENCED_PARAMETER(hContext);
 	char* tok;
 	char* sv;
-    char value[50];
+    char value[256];
 	int factory_reset_mask = 0;
 	UtopiaContext utctx = {0};
 	static pthread_t wifiThread;
@@ -2337,6 +2337,7 @@ CosaDmlDcSetFactoryReset
 	else {
 		/* CID 163040 fix  */
 		strncpy(value, pValue, (sizeof(value)-1));
+		value[sizeof(value)-1] = '\0';
 		tok = strtok_r(value, ",", &sv);
 		while (tok) {
 			if (strcmp("Router", tok) == 0) {
