@@ -897,6 +897,32 @@ EvtDispterWanIpv6AddrsCallback(char *ip_addrs)
      }
 }
 #endif /*RBUS_WAN_IP*/
+
+/*
+ * Handle a wan-status sysevent update. wan-status is set for every WAN mode
+ * (DOCSIS, EthWAN, DSL, ...), so logs are preserved on any started -> stopped transition.
+ */
+int
+EvtDispterWanStatusCallback(const char *value)
+{
+    if (!strncmp(value, "started", 7))
+    {
+        gWanStatus = true;
+        return EVENT_WAN_STARTED;
+    }
+    if (!strncmp(value, "stopped", 7))
+    {
+        if (gWanStatus)
+        {
+            CcspTraceInfo(("%s: wan-status changed to stopped; preserving logs\n", __FUNCTION__));
+            system("/rdklogger/backupLogs.sh false '' wan-stopped '' &");
+        }
+        gWanStatus = false;
+        return EVENT_WAN_STOPPED;
+    }
+    return EVENT_TIMEOUT;
+}
+
 /*
  * Initialize sysevnt 
  *   return 0 if success and -1 if failture.
@@ -1088,16 +1114,7 @@ EvtDispterEventListen(void)
             }
             else if(!strcmp(name_str, "wan-status"))
             {
-                if (!strncmp(value_str, "started", 7))
-                {
-                    gWanStatus = true;
-                    ret = EVENT_WAN_STARTED;
-                }
-                else if (!strncmp(value_str, "stopped", 7)) 
-                {
-                    gWanStatus = false;
-                    ret = EVENT_WAN_STOPPED;
-                }
+                ret = EvtDispterWanStatusCallback(value_str);
             }
             else if(!strcmp(name_str, "ipv4_wan_ipaddr"))
             {
@@ -1198,7 +1215,7 @@ EvtDispterEventListen(void)
             }
         } else {
             CcspTraceWarning(("Received msg that is not a SE_MSG_NOTIFICATION (%d)\n", msg_type));
-	    if (  0 != system("pidof syseventd")) {
+            if (  0 != system("pidof syseventd")) {
 
            	CcspTraceWarning(("%s syseventd not running ,breaking the receive notification loop \n",__FUNCTION__));
 		ret = EVENT_HANDLE_EXIT;
@@ -1443,7 +1460,7 @@ EvtDispterHandleEventAsync(void)
 int executeCmd(char *cmd)
 {
 	int l_iSystem_Res;
-	l_iSystem_Res = system(cmd);
+    l_iSystem_Res = system(cmd);
     if (0 != l_iSystem_Res && ECHILD != errno)
     {
         CcspTraceError(("%s: %s command didnt execute successfully\n", __FUNCTION__,cmd));
