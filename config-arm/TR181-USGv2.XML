@@ -626,7 +626,7 @@
 
           <name>X_CISCO_COM_FirmwareName</name>
 
-          <type>string(64)</type>
+          <type>string(96)</type>
 
           <syntax>string</syntax>
 
@@ -636,7 +636,7 @@
 
           <name>X_RDK_FirmwareName</name>
 
-          <type>string(64)</type>
+          <type>string(96)</type>
 
           <syntax>string</syntax>
 
@@ -1053,7 +1053,7 @@
 
           <name>SoftwareVersion</name>
 
-          <type>string(64)</type>
+          <type>string(96)</type>
 
           <syntax>string</syntax>
 
