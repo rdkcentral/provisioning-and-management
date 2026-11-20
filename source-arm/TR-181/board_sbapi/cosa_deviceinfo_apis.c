@@ -2389,6 +2389,11 @@ int findLocalPortAvailable()
 /* else FALSE */
 BOOL isProdHardened(void)
 {
+
+#if defined(_CBR2_PRODUCT_REQ_)
+return FALSE;
+}
+#else
     char buildType[6] = {0};
 
     if (CheckAndGetDevicePropertiesEntry(buildType, sizeof(buildType) - 1, "BUILD_TYPE") != 0)
@@ -2398,6 +2403,7 @@ BOOL isProdHardened(void)
 
     return (strcmp(buildType, "prod") == 0) ? TRUE : FALSE;
 }
+#endif
 
 int setXOpsReverseSshArgs(char* pString) {
     char tempCopy[512] = { "\0" };
