@@ -1183,6 +1183,8 @@ Interface2_GetParamUlongValue
     PCOSA_DATAMODEL_IP              pMyObject    = (PCOSA_DATAMODEL_IP)g_pCosaBEManager->hIP;
 #endif
 
+    CosaDmlIpIfRefreshWanIfName(pIPInterface);
+
     p = CosaDmlIpIfGetEntry2(NULL, pIPInterface->Cfg.InstanceNumber);
 
     /* check the parameter name and return the corresponding value */
@@ -1350,6 +1352,8 @@ Interface2_GetParamStringValue
     PCOSA_CONTEXT_LINK_OBJECT       pCosaContext = (PCOSA_CONTEXT_LINK_OBJECT)hInsContext;
     PCOSA_DML_IP_IF_FULL2           pIPInterface = (PCOSA_DML_IP_IF_FULL2)pCosaContext->hContext;
     errno_t                         rc           = -1;
+
+    CosaDmlIpIfRefreshWanIfName(pIPInterface);
 
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "Alias") == 0)
@@ -2517,6 +2521,8 @@ IPv4Address_GetParamUlongValue
     PCOSA_DML_IP_V4ADDR             pIPv4Addr    = (PCOSA_DML_IP_V4ADDR)pCosaContext->hContext;
     PCOSA_DML_IP_IF_FULL2           pIPInterface = (PCOSA_DML_IP_IF_FULL2)pCosaContext->hParentTable;
 
+    CosaDmlIpIfRefreshWanIfName(pIPInterface);
+
     /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "IPAddress") == 0)
     {
@@ -3258,6 +3264,8 @@ IPv6Address_Synchronize
     ULONG                                 entryCount        = 0;
     ULONG                                 i                 = 0;
     PULONG                                pOldInBE          = NULL; /*Old entry in back end*/
+
+    CosaDmlIpIfRefreshWanIfName(pIPInterface);
 
     pIPv6Addr         = CosaDmlIPGetIPv6Addresses(pIPInterface,&entryCount);
     if ( !pIPv6Addr )

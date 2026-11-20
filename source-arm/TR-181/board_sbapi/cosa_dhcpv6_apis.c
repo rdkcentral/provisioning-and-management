@@ -3957,8 +3957,15 @@ static int get_ipv6_tpmode (int *tpmod)
   int i = 0;
   int j = 0;
 
+  char wanInterface[32] = {'\0'};
+  char sysevent_name[BUFLEN_128];
+  PandM_GetWanInterface(wanInterface);
+
   // sysevent_get(si6->sefd, si6->setok, "erouter_topology-mode", buf, sizeof(buf));
-  commonSyseventGet(COSA_DML_DHCPV6C_PREF_IAID_SYSEVENT_NAME, buf, sizeof(buf));
+  memset(sysevent_name, 0, sizeof(sysevent_name));
+  snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_iaid", wanInterface);
+  commonSyseventGet(sysevent_name, buf, sizeof(buf));
+
   while (buf[i] != '\0') {
     if (buf[i] != '\'') {
         fixed_buf[j++] = buf[i];
@@ -4080,8 +4087,13 @@ static int divide_ipv6_prefix()
     char                ipv6_prefix[64] = {0};
     int                 tpmod;
 
+    char wanInterface[32] = {'\0'};
+    char sysevent_name[BUFLEN_128] = {'\0'};
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_v6pref", wanInterface);
+
     commonSyseventSet("ipv6_prefix-divided", "");
-    commonSyseventGet(COSA_DML_DHCPV6C_PREF_SYSEVENT_NAME, ipv6_prefix, sizeof(ipv6_prefix));
+    commonSyseventGet(sysevent_name, ipv6_prefix, sizeof(ipv6_prefix));
 
     if (get_prefix_info(ipv6_prefix, mso_prefix.value, sizeof(mso_prefix.value), (unsigned int*)&mso_prefix.len) != 0) {
       CcspTraceError(("[%s] ERROR return -1 (i.e. error due to get_prefix_info() return -1)\n", __FUNCTION__));
@@ -4307,7 +4319,13 @@ static int get_iapd_info(ia_pd_t *iapd)
     if(iapd == NULL)
       return -1;
 
-    commonSyseventGet(COSA_DML_DHCPV6C_PREF_T1_SYSEVENT_NAME, evt_val, sizeof(evt_val));
+    char wanInterface[32] = {'\0'};
+    char sysevent_name[BUFLEN_128];
+    PandM_GetWanInterface(wanInterface);
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_t1", wanInterface);
+
+    commonSyseventGet(sysevent_name, evt_val, sizeof(evt_val));
     if(evt_val[0]!='\0')
     {
       if(!strcmp(evt_val,"'\\0'"))
@@ -4323,7 +4341,10 @@ static int get_iapd_info(ia_pd_t *iapd)
     }
     CcspTraceInfo(("[%s] iapd->t1: %s\n", __FUNCTION__, iapd->t1));
 
-    commonSyseventGet(COSA_DML_DHCPV6C_PREF_T2_SYSEVENT_NAME, evt_val, sizeof(evt_val));
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_pretm", wanInterface);
+    commonSyseventGet(sysevent_name, evt_val, sizeof(evt_val));
+
     st = NULL;
     if(evt_val[0]!='\0')
     {
@@ -4340,7 +4361,9 @@ static int get_iapd_info(ia_pd_t *iapd)
     }
     CcspTraceInfo(("[%s] iapd->t2: %s\n", __FUNCTION__, iapd->t2));
 
-    commonSyseventGet(COSA_DML_DHCPV6C_PREF_PRETM_SYSEVENT_NAME, evt_val, sizeof(evt_val));
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_pretm", wanInterface);
+
     st = NULL;
     if(evt_val[0]!='\0')
     {
@@ -7238,7 +7261,13 @@ CosaDmlDhcpv6sAddPool
 
     Index = uDhcpv6ServerPoolNum;
 #if defined (MULTILAN_FEATURE)    
-    if(!commonSyseventGet(COSA_DML_DHCPV6C_PREF_PRETM_SYSEVENT_NAME, param_val, sizeof(param_val)))
+    char wanInterface[32] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
+    char sysevent_name[BUFLEN_128] = {'\0'};
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_pretm", wanInterface);
+
+    if(!commonSyseventGet(sysevent_name, param_val, sizeof(param_val)))
     {
         if(param_val[0] != '\0')
             pEntry->Cfg.LeaseTime = atoi(param_val);
@@ -8349,7 +8378,12 @@ CosaDmlDhcpv6sGetStartAddress
 {
     UNREFERENCED_PARAMETER(hContext);
     char globalAddress[64] = {0};
-    commonSyseventGet(COSA_DML_DHCPV6C_PREF_SYSEVENT_NAME, globalAddress, sizeof(globalAddress));
+    char wanInterface[32] = {'\0'};
+    char sysevent_name[BUFLEN_128] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_v6pref", wanInterface);
+    commonSyseventGet(sysevent_name, globalAddress, sizeof(globalAddress));
 
     strncpy(addr, globalAddress, (unsigned int)len>strlen(globalAddress)?strlen(globalAddress):(unsigned int)len);
 
@@ -9189,7 +9223,13 @@ int GenAndUpdateIpv6PrefixIntoSysevent(char *pInfName)
 
     if (!pInfName)
         return -1;
-    commonSyseventGet(COSA_DML_DHCPV6C_PREF_SYSEVENT_NAME, ipv6_prefix, sizeof(ipv6_prefix));
+
+    char wanInterface[32] = {'\0'};
+    char sysevent_name[BUFLEN_128];
+    PandM_GetWanInterface(wanInterface);
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_v6pref", wanInterface);
+    commonSyseventGet(sysevent_name, ipv6_prefix, sizeof(ipv6_prefix));
 
     if (getprefixinfo(ipv6_prefix, prefixvalue, sizeof(prefixvalue), (unsigned int*)&len) != 0) 
     {
@@ -10127,6 +10167,9 @@ dhcpv6c_dbg_thrd(void * in)
 
     fd_set rfds;
     struct timeval tm;
+    char wanInterface[32] = {'\0'};
+    char sysevent_name[BUFLEN_128] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
 
     fd= open(CCSP_COMMON_FIFO, O_RDWR);
 
@@ -10321,7 +10364,7 @@ dhcpv6c_dbg_thrd(void * in)
                     (
                         (PUCHAR)"Device.IP.Interface.",
                         (PUCHAR)"Name",
-                        (PUCHAR)COSA_DML_DHCPV6_CLIENT_IFNAME
+                        (PUCHAR)wanInterface
                         ); 
                 if (!strncmp(action, "add", 3))
                 {
@@ -10533,7 +10576,9 @@ dhcpv6c_dbg_thrd(void * in)
                     {
                         if (strlen(v6addr) == 0 )
                         {
-                            commonSyseventSet(COSA_DML_DHCPV6C_ADDR_SYSEVENT_NAME, "");
+			    memset(sysevent_name, 0, sizeof(sysevent_name));
+			    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_v6addr", wanInterface);
+			    commonSyseventSet(sysevent_name, "");
                         }
                         else
                         {
@@ -10543,7 +10588,9 @@ dhcpv6c_dbg_thrd(void * in)
                             CcspTraceInfo(("%s: v6addr is %s ,pref_len is %d\n", __func__,v6addr,pref_len));
                             
                             //remove_single_quote(v6addr);
-			    commonSyseventSet(COSA_DML_DHCPV6C_ADDR_SYSEVENT_NAME,v6addr);
+			    memset(sysevent_name, 0, sizeof(sysevent_name));
+			    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_v6addr", wanInterface);
+			    commonSyseventSet(sysevent_name,v6addr);
 
                             if ((0 == CheckAndGetDevicePropertiesEntry(dropbearInterface, STRING_LENGTH, "DROPBEAR_INTERFACE")) && (0 == strncmp(dropbearInterface, "erouter0", strlen(dropbearInterface))))
                             {
@@ -10565,26 +10612,27 @@ dhcpv6c_dbg_thrd(void * in)
                                 configureLTEIpv6(v6addr);
                              #endif
                         }
-						if (iana_iaid[0] != '\0') {
-							remove_single_quote(iana_iaid);
-                        commonSyseventSet(COSA_DML_DHCPV6C_ADDR_IAID_SYSEVENT_NAME,  iana_iaid);
-						}
-						if (iana_t1[0] != '\0') {
-							remove_single_quote(iana_t1);
-                        commonSyseventSet(COSA_DML_DHCPV6C_ADDR_T1_SYSEVENT_NAME,    iana_t1);
-						}
-						if (iana_t2[0] != '\0') {
-							remove_single_quote(iana_t2);
-                        commonSyseventSet(COSA_DML_DHCPV6C_ADDR_T2_SYSEVENT_NAME,    iana_t2);
-						}
-						if (iana_pretm[0] != '\0') {
-							remove_single_quote(iana_pretm);
-                        commonSyseventSet(COSA_DML_DHCPV6C_ADDR_PRETM_SYSEVENT_NAME, iana_pretm);
-						}
-						if (iana_vldtm[0] != '\0') {
-							remove_single_quote(iana_vldtm);
-                        commonSyseventSet(COSA_DML_DHCPV6C_ADDR_VLDTM_SYSEVENT_NAME, iana_vldtm);
-						}
+                        if (iana_iaid[0] != '\0')
+                        {
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_addr_iaid", wanInterface);
+                                remove_single_quote(iana_iaid);
+                                commonSyseventSet(sysevent_name,  iana_iaid);
+                        }
+                        if (iana_t1[0] != '\0')
+                        {
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_addr_t1", wanInterface);
+                                remove_single_quote(iana_t1);
+                                commonSyseventSet(sysevent_name,    iana_t1);
+                        }
+                        if (iana_t2[0] != '\0')
+                        {
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_addr_t2", wanInterface);
+                                remove_single_quote(iana_t2);
+                                commonSyseventSet(sysevent_name,    iana_t2);
+                        }
 
                         if(pString)
                         {
@@ -10592,6 +10640,20 @@ dhcpv6c_dbg_thrd(void * in)
                             g_COSARepopulateTable(g_pDslhDmlAgent, objName);
                         }
                     }
+                        if (iana_pretm[0] != '\0')
+                        {
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_addr_pretm", wanInterface);
+                                remove_single_quote(iana_pretm);
+                                commonSyseventSet(sysevent_name, iana_pretm);
+                        }
+                        if (iana_vldtm[0] != '\0')
+                        {
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_addr_vldtm", wanInterface);
+                                remove_single_quote(iana_vldtm);
+                                commonSyseventSet(sysevent_name , iana_vldtm);
+                        }
 
 #if defined(FEATURE_MAPT) && defined(FEATURE_RDKB_WAN_MANAGER)
                     strcpy(pdIPv6Prefix, v6pref);
@@ -10678,7 +10740,10 @@ dhcpv6c_dbg_thrd(void * in)
     if(rc < EOK){
         ERR_CHK(rc);
     }    
-    commonSyseventSet(COSA_DML_DHCPV6C_PREF_SYSEVENT_NAME,       wan_v6_pref_received);
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_v6pref", wanInterface);
+    commonSyseventSet(sysevent_name,      wan_v6_pref_received);
+
 #endif
 #if defined(CISCO_CONFIG_DHCPV6_PREFIX_DELEGATION) && defined(_CBR_PRODUCT_REQ_)
 #else
@@ -10758,26 +10823,39 @@ dhcpv6c_dbg_thrd(void * in)
                                 }
                         }
 #endif
-                        if (iapd_iaid[0] != '\0') {
-							remove_single_quote(iapd_iaid);
-                        commonSyseventSet(COSA_DML_DHCPV6C_PREF_IAID_SYSEVENT_NAME,  iapd_iaid);
-						}
-						if (iapd_t1[0] != '\0') {
-							remove_single_quote(iapd_t1);
-                        commonSyseventSet(COSA_DML_DHCPV6C_PREF_T1_SYSEVENT_NAME,    iapd_t1);
-						}
-						if (iapd_t2[0] != '\0') {
-							remove_single_quote(iapd_t2);
-                        commonSyseventSet(COSA_DML_DHCPV6C_PREF_T2_SYSEVENT_NAME,    iapd_t2);
-						}
-						if (iapd_pretm[0] != '\0') {
-							remove_single_quote(iapd_pretm);
-                        commonSyseventSet(COSA_DML_DHCPV6C_PREF_PRETM_SYSEVENT_NAME, iapd_pretm);
-						}
-						if (iapd_vldtm[0] != '\0') {
-							remove_single_quote(iapd_vldtm);
-                        commonSyseventSet(COSA_DML_DHCPV6C_PREF_VLDTM_SYSEVENT_NAME, iapd_vldtm);
-						}
+                        if (iapd_iaid[0] != '\0')
+                        {
+                                remove_single_quote(iapd_iaid);
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_iaid", wanInterface);
+                                commonSyseventSet(sysevent_name ,  iapd_iaid);
+                        }
+                        if (iapd_t1[0] != '\0')
+                        {
+                                remove_single_quote(iapd_t1);
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_t1", wanInterface);
+                                commonSyseventSet(sysevent_name ,    iapd_t1);
+                        }
+                        if (iapd_t2[0] != '\0')
+                        {
+                                remove_single_quote(iapd_t2);
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_t2", wanInterface);
+                                commonSyseventSet(sysevent_name ,    iapd_t2);                                                                     }
+                        if (iapd_pretm[0] != '\0')
+                        {                                                                                                                                  remove_single_quote(iapd_pretm);
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_pretm", wanInterface);
+                                commonSyseventSet(sysevent_name , iapd_pretm);
+                        }
+                        if (iapd_vldtm[0] != '\0')
+                        {
+                                remove_single_quote(iapd_vldtm);
+                                memset(sysevent_name, 0, sizeof(sysevent_name));
+                                snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_pref_vldtm", wanInterface);
+                                commonSyseventSet(sysevent_name , iapd_vldtm);
+                        }
 
 #if defined (MULTILAN_FEATURE)
                         ULONG idx = 0;

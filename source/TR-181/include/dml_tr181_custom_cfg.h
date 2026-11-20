@@ -82,7 +82,6 @@
 #define  CFG_TR181_ps_no_arg                        1
 #define  CFG_TR181_RouteInfo_IfName                 "erouter0"
 
-#define  CFG_TR181_6rd_IfName                       "erouter0"
 #define  CFG_TR181_NO_CosaDml_Ifname2Addr           0
 
 #define  CFG_TR181_Ddns_IfName                      "erouter0"
