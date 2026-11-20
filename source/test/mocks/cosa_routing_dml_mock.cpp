@@ -20,14 +20,6 @@
 #include "cosa_routing_dml_mock.h"
 #include <stdio.h>
 
-extern "C" int CosaGetParamValueString(char* pParamName, char* pBuffer, PULONG pulSize)
-{
-    (void)pParamName;
-    (void)pBuffer;
-    (void)pulSize;
-    return -1;
-}
-
 //#define ANSC_STATUS unsigned long
 /*
 extern "C"
