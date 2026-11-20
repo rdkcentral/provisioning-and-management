@@ -570,11 +570,6 @@ CosaDmlNeighdiscIfBERemove
 COSA_DML_NEIGHDISC_IF_FULL g_neighdisc_interface;
 static BOOLEAN g_neighdisc_enabled = TRUE ;
 
-
-#define RetransTimer_SYSCTL_FILE "/proc/sys/net/ipv6/neigh/"COSA_DML_NEIGHDISC_IFNAME"/retrans_time_ms"
-#define RtrSolicitationInterval_SYSCTL_FILE "/proc/sys/net/ipv6/conf/"COSA_DML_NEIGHDISC_IFNAME"/router_solicitation_interval"
-#define MaxRtrSolicitations_SYSCTL_FILE "/proc/sys/net/ipv6/conf/"COSA_DML_NEIGHDISC_IFNAME"/router_solicitations"
-
 /*
  *  Neighdisc Interface
  */
@@ -715,10 +710,17 @@ CosaDmlNeighdiscIfGetNumberOfEntries
 
 static int _apply_kernel_params(COSA_DML_NEIGHDISC_IF_CFG * pCfg)
 {
-    _write_sysctl_file(RetransTimer_SYSCTL_FILE, pCfg->RetransTimer);
-    _write_sysctl_file(RtrSolicitationInterval_SYSCTL_FILE, 
-                       (pCfg->RtrSolicitationInterval/1000 ? pCfg->RtrSolicitationInterval/1000:1));
-    _write_sysctl_file(MaxRtrSolicitations_SYSCTL_FILE, pCfg->MaxRtrSolicitations);
+    char sysctl_file[128];
+    char wanInterface[32] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
+    snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/neigh/%s/retrans_time_ms", wanInterface);
+    _write_sysctl_file(sysctl_file, pCfg->RetransTimer);
+
+    snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/router_solicitation_interval", wanInterface);
+    _write_sysctl_file(sysctl_file, (pCfg->RtrSolicitationInterval / 1000 ? pCfg->RtrSolicitationInterval / 1000 : 1));
+
+    snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/router_solicitations", wanInterface);
+    _write_sysctl_file(sysctl_file, pCfg->MaxRtrSolicitations);
 
     return 0;
 }
@@ -736,8 +738,10 @@ CosaDmlNeighdiscIfGetEntry
     int  need_write = 0;
     errno_t safec_rc = -1;
 
+    char wanInterface[32] = {'\0'};
     UNREFERENCED_PARAMETER(hContext);
     UNREFERENCED_PARAMETER(ulIndex);
+    PandM_GetWanInterface(wanInterface);
 
     if (!Utopia_Init(&utctx))
         return ANSC_STATUS_FAILURE;
@@ -788,7 +792,7 @@ CosaDmlNeighdiscIfGetEntry
     if (!out[0])
     {
         need_write = 1;
-        safec_rc = strcpy_s(out, sizeof(out), "erouter0");
+        safec_rc = strcpy_s(out, sizeof(out), wanInterface);
         if(safec_rc != EOK)
         {
            ERR_CHK(safec_rc);
@@ -991,6 +995,9 @@ CosaDmlNeighdiscIfSetCfg
     UtopiaContext utctx = {0};
     char out[256] = {0};
     errno_t safec_rc = -1;
+    char sysctl_file[128];
+    char wanInterface[32] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
 
     if ( g_neighdisc_interface.Cfg.InstanceNumber != pCfg->InstanceNumber )
         return ANSC_STATUS_CANT_FIND;   
@@ -1025,7 +1032,8 @@ CosaDmlNeighdiscIfSetCfg
         Utopia_RawSet(&utctx,NULL,SYSCFG_FORMAT_NEIGHDISC_IF"_RetransTimer",out);        
 
         /*this is so called backend implementation*/
-        _write_sysctl_file(RetransTimer_SYSCTL_FILE, pCfg->RetransTimer);
+	snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/neigh/%s/retrans_time_ms", wanInterface);
+	_write_sysctl_file(sysctl_file, pCfg->RetransTimer);
     }
 
     if (pCfg->RtrSolicitationInterval != g_neighdisc_interface.Cfg.RtrSolicitationInterval)
@@ -1039,8 +1047,10 @@ CosaDmlNeighdiscIfSetCfg
 
         /*this is so called backend implementation*/
         /*RtrSolicitationInterval is in the unit of millisecond, but kernel wants seconds.*/
-        _write_sysctl_file(RtrSolicitationInterval_SYSCTL_FILE, 
-                           (pCfg->RtrSolicitationInterval/1000 ? pCfg->RtrSolicitationInterval/1000:1));
+        snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/router_solicitation_interval", wanInterface);
+	_write_sysctl_file(sysctl_file,
+                            (pCfg->RtrSolicitationInterval/1000 ? pCfg->RtrSolicitationInterval/1000:1));
+
     }
 
     if (pCfg->MaxRtrSolicitations != g_neighdisc_interface.Cfg.MaxRtrSolicitations)
@@ -1053,7 +1063,8 @@ CosaDmlNeighdiscIfSetCfg
         Utopia_RawSet(&utctx,NULL,SYSCFG_FORMAT_NEIGHDISC_IF"_MaxRtrSolicitations",out);        
 
         /*this is so called backend implementation*/
-        _write_sysctl_file(MaxRtrSolicitations_SYSCTL_FILE, pCfg->MaxRtrSolicitations);
+	snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/router_solicitations", wanInterface);
+	 _write_sysctl_file(sysctl_file, pCfg->MaxRtrSolicitations);
     }
 
     Utopia_Free(&utctx,1);                    

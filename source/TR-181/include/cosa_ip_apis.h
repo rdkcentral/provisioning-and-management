@@ -1276,5 +1276,13 @@ CosaDmlIpIfGetEntry2
 */
 ANSC_STATUS CosaUpdateIfname(int Index, char *Ifname);
 #endif
+/*
+ *  Refresh WAN interface name
+*/
+void
+CosaDmlIpIfRefreshWanIfName
+    (
+        PCOSA_DML_IP_IF_FULL2 pIPInterface
+    );
 #endif
 

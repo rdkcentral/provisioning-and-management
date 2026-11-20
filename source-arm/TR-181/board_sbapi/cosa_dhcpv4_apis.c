@@ -1770,7 +1770,8 @@ CosaDmlDhcpcSetSentOptionValues
     CHAR            inst_str[64];    
     ULONG           i = 0;
     errno_t         rc = -1;
-    
+    char wanInterface[32] = {'\0'};
+
     ULOGF(ULOG_SYSTEM, UL_DHCP, "%s: ulClientInstanceNumber %d,ulIndex %d, ulInstanceNumber %d\n", 
           __FUNCTION__, ulClientInstanceNumber, ulIndex, ulInstanceNumber);
           
@@ -1778,7 +1779,9 @@ CosaDmlDhcpcSetSentOptionValues
     {
         return ANSC_STATUS_FAILURE;
     }
-    
+   
+    PandM_GetWanInterface(wanInterface);
+ 
     for (i = 0; i < g_Dhcp4ClientNum; i++)
     {
         if ( CH_g_dhcpv4_client[i].Cfg.InstanceNumber ==  ulClientInstanceNumber)
@@ -1793,7 +1796,7 @@ CosaDmlDhcpcSetSentOptionValues
             rc = STRCPY_S_NOCLOBBER(g_dhcpv4_client_sent[i][ulIndex].Alias, sizeof(g_dhcpv4_client_sent[i][ulIndex].Alias), pAlias);
             ERR_CHK(rc);
 
-            if( !_ansc_strncmp(CH_g_dhcpv4_client[i].Cfg.Interface, COSA_DML_DHCPV4_CLIENT_IFNAME, _ansc_strlen(COSA_DML_DHCPV4_CLIENT_IFNAME)))
+            if( !_ansc_strncmp(CH_g_dhcpv4_client[i].Cfg.Interface, wanInterface, sizeof(wanInterface)))
             {                
                 rc = sprintf_s(inst_str, sizeof(inst_str), "%lu", ulInstanceNumber);
                 if(rc < EOK)
@@ -1805,7 +1808,7 @@ CosaDmlDhcpcSetSentOptionValues
             }
             else
             {
-                ULOGF(ULOG_SYSTEM, UL_DHCP, "%s: not " COSA_DML_DHCPV4_CLIENT_IFNAME " nor lan0, New Interface %s\n", __FUNCTION__, CH_g_dhcpv4_client[i].Cfg.Interface);
+                ULOGF(ULOG_SYSTEM, UL_DHCP, "%s: not %s nor lan0, New Interface %s\n", __FUNCTION__, wanInterface, CH_g_dhcpv4_client[i].Cfg.Interface);
                 rc = sprintf_s(inst_str, sizeof(inst_str), "%lu", ulInstanceNumber);
                 if(rc < EOK)
                 {

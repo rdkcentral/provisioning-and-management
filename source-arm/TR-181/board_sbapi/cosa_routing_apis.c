@@ -5880,17 +5880,28 @@ static BOOLEAN g_routeinfo_enabled = FALSE;
 
 static int _set_routeinfo_to_sysctl(BOOLEAN bEnabled)
 {
+    char wanInterface[32] = {'\0'};
+    char sysctl_file[128];
+    PandM_GetWanInterface(wanInterface);
+
     if (bEnabled)
     {
         /*Enable kernel by modify sysctl params*/
-        _write_sysctl_file("/proc/sys/net/ipv6/conf/"COSA_DML_ROUTEINFO_IFNAME"/forwarding", 0);
-        _write_sysctl_file("/proc/sys/net/ipv6/conf/"COSA_DML_ROUTEINFO_IFNAME"/accept_ra_rtr_pref", 1);
-        _write_sysctl_file("/proc/sys/net/ipv6/conf/"COSA_DML_ROUTEINFO_IFNAME"/accept_ra_rt_info_max_plen", 128);
+        snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/forwarding", wanInterface);
+        _write_sysctl_file(sysctl_file, 0);
+
+        snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/accept_ra_rtr_pref", wanInterface);
+        _write_sysctl_file(sysctl_file, 1);
+
+        snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/accept_ra_rt_info_max_plen", wanInterface);
+        _write_sysctl_file(sysctl_file, 128);
     }
     else 
     {
         /*Disable kernel by modify sysctl params*/
-        _write_sysctl_file("/proc/sys/net/ipv6/conf/"COSA_DML_ROUTEINFO_IFNAME"/accept_ra_rtr_pref", 0);
+       snprintf(sysctl_file, sizeof(sysctl_file), "/proc/sys/net/ipv6/conf/%s/accept_ra_rtr_pref", wanInterface);
+        _write_sysctl_file(sysctl_file, 0);
+
     }    
     return 0;
 }
@@ -6041,6 +6052,8 @@ static int _routeinfo_get_lft(char * prefix, char * lft_str, int lft_str_size)
     int   expire_time = 0;
     int   found = 0;
     errno_t  safec_rc = -1;
+    char wanInterface[32] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
 
     v_secure_system("ip -6 route show > " TMP_ROUTEINFO_OUTPUT);
 
@@ -6049,7 +6062,7 @@ static int _routeinfo_get_lft(char * prefix, char * lft_str, int lft_str_size)
     {
         while (fgets(line, sizeof(line), fp))
         {
-            safec_rc = sprintf_s(buf, sizeof(buf), "dev %s ", COSA_DML_ROUTEINFO_IFNAME);
+            safec_rc = sprintf_s(buf, sizeof(buf), "dev %s ", wanInterface);
             if(safec_rc < EOK)
             {
                ERR_CHK(safec_rc);

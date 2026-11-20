@@ -74,6 +74,7 @@
 #include "ansc_string_util.h"
 #include "safec_lib_common.h"
 #include "cosa_apis_busutil.h"
+#include "cosa_drg_common.h"
 
 #define REFRESH_INTERVAL 120
 #define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
@@ -3869,6 +3870,19 @@ IPv6Forwarding_GetParamStringValue
     if (strcmp(ParamName, "Interface") == 0)
     {
         char                            * pString      = NULL;
+	char *token = NULL;
+	char interface[64] = {0};
+	AnscCopyString(interface, pRouterForward->Interface);
+	token = strtok(interface, "\'");
+
+	if(token != NULL)
+		AnscCopyString(interface, token);
+
+	char wanInterface[BUFLEN_32] = {'\0'};
+	PandM_GetWanInterface(wanInterface);
+	/* collect value */
+	if((strcmp(interface, "brlan0") != 0) && (strcmp(interface, wanInterface) != 0))
+		strcpy(interface, wanInterface);
 
         /* collect value */
         pString = (char*)CosaUtilGetFullPathNameByKeyword

@@ -120,6 +120,11 @@ int commonSyseventGet(char* key, char* value, int valLen);
 int commonSyseventClose();
 
 #define CCSP_COMMON_FIFO "/tmp/ccsp_common_fifo"
+#define SYSEVENT_CURRENT_WAN_IFNAME "current_wan_ifname"
+#define BUFLEN_32                       32
+#define BUFLEN_128                      128
+
+void PandM_GetWanInterface(char *wanInterface);
 
 #endif
 #endif

@@ -315,6 +315,8 @@ IPv6rdIF_AddEntry(
     PCOSA_CONTEXT_LINK_OBJECT   pCosaContext = NULL;
     errno_t                     rc           = -1;
 
+    char wanInterface[32] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
     pEntry = (PCOSA_DML_IPV6RD_IF)AnscAllocateMemory(sizeof(COSA_DML_IPV6RD_IF));
     if (!pEntry)
     {
@@ -329,7 +331,7 @@ IPv6rdIF_AddEntry(
       return NULL;
     }
 #if !CFG_TR181_NO_CosaDml_Ifname2Addr
-	CosaDml_Ifname2Addr(CFG_TR181_6rd_IfName, pEntry->AddressSource, sizeof(pEntry->AddressSource));
+	CosaDml_Ifname2Addr(wanInterface, pEntry->AddressSource, sizeof(pEntry->AddressSource));
 #endif
     rc = strcpy_s(pEntry->Status, sizeof(pEntry->Status),"Disabled");
     if(rc != EOK)
@@ -458,6 +460,9 @@ IPv6rdIF_GetParamStringValue(
     char tmp[128];
     errno_t  rc = -1;
 
+    char wanInterface[32] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
+
     if (!pLinkObject)
         return FALSE;
 
@@ -510,7 +515,7 @@ IPv6rdIF_GetParamStringValue(
             return 0;
         }
 
-        path = CosaUtilGetFullPathNameByKeyword((PUCHAR)"Device.IP.Interface.", (PUCHAR)"Name", (PUCHAR)CFG_TR181_6rd_IfName);
+        path = CosaUtilGetFullPathNameByKeyword((PUCHAR)"Device.IP.Interface.", (PUCHAR)"Name", (PUCHAR)wanInterface);
         if ((path != NULL) && (_ansc_strlen((char*)path) > 0))
         {
             if (path[_ansc_strlen((char*)path) - 1] == '.')
