@@ -1423,8 +1423,8 @@ int __find_iana_addr_info(char * ifname, PCOSA_DML_IP_V6ADDR p_dml_v6addr, ipv6_
 ULONG CosaDmlIPv6addrGetV6Status(PCOSA_DML_IP_V6ADDR p_dml_v6addr, PCOSA_DML_IP_IF_FULL2 p_ipif)
 {
     int  valid_lft = 0, prefered_lft = 0;
-    ipv6_addr_info_t v6_ai;
-
+    ipv6_addr_info_t v6_ai = {0};
+    
     AnscTraceFlow(("%s...\n", __FUNCTION__));
 
     errno_t safec_rc = strcpy_s(v6_ai.v6addr, sizeof(v6_ai.v6addr), p_dml_v6addr->IP6Address);

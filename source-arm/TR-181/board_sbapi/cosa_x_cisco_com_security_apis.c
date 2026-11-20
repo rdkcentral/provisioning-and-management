@@ -2539,7 +2539,7 @@ static int middle_layer_2_be_struct(PCOSA_DML_IA_POLICY p_in, iap_entry_t * p_ou
         for (i=0; i<p_out->lanhosts.ip_count; i++)
         {
             /*there is a gap between firewall.c and definition of lanhosts.iplist, firewall.c only want the last octect*/
-            safec_rc = sprintf_s(p, IPADDR_SZ * p_out->lanhosts.ip_count, "%d", p_in->LanHost.IpList[i].Ip.Dot[3]);
+            safec_rc = sprintf_s(p, IPADDR_SZ, "%d", p_in->LanHost.IpList[i].Ip.Dot[3]);
             if(safec_rc < EOK)
             {
                 ERR_CHK(safec_rc);
