@@ -69,6 +69,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <syscfg/syscfg.h>
 #include "ansc_platform.h"
 #include "cosa_deviceinfo_dml.h"
@@ -142,6 +144,7 @@ BOOL CMRt_Isltn_Enable(BOOL status);
 #define MEMINSIGHT_ENABLE_FILE_NVRAM "/nvram/.enable_meminsight"
 #define MEMINSIGHT_ENABLE_FILE_TMP "/tmp/.enable_meminsight"
 #define MEMINSIGHT_SERVICE "meminsight-runner.service"
+#define SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY "SystemdAnalyzeEnable"
 
 #define BOOTSTRAP_INFO_FILE_BACKUP "/nvram/bootstrap.json"
 #define CLEAR_TRACK_FILE "/nvram/ClearUnencryptedData_flags"
@@ -1777,6 +1780,52 @@ BOOL
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
+}
+
+BOOL xSystemdAnalyze_SetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL bValue)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    int ret = 0;
+
+    if (strcmp(ParamName, "Enable") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    ret = syscfg_set_commit(NULL, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, bValue ? "true" : "false");
+    if (ret != 0)
+    {
+        CcspTraceError(("%s: syscfg_set_commit failed for %s, ret=%d\n",
+                        __FUNCTION__, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, ret));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+BOOL xSystemdAnalyze_GetParamBoolValue(ANSC_HANDLE hInsContext, char* ParamName, BOOL* pBool)
+{
+    UNREFERENCED_PARAMETER(hInsContext);
+    char value[8] = {'\0'};
+    int ret = 0;
+
+    if (strcmp(ParamName, "Enable") != 0)
+    {
+        CcspTraceError(("%s: Unknown parameter %s\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    ret = syscfg_get(NULL, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, value, sizeof(value));
+    if (ret != 0)
+    {
+        CcspTraceError(("%s: syscfg_get failed for %s, ret=%d\n",
+                        __FUNCTION__, SYSTEMD_ANALYZE_ENABLE_SYSCFG_KEY, ret));
+        return FALSE;
+    }
+
+    *pBool = (strcmp(value, "1") == 0) || (strcasecmp(value, "true") == 0);
+    return TRUE;
 }
 
 /**
@@ -9496,6 +9545,23 @@ Feature_GetParamIntValue
              return TRUE;
          }
     }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+         /* collect value */
+char buf[16] = {0};
+         syscfg_get(NULL, "edns_packet_size", buf, sizeof(buf));
+         char *end = NULL;
+         long value = strtol(buf, &end, 10);
+         if (buf[0] == '\0' || *end != '\0' || value < 512 || value > 4096)
+         {
+             *pint = 1232;
+         }
+         else
+         {
+             *pint = (int)value;
+         }
+         return TRUE;
+    }
     return FALSE;
 }
 /**********************************************************************
@@ -10803,22 +10869,18 @@ WPA3_Personal_Compatibility_RFC_GetParamBoolValue
             return FALSE;
         }
 
-        CcspTraceInfo(("valStructs[0]->parameterValue = %s\n",valStructs[0]->parameterValue));
+        // DEBUG log level is set here as this prop is constantly polled by the CCSP rbus value-change thread
+        CcspTraceDebug(("valStructs[0]->parameterValue = %s\n",valStructs[0]->parameterValue));
         rc = strcmp_s("true",strlen("true"),valStructs[0]->parameterValue,&ind);
         ERR_CHK(rc);
-
-        if ((ind == 0) && (rc == EOK))
+        free_parameterValStruct_t(bus_handle, valNum, valStructs);
+        if (rc != EOK)
         {
-            free_parameterValStruct_t(bus_handle, valNum, valStructs);
-            *pBool = TRUE;
-            return TRUE;
-        }
-        else
-        {
-            free_parameterValStruct_t(bus_handle, valNum, valStructs);
             *pBool = FALSE;
             return FALSE;
         }
+        *pBool = (ind == 0) ? TRUE : FALSE;
+        return TRUE;
 #else
         *pBool = FALSE;
         return FALSE;
@@ -10963,6 +11025,39 @@ Feature_SetParamIntValue
                CcspTraceInfo(("syscfg_set low_queue_reboot_threshold failed\n"));
         }
 	return TRUE;
+    }
+    if (strcmp(ParamName, "EDNSPacketSize") == 0)
+    {
+        CcspTraceInfo(("Set EDNSPacketSize \n"));
+        /* EDNS UDP payload size is valid from 512 through 4096 octets. */
+        if ((bValue < 512) || (bValue > 4096))
+        {
+            CcspTraceInfo(("EDNSPacketSize %d is out of supported range (512-4096), ignoring\n", bValue));
+            return FALSE;
+        }
+        char buf[16]={0};
+		char currentValue[16] = {0};
+        snprintf(buf, sizeof(buf), "%d", bValue);
+		
+    	if ((syscfg_get(NULL, "edns_packet_size", currentValue, sizeof(currentValue)) == 0) && (strcmp(currentValue, buf) == 0))
+    	{
+    	    CcspTraceInfo(("EDNSPacketSize unchanged, skipping update and DHCP restart\n"));
+        	return TRUE;
+	    }
+        if (syscfg_set_commit(NULL, "edns_packet_size", buf) != 0)
+        {
+               CcspTraceInfo(("syscfg_set edns_packet_size failed\n"));
+               return FALSE;
+        }
+        else
+        {
+            if (commonSyseventSet("dhcp_server-restart", "") != 0)
+            {
+                CcspTraceError(("Failed to set dhcp_server-restart sysevent\n"));
+                return FALSE;
+            }
+            return TRUE;
+        }
     }
     return FALSE;
 }
@@ -14865,18 +14960,27 @@ RDKDownloadManager_SetParamStringValue
 
 #define DISTRIBUTED_TRACING_SYSCFG_KEY "DistributedTracingEnabled"
 #define DISTRIBUTED_TRACING_FLAG_FILE  "/tmp/rdk_distributed_tracing_enabled"
+#define DISTRIBUTED_TRACING_URL_FILE   "/nvram/secure/otel-export-endpoint"
+#define DISTRIBUTED_TRACING_INTERVAL_FILE "/nvram/secure/otel-export-interval"
 
 /**********************************************************************
 
  APIs for Object:
 
     Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Enable
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.URL
+    Device.DeviceInfo.X_RDKCENTRAL-COM_RFC.Feature.DistributedTracing.Interval
 
     *  DistributedTracing_GetParamBoolValue
     *  DistributedTracing_SetParamBoolValue
+    *  DistributedTracing_GetParamStringValue
+    *  DistributedTracing_SetParamStringValue
+    *  DistributedTracing_GetParamUlongValue
+    *  DistributedTracing_SetParamUlongValue
 
-    The value is persisted in syscfg (default false). The flag file is what
+    The Enable value is persisted in syscfg (default false). The flag file is what
     librdk_otlp watches at runtime; the collector service follows the value.
+    URL and Interval are persisted to the secure runtime files used by the hostif path.
 
 **********************************************************************/
 BOOL
@@ -14958,6 +15062,203 @@ DistributedTracing_SetParamBoolValue
 
     CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
     return FALSE;
+}
+
+ULONG
+DistributedTracing_GetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pValue,
+        ULONG*                      pUlSize
+    )
+{
+    errno_t rc = -1;
+    FILE *fp = NULL;
+    char url[513] = { 0 };
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "URL") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return -1;
+    }
+
+    fp = fopen(DISTRIBUTED_TRACING_URL_FILE, "r");
+    if (fp == NULL)
+    {
+        CcspTraceWarning(("%s: Unable to open %s for reading\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        return -1;
+    }
+
+    if (fgets(url, sizeof(url), fp) == NULL)
+    {
+        fclose(fp);
+        CcspTraceWarning(("%s: Failed to read %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        return -1;
+    }
+    fclose(fp);
+
+    size_t len = strlen(url);
+    if (len > 0 && url[len - 1] == '\n')
+    {
+        url[len - 1] = '\0';
+        len--;
+    }
+
+    if ((len + 1) > *pUlSize)
+    {
+        *pUlSize = len + 1;
+        CcspTraceWarning(("%s: Buffer too small for URL, required=%lu\n", __FUNCTION__, (unsigned long)(len + 1)));
+        return 1;
+    }
+
+    rc = strcpy_s(pValue, *pUlSize, url);
+    if (rc != EOK)
+    {
+        ERR_CHK(rc);
+        return -1;
+    }
+
+    return 0;
+}
+
+BOOL
+DistributedTracing_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    FILE *fp = NULL;
+    int fd = -1;
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "URL") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    if (pString == NULL)
+    {
+        CcspTraceWarning(("%s: NULL value provided for URL\n", __FUNCTION__));
+        return FALSE;
+    }
+
+    fd = open(DISTRIBUTED_TRACING_URL_FILE, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (fd < 0)
+    {
+        CcspTraceWarning(("%s: Failed to create %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        return FALSE;
+    }
+
+    fp = fdopen(fd, "w");
+    if (fp == NULL)
+    {
+        CcspTraceWarning(("%s: Failed to open stream for %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        close(fd);
+        return FALSE;
+    }
+
+    if (fputs(pString, fp) == EOF)
+    {
+        CcspTraceWarning(("%s: Failed to write URL to %s\n", __FUNCTION__, DISTRIBUTED_TRACING_URL_FILE));
+        fclose(fp);
+        return FALSE;
+    }
+
+    fclose(fp);
+    return TRUE;
+}
+
+BOOL
+DistributedTracing_GetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG*                      pUlong
+    )
+{
+    FILE *fp = NULL;
+    char buf[32] = { 0 };
+    unsigned long value = 0;
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Interval") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    fp = fopen(DISTRIBUTED_TRACING_INTERVAL_FILE, "r");
+    if (fp == NULL)
+    {
+        *pUlong = 0;
+        return TRUE;
+    }
+
+    if (fgets(buf, sizeof(buf), fp) == NULL)
+    {
+        fclose(fp);
+        *pUlong = 0;
+        return TRUE;
+    }
+    fclose(fp);
+
+    if (sscanf(buf, "%lu", &value) != 1)
+    {
+        CcspTraceWarning(("%s: Invalid interval value in %s\n", __FUNCTION__, DISTRIBUTED_TRACING_INTERVAL_FILE));
+        *pUlong = 0;
+        return FALSE;
+    }
+
+    *pUlong = (ULONG)value;
+    return TRUE;
+}
+
+BOOL
+DistributedTracing_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       ulValue
+    )
+{
+    FILE *fp = NULL;
+    char buf[32] = { 0 };
+
+    UNREFERENCED_PARAMETER(hInsContext);
+    if (strcmp(ParamName, "Interval") != 0)
+    {
+        CcspTraceWarning(("%s: Unsupported parameter '%s'\n", __FUNCTION__, ParamName));
+        return FALSE;
+    }
+
+    if (ulValue == 0 || ulValue > 71582U)
+    {
+        CcspTraceWarning(("%s: Interval value out of range: %lu\n", __FUNCTION__, (unsigned long)ulValue));
+        return FALSE;
+    }
+
+    snprintf(buf, sizeof(buf), "%lu", (unsigned long)ulValue);
+    fp = fopen(DISTRIBUTED_TRACING_INTERVAL_FILE, "w");
+    if (fp == NULL)
+    {
+        CcspTraceWarning(("%s: Failed to create %s\n", __FUNCTION__, DISTRIBUTED_TRACING_INTERVAL_FILE));
+        return FALSE;
+    }
+
+    if (fputs(buf, fp) == EOF)
+    {
+        CcspTraceWarning(("%s: Failed to write interval to %s\n", __FUNCTION__, DISTRIBUTED_TRACING_INTERVAL_FILE));
+        fclose(fp);
+        return FALSE;
+    }
+
+    fclose(fp);
+    return TRUE;
 }
 
 #ifdef FEATURE_ONEWIFI_TESTSUITE
