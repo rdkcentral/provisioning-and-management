@@ -136,7 +136,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
 },
 
@@ -235,7 +236,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
 },
 
@@ -347,7 +349,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "false",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "false",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "false"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "false",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "true"
       }
    },
 
@@ -563,7 +566,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "false",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "false",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "true",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "false"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "false",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "true"
       }
    },
 
@@ -686,7 +690,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
    },
 
@@ -810,7 +815,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
    },
 
@@ -940,7 +946,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
    },
 
@@ -1045,7 +1052,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
    },
 "axb3retail" : {
@@ -1143,7 +1151,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
   },
    "unknown" : {
@@ -1241,7 +1250,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
    },
 
@@ -1344,7 +1354,8 @@
             "Device.X_RDK_Features.GatewayFailover.Enable" : "true",
             "Device.X_RDK_Features.UseCEDMPasswordForGUI" : "true",
             "Device.X_RDK_Features.VlanDiscovery.Enable" : "false",
-            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true"
+            "Device.X_RDK_Features.HotSpotSupport.Enable" : "true",
+            "Device.X_RDK_Features.LanSshNewPortSupport.Enable" : "false"
       }
    }
 
