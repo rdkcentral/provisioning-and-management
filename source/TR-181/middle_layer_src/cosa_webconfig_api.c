@@ -41,6 +41,13 @@ static pthread_mutex_t one_to_one_nat_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 static unsigned long one_to_one_nat_first_id = 0;
 static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat, unsigned long first_id);
 
+enum {
+    NAT_FIELD_PUBLIC_IP = 0,
+    NAT_FIELD_INT_PORT = 1,
+    NAT_FIELD_EXT_PORT_RANGE = 2,
+    NAT_FIELD_REQUIRED_COUNT = 3
+};
+
 int  get_base64_decodedbuffer(char *pString, char **buffer, int *size)
 {
     struct timespec start,end,*startPtr,*endPtr;
@@ -507,12 +514,12 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat)
                 goto failure;
             if (syscfg_get(NULL, key, value, sizeof(value)) != 0)
             {
-                if (field < 3)
+                if (field < NAT_FIELD_REQUIRED_COUNT)
                     goto failure;
                 CcspTraceWarning(("%s: optional NAT field %s is unavailable\n", __FUNCTION__, key));
                 continue;
             }
-            if (field == 0)
+            if (field == NAT_FIELD_PUBLIC_IP)
             {
                 if (inet_pton(AF_INET, value, &public_ip) != 1 ||
                     public_ip.s_addr == INADDR_NONE)
@@ -525,13 +532,13 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat)
                 snprintf(nat->entries[start].val, VAL_BLOCK_SIZE, "%s", alias);
                 nat->cache_size++;
             }
-            else if (field == 1)
+            else if (field == NAT_FIELD_INT_PORT)
             {
                 internal_port = strtol(value, &end, 10);
                 if (end == value || *end != '\0' || internal_port < 0 || internal_port > 65535)
                     goto invalid_mapping;
             }
-            else if (field == 2)
+            else if (field == NAT_FIELD_EXT_PORT_RANGE)
             {
                 char *last = strchr(value, ' ');
                 if (last == NULL)
@@ -545,7 +552,7 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat)
             snprintf(nat->entries[nat->cache_size].cmd, NAT_KEY_BLOCK_SIZE, "%s", key);
             snprintf(nat->entries[nat->cache_size++].val, VAL_BLOCK_SIZE, "%s", value);
         }
-        if (field == 0)
+        if (field == NAT_FIELD_PUBLIC_IP)
         {
             nat->cache_size = start;
             continue;
