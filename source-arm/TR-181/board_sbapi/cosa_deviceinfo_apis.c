@@ -2736,7 +2736,7 @@ ANSC_STATUS fillCurrentPartnerId
     {
          /* CID:66248 Array compared against 0*/
          /*CID: 56187 Logically dead code*/
- 	 strncpy(pValue ,buf,strlen(buf));
+         snprintf(pValue, *pulSize, "%s", buf);
          *pulSize = AnscSizeOfString(pValue);
          return ANSC_STATUS_SUCCESS;
     }

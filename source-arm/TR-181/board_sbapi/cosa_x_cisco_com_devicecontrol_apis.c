@@ -434,12 +434,11 @@ bool IsPortOverlapWithPFPorts(int mgmtport)
         CcspTraceDebug(("%s %d- PFR namespace Not enabled \n",__FUNCTION__,__LINE__));
         continue;
       }
-      char sdport[10];
-      char edport[10];
+      char sdport[11] = {0};
+      char edport[11] = {0};
       char portrange[30];
       portrange[0]='\0';
-      sdport[0] = '\0';
-      edport[0] = '\0';
+
       rc = syscfg_get(namespace, "external_port_range", portrange, sizeof(portrange));
       if (0 != rc || '\0' == portrange[0]) {
          continue;
@@ -529,12 +528,11 @@ bool IsPortOverlapWithPTPorts(int mgmtport)
       } else if ( (0 == strcmp("0", query)) || (0 == strcasecmp("false", query)) ) {
         continue;
       }
-      char sdport[10];
-      char edport[10];
+      char sdport[11] = {0};
+      char edport[11] = {0};
       char portrange[30];
       portrange[0]='\0';
-      sdport[0] = '\0';
-      edport[0] = '\0';
+
       rc = syscfg_get(namespace, "trigger_range", portrange, sizeof(portrange));
       if (0 != rc || '\0' == portrange[0]) {
          continue;
@@ -2500,6 +2498,7 @@ CosaDmlDcSetFactoryReset
         int rc = -1;
         UtopiaContext ctx;
         firewall_t fw;
+        memset(&fw, 0, sizeof(fw));
    		CcspTraceWarning(("FactoryReset:%s Resetting Firewall to factory defaults ...\n",__FUNCTION__));
         fwSync = 1; //inform middle layer to get data from backend not cache
         if (!Utopia_Init(&ctx))
