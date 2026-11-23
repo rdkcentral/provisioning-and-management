@@ -491,29 +491,28 @@ DNSFailover_SetManagerEnabled(BOOL enable)
     char mode[8] = {0};
     int rc;
 
-    if (syscfg_get(NULL, "Device_Mode", mode, sizeof(mode)) != 0)
+    if (enable)
     {
-        CcspTraceError(("DNS failover service request not made: cannot read Device_Mode\n"));
-        return FALSE;
+        rc = syscfg_get(NULL, "Device_Mode", mode, sizeof(mode));
+        if (rc != 0)
+        {
+            CcspTraceError(("DNS failover Device_Mode read failed: rc=%d; using router behavior\n", rc));
+            mode[0] = '\0';
+        }
     }
 
-    if (strcmp(mode, "1") == 0)
+    if (strcmp(mode, "1") == 0 && enable)
     {
-        CcspTraceInfo(("DNS failover service request skipped in extender mode\n"));
+        CcspTraceInfo(("DNS failover manager start skipped in extender mode\n"));
         return TRUE;
     }
-
-    if (strcmp(mode, "0") != 0)
-    {
-        CcspTraceError(("DNS failover service request not made: invalid Device_Mode='%s'\n", mode));
-        return FALSE;
-    }
-
-    /* Startup calls dmcli back into PAM; do not wait for the service job. */
-    if (enable)
-        rc = v_secure_system("systemctl --no-block start dns-failover-manager.service");
     else
-        rc = v_secure_system("systemctl --no-block stop dns-failover-manager.service unbound.service");
+    {
+        if (enable)
+            rc = v_secure_system("systemctl --no-block start dns-failover-manager.service");
+        else
+            rc = v_secure_system("systemctl --no-block stop dns-failover-manager.service unbound.service");
+    }
 
     if (rc != 0)
     {
