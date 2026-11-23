@@ -14,9 +14,7 @@
 #include "secure_wrapper.h"
 #include <telemetry_busmessage_sender.h>
 
-#ifdef RDKB_EXTENDER_ENABLED
 #include <syscfg/syscfg.h>
-#endif
 
 static const DNS_FAILOVER_CONFIG g_dnsFailoverDefaults =
 {
@@ -490,27 +488,26 @@ DNSFailover_WriteConfig(const DNS_FAILOVER_CONFIG* config)
 BOOL
 DNSFailover_SetManagerEnabled(BOOL enable)
 {
+    char mode[8] = {0};
     int rc;
 
-#ifdef RDKB_EXTENDER_ENABLED
-    if (enable)
+    if (syscfg_get(NULL, "Device_Mode", mode, sizeof(mode)) != 0)
     {
-        char mode[8] = {0};
-
-        if (syscfg_get(NULL, "Device_Mode", mode, sizeof(mode)) != 0 ||
-            (strcmp(mode, "0") != 0 && strcmp(mode, "1") != 0))
-        {
-            CcspTraceError(("DNS failover manager start not requested: cannot determine Device_Mode\n"));
-            return FALSE;
-        }
-
-        if (strcmp(mode, "1") == 0)
-        {
-            CcspTraceInfo(("DNS failover manager start skipped in extender mode\n"));
-            return TRUE;
-        }
+        CcspTraceError(("DNS failover service request not made: cannot read Device_Mode\n"));
+        return FALSE;
     }
-#endif
+
+    if (strcmp(mode, "1") == 0)
+    {
+        CcspTraceInfo(("DNS failover service request skipped in extender mode\n"));
+        return TRUE;
+    }
+
+    if (strcmp(mode, "0") != 0)
+    {
+        CcspTraceError(("DNS failover service request not made: invalid Device_Mode='%s'\n", mode));
+        return FALSE;
+    }
 
     /* Startup calls dmcli back into PAM; do not wait for the service job. */
     if (enable)
