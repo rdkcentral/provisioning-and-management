@@ -2140,6 +2140,7 @@ void* restoreAllDBs(void* arg)
     v_secure_system("sync; find /nvram2 /data -mindepth 1 | grep -vE \"Q[[:xdigit:]]{8}$\" | xargs rm -rf; sync");
     //set flags for all necessary modules.voice module will use HFRES_TELCOVOIP and HFRES_TELCOVOICE
     v_secure_system("echo 1 > /data/HARD_FACTORY;echo 1 > /data/HFRES_UTOPIA;echo 1 > /data/HFRES_TELCOVOIP;echo 2 > /data/HFRES_TELCOVOICE;sync");
+    v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
 #elif defined(_HUB4_PRODUCT_REQ_)
 	v_secure_system("rm -f /nvram/ETH_WAN_PORT_RECLAIMED");
 	v_secure_system("rm -rf /nvram/lxy");
