@@ -2390,7 +2390,7 @@ int findLocalPortAvailable()
 BOOL isProdHardened(void)
 {
 
-#if defined(_CBR2_PRODUCT_REQ_)
+#if defined(_SHORTS_FALLBACK_)
 return FALSE;
 }
 #else
