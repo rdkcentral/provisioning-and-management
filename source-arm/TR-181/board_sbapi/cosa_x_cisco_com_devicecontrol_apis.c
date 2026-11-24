@@ -2746,6 +2746,7 @@ CosaDmlDcSetFactoryReset
 #endif
 #if defined(_SR213_PRODUCT_REQ_)
         v_secure_system("rm -rf /data/.kernel_nvram.setting");
+        v_secure_system("sync; touch /data/.do_fr_on_boot; sync");
 #endif
 	}
 #endif
