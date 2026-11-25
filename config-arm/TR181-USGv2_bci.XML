@@ -1613,11 +1613,43 @@
                                         <syntax>bool</syntax>
                                         <writable>true</writable>
                                       </parameter>
-                                  </parameters>
-                              </object>
-                            </objects>
-                        </object>
-                      <object>
+                                   </parameters>
+                               </object>
+                             </objects>
+                         </object>
+                       <object>
+                           <name>MultiProcessDetect</name>
+                           <objectType>object</objectType>
+                           <functions>
+                               <func_GetParamBoolValue>MultiProcessDetect_GetParamBoolValue</func_GetParamBoolValue>
+                               <func_SetParamBoolValue>MultiProcessDetect_SetParamBoolValue</func_SetParamBoolValue>
+                               <func_GetParamStringValue>MultiProcessDetect_GetParamStringValue</func_GetParamStringValue>
+                               <func_SetParamStringValue>MultiProcessDetect_SetParamStringValue</func_SetParamStringValue>
+                               <func_GetParamUlongValue>MultiProcessDetect_GetParamUlongValue</func_GetParamUlongValue>
+                               <func_SetParamUlongValue>MultiProcessDetect_SetParamUlongValue</func_SetParamUlongValue>
+                           </functions>
+                           <parameters>
+                               <parameter>
+                                   <name>Enable</name>
+                                   <type>boolean</type>
+                                   <syntax>bool</syntax>
+                                   <writable>true</writable>
+                               </parameter>
+                               <parameter>
+                                   <name>ExcludeList</name>
+                                   <type>string</type>
+                                   <syntax>string</syntax>
+                                   <writable>true</writable>
+                               </parameter>
+                               <parameter>
+                                   <name>DetectionInterval</name>
+                                   <type>unsignedInt</type>
+                                   <syntax>uint32</syntax>
+                                   <writable>true</writable>
+                               </parameter>
+                           </parameters>
+                       </object>
+                       <object>
 			<object>
                         	<name>RBUS</name>
                         	<objectType>object</objectType>
