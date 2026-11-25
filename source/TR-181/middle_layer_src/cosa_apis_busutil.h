@@ -180,3 +180,6 @@ ANSC_STATUS PAM_GetInterfaceInstanceFromVlanmanager(char *pIfName, PUCHAR *pMatc
 ANSC_STATUS RdkBus_GetParamValueFromAnyComp( char * pQuery, char *pValue);
 #endif
 #endif
+
+ANSC_STATUS RdkBus_SendParamValueChangeSignalAsync (char *paramName, char *oldValue, char *newValue);
+

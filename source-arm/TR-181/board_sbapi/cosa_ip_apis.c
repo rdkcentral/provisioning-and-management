@@ -70,6 +70,7 @@
 #include "cosa_ip_apis_multilan.h"
 #include "secure_wrapper.h"
 #include "safec_lib_common.h"
+#include "ccsp_base_api.h"
 
 #ifdef _ONESTACK_PRODUCT_REQ_
 #include <rdkb_feature_mode_gate.h>
@@ -367,6 +368,9 @@ static USG_IF_CFG_T g_usg_if_cfg[] =
 #endif
 #endif      
     {"lo",          COSA_DML_LINK_TYPE_EthLink, FALSE}, /*DH  change the value of gDmsbIpIfLoopbackInstNum too, if "lo" is moved to a different location */
+#if defined(ENABLE_ETH_WAN)
+    {"eth0_1",      COSA_DML_LINK_TYPE_EthLink, TRUE},
+#endif
     /*
      *  Multi-LAN -- still have to keep primary LAN interface for IPv6 settings -- overlapping with MLAN configuration
      *  Stay with the name "brlan0" for now.
@@ -407,6 +411,10 @@ ANSC_STATUS CosaUpdateIfname(int Index, char *Ifname)
     rc = strcpy_s((char *)g_ipif_names[Index],sizeof(g_ipif_names[Index]), Ifname);
     ERR_CHK(rc);
 
+    char oldFirstUpstreamIpInterface[128] = {0};
+    /* Save current value before updating */
+    snprintf(oldFirstUpstreamIpInterface, sizeof(oldFirstUpstreamIpInterface), "%s", gFirstUpstreamIpInterface);
+
     /* Wan Iface changed. Reset First Up/Down stream interfaces details to update again */
     memset(gFirstUpstreamIpInterface, 0 , sizeof(gFirstUpstreamIpInterface));
     memset(gFirstDownstreamIpInterface, 0 , sizeof(gFirstDownstreamIpInterface));
@@ -416,6 +424,26 @@ ANSC_STATUS CosaUpdateIfname(int Index, char *Ifname)
      * directly setting gFirstUpstreamIpInterface to IP.Interface updated by WanManager.
      */
     snprintf(gFirstUpstreamIpInterface, sizeof(gFirstUpstreamIpInterface), "Device.IP.Interface.%d.", Index+1);
+
+    /* Notify only if value changed */
+    if (strcmp(oldFirstUpstreamIpInterface, gFirstUpstreamIpInterface) != 0)
+    {
+       CcspTraceInfo(("%s %d FirstUpstreamIpInterface changed: old='%s' new='%s'\n", __FUNCTION__, __LINE__, oldFirstUpstreamIpInterface, gFirstUpstreamIpInterface));
+
+       if (bus_handle)
+       {
+          ANSC_STATUS ret = RdkBus_SendParamValueChangeSignalAsync ("com.cisco.spvtg.ccsp.pam.Helper.FirstUpstreamIpInterface", "", gFirstUpstreamIpInterface);
+          CcspTraceInfo(("%s %d Sent RdkBus_SendParamValueChangeSignalAsync param='%s' value='%s' ret=%lu\n",__FUNCTION__, __LINE__, "com.cisco.spvtg.ccsp.pam.Helper.FirstUpstreamIpInterface", gFirstUpstreamIpInterface, ret));
+          if (ret != ANSC_STATUS_SUCCESS)
+          {
+             CcspTraceWarning(("%s %d failed to create async signal thread\n", __FUNCTION__, __LINE__));
+          }
+       }
+       else
+       {
+          CcspTraceWarning(("%s %d bus_handle is NULL; cannot send WAN change signal\n", __FUNCTION__, __LINE__));
+       }
+    }
 #endif
     return ANSC_STATUS_SUCCESS;
 }

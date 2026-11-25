@@ -1862,9 +1862,19 @@ Interface2_SetParamStringValue
                           return FALSE;
                        }
 #if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
-                       /* LowerLayers Updated from WanManger. Allow only 1st interface.*/
-                       if(pIPInterface->Cfg.InstanceNumber == 1)
+                       /* LowerLayers updated by WanManager.
+                        * Update FirstUpstreamIpInterface only when the interface associated
+                        * with the LowerLayers update matches the active WAN interface. */
+                       CHAR current_wan_ifname[64] = {0};
+                       if ((commonSyseventGet("current_wan_ifname", current_wan_ifname, sizeof(current_wan_ifname)) != 0) || (current_wan_ifname[0] == '\0'))
                        {
+                            AnscTraceError(("%s: Sysevent current_wan_ifname is unavailable or empty, CosaUpdateIfname() is not invoked\n", __FUNCTION__));
+                            return FALSE;
+                       }
+                       AnscTraceInfo(("%s: LinkName=%s, current_wan_ifname=%s\n", __FUNCTION__, ucEntryNameValue, current_wan_ifname));
+                       if (strcmp(current_wan_ifname, ucEntryNameValue) == 0)
+                       {
+                           AnscTraceWarning(("%s: Active WAN matched. LinkName=%s, invoking  CosaUpdateIfname()\n", __FUNCTION__, ucEntryNameValue));
                            rc = STRCPY_S_NOCLOBBER(pIPInterface->Cfg.LowerLayers, sizeof(pIPInterface->Cfg.LowerLayers), pString);
                            if(rc != EOK)
                            {
