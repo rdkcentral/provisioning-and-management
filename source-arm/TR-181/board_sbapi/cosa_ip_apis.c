@@ -967,16 +967,32 @@ IPIF_getEntry_for_Ipv6Addr
         else if (p_v6addr->scope == IPV6_ADDR_SCOPE_GLOBAL)
         {
             char dhcpv6_addr[64] = {0};
+            char dhcpv6_addr_normalized[64] = {0};
             char global_addr[64] = {0};
+            char ra_pref_normalized[64] = {0};
             struct sockaddr_in6 sap;
+            struct sockaddr_in6 sap_ra;
 
-            /*first handle RA type*/
+            /*first handle RA type - with normalization for format-agnostic comparison*/
             for (j = 0; j< ra_num ; j++)
             {
-                if (!strncmp(p_v6addr->v6pre, p_ra[j].pref, sizeof(p_ra[j].pref)))
+                memset(&sap_ra, 0, sizeof(sap_ra));
+                memset(ra_pref_normalized, 0, sizeof(ra_pref_normalized));
+                
+                /* Extract prefix from RA (format: "2001:0558:6045:0012::/64") 
+                   We need to compare just the address part */
+                if (inet_pton(AF_INET6, p_ra[j].pref, &sap_ra.sin6_addr) > 0)
                 {
-                    p_dml_v6addr->Origin = COSA_DML_IP6_ORIGIN_AutoConfigured;
-                    break;
+                    sap_ra.sin6_family = AF_INET6;
+                    inet_ntop(AF_INET6, &sap_ra.sin6_addr, ra_pref_normalized, sizeof(ra_pref_normalized));
+                    
+                    /* Compare normalized prefix with device address
+                       Both now use standard notation regardless of original format */
+                    if (!strncmp(p_v6addr->v6addr, ra_pref_normalized, strlen(ra_pref_normalized)))
+                    {
+                        p_dml_v6addr->Origin = COSA_DML_IP6_ORIGIN_AutoConfigured;
+                        break;
+                    }
                 }
             }
             
@@ -984,41 +1000,63 @@ IPIF_getEntry_for_Ipv6Addr
             snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_SYSEVENT_NAME, (char *)g_ipif_names[ulIndex]);
             commonSyseventGet(sysEventName, dhcpv6_addr, sizeof(dhcpv6_addr));
 
-            if (!strncmp(p_v6addr->v6addr, dhcpv6_addr, sizeof(p_v6addr->v6addr))){
-                p_dml_v6addr->Origin = COSA_DML_IP6_ORIGIN_DHCPv6;
+            /* Normalize DHCPv6 address for format-agnostic comparison */
+            if (strlen(dhcpv6_addr) > 0 && p_dml_v6addr->Origin == 0)
+            {
+                memset(&sap, 0, sizeof(sap));
+                memset(dhcpv6_addr_normalized, 0, sizeof(dhcpv6_addr_normalized));
+                
+                if (inet_pton(AF_INET6, dhcpv6_addr, &sap.sin6_addr) > 0)
+                {
+                    sap.sin6_family = AF_INET6;
+                    inet_ntop(AF_INET6, &sap.sin6_addr, dhcpv6_addr_normalized, sizeof(dhcpv6_addr_normalized));
+                    
+                    /* Compare normalized DHCPv6 address with device address */
+                    if (!strncmp(p_v6addr->v6addr, dhcpv6_addr_normalized, sizeof(p_v6addr->v6addr)))
+                    {
+                        p_dml_v6addr->Origin = COSA_DML_IP6_ORIGIN_DHCPv6;
 
-               if ( _ansc_strstr(g_ipif_names[ulIndex], wan_ifname) ) {
-                   memset(sysEventName, 0, sizeof(sysEventName));
-                   snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_IAID_SYSEVENT_NAME, wan_ifname);
-                   if (!commonSyseventGet(sysEventName, out, sizeof(out)))
-                        g_ipif_be_bufs[ulIndex].Info.iana_iaid = atoi(out);
-                   else
-                        g_ipif_be_bufs[ulIndex].Info.iana_iaid = 0;
+                       if ( _ansc_strstr(g_ipif_names[ulIndex], wan_ifname) ) {
+                           memset(sysEventName, 0, sizeof(sysEventName));
+                           snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_IAID_SYSEVENT_NAME, wan_ifname);
+                           if (!commonSyseventGet(sysEventName, out, sizeof(out)))
+                                g_ipif_be_bufs[ulIndex].Info.iana_iaid = atoi(out);
+                           else
+                                g_ipif_be_bufs[ulIndex].Info.iana_iaid = 0;
 
-                   memset(sysEventName, 0, sizeof(sysEventName));
-                   snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_T1_SYSEVENT_NAME, wan_ifname);
-                   if (!commonSyseventGet(sysEventName, out, sizeof(out)))
-                        g_ipif_be_bufs[ulIndex].Info.iana_t1 = atoi(out);
-                   else
-                        g_ipif_be_bufs[ulIndex].Info.iana_t1 = 0;
+                           memset(sysEventName, 0, sizeof(sysEventName));
+                           snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_T1_SYSEVENT_NAME, wan_ifname);
+                           if (!commonSyseventGet(sysEventName, out, sizeof(out)))
+                                g_ipif_be_bufs[ulIndex].Info.iana_t1 = atoi(out);
+                           else
+                                g_ipif_be_bufs[ulIndex].Info.iana_t1 = 0;
 
-                   memset(sysEventName, 0, sizeof(sysEventName));
-                   snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_T2_SYSEVENT_NAME, wan_ifname);
-                   if (!commonSyseventGet(sysEventName, out, sizeof(out)))
-                        g_ipif_be_bufs[ulIndex].Info.iana_t2 = atoi(out);
-                   else
-                        g_ipif_be_bufs[ulIndex].Info.iana_t2 = 0;
-               }
+                           memset(sysEventName, 0, sizeof(sysEventName));
+                           snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_T2_SYSEVENT_NAME, wan_ifname);
+                           if (!commonSyseventGet(sysEventName, out, sizeof(out)))
+                                g_ipif_be_bufs[ulIndex].Info.iana_t2 = atoi(out);
+                           else
+                                g_ipif_be_bufs[ulIndex].Info.iana_t2 = 0;
+                       }
+                    }
+                }
             }
 
-            commonSyseventGet(COSA_DML_DHCPV6S_ADDR_SYSEVENT_NAME, global_addr, sizeof(global_addr));
-            inet_pton(AF_INET6, global_addr, (struct sockaddr *) &sap.sin6_addr);
-            sap.sin6_family = AF_INET6;
-            inet_ntop(AF_INET6, (struct sockaddr *) &sap.sin6_addr, global_addr, sizeof(global_addr));
+            /* DHCP server check - already has normalization */
+            if (p_dml_v6addr->Origin == 0)
+            {
+                commonSyseventGet(COSA_DML_DHCPV6S_ADDR_SYSEVENT_NAME, global_addr, sizeof(global_addr));
+                if (strlen(global_addr) > 0)
+                {
+                    memset(&sap, 0, sizeof(sap));
+                    inet_pton(AF_INET6, global_addr, (struct sockaddr *) &sap.sin6_addr);
+                    sap.sin6_family = AF_INET6;
+                    inet_ntop(AF_INET6, (struct sockaddr *) &sap.sin6_addr, global_addr, sizeof(global_addr));
 
-            //fprintf(stderr, "changed event addr:%s, p_v6addr->v6addr:%s\n", global_addr, p_v6addr->v6addr);
-            if (!strncmp(p_v6addr->v6addr, global_addr, sizeof(p_v6addr->v6addr)))
-                p_dml_v6addr->Origin = COSA_DML_IP6_ORIGIN_AutoConfigured;
+                    if (!strncmp(p_v6addr->v6addr, global_addr, sizeof(p_v6addr->v6addr)))
+                        p_dml_v6addr->Origin = COSA_DML_IP6_ORIGIN_AutoConfigured;
+                }
+            }
 
         }
         
