@@ -2769,6 +2769,7 @@ CosaDmlFirewallSetConfig2
     int rc = -1;
     UtopiaContext ctx;
     firewall_t fw;
+    memset(&fw, 0, sizeof(fw));
 
     if ( !pCfg )
         return ANSC_STATUS_FAILURE;
@@ -6048,6 +6049,8 @@ CosaDmlSecuritySetConfig
     UtopiaContext ctx;
     errno_t safec_rc = -1;
     email_notification_t emailSetting, defaultEmailSetting;
+    memset(&emailSetting, 0, sizeof(emailSetting));
+    memset(&defaultEmailSetting, 0, sizeof(defaultEmailSetting));
      char logFilePath[MAX_PATH_LEN] = "";
     
     if(!Utopia_Init(&ctx))

@@ -1368,6 +1368,7 @@ static void readDHCPv4ServerPoolFromPSM()
             if(rc < EOK)
             {
                 ERR_CHK(rc);
+                AnscFreeMemory(pPoolLinkObj);
                 continue;
             }
 
@@ -1387,6 +1388,7 @@ static void readDHCPv4ServerPoolFromPSM()
             if(rc < EOK)
             {
                 ERR_CHK(rc);
+                AnscFreeMemory(pPoolLinkObj);
                 continue;
             }
             retPsmGet1 = PsmGetNextLevelInstances(bus_handle, g_Subsystem, param_name, &optionCnt, &optionList);
@@ -1423,6 +1425,7 @@ static void readDHCPv4ServerPoolFromPSM()
             }
             // push pool to the end of list
             AnscSListPushEntryAtBack(&g_dhcpv4_server_pool_list, &pPoolLinkObj->Linkage);   
+            pPoolLinkObj = NULL;
 
         }// poolCnt
 
@@ -3349,7 +3352,7 @@ int sbapi_get_dhcpv4_active_number(int index, ULONG minAddress, ULONG maxAddress
 		return(0);
 	}
 	while(fgets(buffer,sizeof(buffer),fp)){
-		if(sscanf((const char*)buffer,"%lu %20s %16s",&t1,mac,ip)<3){
+		if(sscanf((const char*)buffer,"%lu %19s %15s",&t1,mac,ip)<3){
 			continue;
 		}
         // compare subnet for correct pool
