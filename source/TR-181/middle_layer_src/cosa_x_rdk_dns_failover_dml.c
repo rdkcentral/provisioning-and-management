@@ -194,13 +194,18 @@ DNSFailover_Commit(ANSC_HANDLE hInsContext)
     previousEnable = active->Enable;
     *active = *candidate;
 
-    /* The file is committed; notify the manager to reload the complete config. */
-    DNSFailover_NotifyManager();
-
     if (previousEnable != active->Enable)
     {
         t2_event_s(active->Enable ? DNS_FAILOVER_T2_ENABLED : DNS_FAILOVER_T2_DISABLED, "override");
     }
+
+    /* Reconcile on every commit so a failed service request can be retried. */
+    if (!DNSFailover_SetManagerEnabled(active->Enable != 0))
+    {
+        CcspTraceError(("DNS failover configuration saved, but manager service request failed\n"));
+    }
+
+    DNSFailover_NotifyManager();
 
     CcspTraceInfo(("DNS failover config committed to NVRAM: Enable=%lu, ResolverSource=%s, ReplyDeadline=%lu, FailureEpisodeGap=%lu, FailureThreshold=%lu, MonitorTick=%lu, VerifyTimeout=%lu, VerifyAttempts=%lu, VerifyCooldown=%lu, RecoveryInitial=%lu, RecoveryMax=%lu, RecoverySuccessThreshold=%lu, ResolverReload=%lu\n",
         active->Enable, active->ResolverSource, active->ReplyDeadline, active->FailureEpisodeGap,
@@ -264,7 +269,8 @@ DNSFailoverStatus_GetParamStringValue
 
     DNSFailover_ReadStatusFile(&status);
 
-    if (strcmp(ParamName, "State") == 0) value = status.State;
+    if (strcmp(ParamName, "State") == 0)
+        value = DNSFailover_GetActiveConfig()->Enable ? status.State : "Disabled";
     else if (strcmp(ParamName, "LastFailureTime") == 0) value = status.LastFailureTime;
     else if (strcmp(ParamName, "LastRecoveryTime") == 0) value = status.LastRecoveryTime;
     else if (strcmp(ParamName, "LastVerificationResult") == 0) value = status.LastVerificationResult;
