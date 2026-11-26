@@ -734,10 +734,12 @@ WebGUIRestart(void *arg)
     /* Wait for 60 seconds */
     sleep(60);
 
-    #if defined (_XB6_PRODUCT_REQ_)
+    #if defined (_XB6_PRODUCT_REQ_) || defined (_CBR_PRODUCT_REQ_)
     system("/bin/systemctl restart CcspWebUI.service");
+    CcspTraceInfo(("%s -- WebUI restart via ccsp webui service \n", __FUNCTION__));
     #else
     system("/bin/sh /etc/webgui.sh &");
+    CcspTraceInfo(("%s -- WebUI restart via webgui.sh \n", __FUNCTION__));
     #endif
 
     pthread_mutex_lock(&webui_restart_mutex);
