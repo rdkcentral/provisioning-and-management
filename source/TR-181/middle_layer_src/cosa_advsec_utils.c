@@ -76,11 +76,15 @@ ANSC_STATUS CosaGetSysCfgString(char* setting, char* pValue, PULONG pulSize )
 {
     char buf[1024];
     memset(buf, 0, sizeof(buf));
+    if (pValue == NULL || pulSize == NULL)
+    {
+       return ANSC_STATUS_FAILURE;
+    }
     if(ANSC_STATUS_SUCCESS == syscfg_get( NULL, setting, buf, sizeof(buf)))
     {
       /*CID: 59107 Array compared against 0*/
       /*CID: 59338 Logically dead code*/
-       strncpy(pValue ,buf,strlen(buf));
+       snprintf(pValue, *pulSize, "%s", buf);
        *pulSize = AnscSizeOfString(pValue);
        return ANSC_STATUS_SUCCESS;
     }

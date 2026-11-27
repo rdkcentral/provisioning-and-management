@@ -11,7 +11,10 @@
 #include <unistd.h>
 
 #include "safec_lib_common.h"
+#include "secure_wrapper.h"
 #include <telemetry_busmessage_sender.h>
+
+#include <syscfg/syscfg.h>
 
 static const DNS_FAILOVER_CONFIG g_dnsFailoverDefaults =
 {
@@ -479,6 +482,47 @@ DNSFailover_WriteConfig(const DNS_FAILOVER_CONFIG* config)
         config->VerifyAttempts, config->VerifyCooldown, config->RecoveryInitial, config->RecoveryMax,
         config->RecoverySuccessThreshold, config->ResolverReload));
 
+    return TRUE;
+}
+
+BOOL
+DNSFailover_SetManagerEnabled(BOOL enable)
+{
+    char mode[8] = {0};
+    int rc;
+
+    if (enable)
+    {
+        rc = syscfg_get(NULL, "Device_Mode", mode, sizeof(mode));
+        if (rc != 0)
+        {
+            CcspTraceError(("DNS failover Device_Mode read failed: rc=%d; using router behavior\n", rc));
+            mode[0] = '\0';
+        }
+    }
+
+    if (strcmp(mode, "1") == 0 && enable)
+    {
+        CcspTraceInfo(("DNS failover manager start skipped in extender mode\n"));
+        return TRUE;
+    }
+    else
+    {
+        if (enable)
+            rc = v_secure_system("systemctl --no-block start dns-failover-manager.service");
+        else
+            rc = v_secure_system("systemctl --no-block stop dns-failover-manager.service unbound.service");
+    }
+
+    if (rc != 0)
+    {
+        CcspTraceError(("DNS failover service request failed (%s): rc=%d\n",
+            enable ? "start manager" : "stop manager and Unbound", rc));
+        return FALSE;
+    }
+
+    CcspTraceInfo(("DNS failover service request accepted (%s); service completion is asynchronous\n",
+        enable ? "start manager" : "stop manager and Unbound"));
     return TRUE;
 }
 
