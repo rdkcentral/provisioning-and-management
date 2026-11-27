@@ -25,8 +25,8 @@
 #include <gmock/gmock.h>
 
 #define GTEST_DEFAULT_RESULT_FILEPATH "/tmp/Gtest_Report/"
-#define GTEST_DEFAULT_RESULT_FILENAME "CcspPandMSsp_gtest_report.json"
-#define GTEST_REPORT_FILEPATH_SIZE 128
+#define GTEST_DEFAULT_RESULT_STEM "CcspPandMSsp_gtest"
+#define GTEST_REPORT_FILEPATH_SIZE 256
 
 class PandMSSPEnvironment : public ::testing::Environment
 {
@@ -47,12 +47,27 @@ class PandMSSPEnvironment : public ::testing::Environment
 GTEST_API_ int main(int argc, char *argv[])
 {
     char testresults_fullfilepath[GTEST_REPORT_FILEPATH_SIZE];
-    char buffer[GTEST_REPORT_FILEPATH_SIZE];
+    char reportname[GTEST_REPORT_FILEPATH_SIZE];
 
     memset( testresults_fullfilepath, 0, GTEST_REPORT_FILEPATH_SIZE );
-    memset( buffer, 0, GTEST_REPORT_FILEPATH_SIZE );
+    memset( reportname, 0, GTEST_REPORT_FILEPATH_SIZE );
 
-    snprintf( testresults_fullfilepath, GTEST_REPORT_FILEPATH_SIZE, "json:%s%s" , GTEST_DEFAULT_RESULT_FILEPATH , GTEST_DEFAULT_RESULT_FILENAME);
+    /* Derive the report name from the binary name so multiple test binaries
+       don't overwrite each other's JSON report in the shared directory. */
+    const char* base = (argc > 0 && argv[0] != NULL && argv[0][0] != '\0') ? argv[0] : GTEST_DEFAULT_RESULT_STEM;
+    const char* slash = strrchr(base, '/');
+    if (slash != NULL)
+    {
+        base = slash + 1;
+    }
+    snprintf( reportname, sizeof(reportname), "%s", base );
+    size_t namelen = strlen(reportname);
+    if (namelen > 4 && strcmp(reportname + namelen - 4, ".bin") == 0)
+    {
+        reportname[namelen - 4] = '\0';
+    }
+
+    snprintf( testresults_fullfilepath, sizeof(testresults_fullfilepath), "json:%s%s_report.json", GTEST_DEFAULT_RESULT_FILEPATH, reportname );
     ::testing::GTEST_FLAG(output) = testresults_fullfilepath;
     ::testing::InitGoogleMock(&argc, argv);
     return RUN_ALL_TESTS();
