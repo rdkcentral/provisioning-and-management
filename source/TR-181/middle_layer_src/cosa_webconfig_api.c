@@ -544,7 +544,8 @@ static int read_one_to_one_nat_cache(t_one_to_one_nat_cache *nat)
                 if (last == NULL)
                     goto invalid_mapping;
                 *last = '\0';
-                int port_ret = CheckIfPortsAreValid(value, last + 1);
+                int port_ret = (strcmp(value, "0") == 0 && strcmp(last + 1, "0") == 0)
+                    ? 0 : CheckIfPortsAreValid(value, last + 1);
                 *last = ' ';
                 if (port_ret != 0)
                     goto invalid_mapping;
@@ -580,6 +581,16 @@ failure:
     return SYSCFG_FAILURE;
 }
 
+void lock_one_to_one_nat_cache(void)
+{
+    pthread_mutex_lock(&one_to_one_nat_cache_lock);
+}
+
+void unlock_one_to_one_nat_cache(void)
+{
+    pthread_mutex_unlock(&one_to_one_nat_cache_lock);
+}
+
 int update_one_to_one_nat_cache(void)
 {
     t_one_to_one_nat_cache *nat = calloc(1, sizeof(*nat));
@@ -587,11 +598,9 @@ int update_one_to_one_nat_cache(void)
 
     if (nat != NULL)
     {
-        pthread_mutex_lock(&one_to_one_nat_cache_lock);
         ret = read_one_to_one_nat_cache(nat);
         if (ret == 0)
             one_to_one_nat_cache = *nat;
-        pthread_mutex_unlock(&one_to_one_nat_cache_lock);
         free(nat);
     }
     if (ret != 0)
@@ -631,6 +640,7 @@ static int restore_one_to_one_nat_to_DB(const t_one_to_one_nat_cache *nat, unsig
                 if (last_id == ULONG_MAX)
                     goto exit;
                 id = last_id + 1;
+                CcspTraceWarning(("%s: NAT alias %s remapped to %s%lu\n", __FUNCTION__, nat->entries[i].val, ALIAS_PRE_PFR, id));
                 snprintf(alias, sizeof(alias), ALIAS_PRE_PFR"%lu", id);
             }
             last_id = id;
@@ -664,6 +674,55 @@ exit:
         CcspTraceError(("%s: failed to restore NAT 1:1 cache\n", __FUNCTION__));
     free(restored);
     return ret;
+}
+
+/* Shift PF range aliases above the highest cached NAT ID so NAT keeps its aliases on restore.
+ * Returns 1 if rebased; 0 if nothing to do or the shifted keys would not fit in BLOCK_SIZE. */
+static int rebase_pf_cache_ids_above_nat(const t_one_to_one_nat_cache *nat)
+{
+    const size_t prefix = sizeof(ALIAS_PRE_PFR) - 1;
+    unsigned long base = 0, id = 0, max_id = 0;
+    char key[VAL_BLOCK_SIZE] = {0}, suffix[BLOCK_SIZE] = {0}, *end = NULL;
+    int i = 0, pass = 0;
+
+    for (i = 0; i < nat->cache_size; i++)
+        if (nat->entries[i].rule_id > base)
+            base = nat->entries[i].rule_id;
+    if (base == 0)
+        return 0;
+
+    for (pass = 0; pass < 2; pass++)
+    {
+        for (i = 0; i < pf_cache_size; i++)
+        {
+            char *src = NULL;
+            if (strncmp(pf_cache[i].cmd, ALIAS_PFR, sizeof(ALIAS_PFR) - 1) == 0)
+                src = pf_cache[i].val;
+            else if (strncmp(pf_cache[i].cmd, ALIAS_PRE_PFR, prefix) == 0)
+                src = pf_cache[i].cmd;
+            if (src == NULL || strncmp(src, ALIAS_PRE_PFR, prefix) != 0 || !isdigit((unsigned char)src[prefix]))
+                continue;
+            errno = 0;
+            id = strtoul(src + prefix, &end, 10);
+            if (errno != 0 || id > ULONG_MAX - base)
+                return 0;
+            if (pass == 0)
+            {
+                if (id > max_id)
+                    max_id = id;
+                continue;
+            }
+            snprintf(suffix, sizeof(suffix), "%s", end);
+            if (src == pf_cache[i].val)
+                snprintf(pf_cache[i].val, VAL_BLOCK_SIZE, ALIAS_PRE_PFR"%lu", id + base);
+            else
+                snprintf(pf_cache[i].cmd, BLOCK_SIZE, ALIAS_PRE_PFR"%lu%s", id + base, suffix);
+        }
+        if (pass == 0 && (max_id == 0 || max_id > ULONG_MAX - base ||
+            snprintf(key, sizeof(key), ALIAS_PRE_PFR"%lu"ALIAS_PFR_INT_RANGE, max_id + base) >= BLOCK_SIZE))
+            return 0;
+    }
+    return 1;
 }
 
 /* Read blob entries into a cache */
@@ -1002,6 +1061,9 @@ pErr Process_PF_WebConfigRequest(void *Data)
                 lpfEnable = 1 ;
         
         one_to_one_nat_first_id = rpm->entries_count + 1;
+        /* PF IDs now sit above every NAT ID, so NAT restore needs no remap. */
+        if (rebase_pf_cache_ids_above_nat(&one_to_one_nat_cache_bkup))
+            one_to_one_nat_first_id = 1;
     	if ( SYSCFG_FAILURE == apply_pf_cache_ToDB(pf_cache,pf_cache_size, lpfEnable ) )
     	{
             	CcspTraceError(("Failed to apply Portmap configurartion\n"));

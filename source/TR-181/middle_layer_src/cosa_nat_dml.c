@@ -584,10 +584,12 @@ NAT_Commit
     PCOSA_DATAMODEL_NAT             pMyObject     = (PCOSA_DATAMODEL_NAT)g_pCosaBEManager->hNat;
     PCOSA_DML_NAT                   pNat          = &pMyObject->Nat;
 
+    lock_one_to_one_nat_cache();
     returnStatus = CosaDmlNatSet(NULL, pNat);
 
     if (returnStatus == ANSC_STATUS_SUCCESS)
         update_one_to_one_nat_cache();
+    unlock_one_to_one_nat_cache();
 
     return returnStatus;
 }
@@ -1787,9 +1789,11 @@ PortMapping_DelEntry
     }
     else
     {
+        lock_one_to_one_nat_cache();
         returnStatus = CosaDmlNatDelPortMapping(NULL, pNatPMapping->InstanceNumber);
         if (returnStatus == ANSC_STATUS_SUCCESS)
             update_one_to_one_nat_cache();
+        unlock_one_to_one_nat_cache();
     }
 
     if ( returnStatus == ANSC_STATUS_SUCCESS )
@@ -2707,6 +2711,7 @@ PortMapping_Commit
     PCOSA_DATAMODEL_NAT                 pNat          = (PCOSA_DATAMODEL_NAT)g_pCosaBEManager->hNat;
     errno_t                             rc            = -1;
 
+    lock_one_to_one_nat_cache();
     if ( pCxtLink->bNew )
     {
         returnStatus = CosaDmlNatAddPortMapping(NULL, pNatPMapping );
@@ -2746,6 +2751,7 @@ PortMapping_Commit
 
     if (returnStatus == ANSC_STATUS_SUCCESS)
         update_one_to_one_nat_cache();
+    unlock_one_to_one_nat_cache();
 
     AnscZeroMemory( pNat->AliasOfPortMapping, sizeof(pNat->AliasOfPortMapping) );
 

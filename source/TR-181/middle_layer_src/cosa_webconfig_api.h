@@ -103,6 +103,8 @@ typedef struct {
  * Returns 0 on success; logs and returns SYSCFG_FAILURE on failure.
  */
 int update_one_to_one_nat_cache(void);
+void lock_one_to_one_nat_cache(void);
+void unlock_one_to_one_nat_cache(void);
 
 extern t_cache pf_cache[PORTMAP_CACHE_SIZE];
 extern t_cache pf_cache_bkup[PORTMAP_CACHE_SIZE];
