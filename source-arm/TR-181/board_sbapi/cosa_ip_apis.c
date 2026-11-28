@@ -429,6 +429,10 @@ CosaDmlIpInit
     )
 {
     errno_t rc = -1;
+    char wanInterface[32] = {0};
+    PandM_GetWanInterface(wanInterface);
+    snprintf(g_usg_if_cfg[0].IfName, sizeof(g_usg_if_cfg[0].IfName), "%s", wanInterface);
+
 #if defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
     ANSC_STATUS                     returnStatus;
     ULONG i;
@@ -763,9 +767,19 @@ static int _get_datetime_lfts(char * p_pref_datetime, int len1,  char * p_valid_
         memset( sysEventName, 0, sizeof(sysEventName));
         snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_VLDTM_SYSEVENT_NAME, (char *)g_ipif_names[ulIndex]);
         commonSyseventSet(sysEventName, iana_vldtm);
-#else    
-    commonSyseventSet(COSA_DML_DHCPV6C_ADDR_PRETM_SYSEVENT_NAME, iana_pretm);
-    commonSyseventSet(COSA_DML_DHCPV6C_ADDR_VLDTM_SYSEVENT_NAME, iana_vldtm);
+#else
+    char wanInterface[32] = {'\0'};
+    char sysevent_name[BUFLEN_128] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
+
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_addr_pretm", wanInterface);
+    commonSyseventSet(sysevent_name, iana_pretm);
+
+    memset(sysevent_name, 0, sizeof(sysevent_name));
+    snprintf(sysevent_name, sizeof(sysevent_name), "tr_%s_dhcpv6_client_addr_vldtm", wanInterface);
+    commonSyseventSet(sysevent_name, iana_vldtm);
+	
 #endif
 
     return 0;
@@ -944,6 +958,10 @@ IPIF_getEntry_for_Ipv6Addr
     /*save for free()*/
     orig_p_v6addr = p_v6addr;
 
+    char wanInterface[32] = {0};
+    char sysevent_name[BUFLEN_128] = {0};
+    PandM_GetWanInterface(wanInterface);
+
     /*the following loop block is on link-local, loopback, RA, DHCPv6 IANA address*/
     /*if we have too many ipv6 addresses, drop them*/
 
@@ -992,6 +1010,7 @@ IPIF_getEntry_for_Ipv6Addr
                    snprintf(sysEventName, sizeof(sysEventName), COSA_DML_WANIface_ADDR_IAID_SYSEVENT_NAME, wan_ifname);
                    if (!commonSyseventGet(sysEventName, out, sizeof(out)))
                         g_ipif_be_bufs[ulIndex].Info.iana_iaid = atoi(out);
+
                    else
                         g_ipif_be_bufs[ulIndex].Info.iana_iaid = 0;
 
@@ -1008,6 +1027,7 @@ IPIF_getEntry_for_Ipv6Addr
                         g_ipif_be_bufs[ulIndex].Info.iana_t2 = atoi(out);
                    else
                         g_ipif_be_bufs[ulIndex].Info.iana_t2 = 0;
+
                }
             }
 
@@ -4832,6 +4852,51 @@ CosaDmlIpGetActivePorts
     return pActivePort;
 }
 
+/**
+ * Description: Re-reads the current WAN interface name and refreshes the
+ *              cached WAN-slot (index 0) name buffers so the
+ *              Device.IP.Interface data model reflects the runtime interface.
+ * @param[in,out] pIPInterface Pointer to the IP interface structure to be updated.
+ * @return void
+ */
+void
+CosaDmlIpIfRefreshWanIfName
+    (
+        PCOSA_DML_IP_IF_FULL2 pIPInterface
+    )
+{
+    errno_t rc                      = -1;
+    CHAR    wanInterface[BUFLEN_32] = {0};
+    CHAR    alias[BUFLEN_32]        = {0};
+
+    /* Update the passed-in interface structure if it is the WAN interface */
+    if ((pIPInterface == NULL) || (pIPInterface->Cfg.InstanceNumber != 1))
+    {
+        return;
+    }
+
+    PandM_GetWanInterface(wanInterface);
+    if ((wanInterface[0] != '\0') && (strcmp(pIPInterface->Info.Name, wanInterface) != 0))
+    {
+        rc = strcpy_s(pIPInterface->Info.Name, sizeof(pIPInterface->Info.Name), wanInterface);
+        ERR_CHK(rc);
+        rc = strcpy_s(pIPInterface->Cfg.LinkName, sizeof(pIPInterface->Cfg.LinkName), wanInterface);
+        ERR_CHK(rc);
+
+        sprintf_s(alias, sizeof(alias), "Interface_%s", wanInterface);
+        rc = strcpy_s(pIPInterface->Cfg.Alias, sizeof(pIPInterface->Cfg.Alias), alias);
+        ERR_CHK(rc);
+
+        rc = strcpy_s(g_usg_if_cfg[0].IfName, sizeof(g_usg_if_cfg[0].IfName), wanInterface);
+        ERR_CHK(rc);
+        rc = strcpy_s((char *)g_ipif_names[0], sizeof(g_ipif_names[0]), wanInterface);
+        ERR_CHK(rc);
+        rc = strcpy_s(g_ipif_be_bufs[0].Info.Name, sizeof(g_ipif_be_bufs[0].Info.Name), wanInterface);
+        ERR_CHK(rc);
+        rc = strcpy_s(g_ipif_be_bufs[0].Cfg.LinkName, sizeof(g_ipif_be_bufs[0].Cfg.LinkName), wanInterface);
+        ERR_CHK(rc);
+    }
+}
 
 #endif
 

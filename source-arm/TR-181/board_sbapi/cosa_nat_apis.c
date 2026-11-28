@@ -3842,6 +3842,8 @@ BOOL CosaDmlNatChkPortMappingIPV6Address(char* address)
     int i;
     ipv6_addr_info_t * p_v6addr = NULL;
     int  v6addr_num = 0;
+    char wanInterface[32] = {'\0'};
+    PandM_GetWanInterface(wanInterface);
 	
     if(*address == 'x'){
 		return TRUE; /*ipv6 not set, default is 'x'*/
@@ -3853,7 +3855,7 @@ BOOL CosaDmlNatChkPortMappingIPV6Address(char* address)
 	}	
 
     /* cannot set wan IPv6 address */
-    CosaUtilGetIpv6AddrInfo("erouter0", &p_v6addr, &v6addr_num);
+    CosaUtilGetIpv6AddrInfo(wanInterface, &p_v6addr, &v6addr_num);
     for(i = 0; i < v6addr_num; i++ )
     {
         if(p_v6addr[i].scope == IPV6_ADDR_SCOPE_GLOBAL)

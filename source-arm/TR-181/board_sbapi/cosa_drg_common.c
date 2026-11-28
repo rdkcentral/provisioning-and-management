@@ -100,4 +100,14 @@ int getOSStats(char* iface, POSStats stats)
     stats->txMulticast  = ifstat.MulticastPacketsSent;
     return 0;
 }
+
+void PandM_GetWanInterface(char *wanInterface)
+{
+    commonSyseventGet("current_wan_ifname", wanInterface,BUFLEN_32);
+    if (wanInterface[0] == '\0')
+    {
+        syscfg_get( NULL, "wan_ifname", wanInterface, BUFLEN_32);
+    }
+}
+
 #endif

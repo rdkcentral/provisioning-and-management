@@ -80,8 +80,6 @@ _COSA_DML_NEIGHDISC_IF_STATUS
 }
 COSA_DML_NEIGHDISC_IF_STATUS, *PCOSA_DML_NEIGHDISC_IF_STATUS;
 
-#define COSA_DML_NEIGHDISC_IFNAME                   CFG_TR181_NeighborDiscovery_IfName
-
 /*
  *  Structure definitions for NEIGHDISC InterfaceSetting
  */

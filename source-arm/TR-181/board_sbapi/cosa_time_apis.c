@@ -468,13 +468,7 @@ void* startNTP(void* arg)
     v_secure_system("rm -rf /tmp/ntpclient.log");
     AnscTraceWarning(("%s: stopping ntpclient \n", __FUNCTION__));
 
-    /*get current eRT interface*/
-    commonSyseventGet("current_wan_ifname", wan_interface, sizeof(wan_interface));
-    if('\0' == wan_interface[0])
-    {
-        /*default wan interface*/
-        commonSyseventGet("wan_ifname", wan_interface, sizeof(wan_interface));
-    }
+    PandM_GetWanInterface(wan_interface);
 
     /* XXX: ntpclient only support one NTP Server */
     if (pTimeCfg->bEnabled)
