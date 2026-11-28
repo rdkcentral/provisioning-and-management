@@ -74,6 +74,11 @@
 
 #include "cosa_dml_api_common.h"
 
+#define FORWARDING_DNS_SERVER_ENABLE      "dmsb.dns.forwarding.%d.enable"
+#define FORWARDING_DNS_SERVER_ALIAS       "dmsb.dns.forwarding.%d.alias"
+#define FORWARDING_DNS_SERVER_INTERFACE   "dmsb.dns.forwarding.%d.interface"
+#define FORWARDING_DNS_SERVER             "dmsb.dns.forwarding.%d.dnsserver"
+
 /**********************************************************************
                 STRUCTURE AND CONSTANT DEFINITIONS
 **********************************************************************/
@@ -116,6 +121,13 @@ _COSA_DML_DNS_CLIENT_SERVER
 }
 COSA_DML_DNS_CLIENT_SERVER,  *PCOSA_DML_DNS_CLIENT_SERVER;
 
+typedef struct
+_COSA_DML_DNS_RELAY
+{
+    BOOLEAN                         bEnabled;
+    COSA_DML_DNS_STATUS             Status;
+}
+COSA_DML_DNS_RELAY, *PCOSA_DML_DNS_RELAY;
 
 typedef  struct
 _COSA_DML_DNS_RELAY_ENTRY
@@ -125,7 +137,11 @@ _COSA_DML_DNS_RELAY_ENTRY
 
     BOOLEAN                         bEnabled;
     COSA_DML_DNS_STATUS             Status;
+    #if (defined(_COSA_SIM_))
     ANSC_IPV4_ADDRESS               DNSServer;
+    #elif defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
+    char                            DNSServer[COSA_DML_ALIAS_NAME_LENGTH];
+    #endif
     char                            Interface[COSA_DML_ALIAS_NAME_LENGTH]; /* IP interface name */
     COSA_DML_DNS_ADDR_SRC           Type;
 }
@@ -372,12 +388,21 @@ CosaDmlDnsEnableRelay
 * @retval COSA_DML_DNS_STATUS_Error if the DNS relay is in an error state.
 *
 */
+
+#if (defined(_COSA_SIM_))
 COSA_DML_DNS_STATUS
 CosaDmlIpDnsGetRelayStatus
     (
         ANSC_HANDLE                 hContext
     );
-
+#elif defined(_COSA_INTEL_USG_ARM_) || defined(_COSA_BCM_ARM_) || defined(_COSA_BCM_MIPS_)
+COSA_DML_DNS_STATUS
+CosaDmlIpDnsGetRelayStatus
+    (
+        ANSC_HANDLE                 hContext,
+        PCOSA_DML_DNS_RELAY         pRelay
+    );
+#endif
 /*
  *  DNS Relay Forwarding (server)
  */
