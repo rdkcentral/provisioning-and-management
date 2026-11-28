@@ -97,9 +97,7 @@ struct _COSA_DML_USER
     int			       				RemainingAttempts;
     int			       				LoginCounts;
     int								LockOutRemainingTime;
-    #if defined(_COSA_FOR_BCI_) || defined(_ONESTACK_PRODUCT_REQ_)
     int                             NumOfRestoreFailedAttempt;
-    #endif
     /*
      * *  Extensions
      * */
