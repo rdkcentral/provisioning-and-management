@@ -606,7 +606,7 @@ rbusError_t RRDWebCfg_SetStringHandler(rbusHandle_t handle, rbusProperty_t prope
         if(rbusValue_GetType(value) != RBUS_STRING)
         {
             CcspTraceError(("[%s]: Invalid gettype name\n", __FUNCTION__));
-            return RBUS_ERROR_INVALID_INPUT;
+            return RBUS_ERROR_INVALID_PARAMETER_TYPE;
         }
         strncpy(prev_val, RRDWebCfgData, sizeof(prev_val)-1);
         CcspTraceInfo(("[%s]: RemotedebuggerWebCfgData Previous String Value is %s\n", __FUNCTION__,RRDWebCfgData));
@@ -705,7 +705,7 @@ rbusError_t RRD_SetStringHandler(rbusHandle_t handle, rbusProperty_t property, r
         if(rbusValue_GetType(value) != RBUS_STRING)
         {
             CcspTraceError(("[%s]: Invalid gettype name\n", __FUNCTION__));
-            return RBUS_ERROR_INVALID_INPUT;
+            return RBUS_ERROR_INVALID_PARAMETER_TYPE;
         }
         strncpy(prev_val, RRDIssueType, sizeof(prev_val)-1);
         CcspTraceInfo(("[%s]: RemotedebuggerIssueType Previous String Value is %s\n", __FUNCTION__,RRDIssueType));
