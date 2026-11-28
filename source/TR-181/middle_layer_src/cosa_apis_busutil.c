@@ -659,3 +659,180 @@ ANSC_STATUS RdkBus_GetParamValueFromAnyComp( char * pQuery, char *pValue)
 }
 #endif
 #endif
+
+typedef struct
+{
+  parameterSigStruct_t signal;
+} ParamValueChangeSignalData_t;
+
+/**********************************************************************
+    prototype:
+
+        static void *
+        RdkBus_ParamValueChangeSignalThread
+            (
+                void *arg
+            )
+
+    description:
+
+        This function runs in a worker thread and sends the
+        parameter value change signal asynchronously. It also
+        releases all dynamically allocated resources associated
+        with the signal data before exiting.
+
+    argument:
+
+        void*                       arg
+            Pointer to ParamValueChangeSignalData_t structure
+            containing the signal information.
+
+    return:
+
+        void*
+            Returns NULL on thread completion.
+
+**********************************************************************/
+
+static void *RdkBus_ParamValueChangeSignalThread (void *arg)
+{
+    ParamValueChangeSignalData_t *pData = (ParamValueChangeSignalData_t *)arg;
+    int ret = CCSP_FAILURE;
+    CcspTraceInfo (("%s: Thread started\n", __FUNCTION__));
+    if (!pData)
+    {
+       CcspTraceError (("%s: Invalid input\n", __FUNCTION__));
+       return NULL;
+    }
+
+    CcspTraceInfo (("%s: Sending parameterValueChangeSignal, ParamName='%s' OldValue='%s' NewValue='%s'\n", __FUNCTION__, pData->signal.parameterName ? pData->signal.parameterName : "NULL", pData->signal.oldValue ? pData->signal.oldValue : "NULL", pData->signal.newValue ? pData->signal.newValue : "NULL"));
+
+    ret = CcspBaseIf_SendparameterValueChangeSignal (bus_handle, &pData->signal, 1);
+    CcspTraceInfo (("%s:CcspBaseIf_SendparameterValueChangeSignal returned %d\n", __FUNCTION__, ret));
+
+    if (pData->signal.parameterName)
+    {
+       AnscFreeMemory ((void *)pData->signal.parameterName);
+    }
+    if (pData->signal.oldValue)
+    {
+       AnscFreeMemory ((void *)pData->signal.oldValue);
+    }
+    if (pData->signal.newValue)
+    {
+       AnscFreeMemory ((void *)pData->signal.newValue);
+    }
+    if (pData->signal.subsystem_prefix)
+    {
+       AnscFreeMemory ((void *)pData->signal.subsystem_prefix);
+    }
+    AnscFreeMemory (pData);
+
+    CcspTraceInfo (("%s: Thread exiting\n", __FUNCTION__));
+    return NULL;
+}
+
+/**********************************************************************
+    prototype:
+
+        ANSC_STATUS
+        RdkBus_SendParamValueChangeSignalAsync
+            (
+                char *paramName,
+                char *oldValue,
+                char *newValue
+            )
+
+    description:
+
+        This function sends a parameter value change signal asynchronously
+        by creating a worker thread to process and dispatch the notification.
+
+    argument:
+
+        char*                       paramName
+            Parameter name whose value has changed.
+
+        char*                       oldValue
+            Previous value of the parameter.
+
+        char*                       newValue
+            Updated value of the parameter.
+
+    return:
+
+        ANSC_STATUS_SUCCESS         if the worker thread is created successfully.
+
+        ANSC_STATUS_FAILURE         if input validation, memory allocation,
+                                    string cloning, or thread creation fails.
+
+**********************************************************************/
+
+ANSC_STATUS RdkBus_SendParamValueChangeSignalAsync (char *paramName, char *oldValue, char *newValue)
+{
+  pthread_t threadId;
+  ParamValueChangeSignalData_t *pData = NULL;
+
+  CcspTraceInfo (("%s: Entry\n", __FUNCTION__));
+  if (!paramName || !newValue)
+  {
+    CcspTraceError (("%s: Invalid arguments\n", __FUNCTION__));
+    return ANSC_STATUS_FAILURE;
+  }
+
+  pData = AnscAllocateMemory (sizeof (ParamValueChangeSignalData_t));
+  if (!pData)
+  {
+    CcspTraceError (("%s: Memory allocation failed\n", __FUNCTION__));
+    return ANSC_STATUS_FAILURE;
+  }
+
+  memset (pData, 0, sizeof (*pData));
+  pData->signal.parameterName = AnscCloneString (paramName);
+  pData->signal.oldValue = AnscCloneString (oldValue ? oldValue : "");
+  pData->signal.newValue = AnscCloneString (newValue);
+  pData->signal.type = ccsp_string;
+  pData->signal.subsystem_prefix = AnscCloneString (g_SubsystemPrefix);
+
+  CcspTraceInfo (("%s: Signal structure prepared\n", __FUNCTION__));
+  if (!pData->signal.parameterName || !pData->signal.oldValue || !pData->signal.newValue || (g_SubsystemPrefix && !pData->signal.subsystem_prefix))
+  {
+     CcspTraceError (("%s: String clone failed\n", __FUNCTION__));
+    if (pData->signal.parameterName)
+    {
+       AnscFreeMemory ((void *)pData->signal.parameterName);
+    }
+    if (pData->signal.oldValue)
+    {
+       AnscFreeMemory ((void *)pData->signal.oldValue);
+    }
+    if (pData->signal.newValue)
+    {
+       AnscFreeMemory ((void *)pData->signal.newValue);
+    }
+    if (pData->signal.subsystem_prefix)
+    {
+       AnscFreeMemory ((void *)pData->signal.subsystem_prefix);
+    }
+    AnscFreeMemory (pData);
+    return ANSC_STATUS_FAILURE;
+  }
+
+  CcspTraceInfo (("%s: Creating worker thread\n", __FUNCTION__));
+  if (pthread_create (&threadId, NULL, RdkBus_ParamValueChangeSignalThread, pData) != 0)
+  {
+     CcspTraceError (("%s: pthread_create failed\n", __FUNCTION__));
+     AnscFreeMemory ((void *)pData->signal.parameterName);
+     AnscFreeMemory ((void *)pData->signal.oldValue);
+     AnscFreeMemory ((void *)pData->signal.newValue);
+     if (pData->signal.subsystem_prefix)
+     {
+        AnscFreeMemory ((void *)pData->signal.subsystem_prefix);
+     }
+     AnscFreeMemory (pData);
+     return ANSC_STATUS_FAILURE;
+  }
+  pthread_detach (threadId);
+  CcspTraceInfo (("%s: Worker thread created successfully\n", __FUNCTION__));
+  return ANSC_STATUS_SUCCESS;
+}
