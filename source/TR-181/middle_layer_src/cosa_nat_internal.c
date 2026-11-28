@@ -117,6 +117,10 @@ CosaNatCreate
     {
         return  (ANSC_HANDLE)NULL;
     }
+    AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatCreate | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pMyObject,
+               sizeof(COSA_DATAMODEL_NAT)));
 
     /*
      * Initialize the common variables and functions for a container object.
@@ -357,6 +361,10 @@ CosaNatRemove
 
         AnscFreeMemory(pNat->hContext);
         AnscFreeMemory(pNat);
+	AnscTraceFlow(("[P&M-MEM] FREE: CosaNatRemove | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pNat,
+                       sizeof(COSA_CONTEXT_LINK_OBJECT)));
     }
 
     for( pLink = AnscSListPopEntry(&pMyObject->NatPTriggerList); pLink; )
@@ -366,6 +374,10 @@ CosaNatRemove
 
         AnscFreeMemory(pNat->hContext);
         AnscFreeMemory(pNat);
+	 AnscTraceFlow(("[P&M-MEM] FREE: CosaNatRemove | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pNat,
+                       sizeof(COSA_CONTEXT_LINK_OBJECT)));
     }
 
     if ( pPoamIrepPt )
@@ -637,6 +649,10 @@ CosaNatRegGetNatInfo
             returnStatus = ANSC_STATUS_FAILURE;
             goto EXIT1;
         }
+	AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatRegGetNatInfo | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pCosaNat,
+               sizeof(COSA_DML_NAT_PMAPPING)));
 
         /* set some default value firstly */
         NAT_PORTMAPPING_SET_DEFAULTVALUE(pCosaNat);
@@ -653,6 +669,10 @@ CosaNatRegGetNatInfo
             returnStatus = ANSC_STATUS_FAILURE;
             goto EXIT2;
         }
+	AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatRegGetNatInfo | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pCosaNatContext,
+               sizeof(COSA_CONTEXT_PMAPPING_LINK_OBJECT)));
 
         NAT_PMAPPING_INITIATION_CONTEXT(pCosaNatContext)
 
@@ -779,6 +799,10 @@ CosaNatRegGetNatInfo
             returnStatus = ANSC_STATUS_RESOURCES;
             goto EXIT1;
         }
+	AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatRegGetNatInfo | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pCosaNatPt,
+               sizeof(COSA_DML_NAT_PTRIGGER)));
 
         /* set some default value firstly */
         COSA_DML_NAT_PTRIGGER_INIT(pCosaNatPt);
@@ -799,6 +823,10 @@ CosaNatRegGetNatInfo
             returnStatus = ANSC_STATUS_FAILURE;
             goto EXIT2;
         }
+	AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatRegGetNatInfo | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pCosaNatPtContext,
+               sizeof(COSA_CONTEXT_LINK_OBJECT)));
 
          COSA_CONTEXT_LINK_INITIATION_CONTENT(pCosaNatPtContext)
 
@@ -1192,9 +1220,16 @@ CosaNatSyncPortTrigger
     if ( !pbFoundPt )
     {
         AnscFreeMemory(pPortTrigger); /*RDKB-6742, CID-32996, free unused resources before exit*/
+	AnscTraceFlow(("[P&M-MEM] FREE: CosaNatSyncPortTrigger | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pPortTrigger,
+                       sizeof(COSA_DML_NAT_PTRIGGER)));
         return ANSC_STATUS_RESOURCES;
     }
-
+    AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatSyncPortTrigger | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pbFoundPt,
+               sizeof(BOOL) * entryCount));
     pSListEntry =   AnscSListGetFirstEntry(&pMyObject->NatPTriggerList);
 
     while( pSListEntry )
@@ -1232,12 +1267,20 @@ CosaNatSyncPortTrigger
             {
                 goto EXIT1;
             }
+            AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatSyncPortTrigger | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pCxtLink,
+               sizeof(COSA_CONTEXT_LINK_OBJECT)));
 
             pPtEntry = AnscAllocateMemory(sizeof(COSA_DML_NAT_PTRIGGER));
             if ( !pPtEntry )
             {
                 goto EXIT2;
             }
+            AnscTraceFlow(("[P&M-MEM] ALLOC: CosaNatSyncPortTrigger | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pPtEntry,
+               sizeof(COSA_DML_NAT_PTRIGGER)));
 
             /* copy new content which should include InstanceNumber and Alias */
             CcspTraceWarning(("!!!!!!!! Ready to copy 2 &pPortTrigger[%lu]->InsNumber: %lu !!!!!!!!\n", i, pPortTrigger[i].InstanceNumber));
@@ -1260,11 +1303,23 @@ CosaNatSyncPortTrigger
 EXIT2:
 
     AnscFreeMemory(pCxtLink);
+    AnscTraceFlow(("[P&M-MEM] FREE: CosaNatSyncPortTrigger | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pCxtLink,
+                       sizeof(COSA_CONTEXT_LINK_OBJECT)));
 
 EXIT1:
 
     AnscFreeMemory(pbFoundPt);
     AnscFreeMemory(pPortTrigger);
+    AnscTraceFlow(("[P&M-MEM] FREE: CosaNatSyncPortTrigger | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pbFoundPt,
+                       sizeof(BOOL) * entryCount));
+    AnscTraceFlow(("[P&M-MEM] FREE: CosaNatSyncPortTrigger | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pPortTrigger,
+                       sizeof(COSA_DML_NAT_PTRIGGER)));
 
     CcspTraceWarning(("!!!!!!!! out CosaNatSyncPortTrigger !!!!!!!!\n"));
 

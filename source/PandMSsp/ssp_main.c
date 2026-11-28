@@ -521,6 +521,10 @@ int main(int argc, char* argv[])
     
     if ( gpPnmStartCfg )
     {
+	AnscTraceFlow(("[P&M-MEM] ALLOC:  main| "
+               "PTR=%p | SIZE=%zu bytes\n",
+               gpPnmStartCfg,
+               sizeof(CCSP_COMPONENT_CFG)));
         CcspComponentLoadCfg(CCSP_PNM_START_CFG_FILE, gpPnmStartCfg);
     }
     else

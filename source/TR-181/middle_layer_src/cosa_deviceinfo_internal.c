@@ -118,6 +118,10 @@ CosaDeviceInfoCreate
     {
         return  (ANSC_HANDLE)NULL;
     }
+    AnscTraceFlow(("[P&M-MEM] ALLOC: CosaDeviceInfoCreate | "
+               "PTR=%p | SIZE=%zu bytes\n",
+               pMyObject,
+               sizeof(COSA_DATAMODEL_DEVICEINFO)));
 
     /*
      * Initialize the common variables and functions for a container object.
@@ -272,6 +276,10 @@ CosaDeviceInfoRemove
 
     /* Remove self */
     AnscFreeMemory((ANSC_HANDLE)pMyObject);
+    AnscTraceFlow(("[P&M-MEM] FREE: CosaDeviceInfoRemove | "
+                       "PTR=%p | SIZE=%zu bytes\n",
+                       pMyObject,
+                       sizeof(COSA_DATAMODEL_DEVICEINFO)));
 
     return returnStatus;
 }
